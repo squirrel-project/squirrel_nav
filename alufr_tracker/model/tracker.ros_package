@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ros:Package xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ros="http://ros/1.0" name="alufr_tracker" author="Armin Hornung" author_email="hornunga@cs.uni-freiburg.de" description="The alufr_tracker package" license="TODO">
+  <node name="tracker">
+    <publisher name="gesture" msg="alufr_tracker_msgs::Gesture"/>
+    <publisher name="detected_pose" msg="geometry_msgs::PoseStamped"/>
+    <publisher name="filtered_cloud" msg="sensor_msgs::PointCloud2"/>
+    <subscriber name="cloud" msg="sensor_msgs::PointCloud2"/>
+    <subscriber name="tf" msg="tf::tfMessage"/>
+  </node>
+  <depend>sensor_msgs</depend>
+  <depend>alufr_tracker_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf</depend>
+</ros:Package>
