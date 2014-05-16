@@ -13,9 +13,10 @@
     <subscriber name="tf" msg="tf::tfMessage"/>
     <subscriber name="odom" msg="nav_msgs::Odometry"/>
     <subscriber name="map" msg="nav_msgs::OccupancyGrid"/>
-    <subscriber name="octomap" msg="octomap_msgs::Octomap"/>
     <subscriber name="scan" msg="sensor_msgs::LaserScan"/>
     <subscriber name="robot_configuration" msg="sensor_msgs::JointState"/>
+    <serviceClient name="octomap" msg="octomap_msgs::GetOctomap"/>
+    <serviceServer name="make_plan" msg="nav_msgs::GetPlan"/>
     <actionserver name="move" ActionType="move_base_msgs::MoveBase"/>
   </node>
   <depend>tf</depend>

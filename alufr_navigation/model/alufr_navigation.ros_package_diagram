@@ -33,7 +33,7 @@
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_xF1V0dw3EeOQY9HS_3cz-w"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_xF1V0tw3EeOQY9HS_3cz-w" fontName="DejaVu Sans"/>
       <element xmi:type="ros:Publisher" href="alufr_navigation.ros_package#//@node.0/@publisher.0"/>
-      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_xF1V09w3EeOQY9HS_3cz-w" x="239" y="88"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_xF1V09w3EeOQY9HS_3cz-w" x="275" y="154"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_DRnJwNw4EeOQY9HS_3cz-w" type="3007">
       <children xmi:type="notation:DecorationNode" xmi:id="_DRnJxNw4EeOQY9HS_3cz-w" type="5007"/>
@@ -50,7 +50,7 @@
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_T-f909w4EeOQY9HS_3cz-w"/>
     </children>
     <element xmi:type="ros:Node" href="alufr_navigation.ros_package#//@node.0"/>
-    <layoutConstraint xmi:type="notation:Bounds" xmi:id="_dtjSgdw3EeOQY9HS_3cz-w" x="121" y="33" width="276" height="309"/>
+    <layoutConstraint xmi:type="notation:Bounds" xmi:id="_dtjSgdw3EeOQY9HS_3cz-w" x="121" y="33" width="298" height="342"/>
   </children>
   <children xmi:type="notation:Shape" xmi:id="_4X08wNw3EeOQY9HS_3cz-w" type="2001" fontName="DejaVu Sans">
     <children xmi:type="notation:DecorationNode" xmi:id="_4X1j0Nw3EeOQY9HS_3cz-w" type="5008"/>
@@ -79,7 +79,7 @@
       <styles xmi:type="notation:FontStyle" xmi:id="_k_30Itw4EeOQY9HS_3cz-w" fontName="DejaVu Sans"/>
       <styles xmi:type="notation:LineStyle" xmi:id="_k_30I9w4EeOQY9HS_3cz-w"/>
       <element xmi:type="ros:ActionServer" href="alufr_navigation.ros_package#//@node.1/@actionserver.0"/>
-      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_k_30JNw4EeOQY9HS_3cz-w"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_k_30JNw4EeOQY9HS_3cz-w" x="275" y="198"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_vwVtENw4EeOQY9HS_3cz-w" type="3007">
       <children xmi:type="notation:DecorationNode" xmi:id="_vwWUINw4EeOQY9HS_3cz-w" type="5007"/>
@@ -93,28 +93,37 @@
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_4nvLkdw4EeOQY9HS_3cz-w"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_4nvLktw4EeOQY9HS_3cz-w" fontName="DejaVu Sans"/>
       <element xmi:type="ros:Publisher" href="alufr_navigation.ros_package#//@node.1/@publisher.0"/>
-      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_4nvLk9w4EeOQY9HS_3cz-w"/>
-    </children>
-    <children xmi:type="notation:Node" xmi:id="_BLnRINw5EeOQY9HS_3cz-w" type="3007">
-      <children xmi:type="notation:DecorationNode" xmi:id="_BLn4MNw5EeOQY9HS_3cz-w" type="5007"/>
-      <styles xmi:type="notation:DescriptionStyle" xmi:id="_BLnRIdw5EeOQY9HS_3cz-w"/>
-      <styles xmi:type="notation:FontStyle" xmi:id="_BLnRItw5EeOQY9HS_3cz-w" fontName="DejaVu Sans"/>
-      <element xmi:type="ros:Subscriber" href="alufr_navigation.ros_package#//@node.1/@subscriber.3"/>
-      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_BLnRI9w5EeOQY9HS_3cz-w"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_4nvLk9w4EeOQY9HS_3cz-w" x="275" y="308"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_JtQiENw5EeOQY9HS_3cz-w" type="3007">
       <children xmi:type="notation:DecorationNode" xmi:id="_JtQiFNw5EeOQY9HS_3cz-w" type="5007"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_JtQiEdw5EeOQY9HS_3cz-w"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_JtQiEtw5EeOQY9HS_3cz-w" fontName="DejaVu Sans"/>
-      <element xmi:type="ros:Subscriber" href="alufr_navigation.ros_package#//@node.1/@subscriber.4"/>
+      <element xmi:type="ros:Subscriber" href="alufr_navigation.ros_package#//@node.1/@subscriber.3"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_JtQiE9w5EeOQY9HS_3cz-w"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_brXtcNw5EeOQY9HS_3cz-w" type="3007">
       <children xmi:type="notation:DecorationNode" xmi:id="_brYUgNw5EeOQY9HS_3cz-w" type="5007"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_brXtcdw5EeOQY9HS_3cz-w"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_brXtctw5EeOQY9HS_3cz-w" fontName="DejaVu Sans"/>
-      <element xmi:type="ros:Subscriber" href="alufr_navigation.ros_package#//@node.1/@subscriber.5"/>
+      <element xmi:type="ros:Subscriber" href="alufr_navigation.ros_package#//@node.1/@subscriber.4"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_brXtc9w5EeOQY9HS_3cz-w"/>
+    </children>
+    <children xmi:type="notation:Node" xmi:id="_DZJ1wNz0EeOhCK6SZgxfVg" type="3003">
+      <children xmi:type="notation:DecorationNode" xmi:id="_DZKc0Nz0EeOhCK6SZgxfVg" type="5003"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="_DZJ1wdz0EeOhCK6SZgxfVg"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="_DZJ1wtz0EeOhCK6SZgxfVg" fontName="DejaVu Sans"/>
+      <styles xmi:type="notation:LineStyle" xmi:id="_DZJ1w9z0EeOhCK6SZgxfVg"/>
+      <element xmi:type="ros:ServiceClient" href="alufr_navigation.ros_package#//@node.1/@serviceClient.0"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_DZJ1xNz0EeOhCK6SZgxfVg"/>
+    </children>
+    <children xmi:type="notation:Node" xmi:id="_RHj_INz3EeOhCK6SZgxfVg" type="3002">
+      <children xmi:type="notation:DecorationNode" xmi:id="_RHkmMNz3EeOhCK6SZgxfVg" type="5002"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="_RHj_Idz3EeOhCK6SZgxfVg"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="_RHj_Itz3EeOhCK6SZgxfVg" fontName="DejaVu Sans"/>
+      <styles xmi:type="notation:LineStyle" xmi:id="_RHj_I9z3EeOhCK6SZgxfVg"/>
+      <element xmi:type="ros:ServiceServer" href="alufr_navigation.ros_package#//@node.1/@serviceServer.0"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_RHj_JNz3EeOhCK6SZgxfVg"/>
     </children>
     <element xmi:type="ros:Node" href="alufr_navigation.ros_package#//@node.1"/>
     <layoutConstraint xmi:type="notation:Bounds" xmi:id="_4X08wdw3EeOQY9HS_3cz-w" x="649" y="33" width="276" height="342"/>

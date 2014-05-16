@@ -1,0 +1,8 @@
+geometry_msgs/Pose2D pose
+sensor_msgs/JointState joints
+---
+---
+uint8 collision
+#collision: 
+#0: not in collision
+#1: in collision
