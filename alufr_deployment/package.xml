@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package>
+  <name>alufr_deployment</name>
+  <description>The alufr_deployment system</description>
+  <version>0.0.1</version>
+  <maintainer email="jsf@todo.todo">jsf</maintainer>
+  <author email="jsf@todo.todo">jsf</author>
+  <license>TODO</license>
+  <url></url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+    <build_depend>alufr_navigation</build_depend>
+    <run_depend>alufr_navigation</run_depend>
+    <build_depend>alufr_mapping</build_depend>
+    <run_depend>alufr_mapping</run_depend>
+    <build_depend>alufr_tracker</build_depend>
+    <run_depend>alufr_tracker</run_depend>
+    <build_depend>alufr_behaviour</build_depend>
+    <run_depend>alufr_behaviour</run_depend>
+
+
+  <!-- protected region additional manifest statements on begin -->
+  <!-- protected region additional manifest statements end -->
+
+
+</package>
