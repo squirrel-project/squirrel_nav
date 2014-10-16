@@ -5,15 +5,24 @@ Repository for navigation related SQUIRREL packages.
 
 ##Creating a 2D Gridmap
 ```bash
+roslaunch robotino_navigation gmapping.launch
+```
+We prepaired a configuration file (for rviz-hydro), that can be found in the git repository at
+*robotino_navigation\config\rviz\hydro_config.rviz*.
+You can load it in rviz via *Cltr+O*. You should see a small part of a map.
+Move the robotino with the joystick to complete the map.
+If done, save the map with the following command:
+```bash
+rosrun map_server map_saver -f [mymap]
+```
+where *[mymap]* should be replaced by the correct path and filename.
 
 ##Starting Laser Based Navigation in the 2D Map
-
 ```bash
-roslaunch robotino_navigation navigation.launch map_file:=[/full/path/to/mapping.yaml]
+roslaunch robotino_navigation navigation.launch map_file:=[map.yaml]
 ```
-*[/full/path/to/mapping.yaml]* has to be replaced by the recorded
-mapping file (see \ref{mapping}). You have to use the full path to the mapping file,
-even if the yaml file is in the same directory.
+*[map.yaml]* has to be replaced by the recorded mapping file.
+You have to use the full path to the mapping file, even if the yaml file is in the same directory.
 
 To set a initial pose estimation, start rviz on your desktop.
 ```bash
