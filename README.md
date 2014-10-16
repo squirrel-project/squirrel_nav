@@ -7,7 +7,7 @@ Repository for navigation related SQUIRREL packages.
 ```bash
 roslaunch robotino_navigation gmapping.launch
 ```
-We prepaired a configuration file (for rviz-hydro), that can be found in the git repository at
+An rviz configuration file, can be found in the git repository at
 *alufr_navigation\config\rviz\hydro_config.rviz*.
 You can load it in rviz via *Cltr+O*. You should see a small part of a map.
 Move the robotino with the joystick to complete the map.
