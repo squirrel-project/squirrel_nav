@@ -59,7 +59,7 @@ Let the robot navigate in the environment. Finally store the 3D Octomap executin
 rosrun octomap_server octomap_saver -f [octomap_name.ot]
 ```
 
-The 3D Octomap should now have been created.
+The 3D Octomap should now have been stored in *octomap_name.ot*.
 
 
 ### Visualising the 3D Octomap
