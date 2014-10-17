@@ -3,7 +3,18 @@ navigation
 
 Repository for navigation related SQUIRREL packages.
 
-##Creating a 2D Gridmap
+## Creating a 2D Gridmap
+
+Run the mapping routine by executing
+
+```bash
+roslaunch robotino_navigation gmapping.launch 
+``` 
+
+The map created can be then visualised in RViz. The robot should be
+teleoperated to explore the area. Once the map of the scene is
+correctly computed, it can be stored running
+
 ```bash
 roslaunch robotino_navigation gmapping.launch
 ```
@@ -16,13 +27,15 @@ If done, save the map with the following command:
 rosrun map_server map_saver -f [mymap]
 ```
 where *[mymap]* should be replaced by the correct path and filename.
+`mymap.pgm` and `mymap.yaml` are created in the folder where the
+above command has been executed.
 
-##Starting Laser Based Navigation in the 2D Map
-###Launch Navigation
+## Starting Laser Based Navigation in the 2D Map
+
 ```bash
-roslaunch robotino_navigation navigation.launch map_file:=[map.yaml]
+roslaunch robotino_navigation navigation.launch map_file:=[mymap.yaml]
 ```
-*[map.yaml]* has to be replaced by the recorded mapping file.
+*[mymap.yaml]* has to be replaced by the recorded mapping file.
 You have to use the full path to the mapping file, even if the yaml file is in the same directory.
 
 ###Start Rviz
@@ -40,11 +53,41 @@ robot. After that, you can send a navigation goal via the rviz button *2D Nav Go
 ##Creating a 3D Octomap Localizing in a 2D Map
 As as first step, start the navigation as described above.
 
-TODO: finish
+### Localising in a 2D Gridmap
 
+Set at first a pose estimate with the button *2D Pose Estimate* and
+move the robot around the map to localise the robot.
+
+### Performing a navigation task
+
+After that, you can send a navigation goal via the rviz button *2D Nav Goal*.
+The robot should now move to the goal.
+
+
+## Creating a 3D Octomap 
+
+To generate a 3D map of scene the pose of the robot must be known. For this, perform the
+localisation procedure as described in the section above. Once the robot is localised, 
+launch *octomap_server*:
+
+```bash
+roslaunch robotino_navigation octomap_server.launch
+```
+
+Let the robot navigate in the environment. Finally store the 3D Octomap executing
+
+```bash
+rosrun octomap_server octomap_saver -f [octomap_name.ot]
+```
+
+The 3D Octomap should now have been stored in *octomap_name.ot*.
+
+
+### Visualising the 3D Octomap
+
+To visualise the octomap, `octovis` is required. 
+
+`sudo apt-get install ros-hydro-octovis` to install it and 
+`octovis octomap_name.ot` to show the 3D Octomap.
 
 ##TODO: Using RGBD-SLAM to create an 3D OCTOMAP
-
-
-
-
