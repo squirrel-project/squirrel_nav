@@ -19,7 +19,7 @@ correctly computed, it can be stored running
 rosrun map_server map_saver -f [map_name]
 ```
 
-`map_name.pgm` and `map_name.yaml` should be created in the folder where the 
+`map_name.pgm` and `map_name.yaml` are created in the folder where the
 above command has been executed.
 
 ## Starting Laser Based Navigation in the 2D Map
