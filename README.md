@@ -40,9 +40,8 @@ that can be loaded with *Ctrl+O*.
 
 ### Localising in a 2D Gridmap
 
-Set at first a pose estimate with the button *2D Pose Estimate*
-and move the robot around the map to localise the
-robot. 
+Set at first a pose estimate with the button *2D Pose Estimate* and
+move the robot around the map to localise the robot.
 
 ### Performing a navigation task
 
