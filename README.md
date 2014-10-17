@@ -70,7 +70,7 @@ To visualise the octomap, `octovis` is required.
 `octovis octomap_name.ot` to show the 3D Octomap.
 
 
-## Using RGBD-SLAM to create an 3D OCTOMAP
+## Using RGBD-SLAM to create a 3D Octomap
 
 
 
