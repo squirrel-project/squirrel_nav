@@ -47,7 +47,7 @@ The robot should now move to the goal.
 
 To generate a 3D map of scene the pose of the robot must be known. For this, perform the
 localisation procedure as described in the section above. Once the robot is localised, 
-launch the octomap server routine.
+launch *octomap_server*:
 
 ```bash
 roslaunch robotino_navigation octomap_server.launch
