@@ -37,9 +37,16 @@ rosrun rviz rviz
 ```
 There is rviz configuration files in our git repository *alufr_navigation/config*,
 that can be loaded with *Ctrl+O*.
+
+### Localising in a 2D Gridmap
+
 Set at first a pose estimate with the button *2D Pose Estimate*
 and move the robot around the map to localise the
-robot. After that, you can send a navigation goal via the rviz button *2D Nav Goal*.
+robot. 
+
+### Performing a navigation task
+
+After that, you can send a navigation goal via the rviz button *2D Nav Goal*.
 The robot should now move to the goal.
 
 
