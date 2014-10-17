@@ -4,14 +4,15 @@ navigation
 Repository for navigation related SQUIRREL packages.
 
 ##Creating a 2D Gridmap
-```bash
+
+
 
 ##Starting Laser Based Navigation in the 2D Map
 
 ```bash
 roslaunch robotino_navigation navigation.launch map_file:=[/full/path/to/mapping.yaml]
 ```
-*[/full/path/to/mapping.yaml]* has to be replaced by the recorded
+`[/full/path/to/mapping.yaml]` has to be replaced by the recorded
 mapping file (see \ref{mapping}). You have to use the full path to the mapping file,
 even if the yaml file is in the same directory.
 
