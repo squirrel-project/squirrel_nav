@@ -66,8 +66,8 @@ The 3D Octomap should now have been created.
 
 To visualise the octomap, `octovis` is required. 
 
-`sudo apt-get install ros-<distro>-octovis` to install it and `octovis
-octomap_name.ot` to show the 3D Octomap.
+`sudo apt-get install ros-hydro-octovis` to install it and 
+`octovis octomap_name.ot` to show the 3D Octomap.
 
 
 ## Using RGBD-SLAM to create an 3D OCTOMAP
