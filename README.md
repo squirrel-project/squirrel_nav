@@ -62,7 +62,7 @@ rosrun octomap_server octomap_saver -f [octomap_name.ot]
 The 3D Octomap should now have been created.
 
 
-### Visualising the 
+### Visualising the 3D Octomap
 
 To visualise the octomap, `octovis` is required. 
 
