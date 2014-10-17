@@ -46,7 +46,7 @@ The robot should now move to the goal.
 ## Creating a 3D Octomap Localising in a 2D Map
 
 To generate a 3D map of scene the pose of the robot must be known. For this, perform the
-localisation routine as described in the section above. Once the robot is localised, 
+localisation procedure as described in the section above. Once the robot is localised, 
 launch the octomap server routine.
 
 ```bash
