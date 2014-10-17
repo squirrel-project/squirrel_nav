@@ -43,7 +43,7 @@ robot. After that, you can send a navigation goal via the rviz button *2D Nav Go
 The robot should now move to the goal.
 
 
-## Creating a 3D Octomap Localising in a 2D Map
+## Creating a 3D Octomap 
 
 To generate a 3D map of scene the pose of the robot must be known. For this, perform the
 localisation procedure as described in the section above. Once the robot is localised, 
