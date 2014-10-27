@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ros:Architecture xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ros="http://ros/1.0" name="alufr_deployment" author="jsf" author_email="jsf@todo.todo" license="TODO" description="The alufr_deployment system">
+  <topic name="tf">
+    <publisher href="platform:/resource//alufr_navigation/model/alufr_navigation.ros_package#//@node.0/@publisher.0"/>
+    <subscriber href="platform:/resource//alufr_navigation/model/alufr_navigation.ros_package#//@node.1/@subscriber.0"/>
+  </topic>
+  <topic name="tf">
+    <publisher href="platform:/resource//alufr_navigation/model/alufr_navigation.ros_package#//@node.0/@publisher.0"/>
+    <subscriber href="platform:/resource//alufr_mapping/model/alufr_mapping.ros_package#//@node.1/@subscriber.0"/>
+  </topic>
+  <topic name="tf">
+    <publisher href="platform:/resource//alufr_navigation/model/alufr_navigation.ros_package#//@node.0/@publisher.0"/>
+    <subscriber href="platform:/resource//alufr_mapping/model/alufr_mapping.ros_package#//@node.0/@subscriber.0"/>
+  </topic>
+  <topic name="tf">
+    <publisher href="platform:/resource//alufr_navigation/model/alufr_navigation.ros_package#//@node.0/@publisher.0"/>
+    <subscriber href="platform:/resource//alufr_tracker/model/tracker.ros_package#//@node.0/@subscriber.1"/>
+  </topic>
+  <topic name="octomap">
+    <publisher href="platform:/resource//alufr_mapping/model/alufr_mapping.ros_package#//@node.0/@publisher.0"/>
+    <subscriber href="platform:/resource//alufr_navigation/model/alufr_navigation.ros_package#//@node.0/@subscriber.4"/>
+  </topic>
+  <packages href="platform:/resource//alufr_navigation/model/alufr_navigation.ros_package#/"/>
+  <packages href="platform:/resource//alufr_mapping/model/alufr_mapping.ros_package#/"/>
+  <packages href="platform:/resource//alufr_tracker/model/tracker.ros_package#/"/>
+  <packages href="platform:/resource//alufr_behaviour/model/alufr_behaviour.ros_coordinator#/"/>
+  <action name="TriggerCollisionCheck">
+    <actionserver href="platform:/resource//alufr_mapping/model/alufr_mapping.ros_package#//@node.1/@actionserver.0"/>
+    <actionclient href="platform:/resource//alufr_behaviour/model/alufr_behaviour.ros_coordinator#//@node.0/@actionclient.0"/>
+  </action>
+  <action name="TriggerMoveBase">
+    <actionserver href="platform:/resource//alufr_navigation/model/alufr_navigation.ros_package#//@node.1/@actionserver.0"/>
+    <actionclient href="platform:/resource//alufr_behaviour/model/alufr_behaviour.ros_coordinator#//@node.0/@actionclient.1"/>
+  </action>
+  <service name="octomap">
+    <serviceserver href="platform:/resource//alufr_mapping/model/alufr_mapping.ros_package#//@node.1/@serviceServer.0"/>
+    <serviceclient href="platform:/resource//alufr_navigation/model/alufr_navigation.ros_package#//@node.1/@serviceClient.0"/>
+  </service>
+</ros:Architecture>
