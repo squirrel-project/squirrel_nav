@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ros:Package xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ros="http://ros/1.0" name="alu_fr_robotino_safety" author="boniardi" author_email="boniardi@todo.todo" description="The alu_fr_robotino_safety package" license="TODO">
+  <node name="robotino_safety_node">
+    <publisher name="inner_ellipse_marker" msg="visualization_msgs::Marker"/>
+    <publisher name="cmd_vel" msg="geometry_msgs::Twist"/>
+    <publisher name="outer_ellipse_marker" msg="visualization_msgs::Marker"/>
+    <subscriber name="robotino_cmd_vel" msg="geometry_msgs::Twist"/>
+    <subscriber name="tf_static" msg="tf::tfMessage"/>
+    <subscriber name="tf" msg="tf::tfMessage"/>
+    <subscriber name="bumper" msg="std_msgs::Bool"/>
+    <subscriber name="scan" msg="sensor_msgs::LaserScan"/>
+    <parameter name="inner_major_radius" type="double"/>
+    <parameter name="inner_minor_radius" type="double"/>
+    <parameter name="outer_major_radius" type="double"/>
+    <parameter name="outer_minor_radius" type="double"/>
+  </node>
+  <depend>visualization_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+</ros:Package>
