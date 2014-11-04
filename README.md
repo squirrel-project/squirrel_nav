@@ -16,27 +16,42 @@ teleoperated to explore the area. Once the map of the scene is
 correctly computed, it can be stored running
 
 ```bash
-rosrun map_server map_saver -f [map_name]
+roslaunch robotino_navigation gmapping.launch
 ```
-
-`map_name.pgm` and `map_name.yaml` are created in the folder where the
+An rviz configuration file, can be found in the git repository at
+*alufr_navigation\config\rviz\hydro_config.rviz*.
+You can load it in rviz via *Cltr+O*. You should see a small part of a map.
+Move the robotino with the joystick to complete the map.
+If done, save the map with the following command:
+```bash
+rosrun map_server map_saver -f [mymap]
+```
+where *[mymap]* should be replaced by the correct path and filename.
+`mymap.pgm` and `mymap.yaml` are created in the folder where the
 above command has been executed.
 
 ## Starting Laser Based Navigation in the 2D Map
 
 ```bash
-roslaunch robotino_navigation navigation.launch map_file:=[/full/path/to/mapping.yaml]
+roslaunch robotino_navigation navigation.launch map_file:=[mymap.yaml]
 ```
-*/full/path/to/mapping.yaml* has to be replaced by the recorded
-mapping file (see \ref{mapping}). You have to use the full path to the mapping file,
-even if the yaml file is in the same directory.
+*[mymap.yaml]* has to be replaced by the recorded mapping file.
+You have to use the full path to the mapping file, even if the yaml file is in the same directory.
 
+###Start Rviz
 To set a initial pose estimation, start rviz on your desktop.
 ```bash
 rosrun rviz rviz
 ```
-There is rviz configuration files in our git repository *alufr_navigation/config*,
+There is rviz configuration files in our git repository *alufr_navigation\config\rviz\hydro_config.rviz*,
 that can be loaded with *Ctrl+O*.
+
+###Set Initial Pose and Move with Rviz
+Set at first a pose estimate with the button *2D Pose Estimate* and move the robot arround the map to localize the
+robot. After that, you can send a navigation goal via the rviz button *2D Nav Goal*.The robot should now move to the goal.
+
+##Creating a 3D Octomap Localizing in a 2D Map
+As as first step, start the navigation as described above.
 
 ### Localising in a 2D Gridmap
 
@@ -75,8 +90,4 @@ To visualise the octomap, `octovis` is required.
 `sudo apt-get install ros-hydro-octovis` to install it and 
 `octovis octomap_name.ot` to show the 3D Octomap.
 
-
-## Using RGBD-SLAM to create a 3D Octomap
-
-
-
+##TODO: Using RGBD-SLAM to create an 3D OCTOMAP
