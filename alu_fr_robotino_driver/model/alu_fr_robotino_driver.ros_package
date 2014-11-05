@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ros:Package xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ros="http://ros/1.0" name="alu_fr_robotino_driver" author="boniardi" author_email="boniardi@todo.todo" description="The alu_fr_robotino_driver package" license="TODO">
+  <node name="robotino_node">
+    <publisher name="distance_sensors_clearing" msg="sensor_msgs::PointCloud"/>
+    <publisher name="robotino_joint_states" msg="sensor_msgs::JointState"/>
+    <parameter name="downsample_kinect" type="bool" value=""/>
+    <parameter name="leaf_size_kinect" type="double"/>
+    <parameter name="max_angular_vel" type="double"/>
+    <parameter name="min_angular_vel" type="double"/>
+    <parameter name="max_linear_vel" type="double"/>
+    <parameter name="min_linear_vel" type="double"/>
+    <parameter name="hostname" type="string"/>
+  </node>
+  <node name="robotino_odometry_node">
+    <publisher name="odom" msg="nav_msgs::Odometry"/>
+    <publisher name="tf" msg="tf::tfMessage"/>
+    <serviceServer name="reset_odometry" msg=""/>
+    <parameter name="hostname"/>
+  </node>
+  <node name="robotino_camera_node">
+    <parameter name="hostname" type="string"/>
+    <parameter name="cameraNumber"/>
+  </node>
+  <node name="robotino_laserrangefinder_node">
+    <publisher name="scan" msg="sensor_msgs::LaserScan"/>
+    <parameter name="hostname" type="string" value=""/>
+    <parameter name="laserRangeFinderNumber"/>
+  </node>
+  <node name="robotino_mapping_node">
+    <subscriber name="odom" msg="nav_msgs::Odometry"/>
+    <subscriber name="map" msg="nav_msgs::OccupancyGrid"/>
+    <parameter name="hostname" type="string"/>
+  </node>
+  <depend>std_msgs</depend>
+  <depend>image_transport</depend>
+  <depend>nav_msgs</depend>
+  <depend>pcl_conversions</depend>
+  <depend>pcl_ros</depend>
+  <depend>robotino_msgs</depend>
+  <depend>tf</depend>
+  <depend>roscpp</depend>
+  <depend>robotino-api2</depend>
+  <depend>sensor_msgs</depend>
+</ros:Package>
