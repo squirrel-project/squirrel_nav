@@ -19,13 +19,9 @@
     <param name="controller_frequency" value="15.0" />
     <!--  Remapping needed in case the safety node below is used  <remap from="cmd_vel" to="robotino_cmd_vel" />-->
   </node>
+
+  <include file="$(find robotino_safety)/launch/robotino_safety_node.launch"/>
   
   <!-- Run rviz -->
-  <!--
-  <include file="$(find robotino_navigation)/launch/rviz.launch" />
-  -->
-  
-  <!-- Run robotino_safety_node 
-  <include file="$(find robotino_safety)/launch/robotino_safety_node.launch"/>
-  -->
+  <!-- <include file="$(find robotino_navigation)/launch/rviz.launch" />   -->
 </launch>
