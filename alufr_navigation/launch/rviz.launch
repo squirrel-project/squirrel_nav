@@ -1,4 +1,0 @@
-<launch>
-  <!-- start rviz -->
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find robotino_navigation)/config/rviz/robotino.rviz"/>
-</launch>
