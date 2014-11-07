@@ -1,0 +1,6 @@
+<launch>
+  <arg name="mapping"/>
+  <!-- start rviz -->
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find squirrel_navigation)/config/rviz/robotino.rviz" unless="$(arg mapping)"/>
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find squirrel_navigation)/config/rviz/rgmapping.rviz" if="$(arg mapping)"/>
+</launch>
