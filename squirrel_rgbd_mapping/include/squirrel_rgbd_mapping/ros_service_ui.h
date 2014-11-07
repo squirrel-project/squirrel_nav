@@ -21,10 +21,10 @@
 //#include "glviewer.h"
 #include "parameter_server.h"
 #include <QObject>
-#include "rgbdslam/rgbdslam_ros_ui.h"
-#include "rgbdslam/rgbdslam_ros_ui_b.h"
-#include "rgbdslam/rgbdslam_ros_ui_f.h"
-#include "rgbdslam/rgbdslam_ros_ui_s.h"
+#include "squirrel_rgbd_mapping/rgbdslam_ros_ui.h"
+#include "squirrel_rgbd_mapping/rgbdslam_ros_ui_b.h"
+#include "squirrel_rgbd_mapping/rgbdslam_ros_ui_f.h"
+#include "squirrel_rgbd_mapping/rgbdslam_ros_ui_s.h"
 
 class QAction;
 
