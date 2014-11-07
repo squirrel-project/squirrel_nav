@@ -26,6 +26,8 @@
 #include "squirrel_rgbd_mapping/rgbdslam_ros_ui_f.h"
 #include "squirrel_rgbd_mapping/rgbdslam_ros_ui_s.h"
 
+namespace rgbdslam = squirrel_rgbd_mapping;
+
 class QAction;
 
 //!Headless version of the Graphical_UI
