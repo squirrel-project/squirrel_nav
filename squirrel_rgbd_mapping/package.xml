@@ -40,7 +40,6 @@
   <build_depend>rosconsole</build_depend>
   <build_depend>message_filters</build_depend>
   <build_depend>cv_bridge</build_depend>
-  <build_depend>squirrel_rgbd_mapping_msgs</build_depend>
   <!-- own stuff -->
   <build_depend>libpcl-all-dev</build_depend>
   <build_depend>tf</build_depend>
