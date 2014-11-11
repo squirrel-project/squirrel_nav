@@ -65,6 +65,7 @@
   <run_depend>tf</run_depend>
   <run_depend>libg2o</run_depend>
   <run_depend>message_runtime</run_depend>
+  <run_depend>squirrel_rgbd_mapping_msgs</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

@@ -21,12 +21,10 @@
 //#include "glviewer.h"
 #include "parameter_server.h"
 #include <QObject>
-#include "squirrel_rgbd_mapping/rgbdslam_ros_ui.h"
-#include "squirrel_rgbd_mapping/rgbdslam_ros_ui_b.h"
-#include "squirrel_rgbd_mapping/rgbdslam_ros_ui_f.h"
-#include "squirrel_rgbd_mapping/rgbdslam_ros_ui_s.h"
-
-namespace rgbdslam = squirrel_rgbd_mapping;
+#include "squirrel_rgbd_mapping_msgs/RgbdSlamRosUi.h"
+#include "squirrel_rgbd_mapping_msgs/RgbdSlamRosUiB.h"
+#include "squirrel_rgbd_mapping_msgs/RgbdSlamRosUiF.h"
+#include "squirrel_rgbd_mapping_msgs/RgbdSlamRosUiS.h"
 
 class QAction;
 
@@ -39,13 +37,13 @@ public:
     RosUi(const char* service_namespace);
 
     ///a service-client for all methods not needing an argument: {reset, quick_save, save_all, save_individual, send_all, delete_frame}
-    bool services(rgbdslam::rgbdslam_ros_ui::Request  &req, rgbdslam::rgbdslam_ros_ui::Response &res);
+    bool services(squirrel_rgbd_mapping_msgs::RgbdSlamRosUi::Request  &req, squirrel_rgbd_mapping_msgs::RgbdSlamRosUi::Response &res);
     ///a service-client for all methods with bool as argument: {pause, record}
-    bool services_b(rgbdslam::rgbdslam_ros_ui_b::Request  &req, rgbdslam::rgbdslam_ros_ui_b::Response &res);
+    bool services_b(squirrel_rgbd_mapping_msgs::RgbdSlamRosUiB::Request  &req, squirrel_rgbd_mapping_msgs::RgbdSlamRosUiB::Response &res);
     ///a service-client for floats, e.g., for changing the maximal depth of a point: {set_max}
-    bool services_f(rgbdslam::rgbdslam_ros_ui_f::Request  &req, rgbdslam::rgbdslam_ros_ui_f::Response &res);
+    bool services_f(squirrel_rgbd_mapping_msgs::RgbdSlamRosUiF::Request  &req, squirrel_rgbd_mapping_msgs::RgbdSlamRosUiF::Response &res);
     ///a service-client for commands with string arguments, e.g. a filename
-    bool services_s(rgbdslam::rgbdslam_ros_ui_s::Request  &req, rgbdslam::rgbdslam_ros_ui_s::Response &res);
+    bool services_s(squirrel_rgbd_mapping_msgs::RgbdSlamRosUiS::Request  &req, squirrel_rgbd_mapping_msgs::RgbdSlamRosUiS::Response &res);
 Q_SIGNALS:
     ///User selected to reset the graph
     void reset(); 

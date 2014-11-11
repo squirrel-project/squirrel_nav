@@ -32,14 +32,14 @@ find_package(catkin REQUIRED COMPONENTS
   rosconsole
 )
 
-add_service_files(DIRECTORY srv FILES rgbdslam_ros_ui.srv rgbdslam_ros_ui_b.srv rgbdslam_ros_ui_f.srv rgbdslam_ros_ui_s.srv) 
+# add_service_files(DIRECTORY srv FILES rgbdslam_ros_ui.srv rgbdslam_ros_ui_b.srv rgbdslam_ros_ui_f.srv rgbdslam_ros_ui_s.srv) 
 
-generate_messages()
+# generate_messages()
 
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES my_pcl_tutorial
-  CATKIN_DEPENDS pcl_conversions pcl_ros roscpp sensor_msgs message_runtime std_msgs
+  CATKIN_DEPENDS pcl_conversions pcl_ros roscpp sensor_msgs message_runtime std_msgs squirrel_rgbd_mapping_msgs
 #  DEPENDS message_runtime std_msgs 
 )
 
