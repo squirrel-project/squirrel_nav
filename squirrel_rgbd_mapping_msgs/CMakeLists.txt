@@ -4,7 +4,15 @@ project(squirrel_rgbd_mapping_msgs)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED genmsg geometry_msgs sensor_msgs actionlib_msgs actionlib)
+find_package(catkin 
+  REQUIRED 
+  genmsg 
+  geometry_msgs 
+  sensor_msgs 
+  actionlib_msgs 
+  actionlib
+  std_msgs
+)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -47,11 +55,13 @@ find_package(catkin REQUIRED genmsg geometry_msgs sensor_msgs actionlib_msgs act
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  RgbdSlamRosUi.srv
+  RgbdSlamRosUiB.srv
+  RgbdSlamRosUiF.srv
+  RgbdSlamRosUiS.srv
+)
 
 ## Generate actions in the 'action' folder
 add_action_files(
@@ -68,6 +78,7 @@ generate_messages(
    std_msgs
    geometry_msgs
    sensor_msgs
+   std_msgs
 )
 
 ###################################
@@ -80,10 +91,10 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES squirrel_rgbd_mapping_msgs
-#  CATKIN_DEPENDS other_catkin_pkg
-#  DEPENDS system_lib
+  #  INCLUDE_DIRS include
+  LIBRARIES squirrel_rgbd_mapping_msgs
+  CATKIN_DEPENDS actionlib_msgs std_msgs geometry_msgs sensor_msgs
+  #  DEPENDS system_lib
 )
 
 ###########
