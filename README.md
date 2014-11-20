@@ -3,12 +3,17 @@ navigation
 
 Repository for navigation related SQUIRREL packages.
 
+## Requirement
+
+Install robotino driver's and robotino safety node from the common
+repository
+
 ## Creating a 2D Gridmap
 
 Run the mapping routine by executing
 
 ```bash
-roslaunch robotino_navigation gmapping.launch 
+roslaunch squirrel_navigation gmapping.launch 
 ``` 
 
 The map created can be then visualised in RViz. The robot should be
@@ -16,7 +21,7 @@ teleoperated to explore the area. Once the map of the scene is
 correctly computed, it can be stored running
 
 ```bash
-roslaunch robotino_navigation gmapping.launch
+roslaunch squirrel_navigation gmapping.launch
 ```
 An rviz configuration file, can be found in the git repository at
 *alufr_navigation\config\rviz\hydro_config.rviz*.
@@ -33,7 +38,7 @@ above command has been executed.
 ## Starting Laser Based Navigation in the 2D Map
 
 ```bash
-roslaunch robotino_navigation navigation.launch map_file:=[mymap.yaml]
+roslaunch squirrel_navigation navigation.launch map_file:=[mymap.yaml]
 ```
 *[mymap.yaml]* has to be replaced by the recorded mapping file.
 You have to use the full path to the mapping file, even if the yaml file is in the same directory.
@@ -71,7 +76,7 @@ localisation procedure as described in the section above. Once the robot is loca
 launch *octomap_server*:
 
 ```bash
-roslaunch robotino_navigation octomap_server.launch
+roslaunch squirrel_navigation octomap_server.launch
 ```
 
 Let the robot navigate in the environment. Finally store the 3D Octomap executing
