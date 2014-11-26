@@ -1,0 +1,16 @@
+<launch>
+  <arg name="rviz" default="false"/>
+  
+  <node name="slam_gmapping" pkg="gmapping" type="slam_gmapping">
+    <param name="xmin" value="-20" />
+    <param name="xmax" value="20" />
+    <param name="ymin" value="-20" />
+    <param name="ymax" value="20" />
+  </node>
+
+  <!-- Run rviz -->
+  <include file="$(find squirrel_navigation)/launch/rviz.launch" if="$(arg rviz)">
+    <arg name="mapping" value="true"/>
+    <arg name="robot" value="robot1"/>
+  </include>
+</launch>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ros:Package xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ros="http://ros/1.0" name="squirrel_navigation" author="hess" author_email="hess@todo.todo" description="The squirrel_navigation package" license="TODO">
+  <node name="localization">
+    <publisher name="tf" msg="tf::tfMessage"/>
+    <subscriber name="tf" msg="tf::tfMessage"/>
+    <subscriber name="scan" msg="sensor_msgs::LaserScan"/>
+    <subscriber name="cloud" msg="sensor_msgs::PointCloud2"/>
+    <subscriber name="map" msg="nav_msgs::OccupancyGrid"/>
+    <subscriber name="octomap" msg="octomap_msgs::Octomap"/>
+  </node>
+  <node name="move_base">
+    <publisher name="cmd_vel" msg="geometry_msgs::Twist"/>
+    <subscriber name="tf" msg="tf::tfMessage"/>
+    <subscriber name="odom" msg="nav_msgs::Odometry"/>
+    <subscriber name="map" msg="nav_msgs::OccupancyGrid"/>
+    <subscriber name="scan" msg="sensor_msgs::LaserScan"/>
+    <subscriber name="robot_configuration" msg="sensor_msgs::JointState"/>
+    <serviceClient name="octomap" msg="octomap_msgs::GetOctomap"/>
+    <serviceServer name="make_plan" msg="nav_msgs::GetPlan"/>
+    <actionserver name="move" ActionType="move_base_msgs::MoveBase"/>
+  </node>
+  <depend>tf</depend>
+  <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>move_base_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>octomap_msgs</depend>
+  <depend>geometry_msgs</depend>
+</ros:Package>
