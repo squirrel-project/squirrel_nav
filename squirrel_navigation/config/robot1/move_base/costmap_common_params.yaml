@@ -1,10 +1,19 @@
-robot_radius: 0.22
+# costmap_common_params.yaml --- 
+# 
+# Filename: costmap_common_params.yaml
+# Description: Global parameters for layered costmap
+# Created: Mon Nov 17 23:52:34 2014 (+0100)
+# Maintainer: boniardi@cs.uni-freiburg.de
+#
+# Code:
 
-plugins: # order matters
+# costmap_2d plugins declaration. Order matters!
+plugins:
   - {name: static_layer, type: "costmap_2d::StaticLayer"}
   - {name: obstacles_layer, type: "squirrel_navigation::ObstaclesLayer"}
   - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
 
+# Parameters for squirrel_navigation::ObstacleLayer
 obstacles_layer:
   obstacle_range: 1.5
   raytrace_range: 3.0 
@@ -15,6 +24,5 @@ obstacles_layer:
   robot_height: 0.76
   floor_threshold: 0.03
 
-inflation_layer: 
-  inflation_radius: 0.6
-  cost_scaling_factor: 20.0  
+#
+# costmap_common_params.yaml ends here
