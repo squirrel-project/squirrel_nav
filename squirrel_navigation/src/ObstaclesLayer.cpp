@@ -7,9 +7,9 @@
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Wed Nov 19 18:57:41 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Wed Nov 26 15:56:58 2014 (+0100)
+// Last-Updated: Fri Nov 28 15:51:20 2014 (+0000)
 //           By: Federico Boniardi
-//     Update #: 1
+//     Update #: 2
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -68,8 +68,10 @@
 #include <squirrel_navigation/ObstaclesLayer.h>
 
 #include <pluginlib/class_list_macros.h>
+
 #include <pcl_conversions/pcl_conversions.h>
 
+#include <map>
 #include <set>
 
 #define VOXEL_BITS 16
@@ -98,6 +100,7 @@ void ObstaclesLayer::onInitialize( void )
 
   private_nh.param("robot_height", robot_height_, 1.0);
   private_nh.param("floor_threshold", floor_threshold_, 0.0);  
+  private_nh.param("obstacle_persistence", obstacle_persistence_, 60.0);
 }
 
 void ObstaclesLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
@@ -123,8 +126,17 @@ void ObstaclesLayer::updateBounds(double robot_x, double robot_y, double robot_y
     raytraceFreespace(clearing_observations[i], min_x, min_y, max_x, max_y);
   }
 
+  ros::Time now = ros::Time::now();
   std::set<unsigned int> index_free_space;
-    
+  
+  if ( obstacle_persistence_ > 0 ) {
+    for (std::map<unsigned int, ros::Time>::iterator i=clearing_index_stamped_.begin(); i!=clearing_index_stamped_.end(); ++i) {
+      if ( i->second.toSec() < now.toSec()-obstacle_persistence_ ) {
+        costmap_[i->first] = costmap_2d::FREE_SPACE;
+      }
+    }
+  }
+  
   for (std::vector<costmap_2d::Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it) {
     const costmap_2d::Observation& obs = *it;
 
@@ -158,6 +170,9 @@ void ObstaclesLayer::updateBounds(double robot_x, double robot_y, double robot_y
       index_free_space.insert(index); 
 
       if ( cloud.points[i].z > floor_threshold_ ) {
+        if ( obstacle_persistence_ > 0 ) {
+          clearing_index_stamped_[index] = now;
+        }
         index_free_space.erase(index);
       }
       
@@ -167,7 +182,7 @@ void ObstaclesLayer::updateBounds(double robot_x, double robot_y, double robot_y
       }
     }
   }
-
+  
   for (std::set<unsigned int>::iterator i=index_free_space.begin(); i!=index_free_space.end(); ++i) {
     costmap_[*i] = costmap_2d::FREE_SPACE; 
   }

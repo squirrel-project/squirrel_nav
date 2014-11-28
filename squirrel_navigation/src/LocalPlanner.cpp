@@ -6,9 +6,9 @@
 // Maintainer: Federico Boniardi (boniardi@cs.uni-freiburg.de)
 // Created: Fri Nov 14 01:09:32 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Wed Nov 26 15:48:02 2014 (+0100)
+// Last-Updated: Fri Nov 28 16:42:41 2014 (+0100)
 //           By: Federico Boniardi
-//     Update #: 2
+//     Update #: 3
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -35,7 +35,9 @@
 // Code:
 
 #include "squirrel_navigation/LocalPlanner.h"
+
 #include <pluginlib/class_list_macros.h>
+
 #include <cmath>
 
 PLUGINLIB_DECLARE_CLASS(squirrel_navigation, LocalPlanner, squirrel_navigation::LocalPlanner, nav_core::BaseLocalPlanner)
@@ -84,8 +86,6 @@ void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, cost
   odom_sub_ = global_node.subscribe<nav_msgs::Odometry>("odom", 1, &LocalPlanner::odomCallback, this);
   next_heading_pub_ = private_nh.advertise<visualization_msgs::Marker>("marker", 10);
   global_plan_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan", 1000);
-  
-  ROS_INFO("LocalPlanner initialized");
 }
 
 bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
@@ -260,14 +260,11 @@ bool LocalPlanner::move( geometry_msgs::Twist& cmd_vel )
 
   rotation = mapToMinusPIToPI( rotation );
 
-  cmd_vel.angular.z = calRotationVel( rotation );
-
-  if( fabs( rotation ) < yaw_goal_tolerance_ ) {
-    // The robot has rotated to its next heading pose
-    cmd_vel.angular.z = 0.0;
-  }
-
-  cmd_vel.linear.x = calLinearVel();
+  double vel_th = fabs( rotation ) < yaw_goal_tolerance_ ? 0.0 : calRotationVel(rotation);
+  double vel_x = calLinearVel() * ( rotation < 0.5*PI/2 && rotation > -0.5*PI);
+  
+  cmd_vel.linear.x = vel_x;
+  cmd_vel.angular.z = vel_th;
 
   // The distance from the robot's current pose to the next heading pose
   double distance_to_next_heading = linearDistance(base_odom_.pose.position, move_goal.pose.position );

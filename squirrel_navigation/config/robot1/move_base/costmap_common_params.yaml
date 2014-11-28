@@ -15,6 +15,7 @@ plugins:
 
 # Parameters for squirrel_navigation::ObstacleLayer
 obstacles_layer:
+  obstacle_persistence: 60.0 # secs
   obstacle_range: 1.5
   raytrace_range: 3.0 
   observation_sources: rgbd_scan laser_scan

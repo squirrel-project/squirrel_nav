@@ -58,7 +58,7 @@
 
 #include <ros/time.h>
 
-#include <stdio.h>
+// #include <stdio.h>
 #include <sstream>
 
 namespace squirrel_navigation {

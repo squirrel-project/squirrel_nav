@@ -6,9 +6,9 @@
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Mon Nov 24 10:20:05 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Wed Nov 26 16:10:57 2014 (+0100)
+// Last-Updated: Fri Nov 28 16:38:43 2014 (+0100)
 //           By: Federico Boniardi
-//     Update #: 1
+//     Update #: 2
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -59,7 +59,6 @@
 #include <angles/angles.h>
 
 #include <boost/bind.hpp>
-#include <boost/ref.hpp>
 
 #include <limits>
 
@@ -224,7 +223,7 @@ void RobotLocalizer::clearCostmapAndShutdown( void )
 
   std_srvs::Empty::Request empty_req;
   std_srvs::Empty::Response empty_res;  
-  if ( ros::service::call("/move_base/clear_unknown_space", empty_req, empty_res) ) {
+  if ( ros::service::call("/move_base/clear_costmaps", empty_req, empty_res) ) {
     ros::shutdown();
   }
 }

@@ -70,22 +70,31 @@
 #define OBSTACLESLAYER_H_
 
 #include <ros/ros.h>
+#include <ros/time.h>
+
 #include <costmap_2d/layer.h>
 #include <costmap_2d/layered_costmap.h>
 #include <costmap_2d/observation_buffer.h>
 #include <costmap_2d/VoxelGrid.h>
+#include <costmap_2d/VoxelPluginConfig.h>
+#include <costmap_2d/obstacle_layer.h>
+
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/LaserScan.h>
 #include <laser_geometry/laser_geometry.h>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud_conversion.h>
+
 #include <tf/message_filter.h>
+
 #include <message_filters/subscriber.h>
+
 #include <dynamic_reconfigure/server.h>
-#include <costmap_2d/VoxelPluginConfig.h>
-#include <costmap_2d/obstacle_layer.h>
+
 #include <voxel_grid/voxel_grid.h>
+
+#include <map>
 
 namespace squirrel_navigation {
 
@@ -114,6 +123,9 @@ private:
 
   dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig> *dsrv_;
 
+  // time based costmap layer
+  std::map<unsigned int, ros::Time> clearing_index_stamped_;
+  
   ros::Publisher voxel_pub_;
   voxel_grid::VoxelGrid voxel_grid_;
   double z_resolution_, origin_z_;
@@ -121,7 +133,7 @@ private:
   ros::Publisher clearing_endpoints_pub_;
   sensor_msgs::PointCloud clearing_endpoints_;
 
-  double floor_threshold_, robot_height_;
+  double floor_threshold_, robot_height_, obstacle_persistence_;
   
   inline bool worldToMap3DFloat(double wx, double wy, double wz, double& mx, double& my, double& mz)
   {

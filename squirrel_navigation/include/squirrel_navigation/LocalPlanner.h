@@ -38,13 +38,16 @@
 #define LOCALPLANNER_H_
 
 #include <nav_core/base_local_planner.h>
+
+#include <tf/transform_listener.h>
+
+#include <costmap_2d/costmap_2d_ros.h>
+
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Point32.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
 #include <std_msgs/Bool.h>
-#include <tf/transform_listener.h>
-#include <costmap_2d/costmap_2d_ros.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
