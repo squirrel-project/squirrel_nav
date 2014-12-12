@@ -1,0 +1,7 @@
+<class_libraries>
+  <library path="lib/libsquirrel_local_planner">
+    <class name="squirrel_navigation/LocalPlanner" type="squirrel_navigation::LocalPlanner" base_class_type="nav_core::BaseLocalPlanner">
+      <description> Local planner for the squirrel project. </description>
+    </class>
+  </library>
+<class_libraris>
