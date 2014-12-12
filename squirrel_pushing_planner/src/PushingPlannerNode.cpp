@@ -1,24 +1,24 @@
-// PointCloudFilterNode.cpp --- 
+// PushingPlannerNode.cpp --- 
 // 
-// Filename: PointCloudFilterNode.cpp
-// Description: Publish a light PointCloud2 for 2D navigation
+// Filename: PushingPlannerNode.cpp
+// Description: Expose a service to retrieve a planner
 // Author: Federico Boniardi
-// Maintainer: boniardi@informatik.uni-freiburg.de
-// Created: Mon Nov 17 21:31:45 2014 (+0100)
-// Version: 0.1.0
-// Last-Updated: Wed Nov 26 15:52:44 2014 (+0100)
-//           By: Federico Boniardi
-//     Update #: 1
+// Maintainer: boniardi@cs.uni-freiburg.de
+// Created: Mon Dec  8 20:12:01 2014 (+0100)
+// Version: 
+// Last-Updated: 
+//           By: 
+//     Update #: 0
 // URL: 
 // Keywords: 
 // Compatibility: 
-//   ROS Hydro, ROS Indigo 
+// 
 // 
 
 // Commentary: 
-//    Tested on: - ROS Hydro on Ubuntu 12.04
-//               - ROS Indigo on Ubuntu 14.04
-//    RGBD source: ASUS Xtion pro
+// 
+// 
+// 
 // 
 
 // Copyright (c) 2014, Federico Boniardi
@@ -34,7 +34,7 @@
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
 // 
-// * Neither the name of the {organization} nor the names of its
+// * Neither the name of the University of Freiburg nor the names of its
 //   contributors may be used to endorse or promote products derived from
 //   this software without specific prior written permission.
 // 
@@ -53,19 +53,22 @@
 
 // Code:
 
-#include "squirrel_navigation/PointCloudFilter.h"
-
 #include <ros/ros.h>
 
-using squirrel_navigation::PointCloudFilter;
+#include "squirrel_pushing_planner/PushingPlanner.h"
+
+#define PLANNER_TIMEOUT 25.0;
 
 int main(int argc, char *argv[])
 {
-  ros::init(argc, argv, "pointcloud_filter");
-  PointCloudFilter pf;
-  pf.spin();
+  ros::init(argc, argv, "pushing_planner");
+  squirrel_pushing_planner::PushingPlanner ppl;
+  ppl.waitForPlannerService();
+  ppl.spin();
   return 0;
 }
 
+
+
 // 
-// PointCloudFilterNode.cpp ends here
+// PushingPlannerNode.cpp ends here

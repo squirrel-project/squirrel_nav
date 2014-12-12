@@ -1,0 +1,22 @@
+<launch>
+  <node pkg="squirrel_3d_mapping" type="octomap_server_node" name="squirrel_3d_mapping" output="screen">
+    <param name="resolution" value="0.025" />
+    <param name="frame_id" type="string" value="map" />
+    <param name="max_sensor_range" value="4.0" />
+    <param name="pointcloud_min_z" value="0.0" />
+    <param name="pointcloud_max_z" value="0.76" />
+    <param name="filter_ground" value="true" />
+    <param name="ground_filter/plane_distance" value="0.03" />
+    <param name="base_frame_id" value="/base_link" /> 
+    <param name="distance_transform/enabled" value="true" />
+    <param name="distance_transform/max_dist" value="1.0" />
+    <param name="distance_transform/unknown_as_occupied" value="false" />
+    <param name="distance_transform/min_x" value="-5.0" />
+    <param name="distance_transform/max_x" value="5.0" />
+    <param name="distance_transform/min_y" value="-5.0" />
+    <param name="distance_transform/max_y" value="5.0" />
+    <param name="distance_transform/min_z" value="0.0" />
+    <param name="distance_transform/max_z" value="0.76" />
+    <remap from="/cloud_in" to="/rgbdscan" />
+  </node>
+</launch>

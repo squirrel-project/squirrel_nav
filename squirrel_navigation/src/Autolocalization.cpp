@@ -1,14 +1,14 @@
-// RobotLocalizer.cpp --- 
+// Autolocalization.cpp --- 
 // 
-// Filename: RobotLocalizer.cpp
+// Filename: Autolocalization.cpp
 // Description: Localisation on startup 
 // Author: Federico Boniardi
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Mon Nov 24 10:20:05 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Fri Nov 28 16:38:43 2014 (+0100)
+// Last-Updated: Wed Nov 26 16:10:57 2014 (+0100)
 //           By: Federico Boniardi
-//     Update #: 2
+//     Update #: 1
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -52,7 +52,7 @@
 
 // Code:
 
-#include "squirrel_navigation/RobotLocalizer.h"
+#include "squirrel_navigation/Autolocalization.h"
 
 #include <std_srvs/Empty.h>
 
@@ -61,12 +61,11 @@
 #include <boost/bind.hpp>
 
 #include <limits>
-
-#define PI 3.14159265358979
+#include <stdexcept>
 
 namespace squirrel_navigation {
 
-RobotLocalizer::RobotLocalizer( void ) :
+Autolocalization::Autolocalization( void ) :
     private_nh_("~"),
     state_(STOP),
     is_localized_(false),
@@ -89,14 +88,16 @@ RobotLocalizer::RobotLocalizer( void ) :
   private_nh_.param("odom_topic", odom_topic_, std::string("/odom"));
   private_nh_.param("distance_sensors_topic", distance_sensors_topic_, std::string("/distance_sensors"));
 
-  odom_sub_ = public_nh_.subscribe(odom_topic_, 1000, &RobotLocalizer::getOdomPose, this);
-  distance_sensors_sub_ = public_nh_.subscribe(distance_sensors_topic_, 1000, &RobotLocalizer::getDistanceSensorsValues, this);
+  odom_sub_ = public_nh_.subscribe(odom_topic_, 1000, &Autolocalization::getOdomPose, this);
+  distance_sensors_sub_ = public_nh_.subscribe(distance_sensors_topic_, 1000, &Autolocalization::getDistanceSensorsValues, this);
   initial_pose_sub_ = public_nh_.subscribe<geometry_msgs::PoseWithCovarianceStamped>(initial_pose_topic_, 1000,
-                                                                                     boost::bind(&RobotLocalizer::getPoseWithCovariance, this, _1, initial_pose_topic_));
+                                                                                     boost::bind(&Autolocalization::getPoseWithCovariance, this, _1, initial_pose_topic_));
   amcl_pose_sub_ = public_nh_.subscribe<geometry_msgs::PoseWithCovarianceStamped>(amcl_pose_topic_, 1000,
-                                                                                  boost::bind(&RobotLocalizer::getPoseWithCovariance, this, _1, amcl_pose_topic_));
+                                                                                  boost::bind(&Autolocalization::getPoseWithCovariance, this, _1, amcl_pose_topic_));
   twist_pub_ = public_nh_.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
 
+  node_name_ = ros::this_node::getName();
+  
   setInitialCovariance();
   
   // Distribute particles in the whole free space
@@ -105,27 +106,36 @@ RobotLocalizer::RobotLocalizer( void ) :
     std_srvs::Empty::Response empty_res;
     ros::service::call("/global_localization", empty_req, empty_res);
   }
+
+  // Be sure not to forget to stop robot
+  std::signal(SIGINT, interruptCallback);
 }
 
-RobotLocalizer::~RobotLocalizer( void )
+Autolocalization::~Autolocalization( void )
 {
   amcl_pose_sub_.shutdown();
   initial_pose_sub_.shutdown();
 }
 
-void RobotLocalizer::spin( void )
+void Autolocalization::spin( void )
 {
   ros::Rate lr(20);  
-  while ( ros::ok() && !is_localized_ ) {     
-    ros::spinOnce();
-    checkCovariance(amcl_pose_);
-    move();
-    lr.sleep();
+  while ( !_SIGINT_caught && !is_localized_ ) {
+    try {
+      ros::spinOnce();
+      checkCovariance(amcl_pose_);
+      move();
+      lr.sleep();
+    } catch ( std::runtime_error& err ) {
+      ROS_ERROR("%s: %s", node_name_.c_str(), err.what());
+      clearCostmapAndShutdown();
+      std::exit(1);
+    }
   }
   clearCostmapAndShutdown();
 }
 
-void RobotLocalizer::waitForStarting( void )
+void Autolocalization::waitForStarting( void )
 {
   ros::Rate lr(1);
   if ( global_localization_ ) {
@@ -148,7 +158,7 @@ void RobotLocalizer::waitForStarting( void )
   }
 }
 
-void RobotLocalizer::getPoseWithCovariance( const geometry_msgs::PoseWithCovarianceStampedConstPtr& pose_msg, std::string topic )
+void Autolocalization::getPoseWithCovariance( const geometry_msgs::PoseWithCovarianceStampedConstPtr& pose_msg, std::string topic )
 {
   if ( topic.compare(initial_pose_topic_) == 0 ) {
     pose_start_ = true;
@@ -173,7 +183,7 @@ void RobotLocalizer::getPoseWithCovariance( const geometry_msgs::PoseWithCovaria
   amcl_pose_.pose.covariance = pose_msg->pose.covariance;
 }
 
-void RobotLocalizer::getOdomPose( const nav_msgs::OdometryConstPtr& odom_msg )
+void Autolocalization::getOdomPose( const nav_msgs::OdometryConstPtr& odom_msg )
 {
   glob_start_ = true;
   odom_.x = odom_msg->pose.pose.position.x;
@@ -181,7 +191,7 @@ void RobotLocalizer::getOdomPose( const nav_msgs::OdometryConstPtr& odom_msg )
   odom_.theta = tf::getYaw(odom_msg->pose.pose.orientation);
 }
 
-void RobotLocalizer::getDistanceSensorsValues( const sensor_msgs::PointCloudConstPtr& distance_sensors_msg )
+void Autolocalization::getDistanceSensorsValues( const sensor_msgs::PointCloudConstPtr& distance_sensors_msg )
 {
   distance_values_.clear();
   for (unsigned int i=0; i<distance_sensors_msg->points.size(); ++i) {
@@ -192,7 +202,7 @@ void RobotLocalizer::getDistanceSensorsValues( const sensor_msgs::PointCloudCons
   } 
 }
 
-void RobotLocalizer::checkCovariance( geometry_msgs::PoseWithCovarianceStamped amcl_pose ) 
+void Autolocalization::checkCovariance( geometry_msgs::PoseWithCovarianceStamped amcl_pose ) 
 {
   double var_x = amcl_pose.pose.covariance[0];
   double var_y = amcl_pose.pose.covariance[7];
@@ -207,35 +217,32 @@ void RobotLocalizer::checkCovariance( geometry_msgs::PoseWithCovarianceStamped a
        var_y <= tolerance_var_y_ &&
        var_th <= tolerance_var_th_ ) {
     is_localized_ = true;
-    
     ROS_INFO("robot is localized.");
   } else {
     is_localized_ = false;
   }
 }
 
-void RobotLocalizer::clearCostmapAndShutdown( void )
+void Autolocalization::clearCostmapAndShutdown( void )
 {
-  cmd_vel_.linear.x = 0.0;
-  cmd_vel_.linear.y = 0.0;
-  cmd_vel_.angular.z = 0.0;
-  twist_pub_.publish(cmd_vel_);
-
+  stop();
+  
   std_srvs::Empty::Request empty_req;
   std_srvs::Empty::Response empty_res;  
   if ( ros::service::call("/move_base/clear_costmaps", empty_req, empty_res) ) {
-    ros::shutdown();
+    ROS_INFO("resetting costmap...");
   }
+  ros::shutdown();
 }
 
-void RobotLocalizer::setInitialCovariance( void )
+void Autolocalization::setInitialCovariance( void )
 {
   amcl_pose_.pose.covariance[0] = std::numeric_limits<double>::max();
   amcl_pose_.pose.covariance[7] = std::numeric_limits<double>::max();
   amcl_pose_.pose.covariance[35] = std::numeric_limits<double>::max();
 }
 
-void RobotLocalizer::calcCmdVel( void )
+void Autolocalization::calcCmdVel( void )
 {
   switch ( state_ ) {
     case STOP: {
@@ -265,7 +272,7 @@ void RobotLocalizer::calcCmdVel( void )
   }      
 }
 
-void RobotLocalizer::move( void )
+void Autolocalization::move( void )
 {
   double d_xy = std::sqrt(std::pow(odom_.x-odom_start_.x, 2) + std::pow(odom_.x-odom_start_.x,2));
   double d_th = angles::normalize_angle(odom_.theta - odom_start_.theta);
@@ -309,7 +316,15 @@ void RobotLocalizer::move( void )
   }        
 }
 
-void RobotLocalizer::checkCollisions( std::vector<polar_t> distance_values )
+void Autolocalization::stop( void )
+{
+  cmd_vel_.linear.x = 0.0;
+  cmd_vel_.linear.y = 0.0;
+  cmd_vel_.angular.z = 0.0;
+  twist_pub_.publish(cmd_vel_);  
+}
+
+void Autolocalization::checkCollisions( std::vector<polar_t> distance_values )
 {
   if ( distance_values[i_distance_sensors_].rho < 0.45 ||
        distance_values[(i_distance_sensors_+1)%9].rho < 0.45 ||
@@ -328,4 +343,4 @@ void RobotLocalizer::checkCollisions( std::vector<polar_t> distance_values )
 }  // namespace squirrel_navigation
 
 // 
-// RobotLocalizer.cpp ends here
+// Autolocalization.cpp ends here

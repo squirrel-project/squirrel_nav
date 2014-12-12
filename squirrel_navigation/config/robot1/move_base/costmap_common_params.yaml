@@ -15,7 +15,6 @@ plugins:
 
 # Parameters for squirrel_navigation::ObstacleLayer
 obstacles_layer:
-  obstacle_persistence: 60.0 # secs
   obstacle_range: 1.5
   raytrace_range: 3.0 
   observation_sources: rgbd_scan laser_scan
@@ -24,6 +23,7 @@ obstacles_layer:
   publish_voxel_map: true
   robot_height: 0.76
   floor_threshold: 0.03
+  obstacles_persistence: 30.0
 
 #
 # costmap_common_params.yaml ends here

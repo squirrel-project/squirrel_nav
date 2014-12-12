@@ -1,26 +1,21 @@
-// PointCloudFilterNode.cpp --- 
+// squirrel_navigation.h --- 
 // 
-// Filename: PointCloudFilterNode.cpp
-// Description: Publish a light PointCloud2 for 2D navigation
+// Filename: squirrel_navigation.h
+// Description: Expose the SIGINT callback
 // Author: Federico Boniardi
-// Maintainer: boniardi@informatik.uni-freiburg.de
-// Created: Mon Nov 17 21:31:45 2014 (+0100)
+// Maintainer: boniardi@cs.uni-freiburg.de
+// Created: Fri Dec  5 18:02:05 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Wed Nov 26 15:52:44 2014 (+0100)
+// Last-Updated: Fri Dec 5 18:10:38 2014 (+0100)
 //           By: Federico Boniardi
 //     Update #: 1
 // URL: 
 // Keywords: 
 // Compatibility: 
-//   ROS Hydro, ROS Indigo 
+// 
 // 
 
-// Commentary: 
-//    Tested on: - ROS Hydro on Ubuntu 12.04
-//               - ROS Indigo on Ubuntu 14.04
-//    RGBD source: ASUS Xtion pro
 // 
-
 // Copyright (c) 2014, Federico Boniardi
 // All rights reserved.
 // 
@@ -34,7 +29,7 @@
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
 // 
-// * Neither the name of the {organization} nor the names of its
+// * Neither the name of the University of Freiburg nor the names of its
 //   contributors may be used to endorse or promote products derived from
 //   this software without specific prior written permission.
 // 
@@ -53,19 +48,27 @@
 
 // Code:
 
-#include "squirrel_navigation/PointCloudFilter.h"
+#ifndef SQUIRREL_NAVIGATION_COMMON_H_
+#define SQUIRREL_NAVIGATION_COMMON_H_
 
-#include <ros/ros.h>
+#include <csignal>
 
-using squirrel_navigation::PointCloudFilter;
+namespace squirrel_navigation {
 
-int main(int argc, char *argv[])
+static sig_atomic_t _SIGINT_caught = 0;
+
+static const double PI = 3.14159265358979;
+
+static const double TRANSFORM_TIMEOUT = 0.5;
+
+static void interruptCallback( int sig )
 {
-  ros::init(argc, argv, "pointcloud_filter");
-  PointCloudFilter pf;
-  pf.spin();
-  return 0;
+  _SIGINT_caught = 1;
 }
 
+}  // namespace squirrel_navigation
+
+#endif /* SQUIRREL_NAVIGATION_COMMON_H_ */
+
 // 
-// PointCloudFilterNode.cpp ends here
+// squirrel_navigation.h ends here

@@ -1,14 +1,14 @@
-// RobotLocalizer.h --- 
+// Autolocalization.h --- 
 // 
-// Filename: RobotLocalizer.h
+// Filename: Autolocalization.h
 // Description: Localisation on startup 
 // Author: Federico Boniardi
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Mon Nov 24 10:20:05 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Wed Nov 26 17:12:12 2014 (+0100)
+// Last-Updated: Mon Dec 8 21:28:29 2014 (+0100)
 //           By: Federico Boniardi
-//     Update #: 1
+//     Update #: 2
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -57,6 +57,9 @@
 
 // Code:
 
+#ifndef SQUIRREL_NAVIGATION_ROBOTLOCALIZER_H_
+#define SQUIRREL_NAVIGATION_ROBOTLOCALIZER_H_
+
 #include <ros/ros.h>
 
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
@@ -69,13 +72,15 @@
 
 #include <vector>
 
+#include "Common.h"
+
 namespace squirrel_navigation {
 
-class RobotLocalizer
+class Autolocalization
 {
  public:
-  RobotLocalizer( void );
-  virtual ~RobotLocalizer( void );
+  Autolocalization( void );
+  virtual ~Autolocalization( void );
   void spin( void );
   void waitForStarting( void );
  private:
@@ -90,13 +95,16 @@ class RobotLocalizer
   void setInitialCovariance( void );
   void calcCmdVel( void );
   void move( void );
+  void stop( void );
   void checkCollisions( std::vector<polar_t> );
- 
+  
   ros::NodeHandle private_nh_, public_nh_;
   
   ros::Subscriber amcl_pose_sub_, initial_pose_sub_, odom_sub_, distance_sensors_sub_;
 
   ros::Publisher twist_pub_;
+
+  std::string node_name_;
   
   geometry_msgs::Twist cmd_vel_;
 
@@ -123,5 +131,7 @@ class RobotLocalizer
 
 }  // namespace squirrel_navigation
 
+#endif /* SQUIRREL_NAVIGATION_ROBOTLOCALIZER_H_ */
+
 // 
-// RobotLocalizer.h ends here
+// Autolocalization.h ends here

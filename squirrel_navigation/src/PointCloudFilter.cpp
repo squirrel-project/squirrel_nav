@@ -6,9 +6,9 @@
 // Maintainer: boniardi@informatik.uni-freiburg.de
 // Created: Mon Nov 17 21:31:45 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Wed Nov 26 15:49:26 2014 (+0100)
+// Last-Updated: Fri Dec 5 17:11:18 2014 (+0100)
 //           By: Federico Boniardi
-//     Update #: 1
+//     Update #: 2
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -58,23 +58,22 @@
 
 #include <ros/time.h>
 
-// #include <stdio.h>
 #include <sstream>
+#include <stdexcept>
 
 namespace squirrel_navigation {
 
 PointCloudFilter::PointCloudFilter( void ) :
-    private_nh_("~")
+    private_nh_("~"),
+    pointcloud_in_topic_("/cloud_in"),
+    pointcloud_out_topic_("/cloud_out"),
+    pointcloud_size_("4500")
 {
   private_nh_.param("pointcloud_in", pointcloud_in_topic_, std::string("/cloud_in"));
   private_nh_.param("pointcloud_out", pointcloud_out_topic_, std::string("/cloud_out"));
   private_nh_.param("pointcloud_size", pointcloud_size_, std::string("4500"));
 
-#ifdef DEBUG  
-  DEBUG_INFO("pointcloud_in: " << pointcloud_in_topic_);
-  DEBUG_INFO("pointcloud_out: " << pointcloud_out_topic_);
-  DEBUG_INFO("pointcloud_size: " << pointcloud_size_);
-#endif
+  node_name_ = ros::this_node::getName();
   
   filter_step_ = getFilterStep();
   seq_ = 0;
@@ -94,8 +93,13 @@ void PointCloudFilter::spin( void )
 {
   ros::Rate lr(10);
   while ( ros::ok() ) {     
-    ros::spinOnce();
-    lr.sleep();
+    try {
+      ros::spinOnce();
+      lr.sleep();
+    } catch ( std::runtime_error& err ) {
+      ROS_ERROR("%s: %s", node_name_.c_str(), err.what());
+      std::exit(1);
+    }
   }
 }
 
@@ -133,7 +137,7 @@ void PointCloudFilter::filterPointCloud( const sensor_msgs::PointCloud2ConstPtr&
 int PointCloudFilter::getFilterStep( void )
 {
   if ( pointcloud_size_.compare("full") == 0 ) {
-    ROS_WARN("chosen 'full pointcloud'. Consider reducing size of the pointcloud.", pointcloud_in_topic_.c_str());
+    ROS_WARN("chosen 'full pointcloud'. Consider reducing size of the pointcloud.");
     return 1;
   } else {
     int size;

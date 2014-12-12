@@ -17,10 +17,9 @@ local_costmap: {
   static_layer/enabled: false,
   obstacles_layer/enabled: true,
   inflation_layer/enabled: true,
-  # avoid eccessively conservative behaviors  
-  robot_radius: 0.1,
+  robot_radius: 0.16,
   inflation_layer/inflation_radius: 0.6,
-  inflation_layer/cost_scaling_factor: 2.5} 
+  inflation_layer/cost_scaling_factor: 20.0} 
 
 #
 # local_costmap_params.yaml ends here

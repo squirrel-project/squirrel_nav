@@ -7,9 +7,9 @@
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Wed Nov 19 18:57:41 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Fri Nov 28 15:51:20 2014 (+0000)
+// Last-Updated: Fri Dec 5 17:57:16 2014 (+0100)
 //           By: Federico Boniardi
-//     Update #: 2
+//     Update #: 3
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -68,10 +68,8 @@
 #include <squirrel_navigation/ObstaclesLayer.h>
 
 #include <pluginlib/class_list_macros.h>
-
 #include <pcl_conversions/pcl_conversions.h>
 
-#include <map>
 #include <set>
 
 #define VOXEL_BITS 16
@@ -81,7 +79,11 @@ PLUGINLIB_EXPORT_CLASS(squirrel_navigation::ObstaclesLayer, costmap_2d::Layer)
 namespace squirrel_navigation {
 
 ObstaclesLayer::ObstaclesLayer( void ) :
-    voxel_grid_(0, 0, 0)
+    voxel_grid_(0, 0, 0),
+    robot_diameter_(0.5),
+    robot_height_(1.0),
+    floor_threshold_(0.0),
+    obstacles_persistence_(60.0)
 {
   costmap_ = NULL;
 }
@@ -91,6 +93,7 @@ ObstaclesLayer::~ObstaclesLayer( void )
   if( dsrv_ ) {
     delete dsrv_;
   }
+  
 }
 
 void ObstaclesLayer::onInitialize( void )
@@ -98,13 +101,21 @@ void ObstaclesLayer::onInitialize( void )
   ObstacleLayer::onInitialize();
   ros::NodeHandle private_nh("~/" + name_);
 
+  private_nh.param("robot_diameter", robot_diameter_, 0.5);
   private_nh.param("robot_height", robot_height_, 1.0);
   private_nh.param("floor_threshold", floor_threshold_, 0.0);  
-  private_nh.param("obstacle_persistence", obstacle_persistence_, 60.0);
+  private_nh.param("obstacles_persistence", obstacles_persistence_, 60.0);
+
+  if ( obstacles_persistence_ > 0 ) {
+    ROS_INFO_STREAM("obstacle persistence: " << obstacles_persistence_);
+  } else if ( obstacles_persistence_ == 0) {
+    std::string ns = ros::this_node::getNamespace();
+    ROS_WARN("/%s: obstacle_persistance is chosen to be 0(s). Reset to 60.0(s). ", ns.c_str());
+  } 
 }
 
-void ObstaclesLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
-                                  double* min_x, double* min_y, double* max_x, double* max_y)
+void ObstaclesLayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
+                                   double* min_x, double* min_y, double* max_x, double* max_y )
 {
   if ( rolling_window_ ) {
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
@@ -128,10 +139,10 @@ void ObstaclesLayer::updateBounds(double robot_x, double robot_y, double robot_y
 
   ros::Time now = ros::Time::now();
   std::set<unsigned int> index_free_space;
-  
-  if ( obstacle_persistence_ > 0 ) {
+
+  if ( obstacles_persistence_ > 0 ) {
     for (std::map<unsigned int, ros::Time>::iterator i=clearing_index_stamped_.begin(); i!=clearing_index_stamped_.end(); ++i) {
-      if ( i->second.toSec() < now.toSec()-obstacle_persistence_ ) {
+      if ( i->second.toSec() < now.toSec()-obstacles_persistence_ ) {
         costmap_[i->first] = costmap_2d::FREE_SPACE;
       }
     }
@@ -149,11 +160,18 @@ void ObstaclesLayer::updateBounds(double robot_x, double robot_y, double robot_y
         continue;
       }
       
-      double sq_dist = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x)
+      double sq_dist_orig = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x)
           + (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y)
           + (cloud.points[i].z - obs.origin_.z) * (cloud.points[i].z - obs.origin_.z);
 
-      if ( sq_dist >= sq_obstacle_range ) {
+      if ( sq_dist_orig >= sq_obstacle_range ) {
+        continue;
+      }
+
+      double sq_dist_robot = (cloud.points[i].x - robot_x) * (cloud.points[i].x - robot_x)
+          + (cloud.points[i].y - robot_y) * (cloud.points[i].y - robot_y);
+
+      if ( sq_dist_orig <= std::pow(0.5*robot_diameter_, 2) ) {
         continue;
       }
       
@@ -170,9 +188,7 @@ void ObstaclesLayer::updateBounds(double robot_x, double robot_y, double robot_y
       index_free_space.insert(index); 
 
       if ( cloud.points[i].z > floor_threshold_ ) {
-        if ( obstacle_persistence_ > 0 ) {
-          clearing_index_stamped_[index] = now;
-        }
+        clearing_index_stamped_[index] = now;
         index_free_space.erase(index);
       }
       

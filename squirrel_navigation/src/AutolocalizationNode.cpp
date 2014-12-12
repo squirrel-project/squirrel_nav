@@ -53,16 +53,16 @@
 
 // Code:
 
-#include "squirrel_navigation/RobotLocalizer.h"
+#include "squirrel_navigation/Autolocalization.h"
 
-#include <ros/ros.h>
+using squirrel_navigation::Autolocalization;
 
 int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "autolocalization");
-  squirrel_navigation::RobotLocalizer rl;
-  rl.waitForStarting();
-  rl.spin();
+  Autolocalization al;
+  al.waitForStarting();
+  al.spin();
   return 0;
 }
 

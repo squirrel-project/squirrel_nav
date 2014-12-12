@@ -34,14 +34,16 @@
 
 // Code:
 
-#ifndef LOCALPLANNER_H_
-#define LOCALPLANNER_H_
+#ifndef SQUIRREL_NAVIGATION_LOCALPLANNER_H_
+#define SQUIRREL_NAVIGATION_LOCALPLANNER_H_
+
+#include <ros/ros.h>
 
 #include <nav_core/base_local_planner.h>
 
-#include <tf/transform_listener.h>
-
 #include <costmap_2d/costmap_2d_ros.h>
+
+#include <tf/transform_listener.h>
 
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Point32.h>
@@ -50,6 +52,10 @@
 #include <std_msgs/Bool.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+
+#include <vector>
+
+#include "Common.h"
 
 namespace squirrel_navigation {
   
@@ -67,7 +73,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   void publishNextHeading( bool show = true );
   bool rotateToStart( geometry_msgs::Twist& );
   bool move( geometry_msgs::Twist& );
-  bool rotateToGoal( geometry_msgs::Twist&);
+  bool rotateToGoal( geometry_msgs::Twist& );
   void computeNextHeadingIndex( void );
   double calLinearVel( void );
   double calRotationVel( double );
@@ -87,7 +93,6 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   ros::Subscriber odom_sub_;
 
   ros::Publisher next_heading_pub_;
-  ros::Publisher global_plan_pub_;
   
   state_t state_;
 
@@ -105,7 +110,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
 
 } // namespace squirrel_navigation
 
-#endif /* LOCALPLANNER_H_ */
+#endif /* SQUIRREL_NAVIGATION_LOCALPLANNER_H_ */
 
 // 
 // LocalPlanner.h ends here

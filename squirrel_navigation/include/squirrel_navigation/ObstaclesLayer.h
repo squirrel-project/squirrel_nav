@@ -7,9 +7,9 @@
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Wed Nov 19 18:57:41 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Wed Nov 26 15:58:12 2014 (+0100)
+// Last-Updated: Fri Dec 5 17:57:27 2014 (+0100)
 //           By: Federico Boniardi
-//     Update #: 1
+//     Update #: 2
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -66,35 +66,29 @@
 
 // Code:
 
-#ifndef OBSTACLESLAYER_H_
-#define OBSTACLESLAYER_H_
+#ifndef SQUIRREL_NAVIGATION_OBSTACLESLAYER_H_
+#define SQUIRREL_NAVIGATION_OBSTACLESLAYER_H_
 
 #include <ros/ros.h>
-#include <ros/time.h>
-
 #include <costmap_2d/layer.h>
 #include <costmap_2d/layered_costmap.h>
 #include <costmap_2d/observation_buffer.h>
 #include <costmap_2d/VoxelGrid.h>
-#include <costmap_2d/VoxelPluginConfig.h>
-#include <costmap_2d/obstacle_layer.h>
-
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/LaserScan.h>
 #include <laser_geometry/laser_geometry.h>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud_conversion.h>
-
 #include <tf/message_filter.h>
-
 #include <message_filters/subscriber.h>
-
 #include <dynamic_reconfigure/server.h>
-
+#include <costmap_2d/VoxelPluginConfig.h>
+#include <costmap_2d/obstacle_layer.h>
 #include <voxel_grid/voxel_grid.h>
 
 #include <map>
+#include <cmath>
 
 namespace squirrel_navigation {
 
@@ -102,24 +96,22 @@ class ObstaclesLayer : public costmap_2d::ObstacleLayer
 {
 public:
   ObstaclesLayer( void );
-  virtual ~ObstaclesLayer();
-  virtual void onInitialize();
-  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw,
-                            double* min_x, double* min_y, double* max_x, double* max_y);
-  void updateOrigin(double new_origin_x, double new_origin_y);
+  virtual ~ObstaclesLayer( void );
+  virtual void onInitialize( void );
+  virtual void updateBounds( double, double, double, double*, double*, double*, double* );
+  void updateOrigin( double, double );
   bool isDiscretized( void );
   virtual void matchSize( void );
   virtual void reset( void );
 
 protected:
-  virtual void setupDynamicReconfigure(ros::NodeHandle& nh);
+  virtual void setupDynamicReconfigure( ros::NodeHandle& );
   virtual void resetMaps( void );
 
 private:
-  void reconfigureCB(costmap_2d::VoxelPluginConfig &config, uint32_t level);
-  void clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info);
-  virtual void raytraceFreespace(const costmap_2d::Observation& clearing_observation,
-                                 double* min_x, double* min_y, double* max_x, double* max_y);
+  void reconfigureCB( costmap_2d::VoxelPluginConfig& , uint32_t );
+  void clearNonLethal( double, double, double, double, bool );
+  virtual void raytraceFreespace( const costmap_2d::Observation&, double*, double*, double*, double* );
 
   dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig> *dsrv_;
 
@@ -132,10 +124,11 @@ private:
   unsigned int unknown_threshold_, mark_threshold_, size_z_;
   ros::Publisher clearing_endpoints_pub_;
   sensor_msgs::PointCloud clearing_endpoints_;
-
-  double floor_threshold_, robot_height_, obstacle_persistence_;
   
-  inline bool worldToMap3DFloat(double wx, double wy, double wz, double& mx, double& my, double& mz)
+  double robot_diameter_, robot_height_;
+  double floor_threshold_,  obstacles_persistence_;
+  
+  inline bool worldToMap3DFloat( double wx, double wy, double wz, double& mx, double& my, double& mz )
   {
     if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_) {
       return false;
@@ -152,7 +145,7 @@ private:
     return false;
   }
 
-  inline bool worldToMap3D(double wx, double wy, double wz, unsigned int& mx, unsigned int& my, unsigned int& mz)
+  inline bool worldToMap3D( double wx, double wy, double wz, unsigned int& mx, unsigned int& my, unsigned int& mz )
   {
     if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_) {
       return false;
@@ -169,22 +162,22 @@ private:
     return false;
   }
 
-  inline void mapToWorld3D(unsigned int mx, unsigned int my, unsigned int mz, double& wx, double& wy, double& wz)
+  inline void mapToWorld3D( unsigned int mx, unsigned int my, unsigned int mz, double& wx, double& wy, double& wz )
   {
     wx = origin_x_ + (mx + 0.5) * resolution_;
     wy = origin_y_ + (my + 0.5) * resolution_;
     wz = origin_z_ + (mz + 0.5) * z_resolution_;
   }
 
-  inline double dist(double x0, double y0, double z0, double x1, double y1, double z1)
+  inline double dist( double x0, double y0, double z0, double x1, double y1, double z1 )
   {
-    return sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0) + (z1 - z0) * (z1 - z0));
+    return std::sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0) + (z1-z0)*(z1-z0));
   }
 };
 
 }  // namespace squirrel_navigation
 
-#endif  // OBSTACLESLAYER_H_
+#endif  // SQUIRREL_NAVIGATION_OBSTACLESLAYER_H_
 
 // 
 // ObstaclesLayer.h ends here

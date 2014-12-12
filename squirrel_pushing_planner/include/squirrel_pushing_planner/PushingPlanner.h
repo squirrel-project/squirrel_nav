@@ -1,26 +1,31 @@
-// PointCloudFilterNode.cpp --- 
+// PushingPlanner.h --- 
 // 
-// Filename: PointCloudFilterNode.cpp
-// Description: Publish a light PointCloud2 for 2D navigation
+// Filename: PushingPlanner.h
+// Description: Planner for the pushing task
 // Author: Federico Boniardi
-// Maintainer: boniardi@informatik.uni-freiburg.de
-// Created: Mon Nov 17 21:31:45 2014 (+0100)
+// Maintainer: boniardi@cs.uni-freiburg.de
+// Created: Mon Dec  8 13:36:41 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Wed Nov 26 15:52:44 2014 (+0100)
-//           By: Federico Boniardi
-//     Update #: 1
+// Last-Updated: 
+//           By: 
+//     Update #: 0
 // URL: 
 // Keywords: 
 // Compatibility: 
-//   ROS Hydro, ROS Indigo 
+// 
 // 
 
 // Commentary: 
-//    Tested on: - ROS Hydro on Ubuntu 12.04
-//               - ROS Indigo on Ubuntu 14.04
-//    RGBD source: ASUS Xtion pro
+// 
+// 
+// 
 // 
 
+// Change Log:
+// 
+// 
+// 
+// 
 // Copyright (c) 2014, Federico Boniardi
 // All rights reserved.
 // 
@@ -34,7 +39,7 @@
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
 // 
-// * Neither the name of the {organization} nor the names of its
+// * Neither the name of the University of Freiburg nor the names of its
 //   contributors may be used to endorse or promote products derived from
 //   this software without specific prior written permission.
 // 
@@ -53,19 +58,44 @@
 
 // Code:
 
-#include "squirrel_navigation/PointCloudFilter.h"
+#ifndef PUSHINGPLANNER_H_
+#define PUSHINGPLANNER_H_
 
 #include <ros/ros.h>
 
-using squirrel_navigation::PointCloudFilter;
+#include <nav_msgs/GetPlan.h>
 
-int main(int argc, char *argv[])
+#include <cmath>
+
+#include "squirrel_rgbd_mapping_msgs/GetPushingPlan.h"
+
+namespace squirrel_pushing_planner {
+
+class PushingPlanner
 {
-  ros::init(argc, argv, "pointcloud_filter");
-  PointCloudFilter pf;
-  pf.spin();
-  return 0;
-}
+ public:
+  PushingPlanner( void );
+  virtual ~PushingPlanner( void );
+  void spin( void );
+  void waitForPlannerService( void );
+  
+ private:
+  bool getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request&,
+                squirrel_rgbd_mapping_msgs::GetPushingPlan::Response& );
+
+  ros::NodeHandle public_nh_, private_nh_;
+  ros::Publisher pushing_plan_pub_;
+  ros::ServiceServer get_pushing_plan_srv_;
+
+  std::string node_name_;
+  
+  // Parameters
+  double tolerance_, robot_radius_;  
+};
+
+}  // namespace squirrel_pushing_planner
+
+#endif /* PUSHINGPLANNER_H_ */
 
 // 
-// PointCloudFilterNode.cpp ends here
+// PushingPlanner.h ends here

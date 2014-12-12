@@ -54,8 +54,8 @@
 
 // Code:
 
-#ifndef POINTCLOUDFILTER_H_
-#define POINTCLOUDFILTER_H_
+#ifndef SQUIRREL_NAVIGATION_POINTCLOUDFILTER_H_
+#define SQUIRREL_NAVIGATION_POINTCLOUDFILTER_H_
 
 #include <ros/ros.h>
 
@@ -95,6 +95,8 @@ class PointCloudFilter
   tf::StampedTransform tf_k2m_, tf_m2k_;
   
   int filter_step_, seq_;
+
+  std::string node_name_;
   
   // Parameters
   std::string pointcloud_in_topic_;
@@ -104,7 +106,7 @@ class PointCloudFilter
 
 }  // namspace squirrel_navigation
 
-#endif /* POINTCLOUDFILTER_H_ */
+#endif /* SQUIRREL_NAVIGATION_POINTCLOUDFILTER_H_ */
 
 // 
 // PointCloudFilter.h ends here
