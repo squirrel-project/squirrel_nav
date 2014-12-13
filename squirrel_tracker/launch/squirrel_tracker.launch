@@ -1,0 +1,5 @@
+<launch>
+<node name="squirrel_tracker" pkg="squirrel_tracker" type="squirrel_tracker" cwd="ROS_HOME" output="screen"> 
+<param name="camera_frame_id" type="str" value="camera_depth_frame" />
+</node>
+</launch>
