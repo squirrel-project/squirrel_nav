@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<notation:Diagram xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.2/notation" xmlns:ros="http://ros/1.0" xmi:id="_yUj28II0EeSWVt4Pli2K-A" type="RosPackage" name="squirrel_3d_mapping.ros_package_diagram" measurementUnit="Pixel">
+  <children xmi:type="notation:Shape" xmi:id="_iVhK4II1EeSWVt4Pli2K-A" type="2001" fontName="Ubuntu">
+    <children xmi:type="notation:DecorationNode" xmi:id="_iVhx8II1EeSWVt4Pli2K-A" type="5008"/>
+    <children xmi:type="notation:BasicCompartment" xmi:id="_iVjAEII1EeSWVt4Pli2K-A" type="7001">
+      <children xmi:type="notation:Node" xmi:id="_nwvdcII1EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.0"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_nwvdcYI1EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_t-xF8II1EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.1"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_t-xF8YI1EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_vZ3K8II1EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.2"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_vZ3K8YI1EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_xKc-0II1EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.3"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_xKc-0YI1EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_yyy1oII1EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.4"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_yyy1oYI1EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_zxrfwII1EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.5"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_zxrfwYI1EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_1GmEQII1EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.6"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_1GmEQYI1EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_26YWEII1EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.7"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_26YWEYI1EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_3yIdcII1EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.8"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_3yIdcYI1EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_9McKAII1EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.9"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_9McKAYI1EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_-3tZAII1EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.10"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_-3tZAYI1EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_Bp4lsII2EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.11"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_Bp4lsYI2EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_DmfcUII2EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.12"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_DmfcUYI2EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_EqlWkII2EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.13"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_EqlWkYI2EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_FypK0II2EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.14"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_FypK0YI2EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_HFJUgII2EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.15"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_HFJUgYI2EeSWVt4Pli2K-A"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_INA7gII2EeSWVt4Pli2K-A" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_3d_mapping.ros_package#//@node.0/@parameter.16"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_INA7gYI2EeSWVt4Pli2K-A"/>
+      </children>
+      <styles xmi:type="notation:TitleStyle" xmi:id="_iVjAEYI1EeSWVt4Pli2K-A" showTitle="true"/>
+      <styles xmi:type="notation:SortingStyle" xmi:id="_iVjAEoI1EeSWVt4Pli2K-A"/>
+      <styles xmi:type="notation:FilteringStyle" xmi:id="_iVjAE4I1EeSWVt4Pli2K-A"/>
+    </children>
+    <children xmi:type="notation:Node" xmi:id="_PuUJwII2EeSWVt4Pli2K-A" type="3004">
+      <children xmi:type="notation:DecorationNode" xmi:id="_PuUJxII2EeSWVt4Pli2K-A" type="5004"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="_PuUJwYI2EeSWVt4Pli2K-A"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="_PuUJwoI2EeSWVt4Pli2K-A" fontName="Ubuntu"/>
+      <element xmi:type="ros:Publisher" href="squirrel_3d_mapping.ros_package#//@node.0/@publisher.0"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_PuUJw4I2EeSWVt4Pli2K-A"/>
+    </children>
+    <children xmi:type="notation:Node" xmi:id="_SjBGAII2EeSWVt4Pli2K-A" type="3004">
+      <children xmi:type="notation:DecorationNode" xmi:id="_SjBtEII2EeSWVt4Pli2K-A" type="5004"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="_SjBGAYI2EeSWVt4Pli2K-A"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="_SjBGAoI2EeSWVt4Pli2K-A" fontName="Ubuntu"/>
+      <element xmi:type="ros:Publisher" href="squirrel_3d_mapping.ros_package#//@node.0/@publisher.1"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_SjBGA4I2EeSWVt4Pli2K-A"/>
+    </children>
+    <children xmi:type="notation:Node" xmi:id="_Xr5EUII2EeSWVt4Pli2K-A" type="3007">
+      <children xmi:type="notation:DecorationNode" xmi:id="_Xr6ScII2EeSWVt4Pli2K-A" type="5007"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="_Xr5EUYI2EeSWVt4Pli2K-A"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="_Xr5EUoI2EeSWVt4Pli2K-A" fontName="Ubuntu"/>
+      <element xmi:type="ros:Subscriber" href="squirrel_3d_mapping.ros_package#//@node.0/@subscriber.0"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_Xr5EU4I2EeSWVt4Pli2K-A" x="-79" y="144"/>
+    </children>
+    <children xmi:type="notation:Node" xmi:id="_bgy5UII2EeSWVt4Pli2K-A" type="3007">
+      <children xmi:type="notation:DecorationNode" xmi:id="_bgzgYII2EeSWVt4Pli2K-A" type="5007"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="_bgy5UYI2EeSWVt4Pli2K-A"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="_bgy5UoI2EeSWVt4Pli2K-A" fontName="Ubuntu"/>
+      <element xmi:type="ros:Subscriber" href="squirrel_3d_mapping.ros_package#//@node.0/@subscriber.1"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_bgy5U4I2EeSWVt4Pli2K-A" x="-79" y="180"/>
+    </children>
+    <children xmi:type="notation:Node" xmi:id="_h2P_gII2EeSWVt4Pli2K-A" type="3002">
+      <children xmi:type="notation:DecorationNode" xmi:id="_h2QmkII2EeSWVt4Pli2K-A" type="5002"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="_h2P_gYI2EeSWVt4Pli2K-A"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="_h2P_goI2EeSWVt4Pli2K-A" fontName="Ubuntu"/>
+      <styles xmi:type="notation:LineStyle" xmi:id="_h2P_g4I2EeSWVt4Pli2K-A"/>
+      <element xmi:type="ros:ServiceServer" href="squirrel_3d_mapping.ros_package#//@node.0/@serviceServer.0"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_h2P_hII2EeSWVt4Pli2K-A"/>
+    </children>
+    <element xmi:type="ros:Node" href="squirrel_3d_mapping.ros_package#//@node.0"/>
+    <layoutConstraint xmi:type="notation:Bounds" xmi:id="_iVhK4YI1EeSWVt4Pli2K-A" x="396" y="120"/>
+  </children>
+  <styles xmi:type="notation:DiagramStyle" xmi:id="_yUj28YI0EeSWVt4Pli2K-A"/>
+  <element xmi:type="ros:Package" href="squirrel_3d_mapping.ros_package#/"/>
+</notation:Diagram>
