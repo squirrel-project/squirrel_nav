@@ -26,11 +26,15 @@
   <build_depend>octomap_ros</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>nodelet</build_depend>
-  <build_depend>libpcl-all-dev</build_depend>
+<!--  <build_depend>libpcl-all-dev</build_depend> -->
   <build_depend>message_generation</build_depend>
   <build_depend>message_runtime</build_depend>
   <build_depend>geometry_msgs</build_depend>
+  <build_depend>squirrel_rgbd_mapping_msgs</build_depend>
+  <build_depend>squirrel_3d_mapping_msgs</build_depend>
 
+  <run_depend>squirrel_3d_mapping_msgs</run_depend>
+  <run_depend>squirrel_rgbd_mapping_msgs</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>visualization_msgs</run_depend>
   <run_depend>sensor_msgs</run_depend>
@@ -44,7 +48,7 @@
   <run_depend>octomap_ros</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>nodelet</run_depend>
-  <run_depend>libpcl-all</run_depend>
+<!--  <run_depend>libpcl-all</run_depend> -->
   <run_depend>message_runtime</run_depend>
   <run_depend>message_generation</run_depend>
   <run_depend>geometry_msgs</run_depend>

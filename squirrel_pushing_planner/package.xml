@@ -14,10 +14,12 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>roscpp</build_depend>
+  <build_depend>squirrel_rgbd_mapping_msgs</build_depend>
  
   <run_depend>geometry_msgs</run_depend>
   <run_depend>nav_msgs</run_depend>
   <run_depend>roscpp</run_depend>
+  <run_depend>squirrel_rgbd_mapping_msgs</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <!--export>
