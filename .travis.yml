@@ -10,9 +10,9 @@ install:
   - sudo apt-get install ros-hydro-ros
   - source /opt/ros/hydro/setup.bash
   - mkdir -p ~/catkin_ws/src && pushd ~/catkin_ws
-  - catkin_init_workspace ~/catkin_ws/src
+  - ln -s `eval echo $(dirs +1)` ~/catkin_ws/src/
   - git clone git@github.com:squirrel-project/common.git ~/catkin_ws/src/common
+  - catkin_init_workspace ~/catkin_ws/src
   - rosdep install --from-paths ~/catkin_ws/src --ignore-src --rosdistro hydro
-  - ln -s `eval echo $(dirs +1)` src/
 script:
   - catkin_make
