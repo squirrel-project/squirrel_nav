@@ -73,3 +73,5 @@ qtcreator-*
 CATKIN_IGNORE
 #SVN
 .svn/
+# catkin ignore
+CATKIN_IGNORE
