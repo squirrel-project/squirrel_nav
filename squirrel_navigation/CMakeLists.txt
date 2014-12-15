@@ -88,7 +88,7 @@ target_link_libraries(pointcloud_filter_node
 ## Install ##
 #############
 
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS
   squirrel_local_planner
   squirrel_obstacles_layer
   pointcloud_filter_node
