@@ -1,9 +1,0 @@
-<launch>
-
- <include file="$(find openni2_launch)/launch/openni2.launch" />
-
- <node pkg="nodelet" type="nodelet" name="squirrel_tracker" args="load squirrel_tracker/squirrel_tracker_nodelet /camera/camera_nodelet_manager" output="screen" cwd="ROS_HOME">
-<param name="camera_frame_id" type="str" value="camera_depth_frame" />
- </node>  
-           
-</launch>
