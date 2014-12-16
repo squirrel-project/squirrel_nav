@@ -95,10 +95,3 @@ To visualise the octomap, `octovis` is required.
 `sudo apt-get install ros-hydro-octovis` to install it and 
 `octovis octomap_name.ot` to show the 3D Octomap.
 
-## TODO: Using RGBD-SLAM to create an 3D OCTOMAP
-
-The package `squirrel_rgbd_mapping` package hasn't been tested on Indigo. If you
-compile on Indigo, just ignore the package (this can be done just by creating
-an empty file `CATKIN_IGNORE` inside the package folder).
-
-
