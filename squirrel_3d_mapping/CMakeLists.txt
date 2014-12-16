@@ -19,6 +19,7 @@ set(squirrel_3d_mapping_DEPENDENCIES
   message_runtime
   message_generation
   squirrel_3d_mapping_msgs
+  squirrel_rgbd_mapping_msgs
 )
 
 ############
