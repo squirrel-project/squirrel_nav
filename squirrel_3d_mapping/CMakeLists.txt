@@ -81,6 +81,8 @@ set(LINK_LIBS
 add_library(dynamic_edt src/DynamicEDT3D.cpp src/DynamicEDTOctomap.cpp)
 target_link_libraries(dynamic_edt ${LINK_LIBS})
 
+add_dependencies(dynamic_edt squirrel_3d_mapping_msgs_generate_messages_cpp)
+
 add_library(${PROJECT_NAME} src/OctomapServer.cpp src/OctomapServerMultilayer.cpp src/TrackingOctomapServer.cpp)
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
