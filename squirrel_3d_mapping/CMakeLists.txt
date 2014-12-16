@@ -117,7 +117,7 @@ target_link_libraries(octomap_server_nodelet ${PROJECT_NAME} ${LINK_LIBS} dynami
 ## Install ##
 #############
 
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS 
   dynamic_edt
   octomap_server_node
   octomap_server_static
