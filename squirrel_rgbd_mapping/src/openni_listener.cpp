@@ -20,7 +20,7 @@
 #endif
 #include "squirrel_rgbd_mapping/parameter_server.h"
 //Documentation see header file
-#include "pcl/ros/conversions.h"
+#include "pcl/conversions.h"
 #include <pcl/common/distances.h>
 #include <pcl/io/io.h>
 #include <pcl/io/impl/pcd_io.hpp>
@@ -179,8 +179,8 @@ OpenNIListener::OpenNIListener(GraphManager* graph_mgr)
   else {
     ROS_WARN("RGBDSLAM loads a bagfile - therefore doesn't subscribe to topics.");
   }
-  detector_ = createDetector(ps->get<std::string>("feature_detector_type"));
-  extractor_ = createDescriptorExtractor(ps->get<std::string>("feature_extractor_type"));
+  detector_ = cv::FeatureDetector::create(ps->get<std::string>("feature_detector_type"));
+  extractor_ = cv::DescriptorExtractor::create(ps->get<std::string>("feature_extractor_type"));
 }
 
  
