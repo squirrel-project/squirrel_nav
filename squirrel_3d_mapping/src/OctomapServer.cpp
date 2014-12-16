@@ -1180,7 +1180,7 @@ std_msgs::ColorRGBA OctomapServer::heightMapColor(double h) {
   return color;
 }
 
-bool OctomapServer::checkCollision( CheckCollision::Request& req, CheckCollision::Response& res)
+bool OctomapServer::checkCollision( squirrel_3d_mapping_msgs::CheckCollision::Request& req, squirrel_3d_mapping_msgs::CheckCollision::Response& res)
 {
   double p_x = req.pose.x;
   double p_y = req.pose.y;

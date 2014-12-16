@@ -1,4 +1,0 @@
-geometry_msgs/Pose2D pose
-sensor_msgs/JointState joints
----
-uint8 collision
