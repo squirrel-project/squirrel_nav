@@ -10,7 +10,6 @@
   <run_depend>squirrel_rgbd_mapping</run_depend>
   <run_depend>squirrel_3d_mapping</run_depend>
   <run_depend>squirrel_pushing_planner</run_depend>
-  <run_depend>squirrel_tracker</run_depend>
   
 
   <export>
