@@ -18,6 +18,8 @@ set(squirrel_3d_mapping_DEPENDENCIES
   geometry_msgs
   message_runtime
   message_generation
+  squirrel_3d_mapping_msgs
+  squirrel_rgbd_mapping_msgs
 )
 
 ############
@@ -62,17 +64,6 @@ include_directories(
 )
 
 generate_dynamic_reconfigure_options(cfg/OctomapServer.cfg)
-
-add_service_files(
-  FILES
-  CheckCollision.srv
-)
-
-generate_messages(
-  DEPENDENCIES
-  geometry_msgs
-  sensor_msgs
-)
 
 catkin_package(
   INCLUDE_DIRS include
