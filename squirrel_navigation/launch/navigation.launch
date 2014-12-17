@@ -19,7 +19,7 @@
   <!-- Run pointcloud_filter_node: filter the PointCloud to speed up planning -->
   <node pkg="squirrel_navigation" type="pointcloud_filter_node" name="pointcloud_filter" 
 	output="screen" respawn="true">
-    <param name="pointcloud_in" value="/camera/depth/points" />
+    <param name="pointcloud_in" value="/kinect/depth/points" />
     <param name="pointcloud_out" value="/rgbdscan" />
     <param name="pointcloud_size" value="5000" />
   </node>
