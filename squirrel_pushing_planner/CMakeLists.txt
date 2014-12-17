@@ -110,6 +110,10 @@ add_executable(pushing_planner_node
   src/PushingPlannerNode.cpp
 )
 
+add_dependencies(pushing_planner_node 
+  squirrel_rgbd_mapping_msgs_generate_messages_cpp  
+)
+
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 
