@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ros:Package xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ros="http://ros/1.0" name="squirrel_3d_mapping" author="Armin Hornung, Federico Bonairdi" author_email="bonairdi@cs.uni-freiburg.de" description="The squirrel_3d_mapping package" license="BSD 3 clauses">
+  <node name="octomap_server_node">
+    <publisher name="octomap_binary" msg="octomap_msgs::Octomap"/>
+    <publisher name="octomap_full" msg="octomap_msgs::Octomap"/>
+    <subscriber name="tf" msg="tf::tfMessage"/>
+    <subscriber name="cloud_in" msg="sensor_msgs::PointCloud2"/>
+    <serviceServer name="CkeckCollision" msg="squirrel_3d_mapping::CheckCollision"/>
+    <parameter name="resolution"/>
+    <parameter name="frame_id"/>
+    <parameter name="max_sensor_range"/>
+    <parameter name="pointcloud_min_z"/>
+    <parameter name="pointcloud_max_z"/>
+    <parameter name="filter_ground"/>
+    <parameter name="ground_filter/plane_distance"/>
+    <parameter name="base_frame_id"/>
+    <parameter name="distance_transform/enabled"/>
+    <parameter name="distance_transform/max_dist"/>
+    <parameter name="distance_transform/unknown_as_occupied"/>
+    <parameter name="distance_transform/min_x"/>
+    <parameter name="distance_transform/max_x"/>
+    <parameter name="distance_transform/min_y"/>
+    <parameter name="distance_transform/max_y"/>
+    <parameter name="distance_transform/min_z"/>
+    <parameter name="distance_transform/max_z"/>
+  </node>
+  <depend>roscpp</depend>
+  <depend>visualization_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>pcl_ros</depend>
+  <depend>pcl_conversions</depend>
+  <depend>std_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>octomap</depend>
+  <depend>octomap_msgs</depend>
+  <depend>octomap_ros</depend>
+  <depend>dynamic_reconfigure</depend>
+  <depend>nodelet</depend>
+  <depend>libpcl-all-dev</depend>
+  <depend>message_generation</depend>
+  <depend>message_runtime</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf</depend>
+</ros:Package>
