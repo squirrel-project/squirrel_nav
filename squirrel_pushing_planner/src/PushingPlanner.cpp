@@ -168,11 +168,11 @@ bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reques
 
       // smooth connectio to the path
       int smoother = 1;
-      for (double t=0.0; t<object_d; t+=0.05, ++smoother) {
+      for (double t=0.5*object_d; t<object_d; ++smoother, t+=object_d*std::pow(0.5, smoother)) {
         double dx_s = plan.response.plan.poses[smoother].pose.position.x - plan.response.plan.poses[smoother-1].pose.position.x;
         double dy_s = plan.response.plan.poses[smoother].pose.position.y - plan.response.plan.poses[smoother-1].pose.position.y;
-        p.pose.position.x = res.plan.poses[smoother-1].pose.position.x + 0.05 * std::cos(req.start.theta) + dx_s;
-        p.pose.position.y = res.plan.poses[smoother-1].pose.position.y + 0.05 * std::sin(req.start.theta) + dy_s;
+        p.pose.position.x = res.plan.poses[smoother-1].pose.position.x + object_d * std::pow(0.5, smoother) * std::cos(req.start.theta) + dx_s;
+        p.pose.position.y = res.plan.poses[smoother-1].pose.position.y + object_d * std::pow(0.5, smoother) * std::sin(req.start.theta) + dy_s;
         p.pose.orientation.x = q_start.x;
         p.pose.orientation.y = q_start.y;
         p.pose.orientation.z = q_start.z;
@@ -180,19 +180,8 @@ bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reques
         res.plan.poses.push_back(p);
       }
 
-      // last desplacement
-      smoother++;
-      double dx_s = plan.response.plan.poses[smoother].pose.position.x - plan.response.plan.poses[smoother-1].pose.position.x;
-      double dy_s = plan.response.plan.poses[smoother].pose.position.y - plan.response.plan.poses[smoother-1].pose.position.y;
-      p.pose.position.x = res.plan.poses[smoother-1].pose.position.x + smoother * 0.05 * std::cos(req.start.theta) + dx_s; 
-      p.pose.position.y = res.plan.poses[smoother-1].pose.position.y + smoother * 0.05 * std::sin(req.start.theta) + dy_s;
-      p.pose.orientation.x = q_start.x;
-      p.pose.orientation.y = q_start.y;
-      p.pose.orientation.z = q_start.z;
-      p.pose.orientation.w = q_start.w;
-      
       // ROS_INFO_STREAM("path size: " << plan.response.plan.poses.size() << " smoother: " << smoother);
-      res.plan.poses.insert(res.plan.poses.end(), plan.response.plan.poses.begin()+smoother+2, plan.response.plan.poses.end());
+      res.plan.poses.insert(res.plan.poses.end(), plan.response.plan.poses.begin()+smoother+1, plan.response.plan.poses.end());
       pushing_plan_pub_.publish(res.plan);
       return true;
     }
