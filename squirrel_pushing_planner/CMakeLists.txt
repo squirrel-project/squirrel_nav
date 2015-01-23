@@ -111,10 +111,6 @@ add_executable(pushing_planner_node
   src/PushingPlannerNode.cpp
 )
 
-add_executable(test_pushing_planner_node
-  src/TestService.cpp
-)
-
 add_dependencies(pushing_planner_node 
   squirrel_rgbd_mapping_msgs_generate_messages_cpp  
 )
@@ -124,10 +120,6 @@ add_dependencies(pushing_planner_node
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(pushing_planner_node
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(test_pushing_planner_node
   ${catkin_LIBRARIES}
 )
 
