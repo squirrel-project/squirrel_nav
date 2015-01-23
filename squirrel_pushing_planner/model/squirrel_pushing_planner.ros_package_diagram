@@ -7,6 +7,18 @@
         <element xmi:type="ros:Parameter" href="squirrel_pushing_planner.ros_package#//@node.0/@parameter.0"/>
         <layoutConstraint xmi:type="notation:Location" xmi:id="_BlK9cYI5EeSWVt4Pli2K-A"/>
       </children>
+      <children xmi:type="notation:Node" xmi:id="_lToRkKDQEeSt5awemFfIAQ" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_pushing_planner.ros_package#//@node.0/@parameter.1"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_lToRkaDQEeSt5awemFfIAQ"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_onjgcKDQEeSt5awemFfIAQ" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_pushing_planner.ros_package#//@node.0/@parameter.2"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_onjgcaDQEeSt5awemFfIAQ"/>
+      </children>
+      <children xmi:type="notation:Node" xmi:id="_t0LWUKDQEeSt5awemFfIAQ" type="3001">
+        <element xmi:type="ros:Parameter" href="squirrel_pushing_planner.ros_package#//@node.0/@parameter.3"/>
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_t0LWUaDQEeSt5awemFfIAQ"/>
+      </children>
       <styles xmi:type="notation:TitleStyle" xmi:id="_82oKtII4EeSWVt4Pli2K-A" showTitle="true"/>
       <styles xmi:type="notation:SortingStyle" xmi:id="_82oKtYI4EeSWVt4Pli2K-A"/>
       <styles xmi:type="notation:FilteringStyle" xmi:id="_82oKtoI4EeSWVt4Pli2K-A"/>

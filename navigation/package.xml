@@ -1,17 +1,26 @@
+<?xml version="1.0"?>
 <package>
   <name>navigation</name>
+  
   <version>0.0.1</version>
+  
   <description>Everything related navigation</description>
+  
+  <author>Federico Boniardi</author>
+  <author>Armin Hornung</author>
+
+  <maintainer email="boniardi@cs.uni-freiburg.de">Federico Boniardi</maintainer> 
   <maintainer email="nhg@ipa.fhg.de">Nadia Hammoudeh Garcia</maintainer>
+
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
+  
   <run_depend>squirrel_navigation</run_depend>
   <run_depend>squirrel_rgbd_mapping</run_depend>
   <run_depend>squirrel_3d_mapping</run_depend>
   <run_depend>squirrel_pushing_planner</run_depend>
   
-
   <export>
 	<metapackage/>
   </export>

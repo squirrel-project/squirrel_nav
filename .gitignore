@@ -73,3 +73,5 @@ qtcreator-*
 #CATKIN_IGNORE
 #SVN
 .svn/
+# don't update the map files
+squirrel_navigation/maps/test_maps

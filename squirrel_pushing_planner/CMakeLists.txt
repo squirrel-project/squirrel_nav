@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   roscpp
   squirrel_rgbd_mapping_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -83,7 +84,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
  INCLUDE_DIRS include
 # LIBRARIES squirrel_pushing_planner
- CATKIN_DEPENDS geometry_msgs nav_msgs roscpp squirrel_rgbd_mapping_msgs
+ CATKIN_DEPENDS geometry_msgs nav_msgs roscpp squirrel_rgbd_mapping_msgs tf
 #  DEPENDS system_lib
 )
 
@@ -110,6 +111,10 @@ add_executable(pushing_planner_node
   src/PushingPlannerNode.cpp
 )
 
+add_executable(test_pushing_planner_node
+  src/TestService.cpp
+)
+
 add_dependencies(pushing_planner_node 
   squirrel_rgbd_mapping_msgs_generate_messages_cpp  
 )
@@ -119,6 +124,10 @@ add_dependencies(pushing_planner_node
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(pushing_planner_node
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(test_pushing_planner_node
   ${catkin_LIBRARIES}
 )
 

@@ -1,14 +1,20 @@
+<?xml version="1.0"?>
 <package>
   <name>squirrel_3d_mapping</name>
+  
   <version>0.5.3</version>
+  
   <description>
     octomap_server loads a 3D map (as Octree-based OctoMap) and distributes it to other nodes in a compact binary format.
     It also allows to incrementally build 3D OctoMaps, and provides map saving in the node octomap_saver.
   </description>
+  
   <author email="hornunga@informatik.uni-freiburg.de">Armin Hornung</author>
   <author email="boniardi@cs.uni-freiburg.de">Federico Boniardi</author>
+  
   <maintainer email="hornunga@informatik.uni-freiburg.de">Armin Hornung</maintainer>
   <maintainer email="boniardi@cs.uni-freiburg.de">Federico Boniardi</maintainer>
+  
   <license>BSD</license>
   
   <buildtool_depend>catkin</buildtool_depend>
@@ -58,5 +64,3 @@
   </export>
   
 </package>
-
-

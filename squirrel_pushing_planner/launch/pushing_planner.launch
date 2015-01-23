@@ -1,0 +1,14 @@
+<launch>
+  <arg name="tolerance" default="0.05" />
+  <arg name="robot_radius" default="0.22" />
+  <arg name="start_goal_frame_id" default="/map" />
+  <arg name="plan_frame_id" default="/odom" />
+
+  <node pkg="squirrel_pushing_planner" type="pushing_planner_node" name="pushing_planner"
+  	output="screen" respawn="false">
+    <param name="tolerance" value="$(arg tolerance)" />
+    <param name="robot_radius" value="$(arg robot_radius)" />
+    <param name="start_goal_frame_id" value="$(arg start_goal_frame_id)" />
+    <param name="plan_frame_id" value="$(arg plan_frame_id)" />
+  </node>
+</launch>

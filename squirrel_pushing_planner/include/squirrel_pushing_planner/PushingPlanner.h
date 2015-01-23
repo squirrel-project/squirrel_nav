@@ -63,6 +63,9 @@
 
 #include <ros/ros.h>
 
+#include <tf/transform_listener.h>
+
+#include <nav_msgs/Path.h>
 #include <nav_msgs/GetPlan.h>
 
 #include <cmath>
@@ -87,10 +90,15 @@ class PushingPlanner
   ros::Publisher pushing_plan_pub_;
   ros::ServiceServer get_pushing_plan_srv_;
 
+  nav_msgs::Path plan_;
+  
+  tf::TransformListener tfl_;
+  
   std::string node_name_;
   
   // Parameters
-  double tolerance_, robot_radius_;  
+  double tolerance_, robot_radius_;
+  std::string plan_frame_id_, start_goal_frame_id_;
 };
 
 }  // namespace squirrel_pushing_planner

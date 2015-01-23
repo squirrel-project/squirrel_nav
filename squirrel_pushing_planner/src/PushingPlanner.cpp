@@ -60,6 +60,7 @@
 #include <tf/tf.h>
 
 #include <geometry_msgs/Quaternion.h>
+#include <geometry_msgs/PoseStamped.h>
 
 #include <climits>
 #include <cmath>
@@ -70,12 +71,19 @@ namespace squirrel_pushing_planner {
 PushingPlanner::PushingPlanner( void )  :
     private_nh_("~"),
     tolerance_(1.0),
-    robot_radius_(0.22)
+    robot_radius_(0.22),
+    start_goal_frame_id_("/map"),
+    plan_frame_id_("/odom")
 {
   node_name_ = ros::this_node::getName();
   
   private_nh_.param("tolerance", tolerance_, 1.0);
   private_nh_.param("robot_radius", robot_radius_, 0.22);
+  private_nh_.param("plan_frame_id", plan_frame_id_, std::string("/odom"));
+  private_nh_.param("start_goal_frame_id", start_goal_frame_id_, std::string("/map"));
+
+  plan_.header.frame_id = plan_frame_id_;
+  
   pushing_plan_pub_ = private_nh_.advertise<nav_msgs::Path>("pushingPlan", 1000);
   get_pushing_plan_srv_ = public_nh_.advertiseService("getPushingPlan", &PushingPlanner::getPlan, this); 
 }
@@ -104,7 +112,7 @@ void PushingPlanner::spin( void )
 
 void PushingPlanner::waitForPlannerService( void )
 {
-  if ( !ros::service::waitForService("/move_base/make_plan", ros::Duration(10.0)) ) {
+  if ( !ros::service::waitForService("/move_base/make_plan", ros::Duration(60.0)) ) {
     ROS_ERROR("%s: Service [/move_base/make_service] unavailable, shutting down the node...", node_name_.c_str());
     ros::shutdown();
   }
@@ -129,31 +137,53 @@ bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reques
   plan.request.tolerance = tolerance_;
 
   // GetPlan start
-  plan.request.start.header.frame_id = "/map";
-  plan.request.start.pose.orientation.x = q_start.x;
-  plan.request.start.pose.orientation.y = q_start.y;
-  plan.request.start.pose.orientation.z = q_start.z;
-  plan.request.start.pose.orientation.w = q_start.w;
-  plan.request.start.pose.position.x = req.start.x + object_d * std::cos(req.start.theta);
-  plan.request.start.pose.position.y = req.start.y + object_d * std::sin(req.start.theta);
-  
-  // GetPlan goal
-  plan.request.goal.header.frame_id = "/map";
-  plan.request.goal.pose.orientation.x = q_goal.x;
-  plan.request.goal.pose.orientation.y = q_goal.y;
-  plan.request.goal.pose.orientation.z = q_goal.z;
-  plan.request.goal.pose.orientation.w = q_goal.w;
-  plan.request.goal.pose.position.x = req.goal.x;
-  plan.request.goal.pose.position.y = req.goal.y;  
+  geometry_msgs::PoseStamped start;
+  start.header.frame_id = start_goal_frame_id_;
+  start.pose.orientation.x = q_start.x;
+  start.pose.orientation.y = q_start.y;
+  start.pose.orientation.z = q_start.z;
+  start.pose.orientation.w = q_start.w;
+  start.pose.position.x = req.start.x + object_d * std::cos(req.start.theta);
+  start.pose.position.y = req.start.y + object_d * std::sin(req.start.theta);
 
-  // ROS_INFO("start: (%f, %f, %f)", req.start.x, req.start.y, req.start.theta);
+  try {
+    tfl_.waitForTransform(start_goal_frame_id_, "/map", ros::Time::now(), ros::Duration(1.0));
+    tfl_.transformPose("/map", start, plan.request.start);
+    plan.request.start.header.frame_id = "/map";
+  } catch (tf::TransformException ex) {
+    ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
+    return true;
+  }
+
+  // GetPlan goal
+  geometry_msgs::PoseStamped goal;
+
+  goal.header.frame_id = start_goal_frame_id_;
+  goal.pose.orientation.x = q_goal.x;
+  goal.pose.orientation.y = q_goal.y;
+  goal.pose.orientation.z = q_goal.z;
+  goal.pose.orientation.w = q_goal.w;
+  goal.pose.position.x = req.goal.x;
+  goal.pose.position.y = req.goal.y;  
+
+  try {
+    tfl_.waitForTransform(start_goal_frame_id_, "/map", ros::Time::now(), ros::Duration(1.0));
+    tfl_.transformPose("/map", goal, plan.request.goal);
+    plan.request.goal.header.frame_id = "/map";
+  } catch (tf::TransformException ex) {
+    ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
+    return false;
+  }
   
   if ( ros::service::call("/move_base/make_plan", plan) ) {
-    res.plan.header.frame_id = "/map";
     if ( plan.response.plan.poses.empty() ) {
       ROS_WARN("got empty plan");
-      return false;
+      return true;
     } else {
+      if( !plan_.poses.empty() ) {
+        plan_.poses.clear();
+      }
+      
       geometry_msgs::PoseStamped p;
       p.header.frame_id = "/map";
 
@@ -164,29 +194,51 @@ bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reques
       p.pose.orientation.y = q_start.y;
       p.pose.orientation.z = q_start.z;
       p.pose.orientation.w = q_start.w;
-      res.plan.poses.push_back(p);
+      plan_.poses.push_back(p);
 
-      // smooth connectio to the path
+      // Adjust move base approximation
+      plan.response.plan.poses[0].pose.position.x = plan.request.start.pose.position.x;
+      plan.response.plan.poses[0].pose.position.y = plan.request.start.pose.position.y;
+      
+      // smooth connection to the path
+      double c = 0.5;
+      double toll = 1E-4;
       int smoother = 1;
-      for (double t=0.5*object_d; t<object_d; ++smoother, t+=object_d*std::pow(0.5, smoother)) {
+      for (double t=0.5*object_d; (t<object_d-toll && smoother<plan.response.plan.poses.size()); ++smoother, t+=object_d*std::pow(c,smoother)) {
         double dx_s = plan.response.plan.poses[smoother].pose.position.x - plan.response.plan.poses[smoother-1].pose.position.x;
         double dy_s = plan.response.plan.poses[smoother].pose.position.y - plan.response.plan.poses[smoother-1].pose.position.y;
-        p.pose.position.x = res.plan.poses[smoother-1].pose.position.x + object_d * std::pow(0.5, smoother) * std::cos(req.start.theta) + dx_s;
-        p.pose.position.y = res.plan.poses[smoother-1].pose.position.y + object_d * std::pow(0.5, smoother) * std::sin(req.start.theta) + dy_s;
+        p.pose.position.x = plan_.poses[smoother-1].pose.position.x + object_d*std::pow(c,smoother) * std::cos(req.start.theta) + dx_s;
+        p.pose.position.y = plan_.poses[smoother-1].pose.position.y + object_d*std::pow(c,smoother) * std::sin(req.start.theta) + dy_s;
         p.pose.orientation.x = q_start.x;
         p.pose.orientation.y = q_start.y;
         p.pose.orientation.z = q_start.z;
         p.pose.orientation.w = q_start.w;
-        res.plan.poses.push_back(p);
+        plan_.poses.push_back(p);
       }
 
-      // ROS_INFO_STREAM("path size: " << plan.response.plan.poses.size() << " smoother: " << smoother);
-      res.plan.poses.insert(res.plan.poses.end(), plan.response.plan.poses.begin()+smoother+1, plan.response.plan.poses.end());
+      plan_.poses.insert(plan_.poses.end(), plan.response.plan.poses.begin()+smoother+1, plan.response.plan.poses.end());
+
+      // Create response in plan_frame_id_
+      res.plan.header.frame_id = plan_frame_id_;
+      for (unsigned int i=0; i<plan_.poses.size(); ++i) { 
+        try {
+          geometry_msgs::PoseStamped p;
+          tfl_.waitForTransform("/map", plan_frame_id_, ros::Time::now(), ros::Duration(0.5));
+          tfl_.transformPose(plan_frame_id_, plan_.poses[i], p);
+          p.header.frame_id = plan_frame_id_;
+          res.plan.poses.push_back(p);
+        } catch (tf::TransformException ex) {
+          ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
+          return false;
+        }
+      }
+      
       pushing_plan_pub_.publish(res.plan);
       return true;
     }
   } else {
-    ROS_ERROR("failed to call service /move_base/make_plan");
+    ROS_ERROR("%s: call to service [/move_base/make_plan] failed.", node_name_.c_str());
+    return false;
   }
 }
 
