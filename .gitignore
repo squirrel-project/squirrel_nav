@@ -75,3 +75,4 @@ qtcreator-*
 .svn/
 # don't update the map files
 squirrel_navigation/maps/test_maps
+squirrel_pushing_planner/src/TestService.cpp
