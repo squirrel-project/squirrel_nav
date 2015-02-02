@@ -73,3 +73,4 @@ qtcreator-*
 CATKIN_IGNORE
 #SVN
 .svn/
+squirrel_navigation/maps/test_maps
