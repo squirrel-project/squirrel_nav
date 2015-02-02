@@ -295,10 +295,19 @@ void ObstaclesLayer::updateOrigin(double new_origin_x, double new_origin_y)
 
 void ObstaclesLayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j )
 {
-  boost::unique_lock < boost::shared_mutex > lock(*access_);
   if ( !enabled_ ) {
     return;
   }
+
+  footprint_layer_.updateCosts(*this, min_i, min_j, max_i, max_j);
+
+  if(combination_method_==0) {
+    updateWithOverwrite(master_grid, min_i, min_j, max_i, max_j);
+  } else {
+    updateWithMax(master_grid, min_i, min_j, max_i, max_j);
+  }
+  
+  boost::unique_lock < boost::shared_mutex > lock(*access_);
 
   //make sure the inflation queue is empty at the beginning of the cycle (should always be true)
   ROS_ASSERT_MSG(inflation_queue_.empty(), "The inflation queue must be empty at the beginning of inflation");
