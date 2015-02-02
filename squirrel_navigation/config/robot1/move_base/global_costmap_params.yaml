@@ -8,13 +8,12 @@
 # Code:
 
 global_costmap: {
-  robot_radius: 0.16,
   global_frame: /map,
   robot_base_frame: /base_link,
   update_frequency: 5.0,
   static_map: true,
   static_layer/enabled: true,
-  ostacles_layer/enabled: true,
+  obstacles_layer/enabled: true,
 }
 
 #

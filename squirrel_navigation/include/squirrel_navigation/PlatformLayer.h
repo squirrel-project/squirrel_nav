@@ -1,6 +1,6 @@
- // ObstaclesLayer.h --- 
+ // PlatformLayer.h --- 
 // 
-// Filename: ObstaclesLayer.h
+// Filename: PlatformLayer.h
 // Description: Dynamic mapping of obstacles with RGBD
 //              and Laser sensors
 // Author: Federico Boniardi
@@ -118,11 +118,11 @@ inline bool operator<(const CellData &a, const CellData &b)
   return a.distance_ > b.distance_;
 }
 
-class ObstaclesLayer : public costmap_2d::ObstacleLayer
+class PlatformLayer : public costmap_2d::ObstacleLayer
 {
 public:
-  ObstaclesLayer( void );
-  virtual ~ObstaclesLayer( void );
+  PlatformLayer( void );
+  virtual ~PlatformLayer( void );
   virtual void onInitialize( void );
   virtual void updateBounds( double, double, double, double*, double*, double*, double* );
   virtual void updateCosts( costmap_2d::Costmap2D&, int, int, int, int );
@@ -265,4 +265,4 @@ private:
 #endif  // SQUIRREL_NAVIGATION_OBSTACLESLAYER_H_
 
 // 
-// ObstaclesLayer.h ends here
+// PlatformLayer.h ends here

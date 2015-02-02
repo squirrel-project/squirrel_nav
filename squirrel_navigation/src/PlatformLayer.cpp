@@ -1,6 +1,6 @@
-// ObstaclesLayer.cpp --- 
+// PlatformLayer.cpp --- 
 // 
-// Filename: ObstaclesLayer.cpp
+// Filename: PlatformLayer.cpp
 // Description: Dynamic mapping of obstacles with RGBD
 //              and Laser sensors
 // Author: Federico Boniardi
@@ -65,18 +65,18 @@
 
 // Code:
 
-#include <squirrel_navigation/ObstaclesLayer.h>
+#include <squirrel_navigation/PlatformLayer.h>
 
 #include <pluginlib/class_list_macros.h>
 #include <pcl_conversions/pcl_conversions.h>
 
 #define VOXEL_BITS 16
 
-PLUGINLIB_EXPORT_CLASS(squirrel_navigation::ObstaclesLayer, costmap_2d::Layer)
+PLUGINLIB_EXPORT_CLASS(squirrel_navigation::PlatformLayer, costmap_2d::Layer)
 
 namespace squirrel_navigation {
 
-ObstaclesLayer::ObstaclesLayer( void ) :
+PlatformLayer::PlatformLayer( void ) :
     voxel_grid_(0, 0, 0),
     robot_diameter_(0.5),
     robot_height_(1.0),
@@ -93,7 +93,7 @@ ObstaclesLayer::ObstaclesLayer( void ) :
   costmap_ = NULL;
 }
 
-ObstaclesLayer::~ObstaclesLayer( void )
+PlatformLayer::~PlatformLayer( void )
 {
   if ( obst_dsrv_ ) {
     delete obst_dsrv_;
@@ -104,7 +104,7 @@ ObstaclesLayer::~ObstaclesLayer( void )
   }
 }
 
-void ObstaclesLayer::onInitialize( void )
+void PlatformLayer::onInitialize( void )
 {
   ros::NodeHandle private_nh("~/" + name_), g_nh;
 
@@ -115,7 +115,7 @@ void ObstaclesLayer::onInitialize( void )
     need_reinflation_ = false;
 
     dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig>::CallbackType cb = boost::bind(
-        &ObstaclesLayer::inflationReconfigureCB, this, _1, _2);
+        &PlatformLayer::inflationReconfigureCB, this, _1, _2);
 
     if ( infl_dsrv_ != NULL ) {
       infl_dsrv_->clearCallback();
@@ -145,7 +145,7 @@ void ObstaclesLayer::onInitialize( void )
   inflationMatchSize();
 }
 
-void ObstaclesLayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
+void PlatformLayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
                                    double* min_x, double* min_y, double* max_x, double* max_y )
 {
   if ( rolling_window_ ) {
@@ -248,7 +248,7 @@ void ObstaclesLayer::updateBounds( double robot_x, double robot_y, double robot_
 
 }
 
-void ObstaclesLayer::updateOrigin(double new_origin_x, double new_origin_y)
+void PlatformLayer::updateOrigin(double new_origin_x, double new_origin_y)
 {
   int cell_ox, cell_oy;
   cell_ox = int((new_origin_x - origin_x_) / resolution_);
@@ -293,7 +293,7 @@ void ObstaclesLayer::updateOrigin(double new_origin_x, double new_origin_y)
   delete[] local_voxel_map;
 }
 
-void ObstaclesLayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j )
+void PlatformLayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j )
 {
   if ( !enabled_ ) {
     return;
@@ -372,19 +372,19 @@ void ObstaclesLayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i,
   }
 }
 
-bool ObstaclesLayer::isDiscretized( void )
+bool PlatformLayer::isDiscretized( void )
 {
   return true;
 }
 
-void ObstaclesLayer::obstaclesMatchSize( void )
+void PlatformLayer::obstaclesMatchSize( void )
 {
   costmap_2d::ObstacleLayer::matchSize();
   voxel_grid_.resize(size_x_, size_y_, size_z_);
   ROS_ASSERT(voxel_grid_.sizeX() == size_x_ && voxel_grid_.sizeY() == size_y_);
 }
 
-void ObstaclesLayer::inflationMatchSize( void )
+void PlatformLayer::inflationMatchSize( void )
 {
   boost::unique_lock < boost::shared_mutex > lock(*access_);
   costmap_2d::Costmap2D* costmap = layered_costmap_->getCostmap();
@@ -399,7 +399,7 @@ void ObstaclesLayer::inflationMatchSize( void )
   seen_ = new bool[size_x * size_y]; 
 }
 
-void ObstaclesLayer::reset( void )
+void PlatformLayer::reset( void )
 {
   deactivate();
   resetMaps();
@@ -407,21 +407,21 @@ void ObstaclesLayer::reset( void )
   activate();
 }
 
-void ObstaclesLayer::setupDynamicReconfigure( ros::NodeHandle& nh )
+void PlatformLayer::setupDynamicReconfigure( ros::NodeHandle& nh )
 {
   obst_dsrv_ = new dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig>(nh);
   dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig>::CallbackType cb = boost::bind(
-      &ObstaclesLayer::obstaclesReconfigureCB, this, _1, _2);
+      &PlatformLayer::obstaclesReconfigureCB, this, _1, _2);
   obst_dsrv_->setCallback(cb);
 }
 
-void ObstaclesLayer::resetMaps( void )
+void PlatformLayer::resetMaps( void )
 {
   costmap_2d::Costmap2D::resetMaps();
   voxel_grid_.reset();
 }
 
-void ObstaclesLayer::obstaclesReconfigureCB( costmap_2d::VoxelPluginConfig &config, uint32_t level )
+void PlatformLayer::obstaclesReconfigureCB( costmap_2d::VoxelPluginConfig &config, uint32_t level )
 {
   enabled_ = config.enabled;
   max_obstacle_height_ = config.max_obstacle_height;
@@ -434,10 +434,11 @@ void ObstaclesLayer::obstaclesReconfigureCB( costmap_2d::VoxelPluginConfig &conf
   obstaclesMatchSize();
 }
 
-void ObstaclesLayer::inflationReconfigureCB( costmap_2d::InflationPluginConfig &config, uint32_t leve )
+void PlatformLayer::inflationReconfigureCB( costmap_2d::InflationPluginConfig &config, uint32_t leve )
 {
   if ( weight_ != config.cost_scaling_factor || inflation_radius_ != config.inflation_radius ) {
     inflation_radius_ = config.inflation_radius;
+    ROS_INFO("inflation_radius: %f", inflation_radius_);
     cell_inflation_radius_ = cellDistance(inflation_radius_);
     weight_ = config.cost_scaling_factor;
     need_reinflation_ = true;
@@ -450,7 +451,7 @@ void ObstaclesLayer::inflationReconfigureCB( costmap_2d::InflationPluginConfig &
   }
 }
 
-void ObstaclesLayer::clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info)
+void PlatformLayer::clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info)
 {
   unsigned int mx, my;
   if (!worldToMap(wx, wy, mx, my)) {
@@ -492,7 +493,7 @@ void ObstaclesLayer::clearNonLethal(double wx, double wy, double w_size_x, doubl
   }
 }
 
-void ObstaclesLayer::raytraceFreespace(const costmap_2d::Observation& clearing_observation,
+void PlatformLayer::raytraceFreespace(const costmap_2d::Observation& clearing_observation,
                                        double* min_x, double* min_y, double* max_x, double* max_y)
 {
   if (clearing_observation.cloud_->points.size() == 0) {
@@ -571,7 +572,7 @@ void ObstaclesLayer::raytraceFreespace(const costmap_2d::Observation& clearing_o
   }
 }
 
-inline void ObstaclesLayer::enqueue( unsigned char* grid, unsigned int index, unsigned int mx, unsigned int my,
+inline void PlatformLayer::enqueue( unsigned char* grid, unsigned int index, unsigned int mx, unsigned int my,
                                      unsigned int src_x, unsigned int src_y )
 { 
   //set the cost of the cell being inserted
@@ -600,7 +601,7 @@ inline void ObstaclesLayer::enqueue( unsigned char* grid, unsigned int index, un
   }
 }
 
-void ObstaclesLayer::computeCaches( void )
+void PlatformLayer::computeCaches( void )
 {
   if ( cell_inflation_radius_ == 0 ) {
     return;
@@ -633,7 +634,7 @@ void ObstaclesLayer::computeCaches( void )
   }
 }
 
-void ObstaclesLayer::deleteKernels()
+void PlatformLayer::deleteKernels()
 {
   if ( cached_distances_ != NULL ) {
     for (unsigned int i = 0; i <= cached_cell_inflation_radius_ + 1; ++i) {
@@ -650,7 +651,7 @@ void ObstaclesLayer::deleteKernels()
   }
 }
 
-void ObstaclesLayer::onFootprintChanged( void )
+void PlatformLayer::onFootprintChanged( void )
 {
   inscribed_radius_ = layered_costmap_->getInscribedRadius();
   cell_inflation_radius_ = cellDistance( inflation_radius_ );
@@ -661,4 +662,4 @@ void ObstaclesLayer::onFootprintChanged( void )
 }  // namespace squirrel_navigation
 
 // 
-// ObstaclesLayer.cpp ends here
+// PlatformLayer.cpp ends here
