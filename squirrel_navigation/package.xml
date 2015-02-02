@@ -65,6 +65,6 @@
   <!-- Export the plugins -->
   <export>
     <nav_core plugin="${prefix}/SquirrelLocalPlanner.xml"/>
-    <costmap_2d plugin="${prefix}/SquirrelObstaclesLayer.xml"/>
+    <costmap_2d plugin="${prefix}/SquirrelCostmapLayers.xml"/>
   </export>
 </package>

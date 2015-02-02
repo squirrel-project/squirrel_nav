@@ -4,7 +4,6 @@ project(squirrel_navigation)
 ## Dependencies
 set(squirrel_navigation_DEPENDENCIES
   actionlib
-  # cmake_modules
   costmap_2d
   dynamic_reconfigure
   geometry_msgs
@@ -36,6 +35,11 @@ find_package(catkin REQUIRED
   COMPONENTS
   ${squirrel_navigation_DEPENDENCIES}
 )
+
+generate_dynamic_reconfigure_options(
+  cfg/ObstaclesLayerPlugin.cfg
+)
+
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES sqiurrel_local_planner squirrel_obstacles_layer
@@ -59,6 +63,10 @@ add_library(squirrel_local_planner
 
 add_library(squirrel_obstacles_layer
   src/ObstaclesLayer.cpp
+)
+
+add_dependencies(squirrel_obstacles_layer
+  ${PROJECT_NAME}_gencfg
 )
 
 target_link_libraries(squirrel_obstacles_layer

@@ -13,7 +13,8 @@ global_costmap: {
   update_frequency: 5.0,
   static_map: true,
   static_layer/enabled: true,
-  obstacles_layer/enabled: true,
+  platform_layer/enabled: true,
+  tower_layer/enabled: true,
 }
 
 #

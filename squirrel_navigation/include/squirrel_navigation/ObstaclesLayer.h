@@ -1,6 +1,6 @@
- // PlatformLayer.h --- 
+// ObstaclesLayer.h --- 
 // 
-// Filename: PlatformLayer.h
+// Filename: ObstaclesLayer.h
 // Description: Dynamic mapping of obstacles with RGBD
 //              and Laser sensors
 // Author: Federico Boniardi
@@ -83,10 +83,10 @@
 #include <tf/message_filter.h>
 #include <message_filters/subscriber.h>
 #include <dynamic_reconfigure/server.h>
-#include <costmap_2d/VoxelPluginConfig.h>
 #include <costmap_2d/obstacle_layer.h>
 #include <voxel_grid/voxel_grid.h>
-#include <costmap_2d/InflationPluginConfig.h>
+
+#include "squirrel_navigation/ObstaclesLayerPluginConfig.h"
 
 #include <map>
 #include <cmath>
@@ -118,11 +118,11 @@ inline bool operator<(const CellData &a, const CellData &b)
   return a.distance_ > b.distance_;
 }
 
-class PlatformLayer : public costmap_2d::ObstacleLayer
+class ObstaclesLayer : public costmap_2d::ObstacleLayer
 {
 public:
-  PlatformLayer( void );
-  virtual ~PlatformLayer( void );
+  ObstaclesLayer( void );
+  virtual ~ObstaclesLayer( void );
   virtual void onInitialize( void );
   virtual void updateBounds( double, double, double, double*, double*, double*, double* );
   virtual void updateCosts( costmap_2d::Costmap2D&, int, int, int, int );
@@ -155,8 +155,7 @@ public:
   boost::shared_mutex* access_;
   
 private:
-  void inflationReconfigureCB( costmap_2d::InflationPluginConfig&, uint32_t );
-  void obstaclesReconfigureCB( costmap_2d::VoxelPluginConfig& , uint32_t );
+  void reconfigureCB( ObstaclesLayerPluginConfig&, uint32_t );
   void clearNonLethal( double, double, double, double, bool );
   virtual void raytraceFreespace( const costmap_2d::Observation&, double*, double*, double*, double* );
 
@@ -231,9 +230,7 @@ private:
     return std::sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0) + (z1-z0)*(z1-z0));
   }
 
-  dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig> *obst_dsrv_;
-  dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig> *infl_dsrv_;
-  
+  dynamic_reconfigure::Server<ObstaclesLayerPluginConfig> *dsrv_;
   
   // time based costmap layer
   std::map<unsigned int, ros::Time> clearing_index_stamped_;
@@ -245,8 +242,8 @@ private:
   ros::Publisher clearing_endpoints_pub_;
   sensor_msgs::PointCloud clearing_endpoints_;
   
-  double robot_diameter_, robot_height_, platform_height_, tower_diameter_;
-  double floor_threshold_,  obstacles_persistence_;
+  double robot_link_radius_;
+  double max_obstacle_height_, min_obstacle_height_,  obstacles_persistence_;
   double inflation_radius_, inscribed_radius_, weight_;
   unsigned int cell_inflation_radius_, cached_cell_inflation_radius_;
 
@@ -265,4 +262,4 @@ private:
 #endif  // SQUIRREL_NAVIGATION_OBSTACLESLAYER_H_
 
 // 
-// PlatformLayer.h ends here
+// ObstaclesLayer.h ends here
