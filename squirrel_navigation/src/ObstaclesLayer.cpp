@@ -70,8 +70,6 @@
 #include <pluginlib/class_list_macros.h>
 #include <pcl_conversions/pcl_conversions.h>
 
-#include <set>
-
 #define VOXEL_BITS 16
 
 PLUGINLIB_EXPORT_CLASS(squirrel_navigation::ObstaclesLayer, costmap_2d::Layer)
@@ -218,7 +216,8 @@ void ObstaclesLayer::updateBounds( double robot_x, double robot_y, double robot_
       }
 
       unsigned int index = getIndex(mx, my);
-      index_free_space.insert(index); 
+      index_free_space.insert(index);
+      obstacles_index_.erase(index);
 
       if ( cloud.points[i].z > floor_threshold_ ) {
         clearing_index_stamped_[index] = now;
@@ -227,6 +226,7 @@ void ObstaclesLayer::updateBounds( double robot_x, double robot_y, double robot_
       
       if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {
         costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
+        obstacles_index_.insert(index);
         touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
       }
     }
@@ -331,14 +331,12 @@ void ObstaclesLayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i,
   max_i = std::min( int( size_x  ), max_i );
   max_j = std::min( int( size_y  ), max_j );
 
-  for (int j = min_j; j < max_j; j++)
-  {
-    for (int i = min_i; i < max_i; i++)
-    {
+  for (int j = min_j; j < max_j; j++) {
+    for (int i = min_i; i < max_i; i++) {
       int index = master_grid.getIndex(i, j);
       unsigned char cost = master_array[index];
-      if (cost == costmap_2d::LETHAL_OBSTACLE)
-      {
+      bool is_obstacle = obstacles_index_.find(index) != obstacles_index_.end();
+      if ( cost == costmap_2d::LETHAL_OBSTACLE && is_obstacle ) {
         enqueue(master_array, index, i, j, i, j);
       }
     }

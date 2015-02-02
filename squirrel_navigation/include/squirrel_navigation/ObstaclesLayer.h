@@ -90,6 +90,7 @@
 
 #include <map>
 #include <cmath>
+#include <set>
 #include <queue>
 
 namespace squirrel_navigation {
@@ -255,6 +256,8 @@ private:
 
   unsigned char **cached_costs_;
   double **cached_distances_;
+
+  std::set<unsigned int> obstacles_index_;
 };
 
 }  // namespace squirrel_navigation
