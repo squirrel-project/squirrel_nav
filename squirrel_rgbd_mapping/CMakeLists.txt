@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 2.4.6)
 
-if ("${ROS_PARALLEL_JOBS}" EQUAL "")
-  set(ROS_PARALLEL_JOBS 1)
-endif ("${ROS_PARALLEL_JOBS}" EQUAL "")
+if(COMMAND cmake_policy)
+  cmake_policy(SET CMP0003 NEW)
+endif(COMMAND cmake_policy)
+
 # #set the default path for built executables to the "bin" directory
 # set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 # #set the default path for built libraries to the "lib" directory
@@ -17,31 +18,34 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake-mo
 
 project(squirrel_rgbd_mapping)
 
-find_package(catkin REQUIRED COMPONENTS 
-  pcl_conversions pcl_ros 
-  roscpp image_transport 
-  cv_bridge 
+
+set(catkin_RUN_PACKAGES 
+  roscpp
+  std_msgs 
   sensor_msgs 
   geometry_msgs 
-  visualization_msgs 
-  std_msgs 
-  tf 
-  message_generation 
-  message_filters 
+  visualization_msgs
+  squirrel_rgbd_mapping_msgs
+  pcl_ros # will automatically pull in all PCL dependecies
+  pcl_conversions
   rosbag 
   rosconsole
+  message_filters
+  cv_bridge
+  image_transport 
+  tf  
 )
 
-# add_service_files(DIRECTORY srv FILES rgbdslam_ros_ui.srv rgbdslam_ros_ui_b.srv rgbdslam_ros_ui_f.srv rgbdslam_ros_ui_s.srv) 
-
-# generate_messages()
-
-catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES my_pcl_tutorial
-  CATKIN_DEPENDS pcl_conversions pcl_ros roscpp sensor_msgs message_runtime std_msgs squirrel_rgbd_mapping_msgs
-#  DEPENDS message_runtime std_msgs 
+set(catkin_BUILD_PACKAGES 
+	${catkin_RUN_PACKAGES}
+	cmake_modules # Eigen
 )
+
+find_package(catkin REQUIRED COMPONENTS 
+  ${catkin_BUILD_PACKAGES}
+)
+
+
 
 include_directories(
   include
@@ -60,10 +64,11 @@ link_libraries(rgbdslam
 # Required 3rd party
 ####################################################
 # PCL #######################
-find_package(PCL 1.7 REQUIRED COMPONENTS common io)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
+# used pcl_ros above
+#find_package(PCL 1.7 REQUIRED COMPONENTS common io)
+#include_directories(${PCL_INCLUDE_DIRS})
+#link_directories(${PCL_LIBRARY_DIRS})
+#add_definitions(${PCL_DEFINITIONS})
 
 # Octomap ###################
 find_package(octomap 1.6 REQUIRED)
@@ -76,7 +81,7 @@ find_package(G2O REQUIRED)
 include_directories(${G2O_INCLUDE_DIRS})
 link_directories(${G2O_LIBRARY_DIRS})
 link_libraries(${G2O_LIBRARIES})
-message("G2o-libraries "${G2O_LIBRARIES})
+message("G2o-libraries " ${G2O_LIBRARIES})
 
 # Qt ########################
 # http://qtnode.net/wiki/Qt4_with_cmake
@@ -113,12 +118,20 @@ find_package(OpenCV)
 include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${OpenCV_LIBRARY_DIRS})
 
+
 #############################
 # Eigen ####################
 #############################
-find_package(Eigen)
+find_package(Eigen REQUIRED)
 include_directories(${EIGEN_INCLUDE_DIRS})
 add_definitions(${EIGEN_DEFINITIONS})
+
+#############################
+# Suitesparse ####################
+#############################
+find_package(SuiteSparse REQUIRED)
+include_directories(${CSPARSE_INCLUDE_DIR})
+link_directories(${CSPARSE_LIBRARY})
 
 ##############################################################################
 # Some QT Magic (MOC Creation)
@@ -150,8 +163,13 @@ endif (${USE_SIFT_GPU})
 
 file(GLOB_RECURSE QT_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} FOLLOW_SYMLINKS)
 
-include_directories(
-  /usr/include/suitesparse/
+
+
+catkin_package(
+  INCLUDE_DIRS include
+#  LIBRARIES 
+  CATKIN_DEPENDS ${catkin_RUN_PACKAGES}
+  DEPENDS Eigen OpenCV G2O glut libglew-dev SuiteSparse
 )
 
 ##############################################################################
@@ -172,11 +190,13 @@ add_dependencies(rgbdslam rgbdslam_gencpp)
 #SET(G2O_LIBS ${G2O_LIBRARIES} cholmod cxsparse)
 #SET(LIBS_LINK GL GLU -lgl2ps ${G2O_LIBS} ${QT_LIBRARIES} ${QT_QTOPENGL_LIBRARY} ${GLUT_LIBRARY} ${OPENGL_LIBRARY} ${OpenCV_LIBS})
 #Use specific version of cxsparse, to avoid linker warning about possible conflicts between versions 2.2.3 (linked from g2o) and 3.1.0
-SET(LIBS_LINK GL GLU cholmod /usr/lib/libcxsparse.so.2.2.3 ${G2O_LIBRARIES} ${QT_LIBRARIES} ${QT_QTOPENGL_LIBRARY} ${GLUT_LIBRARY} ${OPENGL_LIBRARY} ${OpenCV_LIBS})
+#SET(LIBS_LINK GL GLU cholmod /usr/lib/libcxsparse.so.2.2.3 ${G2O_LIBRARIES} ${QT_LIBRARIES} ${QT_QTOPENGL_LIBRARY} ${GLUT_LIBRARY} ${OPENGL_LIBRARY} ${OpenCV_LIBS})
+SET(LIBS_LINK GL GLU cholmod cxsparse ${G2O_LIBRARIES} ${QT_LIBRARIES} ${QT_QTOPENGL_LIBRARY} ${GLUT_LIBRARY} ${OPENGL_LIBRARY} ${OpenCV_LIBS})
+
 #-lboost_signals -lrt -loctomap -loctomap_server -loctomath)
 
 #link libraries
-target_link_libraries(rgbdslam ${LIBS_LINK}  ${catkin_LIBRARIES})
+target_link_libraries(rgbdslam opencv_nonfree ${LIBS_LINK}  ${catkin_LIBRARIES}  )
 
 ###############################################################################
 ## Bag Viewer

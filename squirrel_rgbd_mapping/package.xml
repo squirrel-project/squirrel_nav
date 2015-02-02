@@ -29,43 +29,57 @@
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>pcl_conversions</build_depend>
-  <build_depend>pcl_ros</build_depend>
+  <build_depend>cmake_modules</build_depend>
   <build_depend>roscpp</build_depend>
+  <build_depend>std_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <build_depend>octomap</build_depend>
   <build_depend>visualization_msgs</build_depend>
+  <build_depend>squirrel_rgbd_mapping_msgs</build_depend>
+  <build_depend>pcl_conversions</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <build_depend>rosbag</build_depend>
   <build_depend>rosconsole</build_depend>
+  <build_depend>octomap</build_depend>
   <build_depend>message_filters</build_depend>
   <build_depend>cv_bridge</build_depend>
-  <!-- own stuff -->
-  <build_depend>libpcl-all-dev</build_depend>
-  <build_depend>tf</build_depend>
-  <build_depend>libg2o</build_depend>
-  <build_depend>message_generation</build_depend>
   <build_depend>image_transport</build_depend>
-  <build_depend>rosbag</build_depend>
+  <build_depend>tf</build_depend>
+  <!-- own stuff -->
+  <build_depend>eigen</build_depend>
+  <build_depend>libopencv-dev</build_depend>
+  <build_depend>libg2o</build_depend>
   <build_depend>glut</build_depend>
   <build_depend>libglew-dev</build_depend>
+  <build_depend>suitesparse</build_depend>
+  <build_depend>libqt4</build_depend>
+  <build_depend>squirrel_rgbd_mapping_msgs</build_depend>
 
-  <run_depend>cv_bridge</run_depend>
-  <run_depend>rosconsole</run_depend>
-  <run_depend>pcl_conversions</run_depend>
-  <run_depend>pcl_ros</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>sensor_msgs</run_depend>
-  <run_depend>octomap</run_depend>
+  <run_depend>geometry_msgs</run_depend>
   <run_depend>visualization_msgs</run_depend>
-  <run_depend>rosbag</run_depend>
-  <run_depend>cv_bridge</run_depend>
-  <run_depend>libpcl-all</run_depend>
-  <run_depend>tf</run_depend>
-  <run_depend>libg2o</run_depend>
-  <run_depend>message_runtime</run_depend>
   <run_depend>squirrel_rgbd_mapping_msgs</run_depend>
+  <run_depend>pcl_conversions</run_depend>
+  <run_depend>pcl_ros</run_depend>
+  <run_depend>rosbag</run_depend>
+  <run_depend>rosconsole</run_depend>
+  <run_depend>octomap</run_depend>
+  <run_depend>message_filters</run_depend>
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>image_transport</run_depend>
+  <run_depend>tf</run_depend>
+  <!-- own stuff -->
+  <run_depend>eigen</run_depend>
+  <run_depend>libopencv-dev</run_depend>
+  <run_depend>libg2o</run_depend>
+  <run_depend>glut</run_depend>
+  <run_depend>libglew-dev</run_depend>
+  <run_depend>suitesparse</run_depend>
+  <run_depend>libqt4</run_depend>
+  <run_depend>squirrel_rgbd_mapping_msgs</run_depend>
+ 
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

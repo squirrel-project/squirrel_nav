@@ -1,5 +1,6 @@
 navigation
 ==========
+[![Build Status](https://magnum.travis-ci.com/squirrel-project/navigation.svg?token=3yXoCRsCegowgzzpPuqw)](https://magnum.travis-ci.com/squirrel-project/navigation)
 
 Repository for navigation related SQUIRREL packages.
 
@@ -87,7 +88,6 @@ rosrun octomap_server octomap_saver -f [octomap_name.ot]
 
 The 3D Octomap should now have been stored in *octomap_name.ot*.
 
-
 ### Visualising the 3D Octomap
 
 To visualise the octomap, `octovis` is required. 
@@ -95,4 +95,3 @@ To visualise the octomap, `octovis` is required.
 `sudo apt-get install ros-hydro-octovis` to install it and 
 `octovis octomap_name.ot` to show the 3D Octomap.
 
-##TODO: Using RGBD-SLAM to create an 3D OCTOMAP

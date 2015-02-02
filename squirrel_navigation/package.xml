@@ -1,11 +1,17 @@
 <package>
   <name>squirrel_navigation</name>
+  
   <version>1.11.6</version>
+  
   <description>
-    squirrel_navigation, autonomous navigation using move_base
+    squirrel_navigation, autonomous navigation for SQUIRREL project
   </description>
+  
   <author>Armin Hornung</author>
-  <maintainer email="hornunga@cs.uni-freiburg.de">Armin Hornung</maintainer>
+  <author>Federico Boniardi</author>
+  
+  <maintainer email="boniardi@cs.uni-freiburg.de">Federico Boniardi</maintainer>
+  
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>

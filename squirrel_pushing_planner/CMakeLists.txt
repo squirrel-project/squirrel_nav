@@ -8,6 +8,8 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   nav_msgs
   roscpp
+  squirrel_rgbd_mapping_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -82,7 +84,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
  INCLUDE_DIRS include
 # LIBRARIES squirrel_pushing_planner
- CATKIN_DEPENDS geometry_msgs nav_msgs roscpp
+ CATKIN_DEPENDS geometry_msgs nav_msgs roscpp squirrel_rgbd_mapping_msgs tf
 #  DEPENDS system_lib
 )
 
@@ -109,9 +111,12 @@ add_executable(pushing_planner_node
   src/PushingPlannerNode.cpp
 )
 
+add_dependencies(pushing_planner_node 
+  squirrel_rgbd_mapping_msgs_generate_messages_cpp  
+)
+
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(pushing_planner_node squirrel_rgbd_mapping_msgs_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(pushing_planner_node
@@ -123,18 +128,18 @@ target_link_libraries(pushing_planner_node
 #############
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS pushing_planner_node
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(TARGETS pushing_planner_node
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".git" EXCLUDE
-# )
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".git" EXCLUDE
+)
 
 #############
 ## Testing ##

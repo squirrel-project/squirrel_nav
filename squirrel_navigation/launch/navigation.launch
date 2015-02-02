@@ -11,7 +11,6 @@
   </include>
   
   <!--- Run AMCL -->
-  <!-- <include file="$(find amcl)/examples/amcl_omni.launch" /> -->
   <node pkg="amcl" type="amcl" name="amcl" output="screen">
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/amcl/amcl_params.yaml" command="load"/>
   </node>
@@ -19,7 +18,7 @@
   <!-- Run pointcloud_filter_node: filter the PointCloud to speed up planning -->
   <node pkg="squirrel_navigation" type="pointcloud_filter_node" name="pointcloud_filter" 
 	output="screen" respawn="true">
-    <param name="pointcloud_in" value="/camera/depth/points" />
+    <param name="pointcloud_in" value="/kinect/depth/points" />
     <param name="pointcloud_out" value="/rgbdscan" />
     <param name="pointcloud_size" value="5000" />
   </node>
@@ -43,20 +42,18 @@
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/global_costmap_params.yaml" command="load" />
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/base_local_planner_params.yaml" command="load" />
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/move_base_params.yaml" command="load" />
-    <!-- <param name="base_local_planner" value="squirrel_navigation/LocalPlanner" /> -->
-    <!-- <param name="controller_frequency" value="10.0" /> -->
-    <!-- <param name="planner_frequency" value="1.5" /> -->
   </node>
 
   <!-- Run the octomap server and the 3d collision check -->
   <include file="$(find squirrel_3d_mapping)/launch/3d_mapping.launch" if="$(arg 3d_mapping)"/>
 
   <!-- Run the planner for pushing task -->
-  <node pkg="squirrel_pushing_planner" type="pushing_planner_node" name="pushing_planner"
-  	output="screen" respawn="false">
-    <param name="tolerance" value="0.05" />
-    <param name="robot_radius" value="0.22" />
-  </node>
+  <include file="$(find squirrel_pushing_planner)/launch/pushing_planner.launch">
+    <arg name="tolerance" value="0.05" />
+    <arg name="robot_radius" value="0.22" />
+    <arg name="start_goal_frame_id" value="/map" />
+    <arg name="plan_frame_id" value="/odom" />
+  </include>
 
   <!-- Run rviz -->
   <include file="$(find squirrel_navigation)/launch/rviz.launch" if="$(arg rviz)">

@@ -67,7 +67,7 @@
 #include <octomap/OcTreeKey.h>
 
 #include "squirrel_3d_mapping/DynamicEDTOctomap.h"
-#include "squirrel_3d_mapping/CheckCollision.h"
+#include "squirrel_3d_mapping_msgs/CheckCollision.h"
 
 namespace squirrel_3d_mapping {
 
@@ -116,7 +116,7 @@ protected:
   void publishBinaryOctoMap(const ros::Time& rostime = ros::Time::now()) const;
   void publishFullOctoMap(const ros::Time& rostime = ros::Time::now()) const;
   void publishAll(const ros::Time& rostime = ros::Time::now());
-  bool checkCollision(CheckCollision::Request&, CheckCollision::Response&);
+  bool checkCollision(squirrel_3d_mapping_msgs::CheckCollision::Request&, squirrel_3d_mapping_msgs::CheckCollision::Response&);
   
   /**
   * @brief update occupancy map with a scan labeled as ground and nonground.
