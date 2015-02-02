@@ -1,5 +1,5 @@
 <launch>
-  <arg name="rviz" default="false" />
+  <arg name="rviz" default="true" />
   <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
   <arg name="robot_id" default="robot1" />
   <arg name="autolocalization" default="false"/>
