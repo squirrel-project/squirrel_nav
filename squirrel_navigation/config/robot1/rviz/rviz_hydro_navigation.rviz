@@ -148,7 +148,7 @@ Visualization Manager:
       Max Color: 255; 255; 255
       Max Intensity: 999999
       Min Color: 0; 0; 0
-      Min Intensity: -3.95601e-34
+      Min Intensity: 5.04467e-44
       Name: LaserScan
       Position Transformer: XYZ
       Queue Size: 10
@@ -173,7 +173,7 @@ Visualization Manager:
       Color: 25; 255; 0
       Enabled: true
       Name: Path
-      Topic: /move_base/TrajectoryPlannerROS/global_plan
+      Topic: /move_base/NavfnROS/plan
       Value: true
     - Alpha: 0.7
       Class: rviz/Map
@@ -181,7 +181,7 @@ Visualization Manager:
       Draw Behind: true
       Enabled: true
       Name: Map
-      Topic: /move_base/local_costmap/costmap
+      Topic: /move_base/global_costmap/costmap
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true

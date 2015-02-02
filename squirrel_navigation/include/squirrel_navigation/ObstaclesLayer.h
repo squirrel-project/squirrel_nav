@@ -86,11 +86,36 @@
 #include <costmap_2d/VoxelPluginConfig.h>
 #include <costmap_2d/obstacle_layer.h>
 #include <voxel_grid/voxel_grid.h>
+#include <costmap_2d/InflationPluginConfig.h>
 
 #include <map>
 #include <cmath>
+#include <queue>
 
 namespace squirrel_navigation {
+
+class CellData
+{
+ public:
+  CellData(double d, double i, unsigned int x, unsigned int y, unsigned int sx, unsigned int sy) :
+      distance_(d),
+      index_(i),
+      x_(x),
+      y_(y),
+      src_x_(sx),
+      src_y_(sy)
+  {}
+  
+  double distance_;
+  unsigned int index_;
+  unsigned int x_, y_;
+  unsigned int src_x_, src_y_;
+};
+
+inline bool operator<(const CellData &a, const CellData &b)
+{
+  return a.distance_ > b.distance_;
+}
 
 class ObstaclesLayer : public costmap_2d::ObstacleLayer
 {
@@ -99,35 +124,66 @@ public:
   virtual ~ObstaclesLayer( void );
   virtual void onInitialize( void );
   virtual void updateBounds( double, double, double, double*, double*, double*, double* );
+  virtual void updateCosts( costmap_2d::Costmap2D&, int, int, int, int );
   void updateOrigin( double, double );
   bool isDiscretized( void );
-  virtual void matchSize( void );
+  virtual void obstaclesMatchSize( void );
+  virtual void inflationMatchSize( void );
   virtual void reset( void );
 
-protected:
+  inline unsigned char computeCost( double distance ) const
+  {
+    unsigned char cost = 0;
+    if ( distance == 0 ) {
+      cost = costmap_2d::LETHAL_OBSTACLE;
+    } else if ( distance * resolution_ <= inscribed_radius_ ) {
+      cost = costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
+    } else {
+      double euclidean_distance = distance * resolution_;
+      double factor = exp(-1.0 * weight_ * (euclidean_distance - inscribed_radius_));
+      cost = (unsigned char)((costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
+    }
+    return cost;
+  }
+  
+ protected:
+  virtual void onFootprintChanged( void );
   virtual void setupDynamicReconfigure( ros::NodeHandle& );
   virtual void resetMaps( void );
 
+  boost::shared_mutex* access_;
+  
 private:
-  void reconfigureCB( costmap_2d::VoxelPluginConfig& , uint32_t );
+  void inflationReconfigureCB( costmap_2d::InflationPluginConfig&, uint32_t );
+  void obstaclesReconfigureCB( costmap_2d::VoxelPluginConfig& , uint32_t );
   void clearNonLethal( double, double, double, double, bool );
   virtual void raytraceFreespace( const costmap_2d::Observation&, double*, double*, double*, double* );
 
-  dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig> *dsrv_;
+  inline double distanceLookup( int mx, int my, int src_x, int src_y )
+  {
+    unsigned int dx = std::abs(mx - src_x);
+    unsigned int dy = std::abs(my - src_y);
+    return cached_distances_[dx][dy];
+  }
 
-  // time based costmap layer
-  std::map<unsigned int, ros::Time> clearing_index_stamped_;
+  inline unsigned char costLookup(int mx, int my, int src_x, int src_y)
+  {
+    unsigned int dx = abs(mx - src_x);
+    unsigned int dy = abs(my - src_y);
+    return cached_costs_[dx][dy];
+  }
   
-  ros::Publisher voxel_pub_;
-  voxel_grid::VoxelGrid voxel_grid_;
-  double z_resolution_, origin_z_;
-  unsigned int unknown_threshold_, mark_threshold_, size_z_;
-  ros::Publisher clearing_endpoints_pub_;
-  sensor_msgs::PointCloud clearing_endpoints_;
-  
-  double robot_diameter_, robot_height_, platform_height_, tower_diameter_;
-  double floor_threshold_,  obstacles_persistence_;
-  
+  void computeCaches( void );
+  void deleteKernels( void );
+  void inflate_area( int, int, int, int, unsigned char* );
+
+  unsigned int cellDistance( double world_dist )
+  {
+    return layered_costmap_->getCostmap()->cellDistance(world_dist);
+  }
+
+  inline void enqueue( unsigned char*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
+    
   inline bool worldToMap3DFloat( double wx, double wy, double wz, double& mx, double& my, double& mz )
   {
     if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_) {
@@ -173,6 +229,32 @@ private:
   {
     return std::sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0) + (z1-z0)*(z1-z0));
   }
+
+  dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig> *obst_dsrv_;
+  dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig> *infl_dsrv_;
+  
+  
+  // time based costmap layer
+  std::map<unsigned int, ros::Time> clearing_index_stamped_;
+  
+  ros::Publisher voxel_pub_;
+  voxel_grid::VoxelGrid voxel_grid_;
+  double z_resolution_, origin_z_;
+  unsigned int unknown_threshold_, mark_threshold_, size_z_;
+  ros::Publisher clearing_endpoints_pub_;
+  sensor_msgs::PointCloud clearing_endpoints_;
+  
+  double robot_diameter_, robot_height_, platform_height_, tower_diameter_;
+  double floor_threshold_,  obstacles_persistence_;
+  double inflation_radius_, inscribed_radius_, weight_;
+  unsigned int cell_inflation_radius_, cached_cell_inflation_radius_;
+
+  std::priority_queue<CellData> inflation_queue_;
+
+  bool *seen_, need_reinflation_;
+
+  unsigned char **cached_costs_;
+  double **cached_distances_;
 };
 
 }  // namespace squirrel_navigation

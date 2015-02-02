@@ -83,23 +83,53 @@ ObstaclesLayer::ObstaclesLayer( void ) :
     robot_diameter_(0.5),
     robot_height_(1.0),
     floor_threshold_(0.0),
-    obstacles_persistence_(60.0)
+    obstacles_persistence_(60.0),
+    inflation_radius_(0.0),
+    weight_(0.0),
+    cell_inflation_radius_(0),
+    cached_cell_inflation_radius_(0),
+    obst_dsrv_(NULL),
+    infl_dsrv_(NULL)
 {
+  access_ = new boost::shared_mutex();
   costmap_ = NULL;
 }
 
 ObstaclesLayer::~ObstaclesLayer( void )
 {
-  if( dsrv_ ) {
-    delete dsrv_;
+  if ( obst_dsrv_ ) {
+    delete obst_dsrv_;
+  }
+  
+  if ( infl_dsrv_ ) {
+    delete infl_dsrv_;
   }
 }
 
 void ObstaclesLayer::onInitialize( void )
 {
-  ObstacleLayer::onInitialize();
-  ros::NodeHandle private_nh("~/" + name_);
+  ros::NodeHandle private_nh("~/" + name_), g_nh;
 
+  {
+    boost::unique_lock < boost::shared_mutex > lock(*access_);
+    current_ = true;
+    seen_ = NULL;
+    need_reinflation_ = false;
+
+    dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig>::CallbackType cb = boost::bind(
+        &ObstaclesLayer::inflationReconfigureCB, this, _1, _2);
+
+    if ( infl_dsrv_ != NULL ) {
+      infl_dsrv_->clearCallback();
+      infl_dsrv_->setCallback(cb);
+    } else {
+      infl_dsrv_ = new dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig>(ros::NodeHandle("~/"+name_));
+      infl_dsrv_->setCallback(cb);
+    }
+  }
+
+  ObstacleLayer::onInitialize();
+ 
   private_nh.param("robot_diameter", robot_diameter_, 0.5);
   private_nh.param("robot_height", robot_height_, 1.0);
   private_nh.param("floor_threshold", floor_threshold_, 0.0);  
@@ -113,6 +143,8 @@ void ObstaclesLayer::onInitialize( void )
     std::string ns = ros::this_node::getNamespace();
     ROS_WARN("/%s: obstacle_persistance is chosen to be 0(s). Reset to 60.0(s). ", ns.c_str());
   } 
+
+  inflationMatchSize();
 }
 
 void ObstaclesLayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
@@ -193,32 +225,27 @@ void ObstaclesLayer::updateBounds( double robot_x, double robot_y, double robot_
         index_free_space.erase(index);
       }
       
-      if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {                
-        if ( cloud.points[i].z > platform_height_ ) {
-          int dx = 0.5*tower_diameter_/resolution_;
-          int dy = 0.5*tower_diameter_/resolution_;
-          for (int i=mx-dx; i<=mx+dx; ++i) {
-            for (int j=my-dy; j<=my+dy; ++j) {
-              unsigned int near_index = getIndex(i,j);
-              double dist = resolution_ * std::sqrt((double) (i-mx)*(i-mx)+(j-my)*(j-my));
-              if ( dist < 0.5*tower_diameter_ && costmap_[near_index] < costmap_2d::INSCRIBED_INFLATED_OBSTACLE ) {
-                costmap_[near_index] = costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
-              }
-            }
-          }
-        } else if ( cloud.points[i].z <= platform_height_ ) {
-          costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
-          touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
-        }
+      if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {
+        costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
+        touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
       }
     }
   }
-  
+
   for (std::set<unsigned int>::iterator i=index_free_space.begin(); i!=index_free_space.end(); ++i) {
     costmap_[*i] = costmap_2d::FREE_SPACE; 
   }
-  
+ 
   footprint_layer_.updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
+
+  if( need_reinflation_ ) {
+    *min_x = -std::numeric_limits<float>::max();
+    *min_y = -std::numeric_limits<float>::max();
+    *max_x = std::numeric_limits<float>::max();
+    *max_y = std::numeric_limits<float>::max();
+    need_reinflation_ = false;
+  }
+
 }
 
 void ObstaclesLayer::updateOrigin(double new_origin_x, double new_origin_y)
@@ -266,16 +293,103 @@ void ObstaclesLayer::updateOrigin(double new_origin_x, double new_origin_y)
   delete[] local_voxel_map;
 }
 
+void ObstaclesLayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j )
+{
+  boost::unique_lock < boost::shared_mutex > lock(*access_);
+  if ( !enabled_ ) {
+    return;
+  }
+
+  //make sure the inflation queue is empty at the beginning of the cycle (should always be true)
+  ROS_ASSERT_MSG(inflation_queue_.empty(), "The inflation queue must be empty at the beginning of inflation");
+
+  unsigned char* master_array = master_grid.getCharMap();
+  unsigned int size_x = master_grid.getSizeInCellsX(), size_y = master_grid.getSizeInCellsY();
+
+  memset(seen_, false, size_x * size_y * sizeof(bool));
+  
+  // We need to include in the inflation cells outside the bounding
+  // box min_i...max_j, by the amount cell_inflation_radius_.  Cells
+  // up to that distance outside the box can still influence the costs
+  // stored in cells inside the box.
+  min_i -= cell_inflation_radius_;
+  min_j -= cell_inflation_radius_;
+  max_i += cell_inflation_radius_;
+  max_j += cell_inflation_radius_;
+
+  min_i = std::max( 0, min_i );
+  min_j = std::max( 0, min_j );
+  max_i = std::min( int( size_x  ), max_i );
+  max_j = std::min( int( size_y  ), max_j );
+
+  for (int j = min_j; j < max_j; j++)
+  {
+    for (int i = min_i; i < max_i; i++)
+    {
+      int index = master_grid.getIndex(i, j);
+      unsigned char cost = master_array[index];
+      if (cost == costmap_2d::LETHAL_OBSTACLE)
+      {
+        enqueue(master_array, index, i, j, i, j);
+      }
+    }
+  }
+
+  while (!inflation_queue_.empty())
+  {
+    //get the highest priority cell and pop it off the priority queue
+    const CellData& current_cell = inflation_queue_.top();
+
+    unsigned int index = current_cell.index_;
+    unsigned int mx = current_cell.x_;
+    unsigned int my = current_cell.y_;
+    unsigned int sx = current_cell.src_x_;
+    unsigned int sy = current_cell.src_y_;
+
+    //pop once we have our cell info
+    inflation_queue_.pop();
+
+    //attempt to put the neighbors of the current cell onto the queue
+    if ( mx > 0 ) {
+      enqueue(master_array, index - 1, mx - 1, my, sx, sy);
+    }
+    if ( my > 0 ) {
+      enqueue(master_array, index - size_x, mx, my - 1, sx, sy);
+    }
+    if ( mx < size_x - 1 ) {
+      enqueue(master_array, index + 1, mx + 1, my, sx, sy);
+    }
+    if ( my < size_y - 1 ) {
+      enqueue(master_array, index + size_x, mx, my + 1, sx, sy);
+    }
+  }
+}
+
 bool ObstaclesLayer::isDiscretized( void )
 {
   return true;
 }
 
-void ObstaclesLayer::matchSize( void )
+void ObstaclesLayer::obstaclesMatchSize( void )
 {
   costmap_2d::ObstacleLayer::matchSize();
   voxel_grid_.resize(size_x_, size_y_, size_z_);
   ROS_ASSERT(voxel_grid_.sizeX() == size_x_ && voxel_grid_.sizeY() == size_y_);
+}
+
+void ObstaclesLayer::inflationMatchSize( void )
+{
+  boost::unique_lock < boost::shared_mutex > lock(*access_);
+  costmap_2d::Costmap2D* costmap = layered_costmap_->getCostmap();
+  cell_inflation_radius_ = cellDistance(inflation_radius_);
+  computeCaches();
+  
+  unsigned int size_x = costmap->getSizeInCellsX(), size_y = costmap->getSizeInCellsY();
+
+  if ( seen_ ) {
+    delete seen_;
+  }
+  seen_ = new bool[size_x * size_y]; 
 }
 
 void ObstaclesLayer::reset( void )
@@ -288,10 +402,10 @@ void ObstaclesLayer::reset( void )
 
 void ObstaclesLayer::setupDynamicReconfigure( ros::NodeHandle& nh )
 {
-  dsrv_ = new dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig>(nh);
+  obst_dsrv_ = new dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig>(nh);
   dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig>::CallbackType cb = boost::bind(
-      &ObstaclesLayer::reconfigureCB, this, _1, _2);
-  dsrv_->setCallback(cb);
+      &ObstaclesLayer::obstaclesReconfigureCB, this, _1, _2);
+  obst_dsrv_->setCallback(cb);
 }
 
 void ObstaclesLayer::resetMaps( void )
@@ -300,7 +414,7 @@ void ObstaclesLayer::resetMaps( void )
   voxel_grid_.reset();
 }
 
-void ObstaclesLayer::reconfigureCB( costmap_2d::VoxelPluginConfig &config, uint32_t level )
+void ObstaclesLayer::obstaclesReconfigureCB( costmap_2d::VoxelPluginConfig &config, uint32_t level )
 {
   enabled_ = config.enabled;
   max_obstacle_height_ = config.max_obstacle_height;
@@ -310,7 +424,23 @@ void ObstaclesLayer::reconfigureCB( costmap_2d::VoxelPluginConfig &config, uint3
   unknown_threshold_ = config.unknown_threshold + (VOXEL_BITS - size_z_);
   mark_threshold_ = config.mark_threshold;
   combination_method_ = config.combination_method;
-  matchSize();
+  obstaclesMatchSize();
+}
+
+void ObstaclesLayer::inflationReconfigureCB( costmap_2d::InflationPluginConfig &config, uint32_t leve )
+{
+  if ( weight_ != config.cost_scaling_factor || inflation_radius_ != config.inflation_radius ) {
+    inflation_radius_ = config.inflation_radius;
+    cell_inflation_radius_ = cellDistance(inflation_radius_);
+    weight_ = config.cost_scaling_factor;
+    need_reinflation_ = true;
+    computeCaches();
+  }
+
+  if ( enabled_ != config.enabled ) {
+    enabled_ = config.enabled;
+    need_reinflation_ = true;
+  }
 }
 
 void ObstaclesLayer::clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info)
@@ -432,6 +562,93 @@ void ObstaclesLayer::raytraceFreespace(const costmap_2d::Observation& clearing_o
       updateRaytraceBounds(ox, oy, wpx, wpy, clearing_observation.raytrace_range_, min_x, min_y, max_x, max_y);
     }
   }
+}
+
+inline void ObstaclesLayer::enqueue( unsigned char* grid, unsigned int index, unsigned int mx, unsigned int my,
+                                     unsigned int src_x, unsigned int src_y )
+{ 
+  //set the cost of the cell being inserted
+  if ( !seen_[index] ) {
+    //we compute our distance table one cell further than the inflation radius dictates so we can make the check below
+    double distance = distanceLookup(mx, my, src_x, src_y);
+
+    //we only want to put the cell in the queue if it is within the inflation radius of the obstacle point
+    if (distance > cell_inflation_radius_) {
+      return;
+    }
+
+    //assign the cost associated with the distance from an obstacle to the cell
+    unsigned char cost = costLookup(mx, my, src_x, src_y);
+    unsigned char old_cost = grid[index];
+
+    if ( old_cost == costmap_2d::NO_INFORMATION && cost >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE ) {
+      grid[index] = cost;
+    } else {
+      grid[index] = std::max(old_cost, cost);
+    }
+    //push the cell data onto the queue and mark
+    seen_[index] = true;
+    CellData data(distance, index, mx, my, src_x, src_y);
+    inflation_queue_.push(data);
+  }
+}
+
+void ObstaclesLayer::computeCaches( void )
+{
+  if ( cell_inflation_radius_ == 0 ) {
+    return;
+  }
+
+  //based on the inflation radius... compute distance and cost caches
+  if ( cell_inflation_radius_ != cached_cell_inflation_radius_ ) {
+    if( cached_cell_inflation_radius_ > 0 ) {
+      deleteKernels();
+    }
+
+    cached_costs_ = new unsigned char*[cell_inflation_radius_ + 2];
+    cached_distances_ = new double*[cell_inflation_radius_ + 2];
+
+    for (unsigned int i = 0; i <= cell_inflation_radius_ + 1; ++i) {
+      cached_costs_[i] = new unsigned char[cell_inflation_radius_ + 2];
+      cached_distances_[i] = new double[cell_inflation_radius_ + 2];
+      for (unsigned int j = 0; j <= cell_inflation_radius_ + 1; ++j) {
+        cached_distances_[i][j] = hypot(i, j);
+      }
+    }
+
+    cached_cell_inflation_radius_ = cell_inflation_radius_;
+  }
+
+  for (unsigned int i = 0; i <= cell_inflation_radius_ + 1; ++i) {
+    for (unsigned int j = 0; j <= cell_inflation_radius_ + 1; ++j) {
+      cached_costs_[i][j] = computeCost(cached_distances_[i][j]);
+    }
+  }
+}
+
+void ObstaclesLayer::deleteKernels()
+{
+  if ( cached_distances_ != NULL ) {
+    for (unsigned int i = 0; i <= cached_cell_inflation_radius_ + 1; ++i) {
+      delete[] cached_distances_[i];
+    }
+    delete[] cached_distances_;
+  }
+
+  if (cached_costs_ != NULL) {
+    for (unsigned int i = 0; i <= cached_cell_inflation_radius_ + 1; ++i) {
+      delete[] cached_costs_[i];
+    }
+    delete[] cached_costs_;
+  }
+}
+
+void ObstaclesLayer::onFootprintChanged( void )
+{
+  inscribed_radius_ = layered_costmap_->getInscribedRadius();
+  cell_inflation_radius_ = cellDistance( inflation_radius_ );
+  computeCaches();
+  need_reinflation_ = true;
 }
 
 }  // namespace squirrel_navigation
