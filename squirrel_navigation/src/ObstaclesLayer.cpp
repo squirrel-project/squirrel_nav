@@ -93,7 +93,6 @@ ObstaclesLayer::~ObstaclesLayer( void )
   if( dsrv_ ) {
     delete dsrv_;
   }
-  
 }
 
 void ObstaclesLayer::onInitialize( void )
@@ -105,6 +104,8 @@ void ObstaclesLayer::onInitialize( void )
   private_nh.param("robot_height", robot_height_, 1.0);
   private_nh.param("floor_threshold", floor_threshold_, 0.0);  
   private_nh.param("obstacles_persistence", obstacles_persistence_, 60.0);
+  private_nh.param("tower_diameter", tower_diameter_, 0.075);
+  private_nh.param("platform_height", platform_height_, 0.25);
 
   if ( obstacles_persistence_ > 0 ) {
     ROS_INFO_STREAM("obstacle persistence: " << obstacles_persistence_);
@@ -193,8 +194,22 @@ void ObstaclesLayer::updateBounds( double robot_x, double robot_y, double robot_
       }
       
       if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {                
-        costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
-        touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
+        if ( cloud.points[i].z > platform_height_ ) {
+          int dx = 0.5*tower_diameter_/resolution_;
+          int dy = 0.5*tower_diameter_/resolution_;
+          for (int i=mx-dx; i<=mx+dx; ++i) {
+            for (int j=my-dy; j<=my+dy; ++j) {
+              unsigned int near_index = getIndex(i,j);
+              double dist = resolution_ * std::sqrt((double) (i-mx)*(i-mx)+(j-my)*(j-my));
+              if ( dist < 0.5*tower_diameter_ && costmap_[near_index] < costmap_2d::INSCRIBED_INFLATED_OBSTACLE ) {
+                costmap_[near_index] = costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
+              }
+            }
+          }
+        } else if ( cloud.points[i].z <= platform_height_ ) {
+          costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
+          touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
+        }
       }
     }
   }

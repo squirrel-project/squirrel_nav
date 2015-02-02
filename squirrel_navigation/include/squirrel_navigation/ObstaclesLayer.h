@@ -125,7 +125,7 @@ private:
   ros::Publisher clearing_endpoints_pub_;
   sensor_msgs::PointCloud clearing_endpoints_;
   
-  double robot_diameter_, robot_height_;
+  double robot_diameter_, robot_height_, platform_height_, tower_diameter_;
   double floor_threshold_,  obstacles_persistence_;
   
   inline bool worldToMap3DFloat( double wx, double wy, double wz, double& mx, double& my, double& mz )
