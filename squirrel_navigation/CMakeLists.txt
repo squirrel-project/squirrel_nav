@@ -61,15 +61,15 @@ add_library(squirrel_local_planner
   src/LocalPlanner.cpp
 )
 
-add_library(squirrel_obstacles_layer
+add_library(squirrel_costmap_layers
   src/ObstaclesLayer.cpp
 )
 
-add_dependencies(squirrel_obstacles_layer
+add_dependencies(squirrel_costmap_layers
   ${PROJECT_NAME}_gencfg
 )
 
-target_link_libraries(squirrel_obstacles_layer
+target_link_libraries(squirrel_costmap_layers
   ${catkin_LIBRARIES}
 )
 

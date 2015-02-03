@@ -7,9 +7,9 @@
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Wed Nov 19 18:57:41 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Fri Dec 5 17:57:16 2014 (+0100)
+// Last-Updated: Tue Feb 3 10:52:14 2015 (+0100)
 //           By: Federico Boniardi
-//     Update #: 3
+//     Update #: 4
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -17,8 +17,9 @@
 // 
 
 // Commentary: 
-//   The code therein is an improvement of costmap_2d::VoxelLayer which
-//   is distributed by the authors under BSD license which is below reported
+//   The code therein is an integration of costmap_2d::InflationLayer into
+//   costmap_2d::VoxelLayer. Both source codes are distributed by the authors
+//   under BSD license which is below reported
 //   
 //     /*********************************************************************
 //      *
