@@ -1,6 +1,6 @@
-// ObstaclesLayer.h --- 
+// SensorLayer.h --- 
 // 
-// Filename: ObstaclesLayer.h
+// Filename: SensorLayer.h
 // Description: Dynamic mapping of obstacles with RGBD
 //              and Laser sensors
 // Author: Federico Boniardi
@@ -80,8 +80,8 @@
 
 #include <dynamic_reconfigure/server.h>
 
-#include "squirrel_navigation/CellData.h"
-#include "squirrel_navigation/ObstaclesLayerPluginConfig.h"
+#include "squirrel_navigation/InflatedLayer.h"
+#include "squirrel_navigation/SensorLayerPluginConfig.h"
 
 #include <map>
 #include <cmath>
@@ -91,71 +91,27 @@
 
 namespace squirrel_navigation {
 
-class ObstaclesLayer : public costmap_2d::ObstacleLayer
+class SensorLayer : public InflatedLayer
 {
 public:
-  ObstaclesLayer( void );
-  virtual ~ObstaclesLayer( void );
+  SensorLayer( void );
+  virtual ~SensorLayer( void );
   virtual void onInitialize( void );
   virtual void updateBounds( double, double, double, double*, double*, double*, double* );
   virtual void updateCosts( costmap_2d::Costmap2D&, int, int, int, int );
   void updateOrigin( double, double );
   bool isDiscretized( void );
-  virtual void obstaclesMatchSize( void );
-  virtual void inflationMatchSize( void );
+  virtual void matchSize( void );
   virtual void reset( void );
-
-  inline unsigned char computeCost( double distance ) const
-  {
-    unsigned char cost = 0;
-    if ( distance == 0 ) {
-      cost = costmap_2d::LETHAL_OBSTACLE;
-    } else if ( distance * resolution_ <= inscribed_radius_ ) {
-      cost = costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
-    } else {
-      double euclidean_distance = distance * resolution_;
-      double factor = exp(-1.0 * weight_ * (euclidean_distance - inscribed_radius_));
-      cost = (unsigned char)((costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
-    }
-    return cost;
-  }
   
  protected:
-  virtual void onFootprintChanged( void );
   virtual void setupDynamicReconfigure( ros::NodeHandle& );
   virtual void resetMaps( void );
 
-  boost::shared_mutex* access_;
-  
-private:
-  void reconfigureCB( ObstaclesLayerPluginConfig&, uint32_t );
+ private:
+  void reconfigureCB( SensorLayerPluginConfig&, uint32_t );
   void clearNonLethal( double, double, double, double, bool );
   virtual void raytraceFreespace( const costmap_2d::Observation&, double*, double*, double*, double* );
-
-  inline double distanceLookup( int mx, int my, int src_x, int src_y )
-  {
-    unsigned int dx = std::abs(mx - src_x);
-    unsigned int dy = std::abs(my - src_y);
-    return cached_distances_[dx][dy];
-  }
-
-  inline unsigned char costLookup(int mx, int my, int src_x, int src_y)
-  {
-    unsigned int dx = abs(mx - src_x);
-    unsigned int dy = abs(my - src_y);
-    return cached_costs_[dx][dy];
-  }
-  
-  void computeCaches( void );
-  void deleteKernels( void );
-  void inflate_area( int, int, int, int, unsigned char* );
-
-  unsigned int cellDistance( double world_dist )
-  {
-    return layered_costmap_->getCostmap()->cellDistance(world_dist);
-  }
-
-  inline void enqueue( unsigned char*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
     
   inline bool worldToMap3DFloat( double wx, double wy, double wz, double& mx, double& my, double& mz )
   {
@@ -176,7 +132,7 @@ private:
 
   inline bool worldToMap3D( double wx, double wy, double wz, unsigned int& mx, unsigned int& my, unsigned int& mz )
   {
-    if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_) {
+    if ( wx < origin_x_ || wy < origin_y_ || wz < origin_z_ ) {
       return false;
     }
     
@@ -184,7 +140,7 @@ private:
     my = (int)((wy - origin_y_) / resolution_);
     mz = (int)((wz - origin_z_) / z_resolution_);
 
-    if (mx < size_x_ && my < size_y_ && mz < size_z_) {
+    if ( mx < size_x_ && my < size_y_ && mz < size_z_ ) {
       return true;
     }
 
@@ -203,7 +159,7 @@ private:
     return std::sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0) + (z1-z0)*(z1-z0));
   }
 
-  dynamic_reconfigure::Server<ObstaclesLayerPluginConfig> *dsrv_;
+  dynamic_reconfigure::Server<SensorLayerPluginConfig> *dsrv_;
   
   // time based costmap layer
   std::map<unsigned int, ros::Time> clearing_index_stamped_;
@@ -214,20 +170,9 @@ private:
   unsigned int unknown_threshold_, mark_threshold_, size_z_;
   ros::Publisher clearing_endpoints_pub_;
   sensor_msgs::PointCloud clearing_endpoints_;
-  
+
   double robot_link_radius_;
   double max_obstacle_height_, min_obstacle_height_,  obstacles_persistence_;
-  double inflation_radius_, inscribed_radius_, weight_;
-  unsigned int cell_inflation_radius_, cached_cell_inflation_radius_;
-
-  std::priority_queue<CellData> inflation_queue_;
-
-  bool *seen_, need_reinflation_;
-
-  unsigned char **cached_costs_;
-  double **cached_distances_;
-
-  std::set<unsigned int> obstacles_index_;
 };
 
 }  // namespace squirrel_navigation
@@ -235,4 +180,4 @@ private:
 #endif  // SQUIRREL_NAVIGATION_OBSTACLESLAYER_H_
 
 // 
-// ObstaclesLayer.h ends here
+// SensorLayer.h ends here

@@ -9,6 +9,13 @@ Repository for navigation related SQUIRREL packages.
 Install robotino driver's and robotino safety node from the common
 repository
 
+In order to properly generate the dynamic reconfiguration files, set
+execute permission to the files contained in `cfg` folder: run
+```bash
+chmod a+x cfg/*	
+```
+from the home folder of the package.
+
 ## Creating a 2D Gridmap
 
 Run the mapping routine by executing

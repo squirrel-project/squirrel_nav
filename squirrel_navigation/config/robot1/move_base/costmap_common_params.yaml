@@ -10,18 +10,19 @@
 # costmap_2d plugins declaration. Order matters!
 plugins:
   - {name: map_layer, type: "squirrel_navigation::MapLayer"}
-  - {name: platform_layer, type: "squirrel_navigation::ObstaclesLayer"}
-  - {name: tower_layer, type: "squirrel_navigation::ObstaclesLayer"}
+  - {name: platform_layer, type: "squirrel_navigation::SensorLayer"}
+  - {name: tower_layer, type: "squirrel_navigation::SensorLayer"}
+  
 
 map_layer:
-  robot_link_radis: 0.22
+  robot_link_radius: 0.22
   inflation_radius: 0.6
   cost_scaling_factor: 10.0
   
 platform_layer:
   obstacle_range: 1.5
   raytrace_range: 3.0 
-  observation_sources: laser_scan rgbd_scan
+  observation_sources: laser_scan #rgbd_scan
   rgbd_scan: {sensor_frame: kinect_rgb_optical_frame, data_type: PointCloud2, topic: rgbdscan, marking: true, clearing: false}
   laser_scan: {sensor_frame: hokuyo_link, data_type: LaserScan, topic: scan, marking: true, clearing: false} 
   publish_voxel_map: false

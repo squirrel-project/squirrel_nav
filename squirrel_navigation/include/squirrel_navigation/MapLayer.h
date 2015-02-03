@@ -6,9 +6,9 @@
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Tue Feb 3 10:49:46 2015 (+0100)
 // Version: 0.1.0
-// Last-Updated: 
+// Last-Updated: Tue Feb 3 15:34:16 2015 (+0100)
 //           By: Federico Boniardi
-//     Update #: 0
+//     Update #: 1
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -83,13 +83,14 @@
 
 #include "squirrel_navigation/CellData.h"
 #include "squirrel_navigation/MapLayerPluginConfig.h"
+#include "squirrel_navigation/InflatedLayer.h"
 
 #include <algorithm>
 #include <set>
 
 namespace squirrel_navigation {
 
-class MapLayer : public costmap_2d::CostmapLayer
+class MapLayer : public InflatedLayer
 {
  public:
   MapLayer( void );
@@ -102,58 +103,13 @@ class MapLayer : public costmap_2d::CostmapLayer
   virtual void updateBounds( double, double, double, double*, double*, double*, double* );
   virtual void updateCosts( costmap_2d::Costmap2D&, int, int, int, int );
 
-  virtual void inflationMatchSize( void );
-  virtual void mapMatchSize( void );
+  virtual void matchSize( void );
   
   inline bool isDiscretized( void ) {
     return true;
   }
-  
-  inline unsigned char computeCost(double distance) const
-  {
-    unsigned char cost = 0;
-    if ( distance == 0 ) {
-      cost = costmap_2d::LETHAL_OBSTACLE;
-    } else if ( distance * resolution_ <= inscribed_radius_ ) {
-      cost = costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
-    } else {
-      double euclidean_distance = distance * resolution_;
-      double factor = exp(-1.0 * weight_ * (euclidean_distance - inscribed_radius_));
-      cost = (unsigned char)((costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
-    }
-    return cost;
-  }
-
- protected:
-  virtual void onFootprintChanged( void );
-  boost::shared_mutex* access_;
-  
- private:
-  inline double distanceLookup(int mx, int my, int src_x, int src_y)
-  {
-    unsigned int dx = abs(mx - src_x);
-    unsigned int dy = abs(my - src_y);
-    return cached_distances_[dx][dy];
-  }
-
-  inline unsigned char costLookup(int mx, int my, int src_x, int src_y)
-  {
-    unsigned int dx = std::abs(mx - src_x);
-    unsigned int dy = std::abs(my - src_y);
-    return cached_costs_[dx][dy];
-  }
-
-  void computeCaches( void );
-  void deleteKernels( void );
-  void inflate_area( int, int, int, int, unsigned char* );
-
-  unsigned int cellDistance(double world_dist)
-  {
-    return layered_costmap_->getCostmap()->cellDistance(world_dist);
-  }
-
-  inline void enqueue( unsigned char*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int );
-  
+    
+ private:  
   void incomingMap( const nav_msgs::OccupancyGridConstPtr& );
   void incomingUpdate( const map_msgs::OccupancyGridUpdateConstPtr& );
   void reconfigureCB( MapLayerPluginConfig&, uint32_t );
@@ -171,28 +127,14 @@ class MapLayer : public costmap_2d::CostmapLayer
   ros::Subscriber map_sub_, map_update_sub_;
 
   unsigned char lethal_threshold_, unknown_cost_value_;
-
-  std::set<unsigned int> obstacles_index_;
   
   mutable boost::recursive_mutex lock_;
   dynamic_reconfigure::Server<MapLayerPluginConfig> *dsrv_;
-
-  // Inflation related members
-  double robot_link_radius_;
-  double inflation_radius_, inscribed_radius_, weight_;
-  unsigned int cell_inflation_radius_;
-  unsigned int cached_cell_inflation_radius_;
-  std::priority_queue<CellData> inflation_queue_;
-
-  bool *seen_, need_reinflation_;
-
-  unsigned char** cached_costs_;
-  double** cached_distances_;
 };
   
 }  // namespace squirrel_navigation
 
-#endif /* MAPLAYER_H_ */
+#endif // MAPLAYER_H_
 
 // 
 // MapLayer.h ends here

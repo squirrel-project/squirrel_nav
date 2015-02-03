@@ -6,9 +6,9 @@
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Tue Feb 3 10:49:46 2015 (+0100)
 // Version: 0.1.0
-// Last-Updated: 
+// Last-Updated: Tue Feb 3 15:38:12 2015 (+0100)
 //           By: Federico Boniardi
-//     Update #: 0
+//     Update #: 1
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -79,18 +79,13 @@ PLUGINLIB_EXPORT_CLASS(squirrel_navigation::MapLayer, costmap_2d::Layer)
 namespace squirrel_navigation {
 
 MapLayer::MapLayer( void ) :
-    inflation_radius_(0.0),
-    weight_(0.0),
-    cell_inflation_radius_(0.0),
-    cached_cell_inflation_radius_(0.0),
     dsrv_(NULL)
 {
-  access_ = new boost::shared_mutex();
+  // Nothing to do
 }
 
 MapLayer::~MapLayer( void )
 {
-  deleteKernels();
   if( dsrv_ ) {
     delete dsrv_;
   }
@@ -136,20 +131,16 @@ void MapLayer::onInitialize( void )
     map_update_sub_ = g_nh.subscribe(map_topic + "_updates", 10, &MapLayer::incomingUpdate, this);
   }
 
-  if( dsrv_ ) {
-    delete dsrv_;
-  }
-
   {
     boost::unique_lock < boost::shared_mutex > lock(*access_);
     current_ = true;
     seen_ = NULL;
     need_reinflation_ = false;
-    
+
     dynamic_reconfigure::Server<MapLayerPluginConfig>::CallbackType cb = boost::bind(
-        &MapLayer::reconfigureCB, this, _1, _2);
-    
-    if( dsrv_ != NULL ){
+      &MapLayer::reconfigureCB, this, _1, _2);
+
+    if(dsrv_ != NULL){
       dsrv_->clearCallback();
       dsrv_->setCallback(cb);
     }
@@ -159,8 +150,8 @@ void MapLayer::onInitialize( void )
       dsrv_->setCallback(cb);
     }
   }
-
-  inflationMatchSize();
+  
+  matchInflatedSize();
 }
 
 void MapLayer::reconfigureCB( MapLayerPluginConfig &config, uint32_t level )
@@ -173,8 +164,7 @@ void MapLayer::reconfigureCB( MapLayerPluginConfig &config, uint32_t level )
     computeCaches();
   }
 
-  robot_link_radius_ = config.robot_link_radius;
-  inscribed_radius_ = robot_link_radius_;
+  inscribed_radius_ = config.robot_link_radius;
   
   if ( config.enabled != enabled_ ) {
     enabled_ = config.enabled;
@@ -186,34 +176,11 @@ void MapLayer::reconfigureCB( MapLayerPluginConfig &config, uint32_t level )
   }
 }
 
-void MapLayer::inflationMatchSize( void )
-{
-  boost::unique_lock < boost::shared_mutex > lock(*access_);
-  costmap_2d::Costmap2D* costmap = layered_costmap_->getCostmap();
-  resolution_ = costmap->getResolution();
-  cell_inflation_radius_ = cellDistance(inflation_radius_);
-  computeCaches();
-  
-  unsigned int size_x = costmap->getSizeInCellsX(), size_y = costmap->getSizeInCellsY();
-  if ( seen_ ) {
-    delete seen_;
-  }
-  seen_ = new bool[size_x * size_y];
-}
-
-void MapLayer::mapMatchSize( void )
+void MapLayer::matchSize( void )
 {
   Costmap2D* master = layered_costmap_->getCostmap();
   resizeMap(master->getSizeInCellsX(), master->getSizeInCellsY(), master->getResolution(),
             master->getOriginX(), master->getOriginY());
-}
-
-void MapLayer::onFootprintChanged( void )
-{
-  inscribed_radius_ = robot_link_radius_;
-  cell_inflation_radius_ = cellDistance( inflation_radius_ );
-  computeCaches();
-  need_reinflation_ = true;
 }
 
 unsigned char MapLayer::interpretValue( unsigned char value )
@@ -246,7 +213,7 @@ void MapLayer::incomingMap(const nav_msgs::OccupancyGridConstPtr& new_map)
               resolution_ != new_map->info.resolution ||
               origin_x_ != new_map->info.origin.position.x ||
               origin_y_ != new_map->info.origin.position.y ) {
-    mapMatchSize();
+    matchSize();
   }
 
   unsigned int index = 0;
@@ -256,7 +223,7 @@ void MapLayer::incomingMap(const nav_msgs::OccupancyGridConstPtr& new_map)
       unsigned char value = new_map->data[index];
       unsigned char costmap_value = interpretValue(value);
       if ( costmap_value == costmap_2d::LETHAL_OBSTACLE ) {
-        obstacles_index_.insert(index);
+        obstacles_.insert(index);
       }
       costmap_[index] = costmap_value;
       ++index;
@@ -326,13 +293,7 @@ void MapLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
   
   has_updated_data_ = false;
 
-  if( need_reinflation_ ) {
-    *min_x = -std::numeric_limits<float>::max();
-    *min_y = -std::numeric_limits<float>::max();
-    *max_x = std::numeric_limits<float>::max();
-    *max_y = std::numeric_limits<float>::max();
-    need_reinflation_ = false;
-  }
+  updateInflatedBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 }
 
 void MapLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j)
@@ -347,136 +308,7 @@ void MapLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, int mi
     updateWithMax(master_grid, min_i, min_j, max_i, max_j);
   }
 
-  boost::unique_lock < boost::shared_mutex > lock(*access_);
-  
-  ROS_ASSERT_MSG(inflation_queue_.empty(), "The inflation queue must be empty at the beginning of inflation");
-
-  unsigned char* master_array = master_grid.getCharMap();
-  unsigned int size_x = master_grid.getSizeInCellsX(), size_y = master_grid.getSizeInCellsY();
-
-  memset(seen_, false, size_x * size_y * sizeof(bool));
-
-  min_i -= cell_inflation_radius_;
-  min_j -= cell_inflation_radius_;
-  max_i += cell_inflation_radius_;
-  max_j += cell_inflation_radius_;
-
-  min_i = std::max( 0, min_i );
-  min_j = std::max( 0, min_j );
-  max_i = std::min( int( size_x ), max_i );
-  max_j = std::min( int( size_y ), max_j );
-
-  for (int j = min_j; j < max_j; j++) {
-    for (int i = min_i; i < max_i; i++) {
-      int index = master_grid.getIndex(i, j);
-      unsigned char cost = master_array[index];
-      bool is_static_obstacle = obstacles_index_.find(index) != obstacles_index_.end();
-      if (cost == costmap_2d::LETHAL_OBSTACLE && is_static_obstacle ) {
-        enqueue(master_array, index, i, j, i, j);
-      }
-    }
-  }
-
-  while ( !inflation_queue_.empty() ) {
-    const CellData& current_cell = inflation_queue_.top();
-    
-    unsigned int index = current_cell.index_;
-    unsigned int mx = current_cell.x_;
-    unsigned int my = current_cell.y_;
-    unsigned int sx = current_cell.src_x_;
-    unsigned int sy = current_cell.src_y_;
-
-    inflation_queue_.pop();
-
-    if ( mx > 0 ) {
-      enqueue(master_array, index - 1, mx - 1, my, sx, sy);
-    }
-    
-    if ( my > 0 ) {
-      enqueue(master_array, index - size_x, mx, my - 1, sx, sy);
-    }
-
-    if ( mx < size_x - 1 ) {
-      enqueue(master_array, index + 1, mx + 1, my, sx, sy);
-    }
-
-    if (my < size_y - 1) {
-      enqueue(master_array, index + size_x, mx, my + 1, sx, sy);
-    }
-  }
-}
-
-inline void MapLayer::enqueue(unsigned char* grid, unsigned int index, unsigned int mx, unsigned int my,
-                              unsigned int src_x, unsigned int src_y)
-{
-  if ( !seen_[index] ) {
-    double distance = distanceLookup(mx, my, src_x, src_y);
-
-    if ( distance > cell_inflation_radius_ ) {
-      return;
-    }
-
-    unsigned char cost = costLookup(mx, my, src_x, src_y);
-    unsigned char old_cost = grid[index];
-
-    if ( old_cost == costmap_2d::NO_INFORMATION && cost >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE ) {
-      grid[index] = cost;
-    } else {
-      grid[index] = std::max(old_cost, cost);
-    }
-    seen_[index] = true;
-    CellData data(distance, index, mx, my, src_x, src_y);
-    inflation_queue_.push(data);
-  }
-}
-
-void MapLayer::computeCaches( void )
-{
-  if( cell_inflation_radius_ == 0 ) {
-    return;
-  }
-    
-  if( cell_inflation_radius_ != cached_cell_inflation_radius_ ) {
-    if( cached_cell_inflation_radius_ > 0 ) {
-      deleteKernels();
-    }
-      
-    cached_costs_ = new unsigned char*[cell_inflation_radius_ + 2];
-    cached_distances_ = new double*[cell_inflation_radius_ + 2];
-
-    for (unsigned int i = 0; i <= cell_inflation_radius_ + 1; ++i) {
-      cached_costs_[i] = new unsigned char[cell_inflation_radius_ + 2];
-      cached_distances_[i] = new double[cell_inflation_radius_ + 2];
-      for (unsigned int j = 0; j <= cell_inflation_radius_ + 1; ++j) {
-        cached_distances_[i][j] = hypot(i, j);
-      }
-    }
-
-    cached_cell_inflation_radius_ = cell_inflation_radius_;
-  }
-
-  for (unsigned int i = 0; i <= cell_inflation_radius_ + 1; ++i) {
-    for (unsigned int j = 0; j <= cell_inflation_radius_ + 1; ++j) {
-      cached_costs_[i][j] = computeCost(cached_distances_[i][j]);
-    }
-  }
-}
-
-void MapLayer::deleteKernels( void )
-{
-  if ( cached_distances_ != NULL ) {
-    for (unsigned int i = 0; i <= cached_cell_inflation_radius_ + 1; ++i) {
-      delete[] cached_distances_[i];
-    }
-    delete[] cached_distances_;
-  }
-
-  if ( cached_costs_ != NULL ) {
-    for (unsigned int i = 0; i <= cached_cell_inflation_radius_ + 1; ++i) {
-      delete[] cached_costs_[i];
-    }
-    delete[] cached_costs_;
-  }
+  updateInflatedCosts(master_grid, min_i, min_j, max_i, max_j);
 }
 
 }  // namespace squirrel_navigation
