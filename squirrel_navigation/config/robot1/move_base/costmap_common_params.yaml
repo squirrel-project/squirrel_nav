@@ -9,11 +9,15 @@
 
 # costmap_2d plugins declaration. Order matters!
 plugins:
-  - {name: static_layer, type: "costmap_2d::StaticLayer"}
+  - {name: map_layer, type: "squirrel_navigation::MapLayer"}
   - {name: platform_layer, type: "squirrel_navigation::ObstaclesLayer"}
   - {name: tower_layer, type: "squirrel_navigation::ObstaclesLayer"}
 
-# Parameters for squirrel_navigation::ObstacleLayer
+map_layer:
+  robot_link_radis: 0.22
+  inflation_radius: 0.6
+  cost_scaling_factor: 10.0
+  
 platform_layer:
   obstacle_range: 1.5
   raytrace_range: 3.0 

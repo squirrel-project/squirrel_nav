@@ -15,8 +15,8 @@ local_costmap: {
   static_map: false,
   resolution: 0.05,
   static_layer/enabled: false,
-  platform_layer/enabled: true,
-  tower_layer/enabled: true,
+  platform_layer/enabled: false,
+  tower_layer/enabled: false,
 } 
 
 #

@@ -38,6 +38,7 @@ find_package(catkin REQUIRED
 
 generate_dynamic_reconfigure_options(
   cfg/ObstaclesLayerPlugin.cfg
+  cfg/MapLayerPlugin.cfg
 )
 
 catkin_package(
@@ -63,6 +64,7 @@ add_library(squirrel_local_planner
 
 add_library(squirrel_costmap_layers
   src/ObstaclesLayer.cpp
+  src/MapLayer.cpp
 )
 
 add_dependencies(squirrel_costmap_layers
@@ -98,7 +100,7 @@ target_link_libraries(pointcloud_filter_node
 
 install(TARGETS
   squirrel_local_planner
-  squirrel_obstacles_layer
+  squirrel_costmap_layers
   pointcloud_filter_node
   autolocalization_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -117,7 +119,7 @@ install(DIRECTORY launch/
   PATTERN ".git" EXCLUDE
 )
 
-install(FILES plugins/SquirrelLocalPlanner.xml plugins/SquirrelObstaclesLayer.xml
+install(FILES plugins/SquirrelLocalPlanner.xml plugins/SquirrelCostmapLayers.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 

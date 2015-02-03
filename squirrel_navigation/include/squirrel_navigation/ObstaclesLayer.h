@@ -70,11 +70,14 @@
 #define SQUIRREL_NAVIGATION_OBSTACLESLAYER_H_
 
 #include <ros/ros.h>
+
 #include <costmap_2d/layer.h>
 #include <costmap_2d/layered_costmap.h>
 #include <costmap_2d/observation_buffer.h>
 #include <costmap_2d/obstacle_layer.h>
+
 #include <voxel_grid/voxel_grid.h>
+
 #include <dynamic_reconfigure/server.h>
 
 #include "squirrel_navigation/CellData.h"
@@ -84,6 +87,7 @@
 #include <cmath>
 #include <set>
 #include <queue>
+#include <algorithm>
 
 namespace squirrel_navigation {
 

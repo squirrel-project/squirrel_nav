@@ -4,7 +4,7 @@
       <description>Costmap layer for rgbd+laser sensor</description>
     </class>
     <class type="squirrel_navigation::MapLayer" base_class_type="costmap_2d::Layer">
-      <description>Costmap layer for rgbd+laser sensor</description>
+      <description>Costmap layer for static obstacles</description>
     </class>
   </library>
 </class_libraries>
