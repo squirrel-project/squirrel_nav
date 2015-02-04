@@ -1,5 +1,5 @@
 <package>
-  <name>navigation</name>
+  <name>squirrel_nav</name>
   <version>0.0.1</version>
   <description>Everything related navigation</description>
   <maintainer email="nhg@ipa.fhg.de">Nadia Hammoudeh Garcia</maintainer>

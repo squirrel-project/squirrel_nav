@@ -1,6 +1,5 @@
-navigation
-==========
-[![Build Status](https://magnum.travis-ci.com/squirrel-project/navigation.svg?token=3yXoCRsCegowgzzpPuqw)](https://magnum.travis-ci.com/squirrel-project/navigation)
+squirrel_nav
+============
 
 Repository for navigation related SQUIRREL packages.
 
