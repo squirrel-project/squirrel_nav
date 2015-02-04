@@ -65,8 +65,8 @@
 
 // Code:
 
-#ifndef MAPLAYER_H_
-#define MAPLAYER_H_
+#ifndef SQUIRREL_NAVIGATION_MAPLAYER_H_
+#define SQUIRREL_NAVIGATION_MAPLAYER_H_
 
 #include <ros/ros.h>
 
@@ -134,7 +134,7 @@ class MapLayer : public InflatedLayer
   
 }  // namespace squirrel_navigation
 
-#endif // MAPLAYER_H_
+#endif // SQUIRREL_NAVIGATION_MAPLAYER_H_
 
 // 
 // MapLayer.h ends here

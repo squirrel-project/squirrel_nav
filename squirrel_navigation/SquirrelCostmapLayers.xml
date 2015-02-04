@@ -1,6 +1,6 @@
 <class_libraries>
   <library path="lib/libsquirrel_costmap_layers">
-    <class type="squirrel_navigation::SensorLayer" base_class_type="costmap_2d::Layer">
+    <class type="squirrel_navigation::PerceptionLayer" base_class_type="costmap_2d::Layer">
       <description>Costmap layer for rgbd+laser sensor</description>
     </class>
     <class type="squirrel_navigation::MapLayer" base_class_type="costmap_2d::Layer">

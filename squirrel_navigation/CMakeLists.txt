@@ -40,6 +40,7 @@ generate_dynamic_reconfigure_options(
   cfg/ObstaclesLayerPlugin.cfg
   cfg/MapLayerPlugin.cfg
   cfg/SensorLayerPlugin.cfg
+  cfg/PerceptionLayerPlugin.cfg
 )
 
 catkin_package(
@@ -64,8 +65,10 @@ add_library(squirrel_local_planner
 )
 
 add_library(squirrel_costmap_layers
-  src/SensorLayer.cpp
+  # src/SensorLayer.cpp
+  src/PerceptionLayer
   src/MapLayer.cpp
+  src/MultiInflatedLayer.cpp
   src/InflatedLayer.cpp
 )
 

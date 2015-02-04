@@ -57,8 +57,8 @@
 
 // Code:
 
-#ifndef CELLDATA_H_
-#define CELLDATA_H_
+#ifndef SQUIRREL_NAVIGATION_CELLDATA_H_
+#define SQUIRREL_NAVIGATION_CELLDATA_H_
 
 namespace squirrel_navigation {
 
@@ -87,7 +87,7 @@ inline bool operator<(const CellData &a, const CellData &b)
 
 }  // namespace squirrel_navigation
 
-#endif // CELLDATA_H_ 
+#endif // SQUIRREL_NAVIGATION_CELLDATA_H_ 
 
 // 
 // CellData.h ends here

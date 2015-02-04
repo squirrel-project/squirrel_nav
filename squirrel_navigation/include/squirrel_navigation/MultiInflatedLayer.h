@@ -1,10 +1,10 @@
-// InflatedLayer.h --- 
+// MultiInflatedLayer.h --- 
 // 
-// Filename: InflatedLayer.h
-// Description: Obstacle inflator to simulate robot's configuration space
+// Filename: MultiInflatedLayer.h
+// Description: Obstacle inflator to simulate robot's 3D configuration space
 // Author: Federico Boniardi
 // Maintainer: boniardi@cs.uni-freiburg.de
-// Created: Tue Feb  3 13:46:17 2015 (+0100)
+// Created: Wed Feb 4 10:05:31 2015 (+0100)
 // Version: 0.1.0
 // Last-Updated: 
 //           By: 
@@ -64,47 +64,44 @@
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_INFLATEDLAYER_H_
-#define SQUIRREL_NAVIGATION_INFLATEDLAYER_H_
+#ifndef SQUIRREL_NAVIGATION_MULTIINFLATEDLAYER_H_
+#define SQUIRREL_NAVIGATION_MULTIINFLATEDLAYER_H_
 
 #include "squirrel_navigation/CellData.h"
 
 #include <ros/ros.h>
 
-#include <costmap_2d/costmap_layer.h>
+#include <costmap_2d/obstacle_layer.h>
 #include <costmap_2d/layered_costmap.h>
 
 #include <cmath>
 #include <queue>
-#include <set>
+#include <map>
 
 namespace squirrel_navigation {
-  
-class InflatedLayer : public costmap_2d::CostmapLayer
+
+class MultiInflatedLayer : public costmap_2d::ObstacleLayer
 {
  public:
-  InflatedLayer( void );
+  MultiInflatedLayer( void );
+  virtual ~MultiInflatedLayer( void );
   
-  virtual ~InflatedLayer( void )
-  {
-    deleteKernels();
-  }
+  virtual void malloc_layers( void );
 
   virtual void updateInflatedBounds( double, double, double, double*, double*, double*, double* );
   virtual void updateInflatedCosts(costmap_2d::Costmap2D& master_grid, int, int, int, int );
-  
   virtual void matchInflatedSize( void );
 
-  inline unsigned char computeCost(double distance) const
+  inline unsigned char computeCost(double distance, int l) const
   {
     unsigned char cost = 0;
     if ( distance == 0 ) {
       cost = costmap_2d::LETHAL_OBSTACLE;
-    } else if ( distance * resolution_ <= inscribed_radius_ ) {
+    } else if ( distance * resolution_ <= inscribed_radii_[l] ) {
       cost = costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
     } else {
       double euclidean_distance = distance * resolution_;
-      double factor = exp(-1.0 * weight_ * (euclidean_distance - inscribed_radius_));
+      double factor = exp(-1.0 * weights_[l] * (euclidean_distance - inscribed_radii_[l]));
       cost = (unsigned char)((costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
     }
     return cost;
@@ -119,29 +116,33 @@ class InflatedLayer : public costmap_2d::CostmapLayer
     return layered_costmap_->getCostmap()->cellDistance(world_dist);
   }
 
-  std::set<unsigned int> obstacles_;
-  
-  double inflation_radius_, inscribed_radius_, weight_;
+  std::map<unsigned int, unsigned int> obstacles_;
+
+  unsigned int num_layers_;
+  std::vector<double> inflation_radii_, inscribed_radii_, weights_;
+
   bool *seen_, need_reinflation_; 
+  std::vector<unsigned int> cell_inflation_radii_;
+  std::vector<unsigned int> cached_cell_inflation_radii_;
 
-  unsigned int cell_inflation_radius_;
-  unsigned int cached_cell_inflation_radius_;
-
+  unsigned int max_cell_inflation_radius_;
+  unsigned int max_cached_cell_inflation_radius_;
+  
   boost::shared_mutex* access_;
 
  private:
-  inline double distanceLookup( int mx, int my, int src_x, int src_y )
+  inline double distanceLookup( int mx, int my, int src_x, int src_y, int l )
   {
     unsigned int dx = std::abs(mx - src_x);
     unsigned int dy = std::abs(my - src_y);
-    return cached_distances_[dx][dy];
+    return cached_distances_[l][dx][dy];
   }
 
-  inline unsigned char costLookup( int mx, int my, int src_x, int src_y )
+  inline unsigned char costLookup( int mx, int my, int src_x, int src_y, int l )
   {
     unsigned int dx = abs(mx - src_x);
     unsigned int dy = abs(my - src_y);
-    return cached_costs_[dx][dy];
+    return cached_costs_[l][dx][dy];
   }
 
   void deleteKernels( void );
@@ -150,15 +151,14 @@ class InflatedLayer : public costmap_2d::CostmapLayer
   inline void enqueue(unsigned char*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
 
   std::priority_queue<CellData> inflation_queue_;
-    
-  
-  unsigned char** cached_costs_;
-  double** cached_distances_;
+   
+  unsigned char*** cached_costs_;
+  double*** cached_distances_;
 };
 
 }  // namespace squirrel_navigation
 
-#endif // SQUIRREL_NAVIGATION_INFLATEDLAYER_H_
+#endif // SQUIRREL_NAVIGATION_MULTIINFLATEDLAYER_H_
 
 // 
-// InflatedLayer.h ends here
+// MultiInflatedLayer.h ends here
