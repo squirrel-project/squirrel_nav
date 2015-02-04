@@ -76,7 +76,9 @@ namespace squirrel_navigation {
 
 MultiInflatedLayer::MultiInflatedLayer( void ) :
     max_cell_inflation_radius_(0),
-    max_cached_cell_inflation_radius_(0)
+    max_cached_cell_inflation_radius_(0),
+    cached_distances_(NULL),
+    cached_costs_(NULL)
 {
   access_ = new boost::shared_mutex();
 }
@@ -96,8 +98,6 @@ MultiInflatedLayer::~MultiInflatedLayer( void )
 
 void MultiInflatedLayer::malloc_layers( void )
 { 
-  deleteKernels();
-
   if ( cached_costs_ != NULL ) {
     delete[] cached_costs_;
   }
@@ -107,6 +107,10 @@ void MultiInflatedLayer::malloc_layers( void )
     delete[] cached_distances_;
   }
   cached_distances_ = new double**[num_layers_];
+
+  weights_.resize(num_layers_, 0.0);
+  cell_inflation_radii_.resize(num_layers_, 0.0);
+  cached_cell_inflation_radii_.resize(num_layers_, 0.0);
 }
 
 void MultiInflatedLayer::matchInflatedSize( void )

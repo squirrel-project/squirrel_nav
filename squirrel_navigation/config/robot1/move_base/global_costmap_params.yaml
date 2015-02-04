@@ -14,7 +14,7 @@ global_costmap: {
   static_map: true,
   resolution: 0.05,
   map_layer/enabled: true,
-  platform_layer/enabled: true,
+  perception_layer/enabled: true,
   tower_layer/enabled: false,
 }
 

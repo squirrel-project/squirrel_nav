@@ -344,10 +344,10 @@ void PerceptionLayer::reconfigureCB( PerceptionLayerPluginConfig &config, uint32
   
   if ( robot_link_radii_.size() != num_layers_ || weights.size() != num_layers_ || layers_levels_.size() != num_layers_ ||
        inflation_radii.size() != num_layers_ || inscribed_radii.size() != num_layers_ ) {
-    ROS_ERROR("%s: Invalid parameter form squirrel_navigation::PerceptionLayer", ros::this_node::getName().c_str());
+    ROS_ERROR("%s: Invalid parameter for squirrel_navigation::PerceptionLayer", ros::this_node::getName().c_str());
     ros::shutdown();
   }
-
+  
   if ( !std::equal(weights_.begin(), weights_.end(), weights.data()) ||
        !std::equal(inflation_radii_.begin(), inflation_radii.end(), inflation_radii.data()) ) {
 
