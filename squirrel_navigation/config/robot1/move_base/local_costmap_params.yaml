@@ -9,14 +9,17 @@
 
 local_costmap: {
   global_frame: /map,
-  robot_base_frame: /base_link, 
+  robot_base_frame: /base_link,
   update_frequency: 5.0,
   publish_frequency: 5.0,
   static_map: false,
   resolution: 0.05,
-  map_layer/enabled: false,
-  perception_layer/enabled: true,
-  tower_layer/enabled: false,
+  robot_radius: 0.16,
+  static_layer/enabled: false,
+  obstacles_layer/enabled: true,
+  inflation_layer/enabled: true,
+  inflation_layer/inflation_radius: 0.6,
+  inflation_layer/cost_scaling_factor: 20.0
 } 
 
 #
