@@ -22,6 +22,6 @@
   <run_depend>squirrel_pushing_planner</run_depend>
   
   <export>
-	<metapackage/>
+    <metapackage/>
   </export>
 </package>
