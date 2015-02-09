@@ -1,15 +1,15 @@
-// PerceptionLayer.h --- 
+// DownprojectionMultilayer.h --- 
 // 
-// Filename: PerceptionLayer.h
+// Filename: DownprojectionMultilayer.h
 // Description: Dynamic mapping of obstacles with RGBD
 //              and Laser sensors
 // Author: Federico Boniardi
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Wed Feb 4 10:14:10 2015 (+0100)
 // Version: 0.1.0
-// Last-Updated: Tue Feb 3 10:52:14 2015 (+0100)
+// Last-Updated: Mon Feb 9 11:51:05 2015 (+0100)
 //           By: Federico Boniardi
-//     Update #: 4
+//     Update #: 5
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -66,8 +66,8 @@
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_PERCEPTIONLAYER_H_
-#define SQUIRREL_NAVIGATION_PERCEPTIONLAYER_H_
+#ifndef SQUIRREL_NAVIGATION_DOWNPROJECTIONMULTILAYER_H_
+#define SQUIRREL_NAVIGATION_DOWNPROJECTIONMULTILAYER_H_
 
 #include <ros/ros.h>
 
@@ -80,7 +80,7 @@
 #include <dynamic_reconfigure/server.h>
 
 #include "squirrel_navigation/MultiInflatedLayer.h"
-#include "squirrel_navigation/PerceptionLayerPluginConfig.h"
+#include "squirrel_navigation/DownprojectionMultilayerPluginConfig.h"
 
 #include <map>
 #include <cmath>
@@ -90,11 +90,11 @@
 
 namespace squirrel_navigation {
 
-class PerceptionLayer : public MultiInflatedLayer
+class DownprojectionMultilayer : public MultiInflatedLayer
 {
 public:
-  PerceptionLayer( void );
-  virtual ~PerceptionLayer( void );
+  DownprojectionMultilayer( void );
+  virtual ~DownprojectionMultilayer( void );
   virtual void onInitialize( void );
   virtual void updateBounds( double, double, double, double*, double*, double*, double* );
   virtual void updateCosts( costmap_2d::Costmap2D&, int, int, int, int );
@@ -127,7 +127,7 @@ public:
   };
   
  private:
-  void reconfigureCB( PerceptionLayerPluginConfig&, uint32_t );
+  void reconfigureCB( DownprojectionMultilayerPluginConfig&, uint32_t );
   void clearNonLethal( double, double, double, double, bool );
   virtual void raytraceFreespace( const costmap_2d::Observation&, double*, double*, double*, double* );
     
@@ -191,7 +191,7 @@ public:
     }
   }
   
-  dynamic_reconfigure::Server<PerceptionLayerPluginConfig> *dsrv_;
+  dynamic_reconfigure::Server<DownprojectionMultilayerPluginConfig> *dsrv_;
   
   // time based costmap layer
   std::map<unsigned int, ros::Time> clearing_index_stamped_;
@@ -212,7 +212,7 @@ public:
 
 }  // namespace squirrel_navigation
 
-#endif  // SQUIRREL_NAVIGATION_PERCEPTIONLAYER_H_
+#endif  // SQUIRREL_NAVIGATION_DOWNPROJECTIONMULTILAYER_H_
 
 // 
-// PerceptionLayer.h ends here
+// DownprojectionMultilayer.h ends here

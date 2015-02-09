@@ -1,15 +1,15 @@
- // ObstaclesLayer.h --- 
+ // DownprojectionLayer.h --- 
 // 
-// Filename: ObstaclesLayer.h
+// Filename: DownprojectionLayer.h
 // Description: Dynamic mapping of obstacles with RGBD
 //              and Laser sensors
 // Author: Federico Boniardi
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Wed Nov 19 18:57:41 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Fri Dec 5 17:57:27 2014 (+0100)
+// Last-Updated: Mon Feb 9 11:40:46 2015 (+0100)
 //           By: Federico Boniardi
-//     Update #: 2
+//     Update #: 3
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -66,8 +66,8 @@
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_OBSTACLESLAYER_H_
-#define SQUIRREL_NAVIGATION_OBSTACLESLAYER_H_
+#ifndef SQUIRREL_NAVIGATION_DOWNPROJECTIONLAYER_H_
+#define SQUIRREL_NAVIGATION_DOWNPROJECTIONLAYER_H_
 
 #include <ros/ros.h>
 #include <costmap_2d/layer.h>
@@ -87,16 +87,18 @@
 #include <costmap_2d/obstacle_layer.h>
 #include <voxel_grid/voxel_grid.h>
 
+#include "squirrel_navigation/DownprojectionLayerPluginConfig.h"
+
 #include <map>
 #include <cmath>
 
 namespace squirrel_navigation {
 
-class ObstaclesLayer : public costmap_2d::ObstacleLayer
+class DownprojectionLayer : public costmap_2d::ObstacleLayer
 {
 public:
-  ObstaclesLayer( void );
-  virtual ~ObstaclesLayer( void );
+  DownprojectionLayer( void );
+  virtual ~DownprojectionLayer( void );
   virtual void onInitialize( void );
   virtual void updateBounds( double, double, double, double*, double*, double*, double* );
   void updateOrigin( double, double );
@@ -109,15 +111,15 @@ protected:
   virtual void resetMaps( void );
 
 private:
-  void reconfigureCB( costmap_2d::VoxelPluginConfig& , uint32_t );
+  void reconfigureCB( DownprojectionLayerPluginConfig& , uint32_t );
   void clearNonLethal( double, double, double, double, bool );
   virtual void raytraceFreespace( const costmap_2d::Observation&, double*, double*, double*, double* );
 
-  dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig> *dsrv_;
+  dynamic_reconfigure::Server<DownprojectionLayerPluginConfig> *dsrv_;
 
   // time based costmap layer
   std::map<unsigned int, ros::Time> clearing_index_stamped_;
-  
+
   ros::Publisher voxel_pub_;
   voxel_grid::VoxelGrid voxel_grid_;
   double z_resolution_, origin_z_;
@@ -177,7 +179,7 @@ private:
 
 }  // namespace squirrel_navigation
 
-#endif  // SQUIRREL_NAVIGATION_OBSTACLESLAYER_H_
+#endif  // SQUIRREL_NAVIGATION_DOWNPROJECTIONLAYER_H_
 
 // 
-// ObstaclesLayer.h ends here
+// DownprojectionLayer.h ends here

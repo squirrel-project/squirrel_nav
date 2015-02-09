@@ -37,10 +37,9 @@ find_package(catkin REQUIRED
 )
 
 generate_dynamic_reconfigure_options(
-  cfg/ObstaclesLayerPlugin.cfg
+  cfg/DownprojectionLayerPlugin.cfg
+  cfg/DownprojectionMultilayerPlugin.cfg
   cfg/MapLayerPlugin.cfg
-  cfg/SensorLayerPlugin.cfg
-  cfg/PerceptionLayerPlugin.cfg
 )
 
 catkin_package(
@@ -65,11 +64,11 @@ add_library(squirrel_local_planner
 )
 
 add_library(squirrel_costmap_layers
-  # src/SensorLayer.cpp
-  src/PerceptionLayer
   src/MapLayer.cpp
-  src/MultiInflatedLayer.cpp
   src/InflatedLayer.cpp
+  src/DownprojectionLayer.cpp
+  src/DownprojectionMultilayer.cpp
+  src/MultiInflatedLayer.cpp
 )
 
 add_dependencies(squirrel_costmap_layers
@@ -103,28 +102,32 @@ target_link_libraries(pointcloud_filter_node
 ## Install ##
 #############
 
-install(TARGETS
-  squirrel_local_planner
-  squirrel_costmap_layers
-  pointcloud_filter_node
+install(TARGETS  
+  squirrel_local_planner 
+  squirrel_costmap_layers 
+  pointcloud_filter_node 
   autolocalization_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-install(DIRECTORY include/${PROJECT_NAME}/
+install(DIRECTORY 
+  include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".git" EXCLUDE
 )
 
-install(DIRECTORY launch/
+install(DIRECTORY 
+  launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
   PATTERN ".git" EXCLUDE
 )
 
-install(FILES plugins/SquirrelLocalPlanner.xml plugins/SquirrelCostmapLayers.xml
+install(FILES 
+  SquirrelLocalPlanner.xml 
+  SquirrelCostmapLayers.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 

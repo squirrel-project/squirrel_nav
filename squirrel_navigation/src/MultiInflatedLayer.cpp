@@ -256,11 +256,7 @@ void MultiInflatedLayer::computeCaches( void )
       cached_costs_[l] = new unsigned char*[cell_inflation_radii_[l] + 2];
       cached_distances_[l] = new double*[cell_inflation_radii_[l] + 2];
 
-      ROS_INFO("computeCaches():");
-      ROS_INFO_STREAM("   l = " << l);
-      ROS_INFO_STREAM("   i = " << cell_inflation_radii_[l]+10);
       for (unsigned int i = 0; i <= cell_inflation_radii_[l] + 1; ++i) {
-        ROS_INFO_STREAM("           j = " << cell_inflation_radii_[l]+2);
         cached_costs_[l][i] = new unsigned char[cell_inflation_radii_[l] + 2];
         cached_distances_[l][i] = new double[cell_inflation_radii_[l] + 2];
         for (unsigned int j = 0; j <= cell_inflation_radii_[l] + 1; ++j) {

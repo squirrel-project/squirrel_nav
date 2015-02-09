@@ -1,8 +1,8 @@
 LocalPlanner:
   max_linear_vel: 0.2
-  min_linear_vel: 0.0
+  min_linear_vel: -0.2
   max_rotation_vel: 0.7
-  min_rotation_vel: 0.0
+  min_rotation_vel: -0.7
   yaw_goal_tolerance: 0.05
   xy_goal_tolerance: 0.05
   heading_lookahead: 0.3

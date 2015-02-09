@@ -1,13 +1,13 @@
-// PerceptionLayer.cpp --- 
+// DownprojectionLayer.cpp --- 
 // 
-// Filename: PerceptionLayer.cpp
+// Filename: DownprojectionLayer.cpp
 // Description: Dynamic mapping of obstacles with RGBD
 //              and Laser sensors
 // Author: Federico Boniardi
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Wed Nov 19 18:57:41 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Tue Feb 3 10:52:14 2015 (+0100)
+// Last-Updated: Mon Feb 9 11:41:13 2015 (+0100)
 //           By: Federico Boniardi
 //     Update #: 4
 // URL: 
@@ -17,9 +17,8 @@
 // 
 
 // Commentary: 
-//   The code therein is an integration of costmap_2d::InflationLayer into
-//   costmap_2d::VoxelLayer. Both source codes are distributed by the authors
-//   under BSD license which is below reported
+//   The code therein is an improvement of costmap_2d::VoxelLayer which
+//   is distributed by the authors under BSD license which is below reported
 //   
 //     /*********************************************************************
 //      *
@@ -66,53 +65,50 @@
 
 // Code:
 
-#include "squirrel_navigation/PerceptionLayer.h"
+#include "squirrel_navigation/DownprojectionLayer.h"
+#include "squirrel_navigation/Common.h"
 
 #include <pluginlib/class_list_macros.h>
 #include <pcl_conversions/pcl_conversions.h>
 
-#include <map>
+#include <set>
 
-#define VOXEL_BITS 16
-
-PLUGINLIB_EXPORT_CLASS(squirrel_navigation::PerceptionLayer, costmap_2d::Layer)
+PLUGINLIB_EXPORT_CLASS(squirrel_navigation::DownprojectionLayer, costmap_2d::Layer)
 
 namespace squirrel_navigation {
 
-PerceptionLayer::PerceptionLayer( void ) :
+DownprojectionLayer::DownprojectionLayer( void ) :
     voxel_grid_(0, 0, 0),
-    max_obstacle_height_(1.0),
-    min_obstacle_height_(0.0),
-    obstacles_persistence_(60.0),
-    dsrv_(NULL)
+    robot_diameter_(0.5),
+    robot_height_(1.0),
+    floor_threshold_(0.0),
+    obstacles_persistence_(60.0)
 {
   costmap_ = NULL;
 }
 
-PerceptionLayer::~PerceptionLayer( void )
+DownprojectionLayer::~DownprojectionLayer( void )
 {
-  if ( dsrv_ ) {
+  if( dsrv_ ) {
     delete dsrv_;
-  }
+  }  
 }
 
-void PerceptionLayer::onInitialize( void )
+void DownprojectionLayer::onInitialize( void )
 {
   ObstacleLayer::onInitialize();
-  matchInflatedSize();
 }
 
-void PerceptionLayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
-                                double* min_x, double* min_y, double* max_x, double* max_y )
+void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
+                                        double* min_x, double* min_y, double* max_x, double* max_y )
 {
   if ( rolling_window_ ) {
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
   }
-
-  if ( !enabled_ ) {
+  if (!enabled_) {
     return;
   }
-
+  // This function doesn't compile with older versions of ROS-navigation (just comment it out)
   useExtraBounds(min_x, min_y, max_x, max_y);
   
   bool current = true;
@@ -128,8 +124,7 @@ void PerceptionLayer::updateBounds( double robot_x, double robot_y, double robot
 
   ros::Time now = ros::Time::now();
   std::set<unsigned int> index_free_space;
-  std::map<unsigned int, double> x_free_space, y_free_space;
-  
+
   if ( obstacles_persistence_ > 0 ) {
     for (std::map<unsigned int, ros::Time>::iterator i=clearing_index_stamped_.begin(); i!=clearing_index_stamped_.end(); ++i) {
       if ( i->second.toSec() < now.toSec()-obstacles_persistence_ ) {
@@ -146,11 +141,9 @@ void PerceptionLayer::updateBounds( double robot_x, double robot_y, double robot
     double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
 
     for (unsigned int i = 0; i < cloud.points.size(); ++i) {
-      if ( cloud.points[i].z > max_obstacle_height_ || cloud.points[i].z < -min_obstacle_height_ ) {
+      if ( cloud.points[i].z > robot_height_ || cloud.points[i].z > max_obstacle_height_ ) {
         continue;
       }
-
-      unsigned int l = layer(cloud.points[i].z);
       
       double sq_dist_orig = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x)
           + (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y)
@@ -163,7 +156,7 @@ void PerceptionLayer::updateBounds( double robot_x, double robot_y, double robot
       double sq_dist_robot = (cloud.points[i].x - robot_x) * (cloud.points[i].x - robot_x)
           + (cloud.points[i].y - robot_y) * (cloud.points[i].y - robot_y);
 
-      if ( sq_dist_robot <= std::pow(robot_link_radii_[l], 2) ) {
+      if ( sq_dist_orig <= std::pow(0.5*robot_diameter_, 2) ) {
         continue;
       }
       
@@ -177,34 +170,28 @@ void PerceptionLayer::updateBounds( double robot_x, double robot_y, double robot
       }
 
       unsigned int index = getIndex(mx, my);
-      index_free_space.insert(index);
-      
-      if ( cloud.points[i].z >= min_obstacle_height_ ) {
-        if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {
+      index_free_space.insert(index); 
+
+      if ( cloud.points[i].z > floor_threshold_ ) {
         clearing_index_stamped_[index] = now;
         index_free_space.erase(index);
-          costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
-          if ( !observed_[index] ) {
-            obstacles_[index] = l;
-            observed_[index] = true;
-          } else {
-            obstacles_[index] = inscribed_radii_[l] > inscribed_radii_[obstacles_[index]] ? l : obstacles_[index];            
-          }
-          touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
-        }
+      }
+      
+      if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {                
+        costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
+        touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
       }
     }
   }
-
+  
   for (std::set<unsigned int>::iterator i=index_free_space.begin(); i!=index_free_space.end(); ++i) {
     costmap_[*i] = costmap_2d::FREE_SPACE; 
   }
-
+  
   footprint_layer_.updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
-  updateInflatedBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 }
 
-void PerceptionLayer::updateOrigin( double new_origin_x, double new_origin_y )
+void DownprojectionLayer::updateOrigin( double new_origin_x, double new_origin_y )
 {
   int cell_ox, cell_oy;
   cell_ox = int((new_origin_x - origin_x_) / resolution_);
@@ -249,39 +236,19 @@ void PerceptionLayer::updateOrigin( double new_origin_x, double new_origin_y )
   delete[] local_voxel_map;
 }
 
-void PerceptionLayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j )
-{
-  if ( !enabled_ ) {
-    return;
-  }
-
-  footprint_layer_.updateCosts(*this, min_i, min_j, max_i, max_j);
-
-  if( combination_method_ == 0 ) {
-    updateWithOverwrite(master_grid, min_i, min_j, max_i, max_j);
-  } else {
-    updateWithMax(master_grid, min_i, min_j, max_i, max_j);
-  }
-
-  updateInflatedCosts(master_grid, min_i, min_j, max_i, max_j);
-
-  // obstacles_.clear();
-  // observed_.clear();
-}
-
-bool PerceptionLayer::isDiscretized( void )
+bool DownprojectionLayer::isDiscretized( void )
 {
   return true;
 }
 
-void PerceptionLayer::matchSize( void )
+void DownprojectionLayer::matchSize( void )
 {
   costmap_2d::ObstacleLayer::matchSize();
   voxel_grid_.resize(size_x_, size_y_, size_z_);
   ROS_ASSERT(voxel_grid_.sizeX() == size_x_ && voxel_grid_.sizeY() == size_y_);
 }
 
-void PerceptionLayer::reset( void )
+void DownprojectionLayer::reset( void )
 {
   deactivate();
   resetMaps();
@@ -289,98 +256,47 @@ void PerceptionLayer::reset( void )
   activate();
 }
 
-void PerceptionLayer::setupDynamicReconfigure( ros::NodeHandle& nh )
+void DownprojectionLayer::setupDynamicReconfigure( ros::NodeHandle& nh )
 {
-  {
-    boost::unique_lock < boost::shared_mutex > lock(*access_);
-    current_ = true;
-    seen_ = NULL;
-    need_reinflation_ = false;
-
-    dynamic_reconfigure::Server<PerceptionLayerPluginConfig>::CallbackType cb = boost::bind(
-        &PerceptionLayer::reconfigureCB, this, _1, _2);
-    
-    if ( dsrv_ != NULL ) {
-      dsrv_->clearCallback();
-      dsrv_->setCallback(cb);
-    } else {
-      dsrv_ = new dynamic_reconfigure::Server<PerceptionLayerPluginConfig>(nh);
-      dsrv_->setCallback(cb);
-    }
-  }
+  dsrv_ = new dynamic_reconfigure::Server<DownprojectionLayerPluginConfig>(nh);
+  dynamic_reconfigure::Server<DownprojectionLayerPluginConfig>::CallbackType cb = boost::bind(
+      &DownprojectionLayer::reconfigureCB, this, _1, _2);
+  dsrv_->setCallback(cb);
 }
 
-void PerceptionLayer::resetMaps( void )
+void DownprojectionLayer::resetMaps( void )
 {
   costmap_2d::Costmap2D::resetMaps();
   voxel_grid_.reset();
 }
 
-void PerceptionLayer::reconfigureCB( PerceptionLayerPluginConfig &config, uint32_t level )
+void DownprojectionLayer::reconfigureCB( DownprojectionLayerPluginConfig& config, uint32_t level )
 {
-  num_layers_ = config.num_layers;  
-  malloc_layers();
-
-  max_obstacle_height_ = config.max_obstacle_height;
-  min_obstacle_height_ = config.min_obstacle_height;
-
+  enabled_ = config.enabled;
+  max_obstacle_height_ = config.robot_height;
   size_z_ = config.z_voxels;
   origin_z_ = config.origin_z;
   z_resolution_ = config.z_resolution;
   unknown_threshold_ = config.unknown_threshold + (VOXEL_BITS - size_z_);
   mark_threshold_ = config.mark_threshold;
-  
-  if ( obstacles_persistence_ > 0 ) {
-    ROS_INFO_STREAM("obstacle persistence: " << obstacles_persistence_);
-  } else if ( obstacles_persistence_ == 0) {
-    std::string ns = ros::this_node::getNamespace();
-    ROS_WARN("/%s: obstacle_persistance is chosen to be 0(s). Reset to 60.0(s). ", ns.c_str());
-  }
-
-  robot_link_radii_ = ParameterParser::array<double>(config.robot_link_radii);
-  layers_levels_ = ParameterParser::array<double>(config.layers_levels);
-
-  std::vector<double> weights = ParameterParser::array<double>(config.cost_scaling_factors);
-  std::vector<double> inflation_radii = ParameterParser::array<double>(config.inflation_radii);
-  std::vector<double> inscribed_radii = ParameterParser::array<double>(config.inscribed_radii);
-  
-  if ( robot_link_radii_.size() != num_layers_ || weights.size() != num_layers_ || layers_levels_.size() != num_layers_ ||
-       inflation_radii.size() != num_layers_ || inscribed_radii.size() != num_layers_ ) {
-    ROS_ERROR("%s: Invalid parameter for squirrel_navigation::PerceptionLayer", ros::this_node::getName().c_str());
-    ros::shutdown();
-  }
-  
-  if ( !std::equal(weights_.begin(), weights_.end(), weights.data()) ||
-       !std::equal(inflation_radii_.begin(), inflation_radii.end(), inflation_radii.data()) ) {
-
-    inflation_radii_ = inflation_radii;
-
-    cell_inflation_radii_.clear();
-    for (unsigned int i=0; i<num_layers_; ++i) {
-      cell_inflation_radii_.push_back(cellDistance(inflation_radii_[i]));
-    }
-    max_cell_inflation_radius_ = *std::max_element(cell_inflation_radii_.begin(), cell_inflation_radii_.end());
-
-    inscribed_radii_ = inscribed_radii;
-
-    weights_ = weights;
-
-    need_reinflation_ = true;
-
-    computeCaches();
-  }
-
-  if ( enabled_ != config.enabled ) {
-    enabled_ = config.enabled;
-    need_reinflation_ = true;
-  }
-  
   combination_method_ = config.combination_method;
   
+  robot_diameter_ = config.robot_diameter;
+  floor_threshold_ = config.floor_threshold;
+  obstacles_persistence_ = config.obstacles_persistence;
+
+  if ( obstacles_persistence_ > 0 ) {
+    ROS_INFO("%s/%s: obstacle persistence: %f(s)", ros::this_node::getNamespace().c_str(), ros::this_node::getName().c_str(),
+             obstacles_persistence_);
+  } else if ( obstacles_persistence_ == 0) {
+    ROS_WARN("%s/%s: obstacle_persistance is chosen to be 0(s). Reset to 60.0(s). ", ros::this_node::getNamespace().c_str(),
+             ros::this_node::getName().c_str());
+  } 
+
   matchSize();
 }
 
-void PerceptionLayer::clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info)
+void DownprojectionLayer::clearNonLethal( double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info )
 {
   unsigned int mx, my;
   if (!worldToMap(wx, wy, mx, my)) {
@@ -422,8 +338,8 @@ void PerceptionLayer::clearNonLethal(double wx, double wy, double w_size_x, doub
   }
 }
 
-void PerceptionLayer::raytraceFreespace(const costmap_2d::Observation& clearing_observation,
-                                        double* min_x, double* min_y, double* max_x, double* max_y)
+void DownprojectionLayer::raytraceFreespace( const costmap_2d::Observation& clearing_observation,
+                                             double* min_x, double* min_y, double* max_x, double* max_y )
 {
   if (clearing_observation.cloud_->points.size() == 0) {
     return;
@@ -504,4 +420,4 @@ void PerceptionLayer::raytraceFreespace(const costmap_2d::Observation& clearing_
 }  // namespace squirrel_navigation
 
 // 
-// PerceptionLayer.cpp ends here
+// DownprojectionLayer.cpp ends here

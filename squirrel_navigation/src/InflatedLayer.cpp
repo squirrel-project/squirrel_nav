@@ -98,8 +98,8 @@ void InflatedLayer::matchInflatedSize( void )
   seen_ = new bool[size_x * size_y];
 }
 
-void InflatedLayer::updateInflatedBounds(double robot_x, double robot_y, double robot_yaw, double* min_x,
-                                         double* min_y, double* max_x, double* max_y)
+void InflatedLayer::updateInflatedBounds( double robot_x, double robot_y, double robot_yaw, double* min_x,
+                                          double* min_y, double* max_x, double* max_y )
 {
   if( need_reinflation_ )
   {
@@ -111,15 +111,15 @@ void InflatedLayer::updateInflatedBounds(double robot_x, double robot_y, double 
   }
 }
 
-void InflatedLayer::onFootprintChanged()
+void InflatedLayer::onFootprintChanged( void )
 {
   cell_inflation_radius_ = cellDistance( inflation_radius_ );
   computeCaches();
   need_reinflation_ = true;
 }
 
-void InflatedLayer::updateInflatedCosts(costmap_2d::Costmap2D& master_grid,
-                                        int min_i, int min_j, int max_i, int max_j)
+void InflatedLayer::updateInflatedCosts( costmap_2d::Costmap2D& master_grid,
+                                         int min_i, int min_j, int max_i, int max_j )
 {
   boost::unique_lock < boost::shared_mutex > lock(*access_);
 
@@ -177,8 +177,8 @@ void InflatedLayer::updateInflatedCosts(costmap_2d::Costmap2D& master_grid,
   }
 }
 
-inline void InflatedLayer::enqueue(unsigned char* grid, unsigned int index, unsigned int mx, unsigned int my,
-                                   unsigned int src_x, unsigned int src_y)
+inline void InflatedLayer::enqueue( unsigned char* grid, unsigned int index, unsigned int mx, unsigned int my,
+                                    unsigned int src_x, unsigned int src_y )
 {
   if ( !seen_[index] ) {
     double distance = distanceLookup(mx, my, src_x, src_y);

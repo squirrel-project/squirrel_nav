@@ -113,7 +113,7 @@ void MapLayer::onInitialize( void )
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
   unknown_cost_value_ = temp_unknown_cost_value;
 
-  ROS_INFO("Requesting the map...");
+  ROS_INFO("%s/%s: Requesting the map...", ros::this_node::getNamespace().c_str(), ros::this_node::getName().c_str());
   map_sub_ = g_nh.subscribe(map_topic, 1, &MapLayer::incomingMap, this);
   map_received_ = false;
   has_updated_data_ = false;
@@ -124,10 +124,11 @@ void MapLayer::onInitialize( void )
     r.sleep();
   }
 
-  ROS_INFO("Received a %d X %d map at %f m/pix", getSizeInCellsX(), getSizeInCellsY(), getResolution());
+  ROS_INFO("%s/%s: Received a %d X %d map at %f m/pix", ros::this_node::getNamespace().c_str(), ros::this_node::getName().c_str(),
+           getSizeInCellsX(), getSizeInCellsY(), getResolution());
   
   if( subscribe_to_updates_ ) {
-    ROS_INFO("Subscribing to updates");
+    ROS_INFO("%s/%s: Subscribing to updates", ros::this_node::getNamespace().c_str(), ros::this_node::getName().c_str());
     map_update_sub_ = g_nh.subscribe(map_topic + "_updates", 10, &MapLayer::incomingUpdate, this);
   }
 
@@ -197,7 +198,7 @@ unsigned char MapLayer::interpretValue( unsigned char value )
   return scale * costmap_2d::LETHAL_OBSTACLE;
 }
 
-void MapLayer::incomingMap(const nav_msgs::OccupancyGridConstPtr& new_map)
+void MapLayer::incomingMap( const nav_msgs::OccupancyGridConstPtr& new_map )
 {
   unsigned int size_x = new_map->info.width, size_y = new_map->info.height;
 
@@ -207,7 +208,8 @@ void MapLayer::incomingMap(const nav_msgs::OccupancyGridConstPtr& new_map)
   if ( master->getSizeInCellsX() != size_x || master->getSizeInCellsY() != size_y ||
        master->getResolution() != new_map->info.resolution || master->getOriginX() != new_map->info.origin.position.x ||
        master->getOriginY() != new_map->info.origin.position.y || !layered_costmap_->isSizeLocked() ){
-    ROS_INFO("Resizing costmap to %d X %d at %f m/pix", size_x, size_y, new_map->info.resolution);
+    ROS_INFO("%s/%s: Resizing costmap to %d X %d at %f m/pix", ros::this_node::getNamespace().c_str(), ros::this_node::getName().c_str(),
+             size_x, size_y, new_map->info.resolution);
     layered_costmap_->resizeMap(size_x, size_y, new_map->info.resolution, new_map->info.origin.position.x, new_map->info.origin.position.y, true);
   } else if ( size_x_ != size_x || size_y_ != size_y ||
               resolution_ != new_map->info.resolution ||
@@ -237,7 +239,7 @@ void MapLayer::incomingMap(const nav_msgs::OccupancyGridConstPtr& new_map)
   has_updated_data_ = true;
 }
 
-void MapLayer::incomingUpdate(const map_msgs::OccupancyGridUpdateConstPtr& update) {
+void MapLayer::incomingUpdate( const map_msgs::OccupancyGridUpdateConstPtr& update ) {
   unsigned int di = 0;
   for (unsigned int y = 0; y < update->height ; y++) {
     unsigned int index_base = (update->y + y) * update->width;
@@ -272,13 +274,14 @@ void MapLayer::reset( void )
   activate();
 }
 
-void MapLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
-                            double* min_x, double* min_y, double* max_x, double* max_y)
+void MapLayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
+                             double* min_x, double* min_y, double* max_x, double* max_y )
 {
   if ( !map_received_ || !(has_updated_data_ || has_extra_bounds_) ) {
     return;
   }
-  
+
+  // This function does not compile for older version of ROS-navigation (just comment it out)
   useExtraBounds(min_x, min_y, max_x, max_y);
 
   double mx, my;
@@ -296,7 +299,7 @@ void MapLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
   updateInflatedBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 }
 
-void MapLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j)
+void MapLayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j )
 {
   if (!map_received_) {
     return;
