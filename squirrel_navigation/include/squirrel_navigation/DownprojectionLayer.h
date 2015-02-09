@@ -70,21 +70,13 @@
 #define SQUIRREL_NAVIGATION_DOWNPROJECTIONLAYER_H_
 
 #include <ros/ros.h>
-#include <costmap_2d/layer.h>
-#include <costmap_2d/layered_costmap.h>
+
+#include <dynamic_reconfigure/server.h>
+
 #include <costmap_2d/observation_buffer.h>
 #include <costmap_2d/VoxelGrid.h>
-#include <nav_msgs/OccupancyGrid.h>
-#include <sensor_msgs/LaserScan.h>
-#include <laser_geometry/laser_geometry.h>
-#include <sensor_msgs/PointCloud.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud_conversion.h>
-#include <tf/message_filter.h>
-#include <message_filters/subscriber.h>
-#include <dynamic_reconfigure/server.h>
-#include <costmap_2d/VoxelPluginConfig.h>
 #include <costmap_2d/obstacle_layer.h>
+
 #include <voxel_grid/voxel_grid.h>
 
 #include "squirrel_navigation/DownprojectionLayerPluginConfig.h"
