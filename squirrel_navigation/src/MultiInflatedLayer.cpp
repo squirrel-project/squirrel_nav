@@ -216,17 +216,18 @@ void MultiInflatedLayer::updateInflatedCosts( costmap_2d::Costmap2D& master_grid
   }
 }
 
-inline void MultiInflatedLayer::enqueue( unsigned char* grid, unsigned int index, unsigned int mx, unsigned int my,
+inline void MultiInflatedLayer::enqueue( unsigned char* grid, unsigned int index,  unsigned int mx, unsigned int my,
                                          unsigned int src_x, unsigned int src_y )
 {
+  unsigned int src_index = getIndex(src_x, src_y);
   if ( !seen_[index] ) {
-    double distance = distanceLookup(mx, my, src_x, src_y, obstacles_[index]);
+    double distance = distanceLookup(mx, my, src_x, src_y, obstacles_[src_index]);
 
-    if ( distance > cell_inflation_radii_[obstacles_[index]] ) {
+    if ( distance > cell_inflation_radii_[obstacles_[src_index]] ) {
       return;
     }
     
-    unsigned char cost = costLookup(mx, my, src_x, src_y, obstacles_[index]);
+    unsigned char cost = costLookup(mx, my, src_x, src_y, obstacles_[src_index]);
     unsigned char old_cost = grid[index];
 
     if ( old_cost == costmap_2d::NO_INFORMATION && cost >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE ) {
@@ -255,7 +256,11 @@ void MultiInflatedLayer::computeCaches( void )
       cached_costs_[l] = new unsigned char*[cell_inflation_radii_[l] + 2];
       cached_distances_[l] = new double*[cell_inflation_radii_[l] + 2];
 
+      ROS_INFO("computeCaches():");
+      ROS_INFO_STREAM("   l = " << l);
+      ROS_INFO_STREAM("   i = " << cell_inflation_radii_[l]+10);
       for (unsigned int i = 0; i <= cell_inflation_radii_[l] + 1; ++i) {
+        ROS_INFO_STREAM("           j = " << cell_inflation_radii_[l]+2);
         cached_costs_[l][i] = new unsigned char[cell_inflation_radii_[l] + 2];
         cached_distances_[l][i] = new double[cell_inflation_radii_[l] + 2];
         for (unsigned int j = 0; j <= cell_inflation_radii_[l] + 1; ++j) {

@@ -71,6 +71,8 @@
 #include <pluginlib/class_list_macros.h>
 #include <pcl_conversions/pcl_conversions.h>
 
+#include <map>
+
 #define VOXEL_BITS 16
 
 PLUGINLIB_EXPORT_CLASS(squirrel_navigation::PerceptionLayer, costmap_2d::Layer)
@@ -110,8 +112,8 @@ void PerceptionLayer::updateBounds( double robot_x, double robot_y, double robot
   if ( !enabled_ ) {
     return;
   }
-  // This function doesn't compile with the current libraries in the Robotino
-  // useExtraBounds(min_x, min_y, max_x, max_y);
+
+  useExtraBounds(min_x, min_y, max_x, max_y);
   
   bool current = true;
   std::vector<costmap_2d::Observation> observations, clearing_observations;
@@ -126,7 +128,8 @@ void PerceptionLayer::updateBounds( double robot_x, double robot_y, double robot
 
   ros::Time now = ros::Time::now();
   std::set<unsigned int> index_free_space;
-
+  std::map<unsigned int, double> x_free_space, y_free_space;
+  
   if ( obstacles_persistence_ > 0 ) {
     for (std::map<unsigned int, ros::Time>::iterator i=clearing_index_stamped_.begin(); i!=clearing_index_stamped_.end(); ++i) {
       if ( i->second.toSec() < now.toSec()-obstacles_persistence_ ) {
@@ -175,21 +178,20 @@ void PerceptionLayer::updateBounds( double robot_x, double robot_y, double robot
 
       unsigned int index = getIndex(mx, my);
       index_free_space.insert(index);
-
-      if ( cloud.points[i].z > min_obstacle_height_ ) {
+      
+      if ( cloud.points[i].z >= min_obstacle_height_ ) {
+        if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {
         clearing_index_stamped_[index] = now;
         index_free_space.erase(index);
-      }
-      
-      if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {
-        costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
-        if ( !observed_[index] ) {
-          obstacles_[index] = l;
-          observed_[index] = true;
-        } else {
-          obstacles_[index] = inscribed_radii_[l] > inscribed_radii_[obstacles_[index]] ? l : obstacles_[index];            
+          costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
+          if ( !observed_[index] ) {
+            obstacles_[index] = l;
+            observed_[index] = true;
+          } else {
+            obstacles_[index] = inscribed_radii_[l] > inscribed_radii_[obstacles_[index]] ? l : obstacles_[index];            
+          }
+          touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
         }
-        touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
       }
     }
   }
@@ -197,9 +199,8 @@ void PerceptionLayer::updateBounds( double robot_x, double robot_y, double robot
   for (std::set<unsigned int>::iterator i=index_free_space.begin(); i!=index_free_space.end(); ++i) {
     costmap_[*i] = costmap_2d::FREE_SPACE; 
   }
- 
-  footprint_layer_.updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 
+  footprint_layer_.updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
   updateInflatedBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 }
 
@@ -264,8 +265,8 @@ void PerceptionLayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i
 
   updateInflatedCosts(master_grid, min_i, min_j, max_i, max_j);
 
-  obstacles_.clear();
-  observed_.clear();
+  // obstacles_.clear();
+  // observed_.clear();
 }
 
 bool PerceptionLayer::isDiscretized( void )
@@ -282,7 +283,8 @@ void PerceptionLayer::matchSize( void )
 
 void PerceptionLayer::reset( void )
 {
-  deactivate();resetMaps();
+  deactivate();
+  resetMaps();
   voxel_grid_.reset();
   activate();
 }
@@ -337,7 +339,7 @@ void PerceptionLayer::reconfigureCB( PerceptionLayerPluginConfig &config, uint32
 
   robot_link_radii_ = ParameterParser::array<double>(config.robot_link_radii);
   layers_levels_ = ParameterParser::array<double>(config.layers_levels);
-  
+
   std::vector<double> weights = ParameterParser::array<double>(config.cost_scaling_factors);
   std::vector<double> inflation_radii = ParameterParser::array<double>(config.inflation_radii);
   std::vector<double> inscribed_radii = ParameterParser::array<double>(config.inscribed_radii);

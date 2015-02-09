@@ -71,6 +71,7 @@
 
 #include <ros/ros.h>
 
+#include <costmap_2d/layer.h>
 #include <costmap_2d/obstacle_layer.h>
 #include <costmap_2d/layered_costmap.h>
 
@@ -98,6 +99,7 @@ class MultiInflatedLayer : public costmap_2d::ObstacleLayer
     if ( distance == 0 ) {
       cost = costmap_2d::LETHAL_OBSTACLE;
     } else if ( distance * resolution_ <= inscribed_radii_[l] ) {
+      ROS_INFO("inscribed_radii_[%d] = %f ", l ,inscribed_radii_[l] );
       cost = costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
     } else {
       double euclidean_distance = distance * resolution_;
@@ -133,15 +135,15 @@ class MultiInflatedLayer : public costmap_2d::ObstacleLayer
  private:
   inline double distanceLookup( int mx, int my, int src_x, int src_y, int l )
   {
-    unsigned int dx = std::abs(mx - src_x);
-    unsigned int dy = std::abs(my - src_y);
+    unsigned int dx = std::abs(mx-src_x);
+    unsigned int dy = std::abs(my-src_y);
     return cached_distances_[l][dx][dy];
   }
 
   inline unsigned char costLookup( int mx, int my, int src_x, int src_y, int l )
   {
-    unsigned int dx = abs(mx - src_x);
-    unsigned int dy = abs(my - src_y);
+    unsigned int dx = abs(mx-src_x);
+    unsigned int dy = abs(my-src_y);
     return cached_costs_[l][dx][dy];
   }
 
