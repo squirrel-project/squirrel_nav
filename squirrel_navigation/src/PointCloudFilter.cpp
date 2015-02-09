@@ -138,7 +138,7 @@ int PointCloudFilter::getFilterStep( void )
   } else {
     int size;
     std::istringstream(pointcloud_size_) >> size;
-    return 300000/std::max(1,size);
+    return std::max(300000/std::max(1,size),1);
   }
 }
 
