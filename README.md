@@ -80,6 +80,11 @@ move the robot around the map to localise the robot.
 After that, you can send a navigation goal via the rviz button *2D Nav Goal*.
 The robot should now move to the goal.
 
+### Notes on navigation
+
+The setup is meant for a robot provided with 
+- A laser rangefinder, used for localisation and obstacles mapping
+- A depth camera, used for obstacles mapping and 3D navigation
 
 ## Visualisation
 
