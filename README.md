@@ -68,23 +68,29 @@ The argument `map_file:=[mymap.yaml]` can be omitted and the map
 pointed by `default-map.yaml` is loaded. In case the map's file is
 specified, *[mymap.yaml]* has to be replaced by the recorded mapping
 file.  You have to use the full path to the mapping file, even if the
-yaml file is in the same directory.
+yaml file is in the current working directory.
 
+## Visualisation
 
-###Start Rviz
-To set a initial pose estimation, start rviz on your desktop.
-```bash
-$ rosrun rviz rviz
-```
-There is rviz configuration files in our git repository *alufr_navigation\config\rviz\hydro_config.rviz*,
-that can be loaded with *Ctrl+O*.
+In *squirrel_navigation/config/robot1/rviz* are stored some
+configuration for RViz visualisation. In particular
+*squirrel_navigation/config/robot1/rviz/rviz_hydro_navigation.rviz*
+might be used to track the robot during the navigation tasks.
 
-###Set Initial Pose and Move with Rviz
-Set at first a pose estimate with the button *2D Pose Estimate* and move the robot arround the map to localize the
-robot. After that, you can send a navigation goal via the rviz button *2D Nav Goal*.The robot should now move to the goal.
+<!-- ###Start Rviz -->
+<!-- To set a initial pose estimation, start rviz on your desktop. -->
+<!-- ```bash -->
+<!-- $ rosrun rviz rviz -->
+<!-- ``` -->
+<!-- There is rviz configuration files in our git repository *alufr_navigation\config\rviz\hydro_config.rviz*, -->
+<!-- that can be loaded with *Ctrl+O*. -->
 
-##Creating a 3D Octomap Localizing in a 2D Map
-As as first step, start the navigation as described above.
+<!-- ###Set Initial Pose and Move with Rviz -->
+<!-- Set at first a pose estimate with the button *2D Pose Estimate* and move the robot arround the map to localize the -->
+<!-- robot. After that, you can send a navigation goal via the rviz button *2D Nav Goal*.The robot should now move to the goal. -->
+
+<!-- ##Creating a 3D Octomap Localizing in a 2D Map -->
+<!-- As as first step, start the navigation as described above. -->
 
 ### Localising in a 2D Gridmap
 
