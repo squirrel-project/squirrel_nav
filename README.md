@@ -31,20 +31,24 @@ correctly computed, it can be stored running
 ```bash
 roslaunch squirrel_navigation gmapping.launch
 ```
-An rviz configuration file, can be found in the git repository at
-*alufr_navigation\config\rviz\hydro_config.rviz*.
-You can load it in rviz via *Cltr+O*. You should see a small part of a map.
-Move the robotino with the joystick to complete the map.
-If done, save the map with the following command:
-```bash
-$ rosrun map_server map_saver -f [mymap]
-```
+
+An rviz configuration file for visualising the current map generated
+can be found in the git repository IN
+*squirrel_navigation/config/robot1/rviz/rviz_hydro_gmapping.rviz*.
+You should see a small part of a map.  Move the robotino with the
+joystick to complete the map.  If done, save the map with the
+following command:
+
+```bash 
+$ rosrun map_server map_saver -f [mymap] 
+``` 
+
 where *[mymap]* should be replaced by the correct path and filename.
-`mymap.pgm` and `mymap.yaml` are created in the folder where the
-above command has been executed.
+`mymap.pgm` and `mymap.yaml` are created in the folder where the above
+command has been executed.
 
 Move the map files into the folder
-`navigation/squirrel_navigation/maps` and create a symbolic link to
+*navigation/squirrel_navigation/maps* and create a symbolic link to
 the map:
 ```bash
 $ roscd squirrel_navigation
