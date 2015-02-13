@@ -70,6 +70,17 @@ specified, *[mymap.yaml]* has to be replaced by the recorded mapping
 file.  You have to use the full path to the mapping file, even if the
 yaml file is in the current working directory.
 
+### Localising in a 2D Gridmap
+
+Set at first a pose estimate with the button *2D Pose Estimate* and
+move the robot around the map to localise the robot.
+
+### Performing a navigation task
+
+After that, you can send a navigation goal via the rviz button *2D Nav Goal*.
+The robot should now move to the goal.
+
+
 ## Visualisation
 
 In *squirrel_navigation/config/robot1/rviz* are stored some
@@ -91,16 +102,6 @@ might be used to track the robot during the navigation tasks.
 
 <!-- ##Creating a 3D Octomap Localizing in a 2D Map -->
 <!-- As as first step, start the navigation as described above. -->
-
-### Localising in a 2D Gridmap
-
-Set at first a pose estimate with the button *2D Pose Estimate* and
-move the robot around the map to localise the robot.
-
-### Performing a navigation task
-
-After that, you can send a navigation goal via the rviz button *2D Nav Goal*.
-The robot should now move to the goal.
 
 
 <!-- ## Creating a 3D Octomap  -->
