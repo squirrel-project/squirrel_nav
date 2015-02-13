@@ -63,10 +63,12 @@ in the same folder.
 ```bash
 $ roslaunch squirrel_navigation navigation.launch {map_file:=[mymap.yaml]}
 ```
-The argument `map_file:=[mymap.yaml]` can be omitted. In such case the
-map pointed by `default-map.yaml` is loaded. i*[mymap.yaml]* has to be
-replaced by the recorded mapping file.  You have to use the full path
-to the mapping file, even if the yaml file is in the same directory.
+
+The argument `map_file:=[mymap.yaml]` can be omitted and the map
+pointed by `default-map.yaml` is loaded. In case the map's file is
+specified, *[mymap.yaml]* has to be replaced by the recorded mapping
+file.  You have to use the full path to the mapping file, even if the
+yaml file is in the same directory.
 
 
 ###Start Rviz
