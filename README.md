@@ -83,8 +83,8 @@ The robot should now move to the goal.
 ### Notes on navigation
 
 The setup is meant for a robot provided with 
-- A laser rangefinder, used for localisation and obstacles mapping
-- A depth camera, used for obstacles mapping and 3D navigation
+- A :laser rangefinder, used for localisation and obstacles mapping
+- A :depth camera, used for obstacles mapping and 3D navigation
 
 ## Visualisation
 
