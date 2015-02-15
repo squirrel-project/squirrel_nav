@@ -127,7 +127,7 @@ void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, dou
 
   ros::Time now = ros::Time::now();
   std::set<unsigned int> index_free_space;
-  std::map<unsigned int, double> x_free_space, y_free_space;
+  std::map<unsigned int, bool> free_space_lock;
   
   if ( obstacles_persistence_ > 0 ) {
     for (std::map<unsigned int, ros::Time>::iterator i=clearing_index_stamped_.begin(); i!=clearing_index_stamped_.end(); ++i) {
@@ -176,12 +176,13 @@ void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, dou
       }
 
       unsigned int index = getIndex(mx, my);
-      index_free_space.insert(index);
-      
-      if ( cloud.points[i].z >= min_obstacle_height_ ) {
-        if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {
-        clearing_index_stamped_[index] = now;
+      if ( cloud.points[i].z < min_obstacle_height_ && !free_space_lock[index] ) {
+        index_free_space.insert(index);
+      } else if ( cloud.points[i].z >= min_obstacle_height_ ) {
         index_free_space.erase(index);
+        free_space_lock[index] = true;
+        if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {
+          clearing_index_stamped_[index] = now;
           costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
           if ( !observed_[index] ) {
             obstacles_[index] = l;
@@ -194,7 +195,7 @@ void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, dou
       }
     }
   }
-
+  
   for (std::set<unsigned int>::iterator i=index_free_space.begin(); i!=index_free_space.end(); ++i) {
     costmap_[*i] = costmap_2d::FREE_SPACE; 
   }

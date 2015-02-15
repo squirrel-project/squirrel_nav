@@ -21,8 +21,8 @@
   <library path="lib/libsquirrel_costmap_layers">
     <class type="squirrel_navigation::DownprojectionLayer" base_class_type="costmap_2d::Layer">
       <description>
-	Costmap layer for kinect+laser sensors. It downprojects the obstacles on the costmap with
-	a single inflation radius.
+	Costmap layer for kinect+laser sensors. It downprojects the obstacles on the costmap without
+	adding the inflation related to any robot link.
       </description>
     </class>
     <class type="squirrel_navigation::DownprojectionMultilayer" base_class_type="costmap_2d::Layer">

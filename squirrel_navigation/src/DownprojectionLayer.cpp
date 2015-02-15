@@ -124,7 +124,8 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
 
   ros::Time now = ros::Time::now();
   std::set<unsigned int> index_free_space;
-
+  std::map<unsigned int, bool> free_space_lock;
+  
   if ( obstacles_persistence_ > 0 ) {
     for (std::map<unsigned int, ros::Time>::iterator i=clearing_index_stamped_.begin(); i!=clearing_index_stamped_.end(); ++i) {
       if ( i->second.toSec() < now.toSec()-obstacles_persistence_ ) {
@@ -170,10 +171,13 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
       }
 
       unsigned int index = getIndex(mx, my);
-      index_free_space.insert(index); 
-
+      if ( cloud.points[i].z < floor_threshold_ && !free_space_lock[index] ) {
+        index_free_space.insert(index); 
+      }
+ 
       if ( cloud.points[i].z > floor_threshold_ ) {
         clearing_index_stamped_[index] = now;
+        free_space_lock[index] = true;
         index_free_space.erase(index);
       }
       
@@ -218,8 +222,7 @@ void DownprojectionLayer::updateOrigin( double new_origin_x, double new_origin_y
   unsigned int* voxel_map = voxel_grid_.getData();
 
   copyMapRegion(costmap_, lower_left_x, lower_left_y, size_x_, local_map, 0, 0, cell_size_x, cell_size_x, cell_size_y);
-  copyMapRegion(voxel_map, lower_left_x, lower_left_y, size_x_, local_voxel_map, 0, 0, cell_size_x, cell_size_x,
-                cell_size_y);
+  copyMapRegion(voxel_map, lower_left_x, lower_left_y, size_x_, local_voxel_map, 0, 0, cell_size_x, cell_size_x, cell_size_y);
 
   resetMaps();
 
