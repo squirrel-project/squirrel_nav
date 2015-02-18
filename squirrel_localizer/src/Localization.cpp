@@ -69,9 +69,9 @@ void Localization::start_global()
       Vector2 wp(it->pose[0],it->pose[1]);
       Vector2i mp = m_map->world2map(wp);
       if ( m_map->isInside(mp) ) {
-        on_free_space = !m_map->cell(mp);
+        on_free_space = (bool) !m_map->cell(mp);
       }
-    } while ( on_free_space );    
+    } while ( !on_free_space );    
     it->weight = 0.;
   }
   reset_motion();
