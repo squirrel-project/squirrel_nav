@@ -520,6 +520,13 @@ void Ais_localizer_node::localize() {
   particleVector.header.stamp = scan_front_.header.stamp;
   particleVector.header.frame_id = map_frame_ID_;
 
+  double cov_xx = 0.0,
+      cov_yy = 0.0,
+      cov_aa = 0.0,
+      cov_xy = 0.0,
+      cov_xa = 0.0,
+      cov_ya = 0.0;
+  
   for (unsigned int i = 0; i < particles->size(); i++) {
     particlePose.position.x = (*particles)[i].pose._translation.x();
     particlePose.position.y = (*particles)[i].pose._translation.y();
@@ -528,6 +535,18 @@ void Ais_localizer_node::localize() {
     particlePose.orientation.x = (*particles)[i].pose._rotation.x();
     particlePose.orientation.y = (*particles)[i].pose._rotation.y();
     particlePose.orientation.z = (*particles)[i].pose._rotation.z();
+
+    double dx = particlePose.position.x - mean._translation.x();
+    double dy = particlePose.position.y - mean._translation.y();
+    double da = tf::getYaw(particlePose.orientation)-mean._rotation.yaw();
+    
+    cov_xx += dx * dx / particles->size();
+    cov_yy += dy * dy / particles->size();
+    cov_aa += da * da / particles->size();
+    cov_xy += dx * dy / particles->size();
+    cov_xa += dx * da / particles->size();
+    cov_ya += dy * da / particles->size();
+    
     particleVector.poses.push_back(particlePose);
   }
 
@@ -544,6 +563,16 @@ void Ais_localizer_node::localize() {
   cur_pos.header.stamp = scan_front_.header.stamp;
   cur_pos.header.seq = cur_pos_seq++;
 
+  cur_pos.pose.covariance[0]  = cov_xx;
+  cur_pos.pose.covariance[1]  = cov_xy;
+  cur_pos.pose.covariance[5]  = cov_xa;
+  cur_pos.pose.covariance[6]  = cov_xy;
+  cur_pos.pose.covariance[7]  = cov_yy;
+  cur_pos.pose.covariance[11] = cov_ya;
+  cur_pos.pose.covariance[30] = cov_xa;
+  cur_pos.pose.covariance[31] = cov_ya;
+  cur_pos.pose.covariance[35] = cov_aa;
+  
   if (scanMatcherOn && localizer_.isLocalized()) {
     // scan matcher stuff
     Pose estimatedPose(mean._translation.x(), mean._translation.y(), mean.toVector()[5]);
