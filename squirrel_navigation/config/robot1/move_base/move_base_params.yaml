@@ -8,7 +8,7 @@
 # Code:
 
 base_local_planner: "squirrel_navigation/LocalPlanner"
-controller_frequency: 10.0
+controller_frequency: 7.5
 planner_frequency: 1.5 # to enable replanning
 shutdown_costmaps: false
 recovery_behavior: 
