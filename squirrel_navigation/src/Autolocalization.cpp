@@ -84,7 +84,7 @@ Autolocalization::Autolocalization( void ) :
   private_nh_.param("tolerance_var_th", tolerance_var_th_, 0.05);
   private_nh_.param("calibration", calibration_, false);
   private_nh_.param("initial_pose_topic", initial_pose_topic_, std::string("/initialpose"));
-  private_nh_.param("amcl_pose_topic", amcl_pose_topic_, std::string("/amcl_pose"));
+  private_nh_.param("amcl_pose_topic", amcl_pose_topic_, std::string("/squirrel_localizer_pose"));
   private_nh_.param("odom_topic", odom_topic_, std::string("/odom"));
   private_nh_.param("distance_sensors_topic", distance_sensors_topic_, std::string("/distance_sensors"));
 
