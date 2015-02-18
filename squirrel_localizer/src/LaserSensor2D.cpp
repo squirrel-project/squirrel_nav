@@ -21,6 +21,9 @@
 
 #include "squirrel_localizer/LaserSensor2D.h"
 
+#include <ros/ros.h>
+
+#include <string>
 #include <fstream>
 #include <sstream>
 
@@ -86,7 +89,9 @@ bool LaserSensor::perform_update(double linear_motion, double angular_motion) co
  */
 void LaserSensor::set_map(AISNavigation::FloatMap *map)
 {
-  std::cout << "Setting the map" << std::endl;
+  std::string ns = ros::this_node::getNamespace();
+  std::string nn = ros::this_node::getName();
+  ROS_INFO("%s/%s: Setting the map", ns.c_str(), nn.c_str());
   m_map = map;
   m_distanceMapComputed = false;
 }
@@ -199,7 +204,9 @@ double LaserSensor::particle_weight(const LocalizerParticle &p)
 AISNavigation::FloatMap* LaserSensor::distance_map(const LocalizerParticle &p)
 {
   if(!m_distanceMapComputed){
-    std::cout << "compute the distance map" << std::endl;
+    std::string ns = ros::this_node::getNamespace();
+    std::string nn = ros::this_node::getName();
+    ROS_INFO("%s/%s: Computing the distance map.", ns.c_str(), nn.c_str());
     m_map->computeDistanceMap(*m_distanceMap, m_maxDistance, m_minOccupancy, m_markUnknown);
     m_distanceMapComputed = true;
   }
