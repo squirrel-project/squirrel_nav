@@ -87,23 +87,23 @@ add_library(${PROJECT_NAME} src/OctomapServer.cpp src/OctomapServerMultilayer.cp
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 
-add_executable(octomap_server_node src/octomap_server_node.cpp)
+add_executable(octomap_server_node src/OctomapServerNode.cpp)
 target_link_libraries(octomap_server_node ${PROJECT_NAME} ${LINK_LIBS} dynamic_edt)
 
-add_executable(octomap_server_static src/octomap_server_static.cpp)
+add_executable(octomap_server_static src/OctomapServerStatic.cpp)
 target_link_libraries(octomap_server_static ${PROJECT_NAME} ${LINK_LIBS} dynamic_edt)
 
-add_executable(octomap_server_multilayer src/octomap_server_multilayer.cpp)
+add_executable(octomap_server_multilayer src/OctomapServerMultilayerNode.cpp)
 target_link_libraries(octomap_server_multilayer ${PROJECT_NAME} ${LINK_LIBS} dynamic_edt)
 
-add_executable(octomap_saver src/octomap_saver.cpp)
+add_executable(octomap_saver src/OctomapSaver.cpp)
 target_link_libraries(octomap_saver ${PROJECT_NAME} ${LINK_LIBS} dynamic_edt)
 
-add_executable(octomap_tracking_server_node src/octomap_tracking_server_node.cpp)
+add_executable(octomap_tracking_server_node src/OctomapTrackingServerNode.cpp)
 target_link_libraries(octomap_tracking_server_node ${PROJECT_NAME} ${LINK_LIBS} dynamic_edt)
 
 ## Nodelet
-add_library(octomap_server_nodelet src/octomap_server_nodelet.cpp)
+add_library(octomap_server_nodelet src/OctomapServerNodelet.cpp)
 target_link_libraries(octomap_server_nodelet ${PROJECT_NAME} ${LINK_LIBS} dynamic_edt)
 
 #############

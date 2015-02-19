@@ -5,6 +5,9 @@
     <serviceClient name="make_plan" msg="nav_msgs::GetPlan"/>
     <serviceServer name="getPushingPlan" msg="squirrel_rgbd_mapping_msgs::GetPushingPlan"/>
     <parameter name="tolerance" type="double"/>
+    <parameter name="robot_radius" type="double" value=""/>
+    <parameter name="start_goal_frame_id" type="string" value="/map"/>
+    <parameter name="plan_frame_id" type="string" value="/odom"/>
   </node>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
