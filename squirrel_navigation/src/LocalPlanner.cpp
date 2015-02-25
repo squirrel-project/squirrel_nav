@@ -6,9 +6,9 @@
 // Maintainer: Federico Boniardi (boniardi@cs.uni-freiburg.de)
 // Created: Fri Nov 14 01:09:32 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Fri Dec 5 17:10:34 2014 (+0100)
+// Last-Updated: Wed Feb 25 15:58:57 2015 (+0100)
 //           By: Federico Boniardi
-//     Update #: 3
+//     Update #: 4
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -57,7 +57,7 @@ LocalPlanner::LocalPlanner( void ) :
 {
   node_name_ = ros::this_node::getName();
   namespace_ = ros::this_node::getNamespace();
-  ROS_INFO("%s/%s: LocalPlanner started", namespace_.c_str(), node_name_.c_str());
+  ROS_INFO("%s: LocalPlanner started", node_name_.c_str());
 }
 
 LocalPlanner::~LocalPlanner( void )
@@ -194,13 +194,13 @@ bool LocalPlanner::rotateToStart( geometry_msgs::Twist& cmd_vel )
     tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[next_heading_index_].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
     tf_->transformPose( base_odom_.header.frame_id, global_plan_[next_heading_index_], rotate_goal );
   } catch(tf::LookupException& ex) {
-    ROS_ERROR("%s/%s: Lookup Error: %s\n", namespace_.c_str(), node_name_.c_str(), ex.what());
+    ROS_ERROR("%s: Lookup Error: %s", node_name_.c_str(), ex.what());
     return false;
   } catch(tf::ConnectivityException& ex) {
-    ROS_ERROR("%s/%s: Connectivity Error: %s\n", namespace_.c_str(), node_name_.c_str(), ex.what());
+    ROS_ERROR("%s: Connectivity Error: %s", node_name_.c_str(), ex.what());
     return false;
   } catch(tf::ExtrapolationException& ex) {
-    ROS_ERROR("%s/%s: Extrapolation Error: %s\n", namespace_.c_str(), node_name_.c_str(), ex.what());
+    ROS_ERROR("%s: Extrapolation Error: %s", node_name_.c_str(), ex.what());
     return false;
   }
 
@@ -236,13 +236,13 @@ bool LocalPlanner::move( geometry_msgs::Twist& cmd_vel )
     tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[next_heading_index_].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
     tf_->transformPose( base_odom_.header.frame_id, global_plan_[next_heading_index_], move_goal );
   } catch(tf::LookupException& ex) {
-    ROS_ERROR("%s/%s: Lookup Error: %s\n", namespace_.c_str(), node_name_.c_str(), ex.what());
+    ROS_ERROR("%s: Lookup Error: %s", node_name_.c_str(), ex.what());
     return false;
   } catch(tf::ConnectivityException& ex) {
-    ROS_ERROR("%s/%s: Connectivity Error: %s\n", namespace_.c_str(), node_name_.c_str(), ex.what());
+    ROS_ERROR("%s: Connectivity Error: %s", node_name_.c_str(), ex.what());
     return false;
   } catch(tf::ExtrapolationException& ex) {
-    ROS_ERROR("%s/%s: Extrapolation Error: %s\n", namespace_.c_str(), node_name_.c_str(), ex.what());
+    ROS_ERROR("%s: Extrapolation Error: %s", node_name_.c_str(), ex.what());
     return false;
   }
 
@@ -270,7 +270,7 @@ bool LocalPlanner::move( geometry_msgs::Twist& cmd_vel )
     if( distance_to_next_heading < xy_goal_tolerance_ ) {
       cmd_vel.linear.x = 0.0;
       cmd_vel.angular.z = 0.0;
-      ROS_INFO("%s/%s: Rotate to goal", namespace_.c_str(), node_name_.c_str());
+      ROS_INFO("%s: Rotate to goal", node_name_.c_str());
       state_ = ROTATING_TO_GOAL;
       return true;
     }
@@ -290,13 +290,13 @@ bool LocalPlanner::rotateToGoal( geometry_msgs::Twist& cmd_vel )
     tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[next_heading_index_].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
     tf_->transformPose( base_odom_.header.frame_id, global_plan_[next_heading_index_], rotate_goal );
   } catch(tf::LookupException& ex) {
-    ROS_ERROR("%s/%s: Lookup Error: %s\n", namespace_.c_str(), node_name_.c_str(), ex.what());
+    ROS_ERROR("%s: Lookup Error: %s", node_name_.c_str(), ex.what());
     return false;
   } catch(tf::ConnectivityException& ex) {
-    ROS_ERROR("%s/%s: Connectivity Error: %s\n", namespace_.c_str(), node_name_.c_str(), ex.what());
+    ROS_ERROR("%s: Connectivity Error: %s", node_name_.c_str(), ex.what());
     return false;
   } catch(tf::ExtrapolationException& ex) {
-    ROS_ERROR("%s/%s: Extrapolation Error: %s\n", namespace_.c_str(), node_name_.c_str(), ex.what());
+    ROS_ERROR("%s: Extrapolation Error: %s", node_name_.c_str(), ex.what());
     return false;
   }
   
@@ -304,7 +304,7 @@ bool LocalPlanner::rotateToGoal( geometry_msgs::Twist& cmd_vel )
       tf::getYaw( base_odom_.pose.orientation );
 
   if( fabs( rotation ) < yaw_goal_tolerance_ ) {
-    ROS_INFO("%s/%s: Goal reached", namespace_.c_str(), node_name_.c_str());
+    ROS_INFO("%s: Goal reached", node_name_.c_str());
     if ( global_plan_.size() > 0 ) {
       global_plan_.clear();
     }
@@ -331,13 +331,13 @@ void LocalPlanner::computeNextHeadingIndex( void )
       tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[i].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
       tf_->transformPose( base_odom_.header.frame_id, global_plan_[i], next_heading_pose );
     } catch(tf::LookupException& ex) {
-      ROS_ERROR("%s/%s: Lookup Error: %s\n", namespace_.c_str(), node_name_.c_str(), ex.what());
+      ROS_ERROR("%s: Lookup Error: %s", node_name_.c_str(), ex.what());
       return;
     } catch(tf::ConnectivityException& ex) {
-      ROS_ERROR("%s/%s: Connectivity Error: %s\n", namespace_.c_str(), node_name_.c_str(), ex.what());
+      ROS_ERROR("%s: Connectivity Error: %s", node_name_.c_str(), ex.what());
       return;
     } catch(tf::ExtrapolationException& ex) {
-      ROS_ERROR("%s/%s: Extrapolation Error: %s\n", namespace_.c_str(), node_name_.c_str(), ex.what());
+      ROS_ERROR("%s: Extrapolation Error: %s", node_name_.c_str(), ex.what());
       return;
     }
 
