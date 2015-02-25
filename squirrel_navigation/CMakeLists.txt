@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(squirrel_navigation)
 
-## Dependencies
+set(ROS_BUILD_TYPE Release)
+
+## Package dependencies
 set(squirrel_navigation_DEPENDENCIES
   actionlib
   # cmake_modules

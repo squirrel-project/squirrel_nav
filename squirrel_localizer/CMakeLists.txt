@@ -3,6 +3,7 @@ project(squirrel_localizer)
 
 set(ROS_BUILD_TYPE Release)
 
+## Package dependencies
 set(squirrel_localizer_DEPENDENCIES
   roslib
   roscpp
@@ -30,16 +31,16 @@ find_package(catkin REQUIRED
 ###################################
 ## catkin specific configuration ##
 ###################################
+
 catkin_package(
  INCLUDE_DIRS include
-#  LIBRARIES 
-  CATKIN_DEPENDS ${squirrel_localizer_DEPENDENCIES}
-#  DEPENDS system_lib
+ CATKIN_DEPENDS ${squirrel_localizer_DEPENDENCIES}
 )
 
 ###########
 ## Build ##
 ###########
+
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
@@ -84,7 +85,6 @@ add_executable(squirrel_localizer_tf_pose_node
 target_link_libraries(squirrel_localizer_tf_pose_node
   ${catkin_LIBRARIES}  
 )
-
 
 #############
 ## Install ##
