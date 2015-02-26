@@ -46,7 +46,7 @@ generate_dynamic_reconfigure_options(
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES sqiurrel_local_planner squirrel_obstacles_layer
+  LIBRARIES sqiurrel_local_planner squirrel_costamp_layers
   CATKIN_DEPENDS ${squirrel_navigation_DEPENDENCIES}
   #  DEPENDS system_lib
 )
