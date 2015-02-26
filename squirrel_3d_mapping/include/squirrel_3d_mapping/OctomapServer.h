@@ -217,8 +217,48 @@ protected:
   double edt_robotHeight, edt_robotRadius;
   bool edt_dynamicEdt;
   bool edt_unknownAsOccupied;
- 
+
+  int edt_layersNum;
+  std::vector<double> edt_layersLevels;
+  std::vector<double> edt_inscribedRadii;
   //////////////////////////////////////////////
+
+  class ParameterParser
+  {
+   public:
+    template<typename T> static inline std::vector<T> array( std::string input )
+    {
+      std::vector<T> output;
+      std::stringstream ss(input);
+      std::string token;
+
+      for(unsigned int i=0; std::getline(ss,token,','); ++i) {
+        output.resize(output.size()+1);
+        std::stringstream ss(token);
+        ss >> output[i];
+      }
+      return output;
+    }
+  };
+
+  inline unsigned int layer( double z ) {
+    if ( z < edt_layersLevels.front() ) {
+      return 0;
+    } else if ( z >= edt_layersLevels.back() ) {
+      return (unsigned int) edt_layersNum-1;
+    } else {
+      for (unsigned int i=0; i<edt_layersNum-1; ++i) {
+        if ( z >= edt_layersLevels[i] && z < edt_layersLevels[i+1] ) {
+          return i;
+        }
+      }
+    }
+  }
+
+  inline float xyDistance( octomap::point3d p1, octomap::point3d p2 )
+  {
+    return std::sqrt((p1.x()-p2.x())*(p1.x()-p2.x())+(p1.y()-p2.y())*(p1.y()-p2.y()));
+  }
   
   double m_maxRange;
   std::string m_worldFrameId; // the map frame

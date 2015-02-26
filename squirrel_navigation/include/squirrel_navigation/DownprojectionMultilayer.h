@@ -1,15 +1,15 @@
- // ObstaclesLayer.h --- 
+// DownprojectionMultilayer.h --- 
 // 
-// Filename: ObstaclesLayer.h
+// Filename: DownprojectionMultilayer.h
 // Description: Dynamic mapping of obstacles with RGBD
 //              and Laser sensors
 // Author: Federico Boniardi
 // Maintainer: boniardi@cs.uni-freiburg.de
-// Created: Wed Nov 19 18:57:41 2014 (+0100)
+// Created: Wed Feb 4 10:14:10 2015 (+0100)
 // Version: 0.1.0
-// Last-Updated: Fri Dec 5 17:57:27 2014 (+0100)
+// Last-Updated: Mon Feb 9 11:51:05 2015 (+0100)
 //           By: Federico Boniardi
-//     Update #: 2
+//     Update #: 5
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -17,8 +17,9 @@
 // 
 
 // Commentary: 
-//   The code therein is an improvement of costmap_2d::VoxelLayer which
-//   is distributed by the authors under BSD license, that is below reported
+//   The code therein is an integration of costmap_2d::InflationLayer into
+//   costmap_2d::VoxelLayer. Both source codes are distributed by the authors
+//   under BSD license which is below reported
 //   
 //     /*********************************************************************
 //      *
@@ -60,74 +61,76 @@
 //
 //   Tested on: - ROS Hydro on Ubuntu 12.04
 //              - ROS Indigo on Ubuntu 14.04
-//   RGBD source: ASUS Xtion pro
-//      
+//
 //      
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_OBSTACLESLAYER_H_
-#define SQUIRREL_NAVIGATION_OBSTACLESLAYER_H_
+#ifndef SQUIRREL_NAVIGATION_DOWNPROJECTIONMULTILAYER_H_
+#define SQUIRREL_NAVIGATION_DOWNPROJECTIONMULTILAYER_H_
 
 #include <ros/ros.h>
-#include <costmap_2d/layer.h>
+
+#include <costmap_2d/obstacle_layer.h>
 #include <costmap_2d/layered_costmap.h>
 #include <costmap_2d/observation_buffer.h>
-#include <costmap_2d/VoxelGrid.h>
-#include <nav_msgs/OccupancyGrid.h>
-#include <sensor_msgs/LaserScan.h>
-#include <laser_geometry/laser_geometry.h>
-#include <sensor_msgs/PointCloud.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud_conversion.h>
-#include <tf/message_filter.h>
-#include <message_filters/subscriber.h>
-#include <dynamic_reconfigure/server.h>
-#include <costmap_2d/VoxelPluginConfig.h>
-#include <costmap_2d/obstacle_layer.h>
+
 #include <voxel_grid/voxel_grid.h>
+
+#include <dynamic_reconfigure/server.h>
+
+#include "squirrel_navigation/MultiInflatedLayer.h"
+#include "squirrel_navigation/DownprojectionMultilayerPluginConfig.h"
 
 #include <map>
 #include <cmath>
+#include <algorithm>
+#include <sstream>
+#include <vector>
 
 namespace squirrel_navigation {
 
-class ObstaclesLayer : public costmap_2d::ObstacleLayer
+class DownprojectionMultilayer : public MultiInflatedLayer
 {
 public:
-  ObstaclesLayer( void );
-  virtual ~ObstaclesLayer( void );
+  DownprojectionMultilayer( void );
+  virtual ~DownprojectionMultilayer( void );
   virtual void onInitialize( void );
   virtual void updateBounds( double, double, double, double*, double*, double*, double* );
+  virtual void updateCosts( costmap_2d::Costmap2D&, int, int, int, int );
   void updateOrigin( double, double );
   bool isDiscretized( void );
   virtual void matchSize( void );
   virtual void reset( void );
-
-protected:
+  
+ protected:
   virtual void setupDynamicReconfigure( ros::NodeHandle& );
   virtual void resetMaps( void );
 
-private:
-  void reconfigureCB( costmap_2d::VoxelPluginConfig& , uint32_t );
+  class ParameterParser
+  {
+   public:
+    template<typename T> static inline std::vector<T> array( std::string input )
+    {
+      std::vector<T> output;
+      std::stringstream ss(input);
+      std::string token;
+
+      for(unsigned int i=0; std::getline(ss,token,','); ++i) {
+        output.resize(output.size()+1);
+        std::stringstream ss(token);
+        ss >> output[i];
+      }
+
+      return output;
+    }
+  };
+  
+ private:
+  void reconfigureCB( DownprojectionMultilayerPluginConfig&, uint32_t );
   void clearNonLethal( double, double, double, double, bool );
   virtual void raytraceFreespace( const costmap_2d::Observation&, double*, double*, double*, double* );
-
-  dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig> *dsrv_;
-
-  // time based costmap layer
-  std::map<unsigned int, ros::Time> clearing_index_stamped_;
-  
-  ros::Publisher voxel_pub_;
-  voxel_grid::VoxelGrid voxel_grid_;
-  double z_resolution_, origin_z_;
-  unsigned int unknown_threshold_, mark_threshold_, size_z_;
-  ros::Publisher clearing_endpoints_pub_;
-  sensor_msgs::PointCloud clearing_endpoints_;
-  
-  double robot_diameter_, robot_height_;
-  double floor_threshold_,  obstacles_persistence_;
-  
+    
   inline bool worldToMap3DFloat( double wx, double wy, double wz, double& mx, double& my, double& mz )
   {
     if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_) {
@@ -147,7 +150,7 @@ private:
 
   inline bool worldToMap3D( double wx, double wy, double wz, unsigned int& mx, unsigned int& my, unsigned int& mz )
   {
-    if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_) {
+    if ( wx < origin_x_ || wy < origin_y_ || wz < origin_z_ ) {
       return false;
     }
     
@@ -155,7 +158,7 @@ private:
     my = (int)((wy - origin_y_) / resolution_);
     mz = (int)((wz - origin_z_) / z_resolution_);
 
-    if (mx < size_x_ && my < size_y_ && mz < size_z_) {
+    if ( mx < size_x_ && my < size_y_ && mz < size_z_ ) {
       return true;
     }
 
@@ -173,11 +176,43 @@ private:
   {
     return std::sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0) + (z1-z0)*(z1-z0));
   }
+
+  inline unsigned int layer( double z ) {
+    if ( z < layers_levels_.front() ) {
+      return 0;
+    } else if ( z >= layers_levels_.back() ) {
+      return (unsigned int) num_layers_-1;
+    } else {
+      for (unsigned int i=0; i<num_layers_-1; ++i) {
+        if ( z >= layers_levels_[i] && z < layers_levels_[i+1] ) {
+          return i;
+        }
+      }
+    }
+  }
+  
+  dynamic_reconfigure::Server<DownprojectionMultilayerPluginConfig> *dsrv_;
+  
+  // time based costmap layer
+  std::map<unsigned int, ros::Time> clearing_index_stamped_;
+  
+  ros::Publisher voxel_pub_;
+  voxel_grid::VoxelGrid voxel_grid_;
+  double z_resolution_, origin_z_;
+  unsigned int unknown_threshold_, mark_threshold_, size_z_;
+  ros::Publisher clearing_endpoints_pub_;
+  sensor_msgs::PointCloud clearing_endpoints_;
+
+  std::vector<double> robot_link_radii_;
+  std::vector<double> layers_levels_;
+  double max_obstacle_height_, min_obstacle_height_,  obstacles_persistence_;
+
+  std::map<unsigned int, bool> observed_;
 };
 
 }  // namespace squirrel_navigation
 
-#endif  // SQUIRREL_NAVIGATION_OBSTACLESLAYER_H_
+#endif  // SQUIRREL_NAVIGATION_DOWNPROJECTIONMULTILAYER_H_
 
 // 
-// ObstaclesLayer.h ends here
+// DownprojectionMultilayer.h ends here

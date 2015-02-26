@@ -55,9 +55,7 @@ LocalPlanner::LocalPlanner( void ) :
     min_rotation_vel_(0.0),
     num_window_points_(10)
 {
-  node_name_ = ros::this_node::getName();
-  namespace_ = ros::this_node::getNamespace();
-  ROS_INFO("%s: LocalPlanner started", node_name_.c_str());
+  ROS_INFO("LocalPlanner started");
 }
 
 LocalPlanner::~LocalPlanner( void )
@@ -85,7 +83,7 @@ void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, cost
   next_heading_pub_ = private_nh.advertise<visualization_msgs::Marker>("marker", 10);
 }
 
-bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
+bool LocalPlanner::computeVelocityCommands( geometry_msgs::Twist& cmd_vel )
 {
   // Set all values of cmd_vel to zero
   cmd_vel.linear.x = 0.0;
@@ -120,7 +118,7 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   return ret;
 }
 
-bool LocalPlanner::isGoalReached()
+bool LocalPlanner::isGoalReached( void )
 {
   return (state_ == FINISHED);
 }
@@ -193,14 +191,14 @@ bool LocalPlanner::rotateToStart( geometry_msgs::Twist& cmd_vel )
     boost::mutex::scoped_lock lock(odom_lock_);
     tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[next_heading_index_].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
     tf_->transformPose( base_odom_.header.frame_id, global_plan_[next_heading_index_], rotate_goal );
-  } catch(tf::LookupException& ex) {
-    ROS_ERROR("%s: Lookup Error: %s", node_name_.c_str(), ex.what());
+  } catch( tf::LookupException& ex ) {
+    ROS_ERROR("Lookup Error: %s\n", ex.what());
     return false;
   } catch(tf::ConnectivityException& ex) {
-    ROS_ERROR("%s: Connectivity Error: %s", node_name_.c_str(), ex.what());
+    ROS_ERROR("Connectivity Error: %s\n", ex.what());
     return false;
   } catch(tf::ExtrapolationException& ex) {
-    ROS_ERROR("%s: Extrapolation Error: %s", node_name_.c_str(), ex.what());
+    ROS_ERROR("Extrapolation Error: %s\n", ex.what());
     return false;
   }
 
@@ -235,14 +233,14 @@ bool LocalPlanner::move( geometry_msgs::Twist& cmd_vel )
     boost::mutex::scoped_lock lock(odom_lock_);
     tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[next_heading_index_].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
     tf_->transformPose( base_odom_.header.frame_id, global_plan_[next_heading_index_], move_goal );
-  } catch(tf::LookupException& ex) {
-    ROS_ERROR("%s: Lookup Error: %s", node_name_.c_str(), ex.what());
+  } catch( tf::LookupException& ex ) {
+    ROS_ERROR("Lookup Error: %s\n", ex.what());
     return false;
   } catch(tf::ConnectivityException& ex) {
-    ROS_ERROR("%s: Connectivity Error: %s", node_name_.c_str(), ex.what());
+    ROS_ERROR("Connectivity Error: %s\n", ex.what());
     return false;
   } catch(tf::ExtrapolationException& ex) {
-    ROS_ERROR("%s: Extrapolation Error: %s", node_name_.c_str(), ex.what());
+    ROS_ERROR("Extrapolation Error: %s\n", ex.what());
     return false;
   }
 
@@ -270,7 +268,7 @@ bool LocalPlanner::move( geometry_msgs::Twist& cmd_vel )
     if( distance_to_next_heading < xy_goal_tolerance_ ) {
       cmd_vel.linear.x = 0.0;
       cmd_vel.angular.z = 0.0;
-      ROS_INFO("%s: Rotate to goal", node_name_.c_str());
+      ROS_INFO("rotate to goal");
       state_ = ROTATING_TO_GOAL;
       return true;
     }
@@ -289,14 +287,14 @@ bool LocalPlanner::rotateToGoal( geometry_msgs::Twist& cmd_vel )
     boost::mutex::scoped_lock lock(odom_lock_);
     tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[next_heading_index_].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
     tf_->transformPose( base_odom_.header.frame_id, global_plan_[next_heading_index_], rotate_goal );
-  } catch(tf::LookupException& ex) {
-    ROS_ERROR("%s: Lookup Error: %s", node_name_.c_str(), ex.what());
+  } catch( tf::LookupException& ex ) {
+    ROS_ERROR("Lookup Error: %s\n", ex.what());
     return false;
   } catch(tf::ConnectivityException& ex) {
-    ROS_ERROR("%s: Connectivity Error: %s", node_name_.c_str(), ex.what());
+    ROS_ERROR("Connectivity Error: %s\n", ex.what());
     return false;
   } catch(tf::ExtrapolationException& ex) {
-    ROS_ERROR("%s: Extrapolation Error: %s", node_name_.c_str(), ex.what());
+    ROS_ERROR("Extrapolation Error: %s\n", ex.what());
     return false;
   }
   
@@ -304,7 +302,6 @@ bool LocalPlanner::rotateToGoal( geometry_msgs::Twist& cmd_vel )
       tf::getYaw( base_odom_.pose.orientation );
 
   if( fabs( rotation ) < yaw_goal_tolerance_ ) {
-    ROS_INFO("%s: Goal reached", node_name_.c_str());
     if ( global_plan_.size() > 0 ) {
       global_plan_.clear();
     }
@@ -330,14 +327,14 @@ void LocalPlanner::computeNextHeadingIndex( void )
     try {
       tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[i].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
       tf_->transformPose( base_odom_.header.frame_id, global_plan_[i], next_heading_pose );
-    } catch(tf::LookupException& ex) {
-      ROS_ERROR("%s: Lookup Error: %s", node_name_.c_str(), ex.what());
+    } catch( tf::LookupException& ex ) {
+      ROS_ERROR("Lookup Error: %s\n", ex.what());
       return;
     } catch(tf::ConnectivityException& ex) {
-      ROS_ERROR("%s: Connectivity Error: %s", node_name_.c_str(), ex.what());
+      ROS_ERROR("Connectivity Error: %s\n", ex.what());
       return;
     } catch(tf::ExtrapolationException& ex) {
-      ROS_ERROR("%s: Extrapolation Error: %s", node_name_.c_str(), ex.what());
+      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
       return;
     }
 

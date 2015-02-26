@@ -6,7 +6,6 @@ set(ROS_BUILD_TYPE Release)
 ## Package dependencies
 set(squirrel_navigation_DEPENDENCIES
   actionlib
-  # cmake_modules
   costmap_2d
   dynamic_reconfigure
   geometry_msgs
@@ -38,6 +37,13 @@ find_package(catkin REQUIRED
   COMPONENTS
   ${squirrel_navigation_DEPENDENCIES}
 )
+
+generate_dynamic_reconfigure_options(
+  cfg/DownprojectionLayerPlugin.cfg
+  cfg/DownprojectionMultilayerPlugin.cfg
+  cfg/MapLayerPlugin.cfg
+)
+
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES sqiurrel_local_planner squirrel_obstacles_layer
@@ -59,11 +65,19 @@ add_library(squirrel_local_planner
   src/LocalPlanner.cpp
 )
 
-add_library(squirrel_obstacles_layer
-  src/ObstaclesLayer.cpp
+add_library(squirrel_costmap_layers
+  src/MapLayer.cpp
+  src/InflatedLayer.cpp
+  src/DownprojectionLayer.cpp
+  src/DownprojectionMultilayer.cpp
+  src/MultiInflatedLayer.cpp
 )
 
-target_link_libraries(squirrel_obstacles_layer
+add_dependencies(squirrel_costmap_layers
+  ${PROJECT_NAME}_gencfg
+)
+
+target_link_libraries(squirrel_costmap_layers
   ${catkin_LIBRARIES}
 )
 
@@ -90,28 +104,32 @@ target_link_libraries(pointcloud_filter_node
 ## Install ##
 #############
 
-install(TARGETS
-  squirrel_local_planner
-  squirrel_obstacles_layer
-  pointcloud_filter_node
+install(TARGETS  
+  squirrel_local_planner 
+  squirrel_costmap_layers 
+  pointcloud_filter_node 
   autolocalization_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-install(DIRECTORY include/${PROJECT_NAME}/
+install(DIRECTORY 
+  include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".git" EXCLUDE
 )
 
-install(DIRECTORY launch/
+install(DIRECTORY 
+  launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
   PATTERN ".git" EXCLUDE
 )
 
-install(FILES plugins/SquirrelLocalPlanner.xml plugins/SquirrelObstaclesLayer.xml
+install(FILES 
+  SquirrelLocalPlanner.xml 
+  SquirrelCostmapLayers.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
