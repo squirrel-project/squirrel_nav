@@ -2,7 +2,7 @@
 # 
 # Filename: global_costmap_params.yaml
 # Description: Costmap parameters for the global Planner (Dijkstra)
-# Created: Mon Nov 17 23:54:20 2014 (+0100)
+# Created: Thu Feb 26 18:02:55 2015 (+0100)
 # Maintainer: boniardi@cs.uni-freiburg.de
 #
 # Code:
@@ -14,8 +14,7 @@ global_costmap: {
   static_map: true,
   resolution: 0.05,
   map_layer/enabled: true,
-  obstacles_laser/enabled: true,
-  obstacles_rgbd/enabled: true
+  perception_layer/enabled: true,
 }
 
 #

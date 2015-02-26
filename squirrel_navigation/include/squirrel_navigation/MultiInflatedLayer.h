@@ -99,7 +99,6 @@ class MultiInflatedLayer : public costmap_2d::ObstacleLayer
     if ( distance == 0 ) {
       cost = costmap_2d::LETHAL_OBSTACLE;
     } else if ( distance * resolution_ <= inscribed_radii_[l] ) {
-      ROS_INFO("inscribed_radii_[%d] = %f ", l ,inscribed_radii_[l] );
       cost = costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
     } else {
       double euclidean_distance = distance * resolution_;

@@ -113,7 +113,7 @@ void MapLayer::onInitialize( void )
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
   unknown_cost_value_ = temp_unknown_cost_value;
 
-  ROS_INFO("%s/%s: Requesting the map...", ros::this_node::getNamespace().c_str(), ros::this_node::getName().c_str());
+  ROS_INFO("Requesting the map...");
   map_sub_ = g_nh.subscribe(map_topic, 1, &MapLayer::incomingMap, this);
   map_received_ = false;
   has_updated_data_ = false;
@@ -124,11 +124,10 @@ void MapLayer::onInitialize( void )
     r.sleep();
   }
 
-  ROS_INFO("%s/%s: Received a %d X %d map at %f m/pix", ros::this_node::getNamespace().c_str(), ros::this_node::getName().c_str(),
-           getSizeInCellsX(), getSizeInCellsY(), getResolution());
+  ROS_INFO("Received a %d X %d map at %f m/pix", getSizeInCellsX(), getSizeInCellsY(), getResolution());
   
-  if( subscribe_to_updates_ ) {
-    ROS_INFO("%s/%s: Subscribing to updates", ros::this_node::getNamespace().c_str(), ros::this_node::getName().c_str());
+  if ( subscribe_to_updates_ ) {
+    ROS_INFO("Subscribing to updates");
     map_update_sub_ = g_nh.subscribe(map_topic + "_updates", 10, &MapLayer::incomingUpdate, this);
   }
 
@@ -141,12 +140,10 @@ void MapLayer::onInitialize( void )
     dynamic_reconfigure::Server<MapLayerPluginConfig>::CallbackType cb = boost::bind(
       &MapLayer::reconfigureCB, this, _1, _2);
 
-    if(dsrv_ != NULL){
+    if ( dsrv_ != NULL ) {
       dsrv_->clearCallback();
       dsrv_->setCallback(cb);
-    }
-    else
-    {
+    }  else {
       dsrv_ = new dynamic_reconfigure::Server<MapLayerPluginConfig>(ros::NodeHandle("~/" + name_));
       dsrv_->setCallback(cb);
     }
@@ -208,8 +205,7 @@ void MapLayer::incomingMap( const nav_msgs::OccupancyGridConstPtr& new_map )
   if ( master->getSizeInCellsX() != size_x || master->getSizeInCellsY() != size_y ||
        master->getResolution() != new_map->info.resolution || master->getOriginX() != new_map->info.origin.position.x ||
        master->getOriginY() != new_map->info.origin.position.y || !layered_costmap_->isSizeLocked() ){
-    ROS_INFO("%s/%s: Resizing costmap to %d X %d at %f m/pix", ros::this_node::getNamespace().c_str(), ros::this_node::getName().c_str(),
-             size_x, size_y, new_map->info.resolution);
+    ROS_INFO("Resizing costmap to %d X %d at %f m/pix", size_x, size_y, new_map->info.resolution);
     layered_costmap_->resizeMap(size_x, size_y, new_map->info.resolution, new_map->info.origin.position.x, new_map->info.origin.position.y, true);
   } else if ( size_x_ != size_x || size_y_ != size_y ||
               resolution_ != new_map->info.resolution ||

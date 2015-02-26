@@ -7,7 +7,7 @@
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Wed Nov 19 18:57:41 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Mon Feb 9 13:24:09 2015 (+0100)
+// Last-Updated: Thu Feb 26 17:44:31 2015 (+0100)
 //           By: Federico Boniardi
 //     Update #: 6
 // URL: 
@@ -112,6 +112,7 @@ void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, dou
     return;
   }
 
+  // This function doesnot compile if older version of ROS+Ubuntu are used
   useExtraBounds(min_x, min_y, max_x, max_y);
   
   bool current = true;
@@ -155,7 +156,7 @@ void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, dou
           + (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y)
           + (cloud.points[i].z - obs.origin_.z) * (cloud.points[i].z - obs.origin_.z);
 
-      if ( sq_dist_orig >= sq_obstacle_range ) {
+      if ( sq_dist_orig >= sq_obstacle_range && cloud.points[i].z >= min_obstacle_height_ ) {
         continue;
       }
 
@@ -176,28 +177,29 @@ void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, dou
       }
 
       unsigned int index = getIndex(mx, my);
-      if ( cloud.points[i].z < min_obstacle_height_ && !free_space_lock[index] ) {
+
+      if ( cloud.points[i].z < min_obstacle_height_ && !free_space_lock[index]) {
         index_free_space.insert(index);
-      } else if ( cloud.points[i].z >= min_obstacle_height_ ) {
+        touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
+      } else if ( cloud.points[i].z >= min_obstacle_height_ &&
+                  voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {
         index_free_space.erase(index);
         free_space_lock[index] = true;
-        if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {
-          clearing_index_stamped_[index] = now;
-          costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
-          if ( !observed_[index] ) {
-            obstacles_[index] = l;
-            observed_[index] = true;
-          } else {
-            obstacles_[index] = inscribed_radii_[l] > inscribed_radii_[obstacles_[index]] ? l : obstacles_[index];            
-          }
-          touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
+        clearing_index_stamped_[index] = now;
+        costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
+        if ( !observed_[index] ) {
+          obstacles_[index] = l;
+          observed_[index] = true;
+        } else {
+          obstacles_[index] = inscribed_radii_[l] > inscribed_radii_[obstacles_[index]] ? l : obstacles_[index];            
         }
+        touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
       }
     }
   }
   
-  for (std::set<unsigned int>::iterator i=index_free_space.begin(); i!=index_free_space.end(); ++i) {
-    costmap_[*i] = costmap_2d::FREE_SPACE; 
+  for (std::set<unsigned int>::iterator f=index_free_space.begin(); f!=index_free_space.end(); ++f) {
+    costmap_[*f] = costmap_2d::FREE_SPACE; 
   }
 
   footprint_layer_.updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
@@ -249,8 +251,7 @@ void DownprojectionMultilayer::updateOrigin( double new_origin_x, double new_ori
   delete[] local_voxel_map;
 }
 
-void DownprojectionMultilayer::updateCosts( costmap_2d::Costmap2D& master_grid,
-                                            int min_i, int min_j, int max_i, int max_j )
+void DownprojectionMultilayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j )
 {
   if ( !enabled_ ) {
     return;
@@ -333,11 +334,9 @@ void DownprojectionMultilayer::reconfigureCB( DownprojectionMultilayerPluginConf
   obstacles_persistence_ = config.obstacles_persistence;
 
   if ( obstacles_persistence_ > 0 ) {
-    ROS_INFO("%s/%s: obstacle persistence: %f", ros::this_node::getNamespace().c_str(),
-             ros::this_node::getName().c_str(), obstacles_persistence_);
+    ROS_INFO("Obstacle persistence: %f", obstacles_persistence_);
   } else if ( obstacles_persistence_ == 0) {
-    ROS_WARN("%s/%s: obstacle_persistence is chosen to be 0(s). Reset to 60.0(s).", ros::this_node::getName().c_str(),
-             ros::this_node::getNamespace().c_str());
+    ROS_WARN("Obstacle_persistence is chosen to be 0(s). Reset to 60.0(s).");
   }
 
   robot_link_radii_ = ParameterParser::array<double>(config.robot_link_radii);
@@ -349,8 +348,7 @@ void DownprojectionMultilayer::reconfigureCB( DownprojectionMultilayerPluginConf
   
   if ( robot_link_radii_.size() != num_layers_ || weights.size() != num_layers_ || layers_levels_.size() != num_layers_ ||
        inflation_radii.size() != num_layers_ || inscribed_radii.size() != num_layers_ ) {
-    ROS_ERROR("%s/%s: Invalid parameter for squirrel_navigation::DownprojectionMultilayer", ros::this_node::getNamespace().c_str(),
-              ros::this_node::getName().c_str());
+    ROS_ERROR("Invalid parameter for squirrel_navigation::DownprojectionMultilayer");
     ros::shutdown();
   }
   
