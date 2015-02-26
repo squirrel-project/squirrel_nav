@@ -15,7 +15,8 @@ local_costmap: {
   static_map: false,
   resolution: 0.05,
   map_layer/enabled: false,
-  perception_layer/enabled: true,
+  obstacles_laser/enabled: true,
+  obstacles_rgbd/enabled: true,
 } 
 
 #

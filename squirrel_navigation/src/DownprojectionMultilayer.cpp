@@ -266,8 +266,8 @@ void DownprojectionMultilayer::updateCosts( costmap_2d::Costmap2D& master_grid,
 
   updateInflatedCosts(master_grid, min_i, min_j, max_i, max_j);
 
-  // obstacles_.clear();
-  // observed_.clear();
+  obstacles_.clear();
+  observed_.clear();
 }
 
 bool DownprojectionMultilayer::isDiscretized( void )
