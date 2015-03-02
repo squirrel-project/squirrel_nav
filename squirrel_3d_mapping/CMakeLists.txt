@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(squirrel_3d_mapping)
 
+set(ROS_BUILD_TYPE Release)
+
 ## Package dependencies
 set(squirrel_3d_mapping_DEPENDENCIES
   roscpp

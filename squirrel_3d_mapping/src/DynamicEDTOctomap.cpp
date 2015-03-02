@@ -268,7 +268,6 @@ float DynamicEDTOctomap::getDistance_unsafe( const octomap::point3d& p ) const
   return data[x][y][z].dist*treeResolution;
 }
 
-
 float DynamicEDTOctomap::getDistance( const octomap::OcTreeKey& k ) const
 {
   int x = k[0] + offsetX;

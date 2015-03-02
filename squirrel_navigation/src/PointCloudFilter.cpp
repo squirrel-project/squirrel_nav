@@ -105,9 +105,7 @@ void PointCloudFilter::spin( void )
 
 void PointCloudFilter::filterPointCloud( const sensor_msgs::PointCloud2ConstPtr& pointcloud_in_msg )
 {
-#ifdef DEBUG
-  DEBUG_INFO("filtering pointcloud... ");
-#endif
+  ROS_DEBUG("%s: filtering pointcloud... ", node_name_.c_str());
   
   pcl::PointCloud<pcl::PointXYZ> pointcloud_raw;
   pcl::fromROSMsg(*pointcloud_in_msg, pointcloud_raw);
@@ -129,20 +127,18 @@ void PointCloudFilter::filterPointCloud( const sensor_msgs::PointCloud2ConstPtr&
 
   pointcloud_pub_.publish(pointcloud_out_msg);
 
-#ifdef DEBUG
-  DEBUG_INFO("pointcloud published");
-#endif
+  ROS_DEBUG("%s: pointcloud published", node_name_.c_str());
 }
 
 int PointCloudFilter::getFilterStep( void )
 {
   if ( pointcloud_size_.compare("full") == 0 ) {
-    ROS_WARN("chosen 'full pointcloud'. Consider reducing size of the pointcloud.");
+    ROS_WARN("%s: chosen 'full pointcloud'. Consider reducing size of the pointcloud.", node_name_.c_str());
     return 1;
   } else {
     int size;
     std::istringstream(pointcloud_size_) >> size;
-    return 300000/std::max(1,size);
+    return std::max(300000/std::max(1,size),1);
   }
 }
 

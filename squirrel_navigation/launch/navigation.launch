@@ -1,5 +1,5 @@
 <launch>
-  <arg name="rviz" default="true" />
+  <arg name="rviz" default="false" />
   <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
   <arg name="robot_id" default="robot1" />
   <arg name="autolocalization" default="false"/>
@@ -18,7 +18,7 @@
 	output="screen" respawn="true">
     <param name="pointcloud_in" value="/kinect/depth/points" />
     <param name="pointcloud_out" value="/rgbdscan" />
-    <param name="pointcloud_size" value="5000" />
+    <param name="pointcloud_size" value="6500" />
   </node>
 
   <!-- Run autolocalization_node: localize the robot before starting navigation tasks -->
