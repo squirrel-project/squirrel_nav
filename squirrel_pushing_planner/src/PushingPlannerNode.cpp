@@ -57,8 +57,6 @@
 
 #include "squirrel_pushing_planner/PushingPlanner.h"
 
-#define PLANNER_TIMEOUT 25.0;
-
 int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "pushing_planner");
@@ -67,8 +65,6 @@ int main(int argc, char *argv[])
   ppl.spin();
   return 0;
 }
-
-
 
 // 
 // PushingPlannerNode.cpp ends here

@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   roscpp
   squirrel_rgbd_mapping_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -83,7 +84,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
  INCLUDE_DIRS include
 # LIBRARIES squirrel_pushing_planner
- CATKIN_DEPENDS geometry_msgs nav_msgs roscpp squirrel_rgbd_mapping_msgs
+ CATKIN_DEPENDS geometry_msgs nav_msgs roscpp squirrel_rgbd_mapping_msgs tf
 #  DEPENDS system_lib
 )
 
