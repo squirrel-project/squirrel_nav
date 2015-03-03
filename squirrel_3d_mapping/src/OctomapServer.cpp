@@ -35,22 +35,22 @@ using octomap_msgs::Octomap;
 namespace squirrel_3d_mapping{
 
 OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
-: m_nh(),
-  m_pointCloudSub(NULL),
-  m_tfPointCloudSub(NULL),
-  m_octree(NULL),
-  m_maxRange(-1.0),
-  m_worldFrameId("/map"), m_baseFrameId("base_footprint"),
-  m_useHeightMap(true),
-  m_colorFactor(0.8),
-  m_latchedTopics(true),
-  m_publishFreeSpace(false),
-  m_res(0.05),
-  m_treeDepth(0),
-  m_maxTreeDepth(0),
-  m_probHit(0.7), m_probMiss(0.4),
-  m_thresMin(0.12), m_thresMax(0.97),
-  m_pointcloudMinZ(-std::numeric_limits<double>::max()),
+    : m_nh(),
+      m_pointCloudSub(NULL),
+      m_tfPointCloudSub(NULL),
+      m_octree(NULL),
+      m_maxRange(-1.0),
+      m_worldFrameId("/map"), m_baseFrameId("base_footprint"),
+      m_useHeightMap(true),
+      m_colorFactor(0.8),
+      m_latchedTopics(true),
+      m_publishFreeSpace(false),
+      m_res(0.05),
+      m_treeDepth(0),
+      m_maxTreeDepth(0),
+      m_probHit(0.7), m_probMiss(0.4),
+      m_thresMin(0.12), m_thresMax(0.97),
+      m_pointcloudMinZ(-std::numeric_limits<double>::max()),
   m_pointcloudMaxZ(std::numeric_limits<double>::max()),
   m_occupancyMinZ(-std::numeric_limits<double>::max()),
   m_occupancyMaxZ(std::numeric_limits<double>::max()),
@@ -93,9 +93,9 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
   private_nh.param("incremental_2D_projection", m_incrementalUpdate, m_incrementalUpdate);
 
   if (m_filterGroundPlane && (m_pointcloudMinZ > 0.0 || m_pointcloudMaxZ < 0.0)){
-	  ROS_WARN_STREAM("You enabled ground filtering but incoming pointclouds will be pre-filtered in ["
-			  <<m_pointcloudMinZ <<", "<< m_pointcloudMaxZ << "], excluding the ground level z=0. "
-			  << "This will not work.");
+    ROS_WARN_STREAM("You enabled ground filtering but incoming pointclouds will be pre-filtered in ["
+                    <<m_pointcloudMinZ <<", "<< m_pointcloudMaxZ << "], excluding the ground level z=0. "
+                    << "This will not work.");
 
   }
 
@@ -121,13 +121,25 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
   private_nh.param("distance_transform/max_z", edt_maxZ, 1.0);
   private_nh.param("distance_transform/robot_height", edt_robotHeight, 1.0);
   private_nh.param("distance_transform/robot_radius", edt_robotRadius, 0.5);
+
+  std::string layers_levels_params, inscribed_radii_params;
+  private_nh.param("distance_transform/layers_num", edt_layersNum, 2);
+  private_nh.param("distance_transform/layers_levels", layers_levels_params, std::string("0.03, 0.25"));
+  private_nh.param("distance_transform/layers_levels", inscribed_radii_params, std::string("0.22, 0.07"));
+  edt_layersLevels = ParameterParser::array<double>(layers_levels_params);
+  edt_inscribedRadii = ParameterParser::array<double>(inscribed_radii_params);
+
+  if ( edt_layersNum != edt_layersLevels.size() || edt_layersNum != edt_inscribedRadii.size() ) {
+    ROS_ERROR("%s: Error parsing the robot's shape parameters. Shutting down the node...", ros::this_node::getName().c_str());
+    ros::shutdown();
+  }
   
-  ROS_INFO("Initializing Euclidean Distance Transform...");
+  ROS_INFO("%s: Initializing Euclidean Distance Transform...", ros::this_node::getName().c_str());
   if ( edt_dynamicEdt ) {    
     point3d min(edt_minX, edt_minY, edt_minZ);
     point3d max(edt_maxX, edt_maxY, edt_maxZ);
     
-    ROS_INFO("Creating Euclidean Distance Transform...");
+    ROS_INFO("%s: Creating Euclidean Distance Transform...", ros::this_node::getName().c_str());
     edt_distanceTransform = new DynamicEDTOctomap((float) edt_maxDist, m_octree, min, max, edt_unknownAsOccupied); 
     edt_distanceTransform->update();
   }
@@ -155,9 +167,9 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
 
   private_nh.param("latch", m_latchedTopics, m_latchedTopics);
   if (m_latchedTopics){
-    ROS_INFO("Publishing latched (single publish will take longer, all topics are prepared)");
+    ROS_INFO("%s: Publishing latched (single publish will take longer, all topics are prepared)", ros::this_node::getName().c_str());
   } else
-    ROS_INFO("Publishing non-latched (topics are only prepared as needed, will only be re-published on map change");
+    ROS_INFO("%s: Publishing non-latched (topics are only prepared as needed, will only be re-published on map change", ros::this_node::getName().c_str());
 
   m_markerPub = m_nh.advertise<visualization_msgs::MarkerArray>("occupied_cells_vis_array", 1, m_latchedTopics);
   m_binaryMapPub = m_nh.advertise<Octomap>("octomap_binary", 1, m_latchedTopics);
@@ -228,7 +240,7 @@ bool OctomapServer::openFile(const std::string& filename){
     }
     m_octree = dynamic_cast<OcTree*>(tree);
     if (!m_octree){
-      ROS_ERROR("Could not read OcTree in file, currently there are no other types supported in .ot");
+      ROS_ERROR("%s: Could not read OcTree in file, currently there are no other types supported in .ot", ros::this_node::getName().c_str());
       return false;
     }
 
@@ -236,7 +248,7 @@ bool OctomapServer::openFile(const std::string& filename){
     return false;
   }
 
-  ROS_INFO("Octomap file %s loaded (%zu nodes).", filename.c_str(),m_octree->size());
+  ROS_INFO("%s: Octomap file %s loaded (%zu nodes).", ros::this_node::getName().c_str(), filename.c_str(),m_octree->size());
 
   m_treeDepth = m_octree->getTreeDepth();
   m_maxTreeDepth = m_treeDepth;
@@ -275,7 +287,7 @@ void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr
   try {
     m_tfListener.lookupTransform(m_worldFrameId, cloud->header.frame_id, cloud->header.stamp, sensorToWorldTf);
   } catch(tf::TransformException& ex){
-    ROS_ERROR_STREAM( "Transform error of sensor data: " << ex.what() << ", quitting callback");
+    ROS_ERROR_STREAM(ros::this_node::getName() << ": Transform error of sensor data: " << ex.what() << ", quitting callback");
     return;
   }
 
@@ -300,8 +312,8 @@ void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr
 
 
     } catch(tf::TransformException& ex){
-      ROS_ERROR_STREAM( "Transform error for ground plane filter: " << ex.what() << ", quitting callback.\n"
-                        "You need to set the base_frame_id or disable filter_ground.");
+      ROS_ERROR_STREAM(ros::this_node::getName() << ": Transform error for ground plane filter: " << ex.what() << ", quitting callback.\n"
+                                                    "You need to set the base_frame_id or disable filter_ground.");
     }
 
 
@@ -346,7 +358,7 @@ void OctomapServer::insertScan(const tf::Point& sensorOriginTf, const PCLPointCl
   if (!m_octree->coordToKeyChecked(sensorOrigin, m_updateBBXMin)
     || !m_octree->coordToKeyChecked(sensorOrigin, m_updateBBXMax))
   {
-    ROS_ERROR_STREAM("Could not generate Key for origin "<<sensorOrigin);
+    ROS_ERROR_STREAM(ros::this_node::getName() << "Could not generate Key for origin " << sensorOrigin);
   }
 
 
@@ -371,7 +383,7 @@ void OctomapServer::insertScan(const tf::Point& sensorOriginTf, const PCLPointCl
       updateMinKey(endKey, m_updateBBXMin);
       updateMaxKey(endKey, m_updateBBXMax);
     } else{
-      ROS_ERROR_STREAM("Could not generate Key for endpoint "<<point);
+      ROS_ERROR_STREAM(ros::this_node::getName() << ": Could not generate Key for endpoint " << point);
     }
   }
 
@@ -403,7 +415,7 @@ void OctomapServer::insertScan(const tf::Point& sensorOriginTf, const PCLPointCl
           updateMinKey(endKey, m_updateBBXMin);
           updateMaxKey(endKey, m_updateBBXMax);
         } else{
-          ROS_ERROR_STREAM("Could not generate Key for endpoint "<<new_end);
+          ROS_ERROR_STREAM(ros::this_node::getName() << ": Could not generate Key for endpoint " << new_end);
         }
 
 
@@ -463,7 +475,7 @@ void OctomapServer::publishAll(const ros::Time& rostime){
   size_t octomapSize = m_octree->size();
   // TODO: estimate num occ. voxels for size of arrays (reserve)
   if (octomapSize <= 1){
-    ROS_WARN("Nothing to publish, octree is empty");
+    ROS_WARN("%s: Nothing to publish, octree is empty", ros::this_node::getName().c_str());
     return;
   }
 
@@ -659,7 +671,7 @@ void OctomapServer::publishAll(const ros::Time& rostime){
 bool OctomapServer::octomapBinarySrv(OctomapSrv::Request  &req,
                                     OctomapSrv::Response &res)
 {
-  ROS_INFO("Sending binary map data on service request");
+  ROS_INFO("%s: Sending binary map data on service request", ros::this_node::getName().c_str());
   res.map.header.frame_id = m_worldFrameId;
   res.map.header.stamp = ros::Time::now();
   if (!octomap_msgs::binaryMapToMsg(*m_octree, res.map))
@@ -713,7 +725,7 @@ bool OctomapServer::resetSrv(std_srvs::Empty::Request& req, std_srvs::Empty::Res
   m_gridmap.info.origin.position.x = 0.0;
   m_gridmap.info.origin.position.y = 0.0;
 
-  ROS_INFO("Cleared octomap");
+  ROS_INFO("%s: Cleared octomap", ros::this_node::getName().c_str());
   publishAll(rostime);
 
   publishBinaryOctoMap(rostime);
@@ -779,7 +791,7 @@ void OctomapServer::filterGroundPlane(const PCLPointCloud& pc, PCLPointCloud& gr
   nonground.header = pc.header;
 
   if (pc.size() < 50){
-    ROS_WARN("Pointcloud in OctomapServer too small, skipping ground plane extraction");
+    ROS_WARN("%s: Pointcloud in OctomapServer too small, skipping ground plane extraction", ros::this_node::getName().c_str());
     nonground = pc;
   } else {
     // plane detection for ground plane removal:
@@ -807,7 +819,7 @@ void OctomapServer::filterGroundPlane(const PCLPointCloud& pc, PCLPointCloud& gr
       seg.setInputCloud(cloud_filtered.makeShared());
       seg.segment (*inliers, *coefficients);
       if (inliers->indices.size () == 0){
-        ROS_INFO("PCL segmentation did not find any plane.");
+        ROS_INFO("%s: PCL segmentation did not find any plane.", ros::this_node::getName().c_str());
 
         break;
       }
@@ -858,7 +870,7 @@ void OctomapServer::filterGroundPlane(const PCLPointCloud& pc, PCLPointCloud& gr
     }
     // TODO: also do this if overall starting pointcloud too small?
     if (!groundPlaneFound){ // no plane found or remaining points too small
-      ROS_WARN("No ground plane found in scan");
+      ROS_WARN("%s: No ground plane found in scan", ros::this_node::getName().c_str());
 
       // do a rough fitlering on height to prevent spurious obstacles
       pcl::PassThrough<pcl::PointXYZ> second_pass;
@@ -914,11 +926,11 @@ void OctomapServer::handlePreNodeTraversal(const ros::Time& rostime){
 
     OcTreeKey paddedMaxKey;
     if (!m_octree->coordToKeyChecked(minPt, m_maxTreeDepth, m_paddedMinKey)){
-      ROS_ERROR("Could not create padded min OcTree key at %f %f %f", minPt.x(), minPt.y(), minPt.z());
+      ROS_ERROR("%s: Could not create padded min OcTree key at %f %f %f", ros::this_node::getName().c_str(), minPt.x(), minPt.y(), minPt.z());
       return;
     }
     if (!m_octree->coordToKeyChecked(maxPt, m_maxTreeDepth, paddedMaxKey)){
-      ROS_ERROR("Could not create padded max OcTree key at %f %f %f", maxPt.x(), maxPt.y(), maxPt.z());
+      ROS_ERROR("%s: Could not create padded max OcTree key at %f %f %f", ros::this_node::getName().c_str(), maxPt.x(), maxPt.y(), maxPt.z());
       return;
     }
 
@@ -977,20 +989,15 @@ void OctomapServer::handlePreNodeTraversal(const ros::Time& rostime){
        // test for max idx:
        uint max_idx = m_gridmap.info.width*mapUpdateBBXMaxY + mapUpdateBBXMaxX;
        if (max_idx  >= m_gridmap.data.size())
-         ROS_ERROR("BBX index not valid: %d (max index %zu for size %d x %d) update-BBX is: [%zu %zu]-[%zu %zu]", max_idx, m_gridmap.data.size(), m_gridmap.info.width, m_gridmap.info.height, mapUpdateBBXMinX, mapUpdateBBXMinY, mapUpdateBBXMaxX, mapUpdateBBXMaxY);
+         ROS_ERROR("%s: BBX index not valid: %d (max index %zu for size %d x %d) update-BBX is: [%zu %zu]-[%zu %zu]", ros::this_node::getName().c_str(), max_idx, m_gridmap.data.size(), m_gridmap.info.width, m_gridmap.info.height, mapUpdateBBXMinX, mapUpdateBBXMinY, mapUpdateBBXMaxX, mapUpdateBBXMaxY);
 
        // reset proj. 2D map in bounding box:
        for (unsigned int j = mapUpdateBBXMinY; j <= mapUpdateBBXMaxY; ++j){
           std::fill_n(m_gridmap.data.begin() + m_gridmap.info.width*j+mapUpdateBBXMinX,
                       numCols, -1);
        }
-
     }
-       
-
-
   }
-
 }
 
 void OctomapServer::handlePostNodeTraversal(const ros::Time& rostime){
@@ -1092,7 +1099,7 @@ void OctomapServer::reconfigureCallback(squirrel_3d_mapping::OctomapServerConfig
 
 void OctomapServer::adjustMapData(nav_msgs::OccupancyGrid& map, const nav_msgs::MapMetaData& oldMapInfo) const{
   if (map.info.resolution != oldMapInfo.resolution){
-    ROS_ERROR("Resolution of map changed, cannot be adjusted");
+    ROS_ERROR("%s: Resolution of map changed, cannot be adjusted", ros::this_node::getName().c_str());
     return;
   }
 
@@ -1103,7 +1110,7 @@ void OctomapServer::adjustMapData(nav_msgs::OccupancyGrid& map, const nav_msgs::
       || oldMapInfo.width  + i_off > map.info.width
       || oldMapInfo.height + j_off > map.info.height)
   {
-    ROS_ERROR("New 2D map does not contain old map area, this case is not implemented");
+    ROS_ERROR("%s: New 2D map does not contain old map area, this case is not implemented", ros::this_node::getName().c_str());
     return;
   }
 
@@ -1185,17 +1192,28 @@ bool OctomapServer::checkCollision( squirrel_3d_mapping_msgs::CheckCollision::Re
   double p_x = req.pose.x;
   double p_y = req.pose.y;
 
+  // Collision check for the robot platform
   res.collision = 0;
   for (unsigned int i=0; i<=edt_robotHeight/m_res; ++i) {
     double p_z = i * m_res;
-    point3d p(p_x, p_y, p_z);
-    float distance = edt_distanceTransform->getDistance(p);
-    if ( distance != DynamicEDTOctomap::distanceValue_Error ) {
-      res.collision = ( res.collision || distance <= edt_robotRadius );
+    point3d p(p_x, p_y, p_z), p_cl;
+    float xyz_dist;
+    // float distance = edt_distanceTransform->getDistance(p);
+    edt_distanceTransform->getDistanceAndClosestObstacle(p,xyz_dist,p_cl);
+    float xy_dist = xyDistance(p,p_cl);
+    if ( xyz_dist != DynamicEDTOctomap::distanceValue_Error ) {
+      unsigned int l = layer(p_cl.z());
+      res.collision = ( res.collision || (xy_dist <= edt_inscribedRadii[l] && p_cl.z() <= edt_robotHeight) );
+      if ( res.collision ) {
+        return true;
+      }
     } else {
-      ROS_WARN("couldn't compute distance transform value for such pose");
+      ROS_WARN("%s: couldn't compute distance transform value for such pose", ros::this_node::getName().c_str());
+      return false;
     }
   }
+  return true;
+  // TODO: collision check for the arm.
 }
 
 } // namespace squirrel_3d_mapping

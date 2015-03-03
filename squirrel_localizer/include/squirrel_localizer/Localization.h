@@ -40,6 +40,8 @@
 #include "squirrel_localizer/LaserSensor2D.h"
 #include "squirrel_localizer/FloatMap.h"
 
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+
 class Localization
 {
   typedef std::vector<Vector2> Vector2Vector;
@@ -53,98 +55,127 @@ public:
     VISION
   };
 
-public:
-  Localization();
+  Localization( void );
+  
+  void start_global( void );
+  void start_rand_noise( void );
+  void place_robot( const Transformation3&, double, bool usePoseTheta = false );
 
-  void start_global();
-  void start_rand_noise();
-  void place_robot(const Transformation3 &pose, double sigma, bool usePoseTheta = false);
+  void update_motion( const Transformation3& );
 
-  /** motion update */
-  void update_motion(const Transformation3 &motion);
+  bool update_laser( const std::vector<Vector3f>&, const Transformation3&, const double& );
 
-  /** sensor updates */
-  bool update_laser(const std::vector<Vector3f>& endpoints, const Transformation3& odomPose, const double& timestamp);
+  void particles( int );
 
-  /** particle stuff */
-  void particles(int num);
-  int particles() const;
-  void getParticles(ParticleVector*& particels, bool old=true);
+  int particles( void ) const;
+  void getParticles( ParticleVector*&, bool old=true );
 
-  /** dynamic map related */
-  void set_map(AISNavigation::FloatMap *map);
+  void set_map( AISNavigation::FloatMap* );
+  AISNavigation::FloatMap* get_d_map( void );
 
-  /** pose getter */
-  Transformation3 best_pose() const;
-  inline Transformation3& getMean(){return m_mean;};
-  inline Transformation3  getMeanInterp(){return m_mean * m_motion_model.cummulative_motion();};
+  Transformation3 best_pose( void ) const;
+  
+  inline Transformation3& getMean( void )
+  {
+    return m_mean;
+  };
 
-  /** filter state */
-  inline void             set_localization_state(LocalizerState& state){ m_state = state; }
-  inline bool&            isInitialized(){return m_state.initialized;}
-  void             set_initialized(bool state);
-  inline bool&            isLocalized(){return m_state.localized;}
-  void             set_localized(bool state);
-  bool             has_converged(Transformation3& mean, Matrix6& cov, bool& bounded) const;
+  inline Transformation3 getMeanInterp( void )
+  {
+    return m_mean * m_motion_model.cummulative_motion();
+  };
 
-  /** Scan matcher*/
-  AISNavigation::FloatMap*  get_d_map();
+  inline void getCovariance( geometry_msgs::PoseWithCovarianceStamped& pose_msg )
+  {
+    pose_msg.pose.covariance[0] = m_covariance[0][0];
+    pose_msg.pose.covariance[1] = m_covariance[0][1];
+    pose_msg.pose.covariance[2] = m_covariance[0][2];
+    pose_msg.pose.covariance[5] = m_covariance[0][5];
 
-  //     protected:
-public:
-  void propagate_particles();
+    pose_msg.pose.covariance[6] = m_covariance[1][0];
+    pose_msg.pose.covariance[7] = m_covariance[1][1];
+    pose_msg.pose.covariance[8] = m_covariance[1][2];
+    pose_msg.pose.covariance[11] = m_covariance[1][5];
 
-  void update_filter(BasicSensor &sensor, const Transformation3& odomPose, const double& timestamp);
-  void update_state(const Transformation3& odomPose, const double& timestamp);
+    pose_msg.pose.covariance[12] = m_covariance[2][0];
+    pose_msg.pose.covariance[13] = m_covariance[2][1];
+    pose_msg.pose.covariance[14] = m_covariance[2][2];
+    pose_msg.pose.covariance[17] = m_covariance[2][5];
 
-  void compute_mean();
-  void compute_covariance();
-  void determine_convergence();
-  void perform_resampling();
-  void check_disagreements();
-  void reset_motion();
+    pose_msg.pose.covariance[30] = m_covariance[5][0];
+    pose_msg.pose.covariance[31] = m_covariance[5][1];
+    pose_msg.pose.covariance[32] = m_covariance[5][2];
+    pose_msg.pose.covariance[35] = m_covariance[5][5];
+  };
+  
+  inline void set_localization_state( LocalizerState& state )
+  {
+    m_state = state;
+  }
 
-  double particle_weight_variance() const;
-  double particle_weight_neff() const;
+  inline bool& isInitialized( void )
+  {
+    return m_state.initialized;
+  }
+  
+  void set_initialized( bool );
+  
+  inline bool& isLocalized( void )
+  {
+    return m_state.localized;
+  }
 
-  Transformation3 random_new_pose();
-  Transformation3 random_6d_pose(
-      const Transformation3  &mean,
-      double                  sigma_trans,
-      double                  sigma_rot
-                                 );
+  void set_localized( bool );
+  
+  bool has_converged( Transformation3&, Matrix6&, bool& ) const;
+
+  void propagate_particles( void );
+
+  void update_filter( BasicSensor&, const Transformation3&, const double& );
+  void update_state( const Transformation3&, const double& );
+  void compute_mean( void );
+  void compute_covariance( void );
+  void determine_convergence( void );
+  void perform_resampling( void );
+  void check_disagreements( void);
+  void reset_motion( void );
+  double particle_weight_variance( void ) const;
+  double particle_weight_neff( void ) const;
+  Transformation3 random_new_pose( void );
+  Transformation3 random_6d_pose( const Transformation3&, double, double );
 	
-  inline void setRandomSeed(uint32_t seed) { m_rand_engine.seed(seed); m_motion_model.setSeed(seed);}
+  inline void setRandomSeed( uint32_t seed )
+  {
+    m_rand_engine.seed(seed); m_motion_model.setSeed(seed);
+  }
 
-public:
   // Parameters
-  LocalizerParameters             m_localizer_params;
-  LaserSensorParameters           m_laser_sensor_params;
-  MotionModelParameters           m_motion_model_params;
-  void reload_parameters();
-
+  LocalizerParameters m_localizer_params;
+  LaserSensorParameters m_laser_sensor_params;
+  MotionModelParameters m_motion_model_params;
+  void reload_parameters( void );
 
 protected:
-  ParticleVector                  m_particles;
-  ParticleVector                  m_particles_old;
-  int                             m_disagreements;
+  ParticleVector m_particles;
+  ParticleVector m_particles_old;
+  int m_disagreements;
 
-  SimpleMotionModel               m_motion_model;
-  LaserSensor                     m_laser;
+  SimpleMotionModel m_motion_model;
+  LaserSensor m_laser;
 
-  AISNavigation::FloatMap        *m_map;
+  AISNavigation::FloatMap *m_map;
 
-  Transformation3                 m_mean;
-  Matrix6                         m_covariance;
-  bool                            m_bounded;
-  double                          m_convergence_cum_distance;
-  double                          m_divergence_cum_distance;
+  Transformation3 m_mean;
+  Matrix6 m_covariance;
+  bool m_bounded;
+  double m_convergence_cum_distance;
+  double m_divergence_cum_distance;
 
-  boost::mt19937                  m_rand_engine;
+  boost::mt19937 m_rand_engine;
 
-  bool                            m_active_localization;
-  int                             m_active_localization_laser_count;
-  LocalizerState                  m_state;
+  bool m_active_localization;
+  int m_active_localization_laser_count;
+  LocalizerState m_state;
 };
 
 #endif /* __LOCALIZER_H__ */

@@ -61,6 +61,8 @@ static const double PI = 3.14159265358979;
 
 static const double TRANSFORM_TIMEOUT = 0.5;
 
+static const int VOXEL_BITS = 16;
+
 static void interruptCallback( int sig )
 {
   _SIGINT_caught = 1;
