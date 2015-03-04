@@ -121,6 +121,12 @@ void PushingPlanner::waitForPlannerService( void )
 bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req,
                               squirrel_rgbd_mapping_msgs::GetPushingPlan::Response& res )
 {
+  if ( !isNumericValid(req) ) {
+    std::string node_name = ros::this_node::getName();
+    ROS_ERROR("%s: got an invalid request. Cannot create a planner for pushing", node_name.c_str() );
+    return false;
+  }
+
   nav_msgs::GetPlan plan;
 
   geometry_msgs::Quaternion q_start = tf::createQuaternionMsgFromYaw(req.start.theta);
@@ -240,6 +246,19 @@ bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reques
     ROS_ERROR("%s: call to service [/move_base/make_plan] failed.", node_name_.c_str());
     return false;
   }
+}
+
+bool PushingPlanner::isNumericValid( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req )
+{
+  bool is_vailid_start = !std::isnan(req.start.x) and !std::isinf(req.start.x)
+      and !std::isnan(req.start.y) and !std::isinf(req.start.y)
+      and !std::isnan(req.start.theta) and !std::isinf(req.start.theta);
+
+  bool is_valid_goal = !std::isnan(req.goal.x) and !std::isinf(req.goal.x)
+      and !std::isnan(req.goal.y) and !std::isinf(req.goal.y)
+      and !std::isnan(req.start.theta) and !std::isinf(req.goal.theta);
+
+  return (is_valid_start and is_valid_start);
 }
 
 }  // namespace squirrel_pushing_planner
