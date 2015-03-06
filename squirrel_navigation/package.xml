@@ -62,7 +62,7 @@
   <run_depend>visualization_msgs</run_depend>
   <run_depend>octomap_msgs</run_depend>
   <run_depend>pcl_conversions</run_depend>
-
+  <run_depend>gmapping</run_depend>
   <!-- Export the plugins -->
   <export>
     <nav_core plugin="${prefix}/SquirrelLocalPlanner.xml"/>
