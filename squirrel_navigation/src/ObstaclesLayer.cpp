@@ -72,6 +72,8 @@
 
 #include <set>
 
+#define KINECT_NAVIGATION_ANGLE 0.6
+
 #define VOXEL_BITS 16
 
 PLUGINLIB_EXPORT_CLASS(squirrel_navigation::ObstaclesLayer, costmap_2d::Layer)
@@ -80,12 +82,16 @@ namespace squirrel_navigation {
 
 ObstaclesLayer::ObstaclesLayer( void ) :
     voxel_grid_(0, 0, 0),
-    robot_diameter_(0.5),
+    robot_diameter_(0.44),
     robot_height_(1.0),
-    floor_threshold_(0.0),
-    obstacles_persistence_(60.0)
+    floor_threshold_(0.03),
+    obstacles_persistence_(60.0),
+    tilt_moving_(false),
+    tilt_command_(KINECT_NAVIGATION_ANGLE)
 {
   costmap_ = NULL;
+  tilt_command_sub_ = public_nh_.subscribe("/tilt_controller/command", 2, &ObstaclesLayer::updateTiltCommand, this);
+  tilt_state_sub_ = public_nh_.subscribe("/tilt_controller/state", 2, &ObstaclesLayer::updateTiltState, this);
 }
 
 ObstaclesLayer::~ObstaclesLayer( void )
@@ -93,7 +99,8 @@ ObstaclesLayer::~ObstaclesLayer( void )
   if( dsrv_ ) {
     delete dsrv_;
   }
-  
+  tilt_command_sub_.shutdown();
+  tilt_state_sub_.shutdown();
 }
 
 void ObstaclesLayer::onInitialize( void )
@@ -101,16 +108,16 @@ void ObstaclesLayer::onInitialize( void )
   ObstacleLayer::onInitialize();
   ros::NodeHandle private_nh("~/" + name_);
 
-  private_nh.param("robot_diameter", robot_diameter_, 0.5);
+  private_nh.param("robot_diameter", robot_diameter_, 0.47);
   private_nh.param("robot_height", robot_height_, 1.0);
-  private_nh.param("floor_threshold", floor_threshold_, 0.0);  
+  private_nh.param("floor_threshold", floor_threshold_, 0.03);  
   private_nh.param("obstacles_persistence", obstacles_persistence_, 60.0);
 
   if ( obstacles_persistence_ > 0 ) {
     ROS_INFO_STREAM("obstacle persistence: " << obstacles_persistence_);
   } else if ( obstacles_persistence_ == 0) {
     std::string ns = ros::this_node::getNamespace();
-    ROS_WARN("/%s: obstacle_persistance is chosen to be 0(s). Reset to 60.0(s). ", ns.c_str());
+    ROS_WARN("/%s: obstacle_persistence is chosen to be 0(s). Reset to 60.0(s). ", ns.c_str());
   } 
 }
 
@@ -120,11 +127,23 @@ void ObstaclesLayer::updateBounds( double robot_x, double robot_y, double robot_
   if ( rolling_window_ ) {
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
   }
+
   if (!enabled_) {
     return;
   }
+
+  if ( tilt_moving_ ) {
+    ROS_WARN("kinect is being tilted. Skipping costmap's update");
+    return;
+  }
+
+  if ( std::abs(tilt_command_ - KINECT_NAVIGATION_ANGLE) > 1e-3 ) {
+    ROS_WARN("kinect is going to be tilted. Skipping costmap's update");
+    return;
+  }
+    
   // This function doesn't compile with the current libraries in the Robotino
-  // useExtraBounds(min_x, min_y, max_x, max_y);
+  useExtraBounds(min_x, min_y, max_x, max_y);
   
   bool current = true;
   std::vector<costmap_2d::Observation> observations, clearing_observations;
@@ -156,6 +175,7 @@ void ObstaclesLayer::updateBounds( double robot_x, double robot_y, double robot_
     double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
 
     for (unsigned int i = 0; i < cloud.points.size(); ++i) {
+      
       if ( cloud.points[i].z > robot_height_ || cloud.points[i].z > max_obstacle_height_ ) {
         continue;
       }
@@ -171,9 +191,9 @@ void ObstaclesLayer::updateBounds( double robot_x, double robot_y, double robot_
       double sq_dist_robot = (cloud.points[i].x - robot_x) * (cloud.points[i].x - robot_x)
           + (cloud.points[i].y - robot_y) * (cloud.points[i].y - robot_y);
 
-      if ( sq_dist_orig <= std::pow(0.5*robot_diameter_, 2) ) {
-        continue;
-      }
+      // if ( sq_dist_orig <= std::pow(0.5*robot_diameter_, 2) ) {
+      //   continue;
+      // }
       
       unsigned int mx, my, mz;
       if ( cloud.points[i].z < origin_z_ ) {

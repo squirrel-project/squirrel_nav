@@ -1,29 +1,35 @@
 <launch>
-  <arg name="rviz" default="true" />
-  <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
+  <arg name="rviz" default="false" />
+  <arg name="map_file" default="/home/robotino/git/robotino/src/squirrel_nav/squirrel_navigation/maps/default-map.yaml" />
   <arg name="robot_id" default="robot1" />
   <arg name="autolocalization" default="false"/>
   <arg name="3d_mapping" default="false" />
-  
+  <arg name="kinect_on" value="true" />
+
   <!--- Run mapserver -->
   <include file="$(find squirrel_navigation)/launch/map_server.launch">
     <arg name="map_file" value="$(arg map_file)" />
   </include>
-  
+
+  <!-- AMCL node -->
+  <!-- <node pkg="amcl" type="amcl" name="amcl" output="screen"> -->
+  <!--   <rosparam file="$(find squirrel_navigation)/config/robot1/amcl/amcl_params.yaml" command="load"/> -->
+  <!-- </node> -->
+
   <!-- Run Monte Carlo Localization -->
-  <include file="$(find squirrel_localizer)/launch/squirrel_localization.launch"/>
+  <include file="$(find squirrel_localizer)/launch/squirrel_localizer.launch"/>
 
   <!-- Run pointcloud_filter_node: filter the PointCloud to speed up planning -->
-  <node pkg="squirrel_navigation" type="pointcloud_filter_node" name="pointcloud_filter" 
-	output="screen" respawn="true">
+  <node pkg="squirrel_navigation" type="pointcloud_filter_node" name="pointcloud_filter"
+	output="screen" respawn="true" if="$(arg kinect_on)" >
     <param name="pointcloud_in" value="/kinect/depth/points" />
     <param name="pointcloud_out" value="/rgbdscan" />
     <param name="pointcloud_size" value="5000" />
   </node>
 
   <!-- Run autolocalization_node: localize the robot before starting navigation tasks -->
-  <node pkg="squirrel_navigation" type="autolocalization_node" name="autolocalization" 
-	output="screen" if="$(arg autolocalization)">
+  <node pkg="squirrel_navigation" type="autolocalization_node" name="autolocalization"
+	output="screen" if="$(arg autolocalization)" >
     <param name="global_localization" value="false" />
     <param name="max_angular_vel" value="0.8" />
     <param name="max_linear_vel" value="0.1" />
@@ -50,7 +56,7 @@
     <arg name="tolerance" value="0.05" />
     <arg name="robot_radius" value="0.22" />
     <arg name="start_goal_frame_id" value="/map" />
-    <arg name="plan_frame_id" value="/odom" />
+    <arg name="plan_frame_id" value="/map" />
   </include>
 
   <!-- Run rviz -->

@@ -87,6 +87,9 @@
 #include <costmap_2d/obstacle_layer.h>
 #include <voxel_grid/voxel_grid.h>
 
+#include <dynamixel_msgs/JointState.h>
+#include <std_msgs/Float64.h>
+
 #include <map>
 #include <cmath>
 
@@ -122,11 +125,26 @@ private:
   voxel_grid::VoxelGrid voxel_grid_;
   double z_resolution_, origin_z_;
   unsigned int unknown_threshold_, mark_threshold_, size_z_;
+  ros::NodeHandle public_nh_;
   ros::Publisher clearing_endpoints_pub_;
+  ros::Subscriber tilt_command_sub_, tilt_state_sub_;
   sensor_msgs::PointCloud clearing_endpoints_;
   
   double robot_diameter_, robot_height_;
   double floor_threshold_,  obstacles_persistence_;
+
+  bool tilt_moving_;
+  double tilt_command_;
+
+  inline void updateTiltState( const dynamixel_msgs::JointState::ConstPtr& tilt_state_msg )
+  {
+    tilt_moving_ = tilt_state_msg->is_moving;
+  }
+
+  inline void updateTiltCommand( const std_msgs::Float64::ConstPtr& tilt_cmd_msg )
+  {
+    tilt_command_ = tilt_cmd_msg->data;
+  }
   
   inline bool worldToMap3DFloat( double wx, double wy, double wz, double& mx, double& my, double& mz )
   {
