@@ -57,7 +57,7 @@
 
 #include "squirrel_pushing_planner/PushingPlanner.h"
 
-int main(int argc, char *argv[])
+int main( int argc, char *argv[] )
 {
   ros::init(argc, argv, "pushing_planner");
   squirrel_pushing_planner::PushingPlanner ppl;

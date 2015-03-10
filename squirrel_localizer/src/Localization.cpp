@@ -129,6 +129,7 @@ void Localization::place_robot(const Transformation3 &pose, double sigma, bool u
 
   reset_motion();
   compute_mean();
+  compute_covariance();
 }
 
 /**
@@ -380,8 +381,7 @@ void Localization::compute_mean()
 /**
  * \brief Computes the covariance from the weighted particles.
  *
- */
-void Localization::compute_covariance()
+ */void Localization::compute_covariance()
 {
   double total_weight = 0.0;
   m_covariance.fill(0.0);

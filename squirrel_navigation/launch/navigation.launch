@@ -1,6 +1,10 @@
 <launch>
   <arg name="rviz" default="false" />
+<<<<<<< HEAD
   <arg name="map_file" default="/home/robotino/git/robotino/src/squirrel_nav/squirrel_navigation/maps/default-map.yaml" />
+=======
+  <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
+>>>>>>> 16c655f88582124b6a4e5b967cd76b841ddd3c45
   <arg name="robot_id" default="robot1" />
   <arg name="autolocalization" default="false"/>
   <arg name="3d_mapping" default="false" />
@@ -24,7 +28,7 @@
 	output="screen" respawn="true" if="$(arg kinect_on)" >
     <param name="pointcloud_in" value="/kinect/depth/points" />
     <param name="pointcloud_out" value="/rgbdscan" />
-    <param name="pointcloud_size" value="5000" />
+    <param name="pointcloud_size" value="6500" />
   </node>
 
   <!-- Run autolocalization_node: localize the robot before starting navigation tasks -->

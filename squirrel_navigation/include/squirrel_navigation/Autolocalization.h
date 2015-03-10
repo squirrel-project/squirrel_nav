@@ -57,8 +57,8 @@
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_ROBOTLOCALIZER_H_
-#define SQUIRREL_NAVIGATION_ROBOTLOCALIZER_H_
+#ifndef SQUIRREL_NAVIGATION_AUTOLOCALIZATION_H_
+#define SQUIRREL_NAVIGATION_AUTOLOCALIZATION_H_
 
 #include <ros/ros.h>
 
@@ -131,7 +131,7 @@ class Autolocalization
 
 }  // namespace squirrel_navigation
 
-#endif /* SQUIRREL_NAVIGATION_ROBOTLOCALIZER_H_ */
+#endif /* SQUIRREL_NAVIGATION_AUTOLOCALIZATION_H_ */
 
 // 
 // Autolocalization.h ends here

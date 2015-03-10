@@ -53,9 +53,10 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
+#include <string>
 #include <vector>
 
-#include "Common.h"
+#include "squirrel_navigation/Common.h"
 
 namespace squirrel_navigation {
   
@@ -106,6 +107,9 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   double max_rotation_vel_, min_rotation_vel_;
   double yaw_goal_tolerance_, xy_goal_tolerance_;
   int num_window_points_;
+
+  // Name and references
+  std::string node_name_, namespace_;
 };
 
 } // namespace squirrel_navigation

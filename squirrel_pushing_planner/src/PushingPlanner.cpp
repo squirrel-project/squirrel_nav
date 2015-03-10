@@ -183,7 +183,7 @@ bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reques
   
   if ( ros::service::call("/move_base/make_plan", plan) ) {
     if ( plan.response.plan.poses.empty() ) {
-      ROS_WARN("got empty plan");
+      ROS_WARN("%s: got empty plan", node_name_.c_str());
       return true;
     } else {
       if( !plan_.poses.empty() ) {

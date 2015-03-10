@@ -141,7 +141,7 @@ void Autolocalization::waitForStarting( void )
   if ( global_localization_ ) {
     while ( ros::ok() && !glob_start_ ) {
       ros::spinOnce();
-      ROS_WARN("waiting for odometry...");
+      ROS_WARN("%s: waiting for odometry...", node_name_.c_str());
       lr.sleep();
     }
     return;
@@ -151,7 +151,7 @@ void Autolocalization::waitForStarting( void )
       if ( amcl_start_ ) {
         checkCovariance(amcl_pose_);
       }
-      ROS_WARN("waiting for initial pose...");
+      ROS_WARN("%s: waiting for initial pose...", node_name_.c_str());
       lr.sleep();
     }
     return;
@@ -162,7 +162,7 @@ void Autolocalization::getPoseWithCovariance( const geometry_msgs::PoseWithCovar
 {
   if ( topic.compare(initial_pose_topic_) == 0 ) {
     pose_start_ = true;
-    ROS_INFO("got initial pose");
+    ROS_INFO("%s: got initial pose", node_name_.c_str());
   }
 
   if ( topic.compare(amcl_pose_topic_) == 0 ) {
@@ -209,7 +209,7 @@ void Autolocalization::checkCovariance( geometry_msgs::PoseWithCovarianceStamped
   double var_th = amcl_pose.pose.covariance[35];
 
   if ( calibration_ ) {
-    ROS_INFO("variances (x,y,theta): (%f, %f, %f)", var_x, var_y, var_th);
+    ROS_INFO("%s: variances (x,y,theta): (%f, %f, %f)", node_name_.c_str(), var_x, var_y, var_th);
     return;
   }
   
@@ -217,7 +217,7 @@ void Autolocalization::checkCovariance( geometry_msgs::PoseWithCovarianceStamped
        var_y <= tolerance_var_y_ &&
        var_th <= tolerance_var_th_ ) {
     is_localized_ = true;
-    ROS_INFO("robot is localized.");
+    ROS_INFO("%s: robot is localized.", node_name_.c_str());
   } else {
     is_localized_ = false;
   }
@@ -230,7 +230,7 @@ void Autolocalization::clearCostmapAndShutdown( void )
   std_srvs::Empty::Request empty_req;
   std_srvs::Empty::Response empty_res;  
   if ( ros::service::call("/move_base/clear_costmaps", empty_req, empty_res) ) {
-    ROS_INFO("resetting costmap...");
+    ROS_INFO("%s: resetting costmap...", node_name_.c_str());
   }
   ros::shutdown();
 }
