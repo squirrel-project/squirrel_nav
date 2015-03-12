@@ -1,28 +1,33 @@
-// squirrel_navigation.h --- 
+// TiltHandle.h --- 
 // 
-// Filename: squirrel_navigation.h
-// Description: Expose the SIGINT callback
+// Filename: TiltHandle.h
+// Description: Check wheter the kinect is tilted or not
 // Author: Federico Boniardi
 // Maintainer: boniardi@cs.uni-freiburg.de
-// Created: Fri Dec  5 18:02:05 2014 (+0100)
+// Created: Thu Mar 12 13:00:04 2015 (+0100)
 // Version: 0.1.0
-// Last-Updated: Fri Dec 5 18:10:38 2014 (+0100)
-//           By: Federico Boniardi
-//     Update #: 1
+// Last-Updated: 
+//           By: 
+//     Update #: 0
 // URL: 
 // Keywords: 
 // Compatibility: 
 // 
 // 
 
+// Commentary: 
 // 
-// Copyright (c) 2014, Federico Boniardi
+// 
+// 
+// 
+
+// Copyright (c) 2015, Federico Boniardi
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 // 
-// * Redistributions of source code must retain the above copyright notice, this
+// * redistributions of source code must retain the above copyright notice, this
 //   list of conditions and the following disclaimer.
 // 
 // * Redistributions in binary form must reproduce the above copyright notice,
@@ -43,36 +48,43 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
-// 
+//
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_COMMON_H_
-#define SQUIRREL_NAVIGATION_COMMON_H_
+#ifndef SQUIRREL_NAVIGATION_TILTHANDLER_H_
+#define SQUIRREL_NAVIGATION_TILTHANDLER_H_
 
-#include <csignal>
+#include <ros/ros.h>
+
+#include <dynamixel_msgs/JointState.h>
+#include <std_msgs/Float64.h>
 
 namespace squirrel_navigation {
 
-static sig_atomic_t _SIGINT_caught = 0;
-
-static const double PI = 3.14159265358979;
-
-static const double KINECT_NAVIGATION_ANGLE = 0.6;
-
-static const double TRANSFORM_TIMEOUT = 0.5;
-
-static const int VOXEL_BITS = 16;
-
-static void interruptCallback( int sig )
+class TiltHandle
 {
-  _SIGINT_caught = 1;
-}
+ public:
+  TiltHandle( void );
+  virtual ~TiltHandle( void );
+
+  bool gotMotionCommand( void );
+  bool isMoving( void );
+  
+ private:
+  ros::NodeHandle public_nh_;
+  ros::Subscriber tilt_command_sub_, tilt_state_sub_;
+
+  double tilt_command_;
+  bool tilt_moving_;
+  
+  void updateTiltState( const dynamixel_msgs::JointState::ConstPtr& );
+  void updateTiltCommand( const std_msgs::Float64::ConstPtr& );
+};
 
 }  // namespace squirrel_navigation
 
-#endif /* SQUIRREL_NAVIGATION_COMMON_H_ */
+#endif /* SQUIRREL_NAVIGATION_TILTHANDLER_H_ */
 
 // 
-// squirrel_navigation.h ends here
+// TiltHandle.h ends here

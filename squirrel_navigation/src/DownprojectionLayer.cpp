@@ -91,7 +91,7 @@ DownprojectionLayer::~DownprojectionLayer( void )
 {
   if( dsrv_ ) {
     delete dsrv_;
-  }  
+  }
 }
 
 void DownprojectionLayer::onInitialize( void )
@@ -105,9 +105,21 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
   if ( rolling_window_ ) {
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
   }
+  
   if (!enabled_) {
     return;
   }
+
+  if ( kinect_th_.isMoving() ) {
+    ROS_WARN("%s: Kinect is being tilted. Skipping costmap's update", ros::this_node::getName().c_str());
+    return;
+  }
+
+  if ( kinect_th_.gotMotionCommand() ) {
+    ROS_WARN("%s: Kinect is going to be tilted. Skipping costmap's update", ros::this_node::getName().c_str());
+    return;
+  }
+  
   // This function doesn't compile with older versions of ROS-navigation (just comment it out)
   useExtraBounds(min_x, min_y, max_x, max_y);
   
@@ -289,11 +301,9 @@ void DownprojectionLayer::reconfigureCB( DownprojectionLayerPluginConfig& config
   obstacles_persistence_ = config.obstacles_persistence;
 
   if ( obstacles_persistence_ > 0 ) {
-    ROS_INFO("%s/%s: obstacle persistence: %f(s)", ros::this_node::getNamespace().c_str(), ros::this_node::getName().c_str(),
-             obstacles_persistence_);
+    ROS_INFO("%s: obstacle persistence: %f(s)", ros::this_node::getName().c_str(), obstacles_persistence_);
   } else if ( obstacles_persistence_ == 0) {
-    ROS_WARN("%s/%s: obstacle_persistance is chosen to be 0(s). Reset to 60.0(s). ", ros::this_node::getNamespace().c_str(),
-             ros::this_node::getName().c_str());
+    ROS_WARN("%s: obstacle_persistance is chosen to be 0(s). Reset to 60.0(s). ", ros::this_node::getName().c_str());
   } 
 
   matchSize();

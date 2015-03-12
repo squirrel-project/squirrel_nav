@@ -112,6 +112,16 @@ void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, dou
     return;
   }
 
+  if ( kinect_th_.isMoving() ) {
+    ROS_WARN("%s: Kinect is being tilted. Skipping costmap's update", ros::this_node::getName().c_str());
+    return;
+  }
+
+  if ( kinect_th_.gotMotionCommand() ) {
+    ROS_WARN("%s: Kinect is going to be tilted. Skipping costmap's update", ros::this_node::getName().c_str());
+    return;
+  }
+  
   // This function doesnot compile if older version of ROS+Ubuntu are used
   useExtraBounds(min_x, min_y, max_x, max_y);
   

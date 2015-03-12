@@ -1,28 +1,33 @@
-// squirrel_navigation.h --- 
+// TiltHandle.cpp --- 
 // 
-// Filename: squirrel_navigation.h
-// Description: Expose the SIGINT callback
+// Filename: TiltHandle.cpp
+// Description: Check wheter the kinect is tilted or not
 // Author: Federico Boniardi
 // Maintainer: boniardi@cs.uni-freiburg.de
-// Created: Fri Dec  5 18:02:05 2014 (+0100)
+// Created: Thu Mar 12 13:00:04 2015 (+0100)
 // Version: 0.1.0
-// Last-Updated: Fri Dec 5 18:10:38 2014 (+0100)
-//           By: Federico Boniardi
-//     Update #: 1
+// Last-Updated: 
+//           By: 
+//     Update #: 0
 // URL: 
 // Keywords: 
 // Compatibility: 
 // 
 // 
 
+// Commentary: 
 // 
-// Copyright (c) 2014, Federico Boniardi
+// 
+// 
+// 
+
+// Copyright (c) 2015, Federico Boniardi
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 // 
-// * Redistributions of source code must retain the above copyright notice, this
+// * redistributions of source code must retain the above copyright notice, this
 //   list of conditions and the following disclaimer.
 // 
 // * Redistributions in binary form must reproduce the above copyright notice,
@@ -43,36 +48,52 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
-// 
+//
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_COMMON_H_
-#define SQUIRREL_NAVIGATION_COMMON_H_
+#include "squirrel_navigation/TiltHandle.h"
+#include "squirrel_navigation/Common.h"
 
-#include <csignal>
+#include <algorithm>
 
 namespace squirrel_navigation {
 
-static sig_atomic_t _SIGINT_caught = 0;
-
-static const double PI = 3.14159265358979;
-
-static const double KINECT_NAVIGATION_ANGLE = 0.6;
-
-static const double TRANSFORM_TIMEOUT = 0.5;
-
-static const int VOXEL_BITS = 16;
-
-static void interruptCallback( int sig )
+TiltHandle::TiltHandle( void ) :
+    tilt_command_(KINECT_NAVIGATION_ANGLE),
+    tilt_moving_(false)
 {
-  _SIGINT_caught = 1;
+  tilt_state_sub_ = public_nh_.subscribe("/tilt_controller/state", 2, &TiltHandle::updateTiltState, this);
+  tilt_command_sub_ = public_nh_.subscribe("/tilt_controller/command", 2, &TiltHandle::updateTiltCommand, this);
+}
+
+TiltHandle::~TiltHandle( void )
+{
+  tilt_state_sub_.shutdown();
+  tilt_command_sub_.shutdown();
+}
+
+bool TiltHandle::gotMotionCommand( void )
+{
+  return (std::abs(KINECT_NAVIGATION_ANGLE - tilt_command_) > 1e-3);
+}
+
+bool TiltHandle::isMoving( void )
+{
+  return tilt_moving_;
+}
+
+void TiltHandle::updateTiltState( const dynamixel_msgs::JointState::ConstPtr& tilt_state_msg )
+{
+  tilt_moving_ = tilt_state_msg->is_moving;
+}
+
+void TiltHandle::updateTiltCommand( const std_msgs::Float64::ConstPtr& tilt_cmd_msg )
+{
+  tilt_command_ = tilt_cmd_msg->data;
 }
 
 }  // namespace squirrel_navigation
 
-#endif /* SQUIRREL_NAVIGATION_COMMON_H_ */
-
 // 
-// squirrel_navigation.h ends here
+// TiltHandle.cpp ends here
