@@ -258,7 +258,7 @@ bool PushingPlanner::isNumericValid( squirrel_rgbd_mapping_msgs::GetPushingPlan:
       and !std::isnan(req.goal.y) and !std::isinf(req.goal.y)
       and !std::isnan(req.start.theta) and !std::isinf(req.goal.theta);
 
-  return (is_valid_start and is_valid_start);
+  return (is_valid_start and is_valid_goal);
 }
 
 }  // namespace squirrel_pushing_planner
