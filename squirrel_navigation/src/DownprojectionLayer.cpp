@@ -73,7 +73,6 @@
 
 #include <set>
 
-<<<<<<< HEAD:squirrel_navigation/src/ObstaclesLayer.cpp
 #define KINECT_NAVIGATION_ANGLE 0.6
 
 #define VOXEL_BITS 16
@@ -81,7 +80,6 @@
 PLUGINLIB_EXPORT_CLASS(squirrel_navigation::ObstaclesLayer, costmap_2d::Layer)
 =======
 PLUGINLIB_EXPORT_CLASS(squirrel_navigation::DownprojectionLayer, costmap_2d::Layer)
->>>>>>> 16c655f88582124b6a4e5b967cd76b841ddd3c45:squirrel_navigation/src/DownprojectionLayer.cpp
 
 namespace squirrel_navigation {
 
@@ -103,19 +101,15 @@ DownprojectionLayer::~DownprojectionLayer( void )
 {
   if( dsrv_ ) {
     delete dsrv_;
-<<<<<<< HEAD:squirrel_navigation/src/ObstaclesLayer.cpp
   }
   tilt_command_sub_.shutdown();
   tilt_state_sub_.shutdown();
-=======
   }  
->>>>>>> 16c655f88582124b6a4e5b967cd76b841ddd3c45:squirrel_navigation/src/DownprojectionLayer.cpp
 }
 
 void DownprojectionLayer::onInitialize( void )
 {
   ObstacleLayer::onInitialize();
-<<<<<<< HEAD:squirrel_navigation/src/ObstaclesLayer.cpp
   ros::NodeHandle private_nh("~/" + name_);
 
   private_nh.param("robot_diameter", robot_diameter_, 0.47);
@@ -129,8 +123,7 @@ void DownprojectionLayer::onInitialize( void )
     std::string ns = ros::this_node::getNamespace();
     ROS_WARN("/%s: obstacle_persistence is chosen to be 0(s). Reset to 60.0(s). ", ns.c_str());
   } 
-=======
->>>>>>> 16c655f88582124b6a4e5b967cd76b841ddd3c45:squirrel_navigation/src/DownprojectionLayer.cpp
+
 }
 
 void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
@@ -143,7 +136,6 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
   if (!enabled_) {
     return;
   }
-<<<<<<< HEAD:squirrel_navigation/src/ObstaclesLayer.cpp
 
   if ( tilt_moving_ ) {
     ROS_WARN("kinect is being tilted. Skipping costmap's update");
@@ -156,9 +148,7 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
   }
     
   // This function doesn't compile with the current libraries in the Robotino
-=======
   // This function doesn't compile with older versions of ROS-navigation (just comment it out)
->>>>>>> 16c655f88582124b6a4e5b967cd76b841ddd3c45:squirrel_navigation/src/DownprojectionLayer.cpp
   useExtraBounds(min_x, min_y, max_x, max_y);
   
   bool current = true;

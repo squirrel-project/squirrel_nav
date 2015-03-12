@@ -79,12 +79,9 @@
 
 #include <voxel_grid/voxel_grid.h>
 
-<<<<<<< HEAD:squirrel_navigation/include/squirrel_navigation/ObstaclesLayer.h
 #include <dynamixel_msgs/JointState.h>
 #include <std_msgs/Float64.h>
-=======
 #include "squirrel_navigation/DownprojectionLayerPluginConfig.h"
->>>>>>> 16c655f88582124b6a4e5b967cd76b841ddd3c45:squirrel_navigation/include/squirrel_navigation/DownprojectionLayer.h
 
 #include <map>
 #include <cmath>

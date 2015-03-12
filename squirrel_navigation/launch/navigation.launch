@@ -1,10 +1,7 @@
 <launch>
   <arg name="rviz" default="false" />
-<<<<<<< HEAD
-  <arg name="map_file" default="/home/robotino/git/robotino/src/squirrel_nav/squirrel_navigation/maps/default-map.yaml" />
-=======
+  <!--arg name="map_file" default="/home/robotino/git/robotino/src/squirrel_nav/squirrel_navigation/maps/default-map.yaml" /-->
   <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
->>>>>>> 16c655f88582124b6a4e5b967cd76b841ddd3c45
   <arg name="robot_id" default="robot1" />
   <arg name="autolocalization" default="false"/>
   <arg name="3d_mapping" default="false" />
@@ -61,6 +58,7 @@
     <arg name="robot_radius" value="0.22" />
     <arg name="start_goal_frame_id" value="/map" />
     <arg name="plan_frame_id" value="/map" />
+    <!--arg name="plan_frame_id" value="/odom" /-->
   </include>
 
   <!-- Run rviz -->
