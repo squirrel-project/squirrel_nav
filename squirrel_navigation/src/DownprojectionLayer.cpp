@@ -78,7 +78,6 @@
 #define VOXEL_BITS 16
 
 PLUGINLIB_EXPORT_CLASS(squirrel_navigation::ObstaclesLayer, costmap_2d::Layer)
-=======
 PLUGINLIB_EXPORT_CLASS(squirrel_navigation::DownprojectionLayer, costmap_2d::Layer)
 
 namespace squirrel_navigation {
