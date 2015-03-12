@@ -82,9 +82,11 @@ class PushingPlanner
   void spin( void );
   void waitForPlannerService( void );
   
- private:
+ private:  
   bool getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request&,
                 squirrel_rgbd_mapping_msgs::GetPushingPlan::Response& );
+
+  bool isNumericValid( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& );
 
   ros::NodeHandle public_nh_, private_nh_;
   ros::Publisher pushing_plan_pub_;

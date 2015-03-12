@@ -10,8 +10,8 @@
     <arg name="map_file" value="$(arg map_file)" />
   </include>
   
-  <!-- Run Monte Carlo Localization -->
-  <include file="$(find squirrel_localizer)/launch/squirrel_localization.launch"/>
+  <!-- Run Monte Carlo Localization (many parameters in squirrel_localizer.launch) -->
+  <include file="$(find squirrel_localizer)/launch/squirrel_localizer.launch"/>
 
   <!-- Run pointcloud_filter_node: filter the PointCloud to speed up planning -->
   <node pkg="squirrel_navigation" type="pointcloud_filter_node" name="pointcloud_filter" 
