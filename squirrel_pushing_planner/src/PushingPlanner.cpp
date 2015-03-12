@@ -250,7 +250,7 @@ bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reques
 
 bool PushingPlanner::isNumericValid( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req )
 {
-  bool is_vailid_start = !std::isnan(req.start.x) and !std::isinf(req.start.x)
+  bool is_valid_start = !std::isnan(req.start.x) and !std::isinf(req.start.x)
       and !std::isnan(req.start.y) and !std::isinf(req.start.y)
       and !std::isnan(req.start.theta) and !std::isinf(req.start.theta);
 
