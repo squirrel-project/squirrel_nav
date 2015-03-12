@@ -197,9 +197,9 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
       double sq_dist_robot = (cloud.points[i].x - robot_x) * (cloud.points[i].x - robot_x)
           + (cloud.points[i].y - robot_y) * (cloud.points[i].y - robot_y);
 
-      // if ( sq_dist_orig <= std::pow(0.5*robot_diameter_, 2) ) {
-      //   continue;
-      // }
+      if ( sq_dist_orig <= std::pow(0.5*robot_diameter_, 2) ) {
+         continue;
+      }
       
       unsigned int mx, my, mz;
       if ( cloud.points[i].z < origin_z_ ) {
