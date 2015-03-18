@@ -11,7 +11,7 @@
   </include>
   
   <!-- Run Monte Carlo Localization -->
-  <include file="$(find squirrel_localizer)/launch/squirrel_localization.launch"/>
+  <include file="$(find squirrel_localizer)/launch/squirrel_localizer.launch"/>
 
   <!-- Run pointcloud_filter_node: filter the PointCloud to speed up planning -->
   <node pkg="squirrel_navigation" type="pointcloud_filter_node" name="pointcloud_filter" 
