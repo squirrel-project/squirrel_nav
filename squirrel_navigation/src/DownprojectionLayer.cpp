@@ -77,7 +77,6 @@
 
 #define VOXEL_BITS 16
 
-PLUGINLIB_EXPORT_CLASS(squirrel_navigation::ObstaclesLayer, costmap_2d::Layer)
 PLUGINLIB_EXPORT_CLASS(squirrel_navigation::DownprojectionLayer, costmap_2d::Layer)
 
 namespace squirrel_navigation {
@@ -92,8 +91,8 @@ DownprojectionLayer::DownprojectionLayer( void ) :
     tilt_command_(KINECT_NAVIGATION_ANGLE)
 {
   costmap_ = NULL;
-  tilt_command_sub_ = public_nh_.subscribe("/tilt_controller/command", 2, &ObstaclesLayer::updateTiltCommand, this);
-  tilt_state_sub_ = public_nh_.subscribe("/tilt_controller/state", 2, &ObstaclesLayer::updateTiltState, this);
+  tilt_command_sub_ = public_nh_.subscribe("/tilt_controller/command", 2, &DownprojectionLayer::updateTiltCommand, this);
+  tilt_state_sub_ = public_nh_.subscribe("/tilt_controller/state", 2, &DownprojectionLayer::updateTiltState, this);
 }
 
 DownprojectionLayer::~DownprojectionLayer( void )
@@ -103,7 +102,6 @@ DownprojectionLayer::~DownprojectionLayer( void )
   }
   tilt_command_sub_.shutdown();
   tilt_state_sub_.shutdown();
-  }  
 }
 
 void DownprojectionLayer::onInitialize( void )
