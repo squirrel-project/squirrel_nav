@@ -52,6 +52,7 @@ LocalPlanner::LocalPlanner( void ) :
     max_linear_vel_(0.0),
     min_linear_vel_(0.0),
     max_rotation_vel_(0.0),
+    max_in_place_rotation_vel_(0.0),
     min_rotation_vel_(0.0),
     num_window_points_(10)
 {
@@ -70,13 +71,19 @@ void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, cost
   
   ros::NodeHandle private_nh("~/" + name);
   private_nh.param("heading_lookahead", heading_lookahead_, 0.3);
-  private_nh.param("max_linear_vel", max_linear_vel_, 0.3);
-  private_nh.param("min_linear_vel", min_linear_vel_, 0.1);
-  private_nh.param("max_rotation_vel", max_rotation_vel_, 1.0);
-  private_nh.param("min_rotation_vel", min_rotation_vel_, 0.3);
+  private_nh.param("max_linear_vel", max_linear_vel_, 0.2);
+  private_nh.param("min_linear_vel", min_linear_vel_, 0.0);
+  private_nh.param("max_rotation_vel", max_rotation_vel_, 0.5);
+  private_nh.param("max_in_place_rotation_vel", max_in_place_rotation_vel_, 1.0);
+  private_nh.param("min_rotation_vel", min_rotation_vel_, 0.0);
   private_nh.param("yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
   private_nh.param("xy_goal_tolerance", xy_goal_tolerance_, 0.10);
   private_nh.param("num_window_points", num_window_points_, 10);
+
+  if ( max_in_place_rotation_vel_ <= 0 ) {
+    ROS_WARN("Maximun rotation in place has been chosen to be non positive. Reverting to 1.0 (rad/s)");
+    max_in_place_rotation_vel_ = 1.0;
+  }
   
   ros::NodeHandle global_node;
   odom_sub_ = global_node.subscribe<nav_msgs::Odometry>("odom", 1, &LocalPlanner::odomCallback, this);
@@ -216,7 +223,7 @@ bool LocalPlanner::rotateToStart( geometry_msgs::Twist& cmd_vel )
     return true;
   }
 
-  cmd_vel.angular.z = calRotationVel( rotation );
+  cmd_vel.angular.z = ( max_in_place_rotation_vel_ / max_rotation_vel_ ) * calRotationVel( rotation );
 
   return true;
 }
@@ -310,7 +317,7 @@ bool LocalPlanner::rotateToGoal( geometry_msgs::Twist& cmd_vel )
     return true;
   }
   
-  cmd_vel.angular.z = calRotationVel( rotation );
+  cmd_vel.angular.z = ( max_in_place_rotation_vel_ / max_rotation_vel_ ) * calRotationVel( rotation ) ;
 
   return true;
 }
