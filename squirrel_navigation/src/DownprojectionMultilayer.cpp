@@ -113,12 +113,12 @@ void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, dou
   }
 
   if ( kinect_th_.isMoving() ) {
-    ROS_WARN("%s: Kinect is being tilted. Skipping costmap's update", ros::this_node::getName().c_str());
+    kinect_th_.printROSMsg("Skipping costmap's update");
     return;
   }
 
-  if ( kinect_th_.gotMotionCommand() ) {
-    ROS_WARN("%s: Kinect is going to be tilted. Skipping costmap's update", ros::this_node::getName().c_str());
+  if ( kinect_th_.gotMotionCommand() ) { 
+    kinect_th_.printROSMsg("Skipping costmap's update");
     return;
   }
   

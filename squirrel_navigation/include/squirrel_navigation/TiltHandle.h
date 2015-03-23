@@ -70,13 +70,15 @@ class TiltHandle
 
   bool gotMotionCommand( void );
   bool isMoving( void );
+
+  void printROSMsg( const char* );
   
  private:
   ros::NodeHandle public_nh_;
   ros::Subscriber tilt_command_sub_, tilt_state_sub_;
 
   double tilt_command_;
-  bool tilt_moving_;
+  bool tilt_moving_, info_;
   
   void updateTiltState( const dynamixel_msgs::JointState::ConstPtr& );
   void updateTiltCommand( const std_msgs::Float64::ConstPtr& );
