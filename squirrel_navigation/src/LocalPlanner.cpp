@@ -80,9 +80,9 @@ void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, cost
   private_nh.param("xy_goal_tolerance", xy_goal_tolerance_, 0.10);
   private_nh.param("num_window_points", num_window_points_, 10);
 
-  if ( max_in_place_rotation_vel_ <= 0 ) {
-    ROS_WARN("Maximun rotation in place has been chosen to be non positive. Reverting to 1.0 (rad/s)");
-    max_in_place_rotation_vel_ = 1.0;
+  if ( max_rotation_vel_ <= 0 ) {
+    ROS_WARN("max_rotation_vel has been chosen to be non positive. Reverting to 0.3 (rad/s)");
+    max_rotation_vel_ = 1.0;
   }
   
   ros::NodeHandle global_node;
