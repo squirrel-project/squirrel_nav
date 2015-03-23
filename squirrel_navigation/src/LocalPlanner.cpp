@@ -82,7 +82,7 @@ void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, cost
 
   if ( max_rotation_vel_ <= 0 ) {
     ROS_WARN("max_rotation_vel has been chosen to be non positive. Reverting to 0.3 (rad/s)");
-    max_rotation_vel_ = 1.0;
+    max_rotation_vel_ = 0.3;
   }
   
   ros::NodeHandle global_node;
