@@ -1,10 +1,10 @@
-// PushingPlanner.h --- 
+// TiltHandle.cpp --- 
 // 
-// Filename: PushingPlanner.h
-// Description: Planner for the pushing task
+// Filename: TiltHandle.cpp
+// Description: Check wheter the kinect is tilted or not
 // Author: Federico Boniardi
 // Maintainer: boniardi@cs.uni-freiburg.de
-// Created: Mon Dec  8 13:36:41 2014 (+0100)
+// Created: Thu Mar 12 13:00:04 2015 (+0100)
 // Version: 0.1.0
 // Last-Updated: 
 //           By: 
@@ -21,18 +21,13 @@
 // 
 // 
 
-// Change Log:
-// 
-// 
-// 
-// 
-// Copyright (c) 2014, Federico Boniardi
+// Copyright (c) 2015, Federico Boniardi
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 // 
-// * Redistributions of source code must retain the above copyright notice, this
+// * redistributions of source code must retain the above copyright notice, this
 //   list of conditions and the following disclaimer.
 // 
 // * Redistributions in binary form must reproduce the above copyright notice,
@@ -53,62 +48,64 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
-// 
+//
 
 // Code:
 
-#ifndef PUSHINGPLANNER_H_
-#define PUSHINGPLANNER_H_
+#include "squirrel_navigation/TiltHandle.h"
+#include "squirrel_navigation/Common.h"
 
-#include <ros/ros.h>
+#include <algorithm>
 
-#include <tf/transform_listener.h>
+namespace squirrel_navigation {
 
-#include <nav_msgs/Path.h>
-#include <nav_msgs/GetPlan.h>
-
-#include <cmath>
-
-#include "squirrel_rgbd_mapping_msgs/GetPushingPlan.h"
-
-namespace squirrel_pushing_planner {
-
-class PushingPlanner
+TiltHandle::TiltHandle( void ) :
+    tilt_command_(KINECT_NAVIGATION_ANGLE),
+    tilt_moving_(false),
+    info_(false)
 {
- public:
-  PushingPlanner( void );
+  tilt_state_sub_ = public_nh_.subscribe("/tilt_controller/state", 2, &TiltHandle::updateTiltState, this);
+  tilt_command_sub_ = public_nh_.subscribe("/tilt_controller/command", 2, &TiltHandle::updateTiltCommand, this);
+}
 
-  virtual ~PushingPlanner( void );
+TiltHandle::~TiltHandle( void )
+{
+  tilt_state_sub_.shutdown();
+  tilt_command_sub_.shutdown();
+}
 
-  void spin( void );
+bool TiltHandle::gotMotionCommand( void )
+{
+  return (std::abs(KINECT_NAVIGATION_ANGLE - tilt_command_) > 1e-3);
+}
 
-  void waitForPlannerService( void );
-  
- private:  
-  bool getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request&,
-                squirrel_rgbd_mapping_msgs::GetPushingPlan::Response& );
+bool TiltHandle::isMoving( void )
+{
+  return tilt_moving_;
+}
 
-  bool isNumericValid( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& );
+void TiltHandle::printROSMsg( const char* msg  )
+{
+  if ( !info_ ) {
+    ROS_INFO("%s: Kinect has been tilted. %s", ros::this_node::getName().c_str(), msg);
+    info_ = true;
+  } else {
+    return;
+  }
+}
 
-  ros::NodeHandle public_nh_, private_nh_;
-  ros::Publisher pushing_plan_pub_;
-  ros::ServiceServer get_pushing_plan_srv_;
+void TiltHandle::updateTiltState( const dynamixel_msgs::JointState::ConstPtr& tilt_state_msg )
+{
+  tilt_moving_ = tilt_state_msg->is_moving;
+}
 
-  nav_msgs::Path plan_;
-  
-  tf::TransformListener tfl_;
-  
-  std::string node_name_;
-  
-  // Parameters
-  double tolerance_, robot_radius_;
-  std::string plan_frame_id_, start_goal_frame_id_;
-};
+void TiltHandle::updateTiltCommand( const std_msgs::Float64::ConstPtr& tilt_cmd_msg )
+{
+  tilt_command_ = tilt_cmd_msg->data;
+  info_ = false;
+}
 
-}  // namespace squirrel_pushing_planner
-
-#endif /* PUSHINGPLANNER_H_ */
+}  // namespace squirrel_navigation
 
 // 
-// PushingPlanner.h ends here
+// TiltHandle.cpp ends here

@@ -59,6 +59,8 @@ static sig_atomic_t _SIGINT_caught = 0;
 
 static const double PI = 3.14159265358979;
 
+static const double KINECT_NAVIGATION_ANGLE = 0.6;
+
 static const double TRANSFORM_TIMEOUT = 0.5;
 
 static const int VOXEL_BITS = 16;
