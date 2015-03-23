@@ -73,26 +73,18 @@
 
 #include <set>
 
-#define KINECT_NAVIGATION_ANGLE 0.6
-
-#define VOXEL_BITS 16
-
 PLUGINLIB_EXPORT_CLASS(squirrel_navigation::DownprojectionLayer, costmap_2d::Layer)
 
 namespace squirrel_navigation {
 
 DownprojectionLayer::DownprojectionLayer( void ) :
     voxel_grid_(0, 0, 0),
-    robot_diameter_(0.44),
+    robot_diameter_(0.5),
     robot_height_(1.0),
-    floor_threshold_(0.03),
-    obstacles_persistence_(60.0),
-    tilt_moving_(false),
-    tilt_command_(KINECT_NAVIGATION_ANGLE)
+    floor_threshold_(0.0),
+    obstacles_persistence_(60.0)
 {
   costmap_ = NULL;
-  tilt_command_sub_ = public_nh_.subscribe("/tilt_controller/command", 2, &DownprojectionLayer::updateTiltCommand, this);
-  tilt_state_sub_ = public_nh_.subscribe("/tilt_controller/state", 2, &DownprojectionLayer::updateTiltState, this);
 }
 
 DownprojectionLayer::~DownprojectionLayer( void )
@@ -100,27 +92,11 @@ DownprojectionLayer::~DownprojectionLayer( void )
   if( dsrv_ ) {
     delete dsrv_;
   }
-  tilt_command_sub_.shutdown();
-  tilt_state_sub_.shutdown();
 }
 
 void DownprojectionLayer::onInitialize( void )
 {
   ObstacleLayer::onInitialize();
-  ros::NodeHandle private_nh("~/" + name_);
-
-  private_nh.param("robot_diameter", robot_diameter_, 0.47);
-  private_nh.param("robot_height", robot_height_, 1.0);
-  private_nh.param("floor_threshold", floor_threshold_, 0.03);  
-  private_nh.param("obstacles_persistence", obstacles_persistence_, 60.0);
-
-  if ( obstacles_persistence_ > 0 ) {
-    ROS_INFO_STREAM("obstacle persistence: " << obstacles_persistence_);
-  } else if ( obstacles_persistence_ == 0) {
-    std::string ns = ros::this_node::getNamespace();
-    ROS_WARN("/%s: obstacle_persistence is chosen to be 0(s). Reset to 60.0(s). ", ns.c_str());
-  } 
-
 }
 
 void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
@@ -129,22 +105,21 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
   if ( rolling_window_ ) {
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
   }
-
+  
   if (!enabled_) {
     return;
   }
 
-  if ( tilt_moving_ ) {
-    ROS_WARN("kinect is being tilted. Skipping costmap's update");
+  if ( kinect_th_.isMoving() ) {
+    kinect_th_.printROSMsg("Skipping costmap's update.");
     return;
   }
 
-  if ( std::abs(tilt_command_ - KINECT_NAVIGATION_ANGLE) > 1e-3 ) {
-    ROS_WARN("kinect is going to be tilted. Skipping costmap's update");
+  if ( kinect_th_.gotMotionCommand() ) {
+    kinect_th_.printROSMsg("Skipping costmap's update.");
     return;
   }
-    
-  // This function doesn't compile with the current libraries in the Robotino
+  
   // This function doesn't compile with older versions of ROS-navigation (just comment it out)
   useExtraBounds(min_x, min_y, max_x, max_y);
   
@@ -179,7 +154,6 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
     double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
 
     for (unsigned int i = 0; i < cloud.points.size(); ++i) {
-      
       if ( cloud.points[i].z > robot_height_ || cloud.points[i].z > max_obstacle_height_ ) {
         continue;
       }
@@ -196,7 +170,7 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
           + (cloud.points[i].y - robot_y) * (cloud.points[i].y - robot_y);
 
       if ( sq_dist_orig <= std::pow(0.5*robot_diameter_, 2) ) {
-         continue;
+        continue;
       }
       
       unsigned int mx, my, mz;
@@ -327,11 +301,9 @@ void DownprojectionLayer::reconfigureCB( DownprojectionLayerPluginConfig& config
   obstacles_persistence_ = config.obstacles_persistence;
 
   if ( obstacles_persistence_ > 0 ) {
-    ROS_INFO("%s/%s: obstacle persistence: %f(s)", ros::this_node::getNamespace().c_str(), ros::this_node::getName().c_str(),
-             obstacles_persistence_);
+    ROS_INFO("%s: obstacle persistence: %f(s)", ros::this_node::getName().c_str(), obstacles_persistence_);
   } else if ( obstacles_persistence_ == 0) {
-    ROS_WARN("%s/%s: obstacle_persistance is chosen to be 0(s). Reset to 60.0(s). ", ros::this_node::getNamespace().c_str(),
-             ros::this_node::getName().c_str());
+    ROS_WARN("%s: obstacle_persistance is chosen to be 0(s). Reset to 60.0(s). ", ros::this_node::getName().c_str());
   } 
 
   matchSize();

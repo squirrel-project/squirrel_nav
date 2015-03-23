@@ -126,12 +126,12 @@ bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reques
     ROS_ERROR("%s: got an invalid request. Cannot create a planner for pushing", node_name.c_str() );
     return false;
   }
-  
+
   nav_msgs::GetPlan plan;
-  
+
   geometry_msgs::Quaternion q_start = tf::createQuaternionMsgFromYaw(req.start.theta);
   geometry_msgs::Quaternion q_goal = tf::createQuaternionMsgFromYaw(req.goal.theta);
-  
+
   double object_d = std::numeric_limits<double>::min();
   for (unsigned int i=0; i<req.object.points.size(); ++i) {
     if ( req.object.points[i].x > object_d ) {
@@ -258,7 +258,7 @@ bool PushingPlanner::isNumericValid( squirrel_rgbd_mapping_msgs::GetPushingPlan:
       and !std::isnan(req.goal.y) and !std::isinf(req.goal.y)
       and !std::isnan(req.start.theta) and !std::isinf(req.goal.theta);
 
-  return is_valid_start and is_valid_goal;
+  return (is_valid_start and is_valid_goal);
 }
 
 }  // namespace squirrel_pushing_planner

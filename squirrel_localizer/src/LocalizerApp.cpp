@@ -332,7 +332,7 @@ void Ais_localizer_node::localize( void )
   } catch (tf::TransformException& ex) {
     std::string ns = ros::this_node::getNamespace();
     std::string node_name = ros::this_node::getName();
-    ROS_ERROR("%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+    ROS_ERROR("%s: %s", node_name.c_str(), ex.what());
     return;
   }
 
@@ -350,7 +350,7 @@ void Ais_localizer_node::localize( void )
   } catch ( tf::TransformException& ex ) {
     std::string ns = ros::this_node::getNamespace();
     std::string node_name = ros::this_node::getName();
-    ROS_ERROR("%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+    ROS_ERROR("%s: %s", node_name.c_str(), ex.what());
     return;
   }
 
@@ -381,7 +381,7 @@ void Ais_localizer_node::localize( void )
     } catch ( tf::TransformException& ex ) {
       std::string ns = ros::this_node::getNamespace();
       std::string node_name = ros::this_node::getName();
-      ROS_ERROR("%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+      ROS_ERROR("%s: %s", node_name.c_str(), ex.what());
       return;
     }
 

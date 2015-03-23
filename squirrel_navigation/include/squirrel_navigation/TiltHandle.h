@@ -1,10 +1,10 @@
-// PushingPlanner.h --- 
+// TiltHandle.h --- 
 // 
-// Filename: PushingPlanner.h
-// Description: Planner for the pushing task
+// Filename: TiltHandle.h
+// Description: Check wheter the kinect is tilted or not
 // Author: Federico Boniardi
 // Maintainer: boniardi@cs.uni-freiburg.de
-// Created: Mon Dec  8 13:36:41 2014 (+0100)
+// Created: Thu Mar 12 13:00:04 2015 (+0100)
 // Version: 0.1.0
 // Last-Updated: 
 //           By: 
@@ -21,18 +21,13 @@
 // 
 // 
 
-// Change Log:
-// 
-// 
-// 
-// 
-// Copyright (c) 2014, Federico Boniardi
+// Copyright (c) 2015, Federico Boniardi
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 // 
-// * Redistributions of source code must retain the above copyright notice, this
+// * redistributions of source code must retain the above copyright notice, this
 //   list of conditions and the following disclaimer.
 // 
 // * Redistributions in binary form must reproduce the above copyright notice,
@@ -53,62 +48,45 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
-// 
+//
 
 // Code:
 
-#ifndef PUSHINGPLANNER_H_
-#define PUSHINGPLANNER_H_
+#ifndef SQUIRREL_NAVIGATION_TILTHANDLER_H_
+#define SQUIRREL_NAVIGATION_TILTHANDLER_H_
 
 #include <ros/ros.h>
 
-#include <tf/transform_listener.h>
+#include <dynamixel_msgs/JointState.h>
+#include <std_msgs/Float64.h>
 
-#include <nav_msgs/Path.h>
-#include <nav_msgs/GetPlan.h>
+namespace squirrel_navigation {
 
-#include <cmath>
-
-#include "squirrel_rgbd_mapping_msgs/GetPushingPlan.h"
-
-namespace squirrel_pushing_planner {
-
-class PushingPlanner
+class TiltHandle
 {
  public:
-  PushingPlanner( void );
+  TiltHandle( void );
+  virtual ~TiltHandle( void );
 
-  virtual ~PushingPlanner( void );
+  bool gotMotionCommand( void );
+  bool isMoving( void );
 
-  void spin( void );
-
-  void waitForPlannerService( void );
+  void printROSMsg( const char* );
   
- private:  
-  bool getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request&,
-                squirrel_rgbd_mapping_msgs::GetPushingPlan::Response& );
+ private:
+  ros::NodeHandle public_nh_;
+  ros::Subscriber tilt_command_sub_, tilt_state_sub_;
 
-  bool isNumericValid( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& );
-
-  ros::NodeHandle public_nh_, private_nh_;
-  ros::Publisher pushing_plan_pub_;
-  ros::ServiceServer get_pushing_plan_srv_;
-
-  nav_msgs::Path plan_;
+  double tilt_command_;
+  bool tilt_moving_, info_;
   
-  tf::TransformListener tfl_;
-  
-  std::string node_name_;
-  
-  // Parameters
-  double tolerance_, robot_radius_;
-  std::string plan_frame_id_, start_goal_frame_id_;
+  void updateTiltState( const dynamixel_msgs::JointState::ConstPtr& );
+  void updateTiltCommand( const std_msgs::Float64::ConstPtr& );
 };
 
-}  // namespace squirrel_pushing_planner
+}  // namespace squirrel_navigation
 
-#endif /* PUSHINGPLANNER_H_ */
+#endif /* SQUIRREL_NAVIGATION_TILTHANDLER_H_ */
 
 // 
-// PushingPlanner.h ends here
+// TiltHandle.h ends here
