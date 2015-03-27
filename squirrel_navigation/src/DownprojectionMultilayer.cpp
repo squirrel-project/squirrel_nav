@@ -74,6 +74,8 @@
 
 #include <map>
 
+#define KINECT_NAVIGATION_ANGLE 0.6
+
 PLUGINLIB_EXPORT_CLASS(squirrel_navigation::DownprojectionMultilayer, costmap_2d::Layer)
 
 namespace squirrel_navigation {
@@ -83,9 +85,13 @@ DownprojectionMultilayer::DownprojectionMultilayer( void ) :
     max_obstacle_height_(1.0),
     min_obstacle_height_(0.0),
     obstacles_persistence_(60.0),
-    dsrv_(NULL)
+    dsrv_(NULL),
+    tilt_moving_(false),
+    tilt_command_(KINECT_NAVIGATION_ANGLE)
 {
   costmap_ = NULL;
+  tilt_command_sub_ = public_nh_.subscribe("/tilt_controller/command", 2, &DownprojectionMultilayer::updateTiltCommand, this);
+  tilt_state_sub_ = public_nh_.subscribe("/tilt_controller/state", 2, &DownprojectionMultilayer::updateTiltState, this);
 }
 
 DownprojectionMultilayer::~DownprojectionMultilayer( void )
@@ -109,6 +115,16 @@ void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, dou
   }
 
   if ( !enabled_ ) {
+    return;
+  }
+
+  if ( tilt_moving_ ) {
+    // ROS_WARN("kinect is being tilted. Skipping costmap's update");
+    return;
+  }
+
+  if ( std::abs(tilt_command_ - KINECT_NAVIGATION_ANGLE) > 1e-3 ) {
+    // ROS_WARN("kinect is going to be tilted. Skipping costmap's update");
     return;
   }
 
@@ -382,47 +398,47 @@ void DownprojectionMultilayer::reconfigureCB( DownprojectionMultilayerPluginConf
   matchSize();
 }
 
-void DownprojectionMultilayer::clearNonLethal( double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info )
-{
-  unsigned int mx, my;
-  if (!worldToMap(wx, wy, mx, my)) {
-    return;
-  }
+// void DownprojectionMultilayer::clearNonLethal( double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info )
+// {
+//   unsigned int mx, my;
+//   if (!worldToMap(wx, wy, mx, my)) {
+//     return;
+//   }
   
-  double start_x = wx - w_size_x / 2;
-  double start_y = wy - w_size_y / 2;
-  double end_x = start_x + w_size_x;
-  double end_y = start_y + w_size_y;
+//   double start_x = wx - w_size_x / 2;
+//   double start_y = wy - w_size_y / 2;
+//   double end_x = start_x + w_size_x;
+//   double end_y = start_y + w_size_y;
 
-  start_x = std::max(origin_x_, start_x);
-  start_y = std::max(origin_y_, start_y);
+//   start_x = std::max(origin_x_, start_x);
+//   start_y = std::max(origin_y_, start_y);
 
-  end_x = std::min(origin_x_ + getSizeInMetersX(), end_x);
-  end_y = std::min(origin_y_ + getSizeInMetersY(), end_y);
+//   end_x = std::min(origin_x_ + getSizeInMetersX(), end_x);
+//   end_y = std::min(origin_y_ + getSizeInMetersY(), end_y);
 
-  unsigned int map_sx, map_sy, map_ex, map_ey;
+//   unsigned int map_sx, map_sy, map_ex, map_ey;
 
-  if (!worldToMap(start_x, start_y, map_sx, map_sy) || !worldToMap(end_x, end_y, map_ex, map_ey)) {
-    return;
-  }
+//   if (!worldToMap(start_x, start_y, map_sx, map_sy) || !worldToMap(end_x, end_y, map_ex, map_ey)) {
+//     return;
+//   }
   
-  unsigned int index = getIndex(map_sx, map_sy);
-  unsigned char* current = &costmap_[index];
-  for (unsigned int j = map_sy; j <= map_ey; ++j) {
-    for (unsigned int i = map_sx; i <= map_ex; ++i) {
-      if ( *current != costmap_2d::LETHAL_OBSTACLE ) {
-        if ( clear_no_info || *current != costmap_2d::NO_INFORMATION ) {
-          *current = costmap_2d::FREE_SPACE;
-          voxel_grid_.clearVoxelColumn(index);
-        }
-      }
-      current++;
-      index++;
-    }
-    current += size_x_ - (map_ex - map_sx) - 1;
-    index += size_x_ - (map_ex - map_sx) - 1;
-  }
-}
+//   unsigned int index = getIndex(map_sx, map_sy);
+//   unsigned char* current = &costmap_[index];
+//   for (unsigned int j = map_sy; j <= map_ey; ++j) {
+//     for (unsigned int i = map_sx; i <= map_ex; ++i) {
+//       if ( *current != costmap_2d::LETHAL_OBSTACLE && *current != costmap_2d::INSCRIBED_INFLATED_OBSTACLE ) {
+//         if ( clear_no_info || *current != costmap_2d::NO_INFORMATION ) {
+//           *current = costmap_2d::FREE_SPACE;
+//           voxel_grid_.clearVoxelColumn(index);
+//         }
+//       }
+//       current++;
+//       index++;
+//     }
+//     current += size_x_ - (map_ex - map_sx) - 1;
+//     index += size_x_ - (map_ex - map_sx) - 1;
+//   }
+// }
 
 void DownprojectionMultilayer::raytraceFreespace(const costmap_2d::Observation& clearing_observation,
                                         double* min_x, double* min_y, double* max_x, double* max_y)

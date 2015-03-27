@@ -142,6 +142,8 @@ bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reques
   // GetPlan tolerance
   plan.request.tolerance = tolerance_;
 
+  ROS_INFO("/PushingPlanner: Got frame id in %s", start_goal_frame_id_.c_str());
+  
   // GetPlan start
   geometry_msgs::PoseStamped start;
   start.header.frame_id = start_goal_frame_id_;

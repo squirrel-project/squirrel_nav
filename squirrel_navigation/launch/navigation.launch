@@ -46,6 +46,7 @@
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/global_costmap_params.yaml" command="load" />
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/base_local_planner_params.yaml" command="load" />
+    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/base_local_planner_trajectory_ros_params.yaml" command="load" />
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/move_base_params.yaml" command="load" />
   </node>
 
@@ -57,7 +58,7 @@
     <arg name="tolerance" value="0.05" />
     <arg name="robot_radius" value="0.22" />
     <arg name="start_goal_frame_id" value="/map" />
-    <arg name="plan_frame_id" value="/map" />
+    <arg name="plan_frame_id" value="/odom" />
     <!--arg name="plan_frame_id" value="/odom" /-->
   </include>
 

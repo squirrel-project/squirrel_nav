@@ -79,6 +79,9 @@
 
 #include <dynamic_reconfigure/server.h>
 
+#include <dynamixel_msgs/JointState.h>
+#include <std_msgs/Float64.h>
+
 #include "squirrel_navigation/MultiInflatedLayer.h"
 #include "squirrel_navigation/DownprojectionMultilayerPluginConfig.h"
 
@@ -128,7 +131,7 @@ public:
   
  private:
   void reconfigureCB( DownprojectionMultilayerPluginConfig&, uint32_t );
-  void clearNonLethal( double, double, double, double, bool );
+  /* void clearNonLethal( double, double, double, double, bool ); */
   virtual void raytraceFreespace( const costmap_2d::Observation&, double*, double*, double*, double* );
     
   inline bool worldToMap3DFloat( double wx, double wy, double wz, double& mx, double& my, double& mz )
@@ -207,7 +210,24 @@ public:
   std::vector<double> layers_levels_;
   double max_obstacle_height_, min_obstacle_height_,  obstacles_persistence_;
 
+  ros::NodeHandle public_nh_;
+  ros::Subscriber tilt_command_sub_, tilt_state_sub_;
+
   std::map<unsigned int, bool> observed_;
+
+  bool tilt_moving_;
+  double tilt_command_;
+  bool pushing_;
+  
+  inline void updateTiltState( const dynamixel_msgs::JointState::ConstPtr& tilt_state_msg )
+  {
+    tilt_moving_ = tilt_state_msg->is_moving;
+  }
+
+  inline void updateTiltCommand( const std_msgs::Float64::ConstPtr& tilt_cmd_msg )
+  {
+    tilt_command_ = tilt_cmd_msg->data;
+  }
 };
 
 }  // namespace squirrel_navigation

@@ -135,12 +135,12 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
   }
 
   if ( tilt_moving_ ) {
-    ROS_WARN("kinect is being tilted. Skipping costmap's update");
+    // ROS_WARN("kinect is being tilted. Skipping costmap's update");
     return;
   }
 
   if ( std::abs(tilt_command_ - KINECT_NAVIGATION_ANGLE) > 1e-3 ) {
-    ROS_WARN("kinect is going to be tilted. Skipping costmap's update");
+    // ROS_WARN("kinect is going to be tilted. Skipping costmap's update");
     return;
   }
     
@@ -365,7 +365,7 @@ void DownprojectionLayer::clearNonLethal( double wx, double wy, double w_size_x,
   unsigned char* current = &costmap_[index];
   for (unsigned int j = map_sy; j <= map_ey; ++j) {
     for (unsigned int i = map_sx; i <= map_ex; ++i) {
-      if ( *current != costmap_2d::LETHAL_OBSTACLE ) {
+      if ( *current != costmap_2d::LETHAL_OBSTACLE && *current != costmap_2d::INSCRIBED_INFLATED_OBSTACLE ) {
         if ( clear_no_info || *current != costmap_2d::NO_INFORMATION ) {
           *current = costmap_2d::FREE_SPACE;
           voxel_grid_.clearVoxelColumn(index);

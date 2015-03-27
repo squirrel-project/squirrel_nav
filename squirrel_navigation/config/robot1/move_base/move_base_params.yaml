@@ -9,7 +9,7 @@
 
 base_local_planner: "squirrel_navigation/LocalPlanner"
 controller_frequency: 7.5
-planner_frequency: 1.5 
+planner_frequency: 1.0
 shutdown_costmaps: false
 recovery_behavior: 
   - {name: rotate_recovery, type: "rotate_recovery/RotateRecovery"}
