@@ -1,5 +1,5 @@
 <launch>
-  <arg name="rviz" default="true"/>
+  <arg name="rviz" default="false"/>
   
   <node name="slam_gmapping" pkg="gmapping" type="slam_gmapping">
     <param name="xmin" value="-20" />

@@ -20,6 +20,7 @@
 
 
 #include "squirrel_localizer/Localization.h"
+#include <ros/ros.h>
 
 #include <ctime>
 
@@ -61,19 +62,24 @@ Localization::Localization() :
 void Localization::start_global()
 {
   particles(m_localizer_params.particles);
+  ROS_INFO("/Localizer: computing random new particle");
 
   for(ParticleVector::iterator it=m_particles.begin(); it!=m_particles.end(); ++it) {
     bool on_free_space = false;
     do {
       it->pose = random_new_pose();
+
+      ROS_INFO("/Localizer: new particle %f %f", it->pose[0], it->pose[1]);
+
       Vector2 wp(it->pose[0],it->pose[1]);
       Vector2i mp = m_map->world2map(wp);
       if ( m_map->isInside(mp) ) {
         on_free_space = (bool) !m_map->cell(mp);
       }
     } while ( !on_free_space );    
-    it->weight = 0.;
+    it->weight = 0.0;
   }
+  
   reset_motion();
 }
 
