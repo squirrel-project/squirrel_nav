@@ -52,7 +52,6 @@ LocalPlanner::LocalPlanner( void ) :
     max_linear_vel_(0.0),
     min_linear_vel_(0.0),
     max_rotation_vel_(0.0),
-    max_in_place_rotation_vel_(0.0),
     min_rotation_vel_(0.0),
     num_window_points_(10)
 {
@@ -73,16 +72,17 @@ void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, cost
   private_nh.param("heading_lookahead", heading_lookahead_, 0.3);
   private_nh.param("max_linear_vel", max_linear_vel_, 0.2);
   private_nh.param("min_linear_vel", min_linear_vel_, 0.0);
-  private_nh.param("max_rotation_vel", max_rotation_vel_, 0.5);
+  private_nh.param("max_rotation_vel", max_rotation_vel_, 0.3);
   private_nh.param("max_in_place_rotation_vel", max_in_place_rotation_vel_, 1.0);
   private_nh.param("min_rotation_vel", min_rotation_vel_, 0.0);
   private_nh.param("yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
+  private_nh.param("yaw_start_tolerance", yaw_start_tolerance_, 0.1);
   private_nh.param("xy_goal_tolerance", xy_goal_tolerance_, 0.10);
   private_nh.param("num_window_points", num_window_points_, 10);
 
   if ( max_rotation_vel_ <= 0 ) {
-    ROS_WARN("max_rotation_vel has been chosen to be non positive. Reverting to 0.3 (rad/s)");
-    max_rotation_vel_ = 0.3;
+    ROS_WARN("max__rotation_vel has been chosen to be non positive. Reverting to defalt value: 0.3 (rad/s)");
+    max_in_place_rotation_vel_ = 0.3;
   }
   
   ros::NodeHandle global_node;
@@ -110,9 +110,11 @@ bool LocalPlanner::computeVelocityCommands( geometry_msgs::Twist& cmd_vel )
   switch(state_)
   {
     case ROTATING_TO_START:
+      public_nh.setParam("/move_base/controller_frequency", 0.0);
       ret = rotateToStart( cmd_vel );
       break;
     case MOVING:
+      public_nh.setParam("/move_base/controller_frequency", 1.5);
       ret = move( cmd_vel );
       break;
     case ROTATING_TO_GOAL:
@@ -141,8 +143,11 @@ bool LocalPlanner::setPlan( const std::vector<geometry_msgs::PoseStamped>& globa
   global_plan_msg_.header.frame_id = std::string("map");
   
   // Make our copy of the global plan
-  global_plan_.clear();
-  global_plan_ = global_plan;
+  if ( state_ != ROTATING_TO_START || global_plan_.empty() ) {
+    ROS_INFO("%s: Set a new path", ros::this_node::getName().c_str());
+    global_plan_.clear();
+    global_plan_ = global_plan;
+  }
   global_plan_msg_.poses = global_plan_;
   
   curr_heading_index_ = 0;
@@ -193,6 +198,8 @@ bool LocalPlanner::rotateToStart( geometry_msgs::Twist& cmd_vel )
 
   ros::Time now = ros::Time::now();
   global_plan_[next_heading_index_].header.stamp = now;
+
+  
   
   try {
     boost::mutex::scoped_lock lock(odom_lock_);
@@ -218,7 +225,8 @@ bool LocalPlanner::rotateToStart( geometry_msgs::Twist& cmd_vel )
 
   rotation = mapToMinusPIToPI( rotation );
 
-  if( fabs( rotation ) < yaw_goal_tolerance_ ) {
+  if( fabs( rotation ) < yaw_start_tolerance_ ) {
+    ROS_INFO("moving");
     state_ = MOVING;
     return true;
   }
@@ -275,7 +283,7 @@ bool LocalPlanner::move( geometry_msgs::Twist& cmd_vel )
     if( distance_to_next_heading < xy_goal_tolerance_ ) {
       cmd_vel.linear.x = 0.0;
       cmd_vel.angular.z = 0.0;
-      ROS_INFO("rotate to goal");
+      ROS_INFO("%s: Rotate to goal", ros::this_node::getName().c_str());
       state_ = ROTATING_TO_GOAL;
       return true;
     }
@@ -312,12 +320,13 @@ bool LocalPlanner::rotateToGoal( geometry_msgs::Twist& cmd_vel )
     if ( global_plan_.size() > 0 ) {
       global_plan_.clear();
     }
+    ROS_INFO("%s: goal reached", ros::this_node::getName().c_str());
     state_ = FINISHED;
     cmd_vel.angular.z = 0.0;
     return true;
   }
   
-  cmd_vel.angular.z = ( max_in_place_rotation_vel_ / max_rotation_vel_ ) * calRotationVel( rotation ) ;
+  cmd_vel.angular.z = ( max_in_place_rotation_vel_ / max_rotation_vel_ ) * calRotationVel( rotation );
 
   return true;
 }

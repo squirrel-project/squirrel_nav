@@ -10,9 +10,11 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <run_depend>squirrel_navigation</run_depend>
+  <run_depend>squirrel_localizer</run_depend>
   <run_depend>squirrel_rgbd_mapping</run_depend>
   <run_depend>squirrel_3d_mapping</run_depend>
   <run_depend>squirrel_pushing_planner</run_depend>
+  <run_depend>test_kinect</run_depend>
 
   <export>
     <metapackage/>
