@@ -77,9 +77,13 @@
 #include <costmap_2d/VoxelGrid.h>
 #include <costmap_2d/obstacle_layer.h>
 
+#include <dynamixel_msgs/JointState.h>
+#include <std_msgs/Float64.h>
+
 #include <voxel_grid/voxel_grid.h>
 
 #include "squirrel_navigation/DownprojectionLayerPluginConfig.h"
+#include "squirrel_navigation/TiltHandle.h"
 
 #include <map>
 #include <cmath>
@@ -106,21 +110,6 @@ private:
   void reconfigureCB( DownprojectionLayerPluginConfig& , uint32_t );
   void clearNonLethal( double, double, double, double, bool );
   virtual void raytraceFreespace( const costmap_2d::Observation&, double*, double*, double*, double* );
-
-  dynamic_reconfigure::Server<DownprojectionLayerPluginConfig> *dsrv_;
-
-  // time based costmap layer
-  std::map<unsigned int, ros::Time> clearing_index_stamped_;
-
-  ros::Publisher voxel_pub_;
-  voxel_grid::VoxelGrid voxel_grid_;
-  double z_resolution_, origin_z_;
-  unsigned int unknown_threshold_, mark_threshold_, size_z_;
-  ros::Publisher clearing_endpoints_pub_;
-  sensor_msgs::PointCloud clearing_endpoints_;
-  
-  double robot_diameter_, robot_height_;
-  double floor_threshold_,  obstacles_persistence_;
   
   inline bool worldToMap3DFloat( double wx, double wy, double wz, double& mx, double& my, double& mz )
   {
@@ -137,7 +126,7 @@ private:
     }
     
     return false;
-  }
+  };
 
   inline bool worldToMap3D( double wx, double wy, double wz, unsigned int& mx, unsigned int& my, unsigned int& mz )
   {
@@ -154,19 +143,38 @@ private:
     }
 
     return false;
-  }
+  };
 
   inline void mapToWorld3D( unsigned int mx, unsigned int my, unsigned int mz, double& wx, double& wy, double& wz )
   {
     wx = origin_x_ + (mx + 0.5) * resolution_;
     wy = origin_y_ + (my + 0.5) * resolution_;
     wz = origin_z_ + (mz + 0.5) * z_resolution_;
-  }
+  };
 
   inline double dist( double x0, double y0, double z0, double x1, double y1, double z1 )
   {
     return std::sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0) + (z1-z0)*(z1-z0));
-  }
+  };
+
+  dynamic_reconfigure::Server<DownprojectionLayerPluginConfig> *dsrv_;
+
+  // time based costmap layer
+  std::map<unsigned int, ros::Time> clearing_index_stamped_;
+
+  ros::Publisher voxel_pub_, clearing_endpoints_pub_;
+  
+  voxel_grid::VoxelGrid voxel_grid_;
+  double z_resolution_, origin_z_;
+
+  unsigned int unknown_threshold_, mark_threshold_, size_z_;
+
+  sensor_msgs::PointCloud clearing_endpoints_;
+  
+  double robot_diameter_, robot_height_;
+  double floor_threshold_,  obstacles_persistence_;
+
+  TiltHandle kinect_th_;
 };
 
 }  // namespace squirrel_navigation

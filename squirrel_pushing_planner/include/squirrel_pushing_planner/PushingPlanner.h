@@ -78,8 +78,11 @@ class PushingPlanner
 {
  public:
   PushingPlanner( void );
+
   virtual ~PushingPlanner( void );
+
   void spin( void );
+
   void waitForPlannerService( void );
   
  private:  

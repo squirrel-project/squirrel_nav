@@ -52,7 +52,8 @@ the map:
 ```bash
 $ roscd squirrel_navigation
 $ cd maps
-$ ln -s default-map.yaml mymap.yaml
+$ rm default-map.yaml
+$ ln -s mymap.yaml default-map.yaml
 ```
 Be sure that both the `.yaml` file and `.pgm` files are stored
 in the same folder.
