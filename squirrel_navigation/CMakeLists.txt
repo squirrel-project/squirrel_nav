@@ -8,6 +8,7 @@ set(squirrel_navigation_DEPENDENCIES
   actionlib
   costmap_2d
   dynamic_reconfigure
+  dynamixel_msgs
   geometry_msgs
   message_generation
   move_base_msgs
