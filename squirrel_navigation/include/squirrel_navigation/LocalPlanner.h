@@ -100,12 +100,14 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   boost::mutex odom_lock_;
 
   int curr_heading_index_, next_heading_index_;
+
+  ros::NodeHandle public_nh; 
   
   // Parameters
   double heading_lookahead_;
   double max_linear_vel_, min_linear_vel_;
-  double max_rotation_vel_, min_rotation_vel_, max_in_place_rotation_vel_;
-  double yaw_goal_tolerance_, xy_goal_tolerance_;
+  double max_rotation_vel_, max_in_place_rotation_vel_, min_rotation_vel_;
+  double yaw_goal_tolerance_, xy_goal_tolerance_, yaw_start_tolerance_;
   int num_window_points_;
 
   // Name and references

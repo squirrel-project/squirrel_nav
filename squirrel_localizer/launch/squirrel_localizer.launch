@@ -10,7 +10,7 @@
   <!-- Localiser -->
   <node name="localizer" pkg="squirrel_localizer" type="squirrel_localizer_localization_node" output="screen">
     <param name="verbose" value="false"/>
-    <param name="number_of_particles" value="500"/>
+    <param name="number_of_particles" value="1000"/>
     <param name="maxLocalizationRange" value="20.0"/>
     <param name="maxRange" value="21.0"/>
     <param name="motion_param_magnitude" value="1.5"/>
@@ -34,7 +34,7 @@
     <param name="sm_use_trimed_mean_as_reference_scan"  value="false"/>
     <param name="dMapTheshold" value="0.3"/>
     <param name="observationPointDensity" value="0.5"/>
-    <param name="use_last_pose" value="false"/>
+    <param name="use_last_pose" value="true"/>
   </node>
 
 </launch>
