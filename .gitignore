@@ -78,3 +78,4 @@ squirrel_navigation/maps/test_maps
 squirrel_navigation/maps/test_maps
 squirrel_pushing_planner/src/TestService.cpp
 squirrel_navigator
+squirrel_navigation/config/robot1/rviz/debug_mcl.rviz
