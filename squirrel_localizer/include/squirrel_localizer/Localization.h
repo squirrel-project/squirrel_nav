@@ -29,6 +29,8 @@
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/uniform_real.hpp>
 
+#include <ros/io.h>
+
 #include "squirrel_localizer/PF.h"
 #include "squirrel_localizer/Misc.h"
 #include "squirrel_localizer/Vector_n.h"

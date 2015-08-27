@@ -81,7 +81,7 @@ void toLogForm( OutputIterator& out, const Iterator & begin, const Iterator & en
    returns the set of indices resulting from the resampling 
 */
 template <class WeightVector>
-void resample( std::vector<size_t>& indexes, const WeightVector& weights, size_t nparticles=0 )
+void resample( std::vector<size_t>& indexes, const WeightVector& weights, size_t nparticles=500 )
 {
   double cweight=0;
 	
@@ -122,14 +122,14 @@ void resample( std::vector<size_t>& indexes, const WeightVector& weights, size_t
    returns the set of  resulting from the resampling //TODO change
 */
 template <class Vector>
-void resampleKLD( Vector& dest, const Vector& particles, size_t nparticles=0 )
+void resampleKLD( Vector& dest, const Vector& particles, size_t nparticles=500 )
 {
   std::vector<float>  bins(6,1e10);
   bins[0]=bins[1]=0.05;
   bins[5]=0.01;
 
-  float quantile = 0.8;//0.8
-  float kld_error = 0.15;//0.1
+  float quantile = 0.8;       //0.8
+  float kld_error = 0.15;     //0.1
   float min_samples = 200;
   float max_samples = nparticles;
 
@@ -156,9 +156,7 @@ void resampleKLD( Vector& dest, const Vector& particles, size_t nparticles=0 )
 
     min_samples=sampler.update(particles[sample]);
   }
-
 }
-
 
 
 /**
