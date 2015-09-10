@@ -466,8 +466,9 @@ void Localization::perform_resampling()
   // KLD based adaptive resampling
   ParticleVector resampled;
   resampled.reserve(m_particles.size());
-  resampleKLD(resampled, m_particles);
-
+  
+  resampleKLD(resampled, m_particles, m_localizer_params.particles);
+ 
   // std::cerr << "Particle size change from " << m_particles.size() << " to " << resampled.size() << std::endl;
 
   m_particles = resampled;
