@@ -457,7 +457,7 @@ void Ais_localizer_node::localize( void )
 
     cur_pos.pose.pose.position.x = delta_sm_x + mean._translation.x();
     cur_pos.pose.pose.position.y = delta_sm_y + mean._translation.y();
-    cur_pos.pose.pose.position.z = delta_sm_theta + mean._translation.z();
+    cur_pos.pose.pose.position.z = 0.0 + mean._translation.z();
     cur_pos.pose.pose.orientation = tf::createQuaternionMsgFromYaw(delta_sm_theta + mean.toVector()[5]);
 
   } else {
