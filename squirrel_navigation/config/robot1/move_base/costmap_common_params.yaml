@@ -6,8 +6,9 @@
 # Maintainer: boniardi@cs.uni-freiburg.de
 #
 # Code:
+robot_radius: 0.16
 
-robot_radius: 0.07 # smallest radius in the stack
+#robot_radius: 0.07 # smallest radius in the stack
 
 # costmap_2d plugins declaration.
 plugins:
@@ -19,9 +20,19 @@ map_layer:
   inflation_radius: 0.6
   cost_scaling_factor: 10.0
 
+# Parameters for squirrel_navigation::ObstacleLayer
+obstacles_layer:
+  obstacle_range: 1.5
+  raytrace_range: 3.0 
+  observation_sources: laser_scan rgbd_scan
+  rgbd_scan: {sensor_frame: kinect_depth_optical_frame, data_type: PointCloud2, topic: rgbdscan, marking: true, clearing: false}
+  laser_scan: {sensor_frame: hokuyo_link, data_type: LaserScan, topic: scan, marking: true, clearing: false} 
+  publish_voxel_map: true
+  robot_height: 0.47
+  floor_threshold: 0.04
 perception_layer:
-  obstacle_range: 2.0
-  raytrace_range: 1.5
+  obstacle_range: 1.5
+  raytrace_range: 3.0
   observation_sources: rgbd_scan laser_scan
   laser_scan: {sensor_frame: hokuyo_link, data_type: LaserScan, topic: scan, marking: true, clearing: false} 
   rgbd_scan: {sensor_frame: kinect_rgb_optical_frame, data_type: PointCloud2, topic: rgbdscan, marking: true, clearing: false}
@@ -30,11 +41,22 @@ perception_layer:
   robot_link_radii: "0.22, 0.07"
   layers_levels: "0.03, 0.26" 
   max_obstacle_height: 0.76
-  min_obstacle_height: 0.04
+  min_obstacle_height: 0.03
   obstacles_persistence: 30.0
   inflation_radii: "0.6, 0.3"
   cost_scaling_factors: "10.0, 10.0"
-  inscribed_radii: "0.16, 0.05"
+  inscribed_radii: "0.18, 0.05"
+
+# obstacles_layer:
+#   obstacle_range: 1.5
+#   raytrace_range: 3.0 
+#   observation_sources: laser_scan 
+#   rgbd_scan: {sensor_frame: kinect_depth_optical_frame, data_type: PointCloud2, topic: rgbdscan, marking: true, clearing: false}
+#   laser_scan: {sensor_frame: hokuyo_link, data_type: LaserScan, topic: scan, marking: true, clearing: false} 
+#   publish_voxel_map: true
+#   robot_height: 0.47
+#   floor_threshold: 0.04
+
 
 #
 # costmap_common_params.yaml ends here

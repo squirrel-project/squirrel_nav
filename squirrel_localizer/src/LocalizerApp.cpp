@@ -119,8 +119,8 @@ Ais_localizer_node::Ais_localizer_node() :
   localized = localizer_.has_converged(mean, covariance, bounded);
 
   private_nh_.param("use_scan_to_map_matching", scanMatcherOn, false);
+  private_nh_.param("sm_filter_gain", sm_filter_, 0.97);
   delta_sm_x = delta_sm_y = delta_sm_theta = 0;
-
 
   // Load static map
   init_map_ = false;
@@ -332,7 +332,7 @@ void Ais_localizer_node::localize( void )
   } catch (tf::TransformException& ex) {
     std::string ns = ros::this_node::getNamespace();
     std::string node_name = ros::this_node::getName();
-    ROS_ERROR("%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+    ROS_ERROR("%s: %s", node_name.c_str(), ex.what());
     return;
   }
 
@@ -350,7 +350,7 @@ void Ais_localizer_node::localize( void )
   } catch ( tf::TransformException& ex ) {
     std::string ns = ros::this_node::getNamespace();
     std::string node_name = ros::this_node::getName();
-    ROS_ERROR("%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+    ROS_ERROR("%s: %s", node_name.c_str(), ex.what());
     return;
   }
 
@@ -381,7 +381,7 @@ void Ais_localizer_node::localize( void )
     } catch ( tf::TransformException& ex ) {
       std::string ns = ros::this_node::getNamespace();
       std::string node_name = ros::this_node::getName();
-      ROS_ERROR("%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+      ROS_ERROR("%s: %s", node_name.c_str(), ex.what());
       return;
     }
 
@@ -451,16 +451,14 @@ void Ais_localizer_node::localize( void )
 
     scanMatcher.correlativeScanMatch(endPoints, estimatedPose, correctedPose, smScore);
 
-    double filter = 0.97;
-
-    delta_sm_x = delta_sm_x * filter + ( 1 - filter) * (correctedPose.x - mean._translation.x());
-    delta_sm_y = delta_sm_y * filter + ( 1 - filter) * (correctedPose.y - mean._translation.y());
-    delta_sm_theta = delta_sm_theta * filter + ( 1 - filter) * (correctedPose.theta - mean.toVector()[5]);
+    delta_sm_x = delta_sm_x * sm_filter_ + ( 1 - sm_filter_) * (correctedPose.x - mean._translation.x());
+    delta_sm_y = delta_sm_y * sm_filter_ + ( 1 - sm_filter_) * (correctedPose.y - mean._translation.y());
+    delta_sm_theta = delta_sm_theta * sm_filter_ + ( 1 - sm_filter_) * (correctedPose.theta - mean.toVector()[5]);
 
     cur_pos.pose.pose.position.x = delta_sm_x + mean._translation.x();
     cur_pos.pose.pose.position.y = delta_sm_y + mean._translation.y();
-    cur_pos.pose.pose.position.z = delta_sm_theta + mean._translation.z();
-    cur_pos.pose.pose.orientation = tf::createQuaternionMsgFromYaw(correctedPose.theta);
+    cur_pos.pose.pose.position.z = 0.0 + mean._translation.z();
+    cur_pos.pose.pose.orientation = tf::createQuaternionMsgFromYaw(delta_sm_theta + mean.toVector()[5]);
 
   } else {
     cur_pos.pose.pose.position.x = mean._translation.x();

@@ -112,6 +112,16 @@ void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, dou
     return;
   }
 
+  if ( kinect_th_.isMoving() ) {
+    kinect_th_.printROSMsg("Skipping costmap's update");
+    return;
+  }
+
+  if ( kinect_th_.gotMotionCommand() ) { 
+    kinect_th_.printROSMsg("Skipping costmap's update");
+    return;
+  }
+  
   // This function doesnot compile if older version of ROS+Ubuntu are used
   useExtraBounds(min_x, min_y, max_x, max_y);
   

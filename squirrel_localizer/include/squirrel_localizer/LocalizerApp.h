@@ -139,7 +139,8 @@ private:
 
   Localization localizer_;
   bool localizer_on_;
-
+  double sm_filter_;
+  
   /** Get PARAMS from Param Deamon */
   LocalizerParameters loc_param_;
   LaserSensorParameters laser_param_;

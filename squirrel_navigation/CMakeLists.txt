@@ -8,6 +8,7 @@ set(squirrel_navigation_DEPENDENCIES
   actionlib
   costmap_2d
   dynamic_reconfigure
+  dynamixel_msgs
   geometry_msgs
   message_generation
   move_base_msgs
@@ -27,6 +28,7 @@ set(squirrel_navigation_DEPENDENCIES
   roscpp
   pluginlib
   octomap_msgs
+  dynamixel_msgs
 )
 
 ############
@@ -71,6 +73,7 @@ add_library(squirrel_costmap_layers
   src/DownprojectionLayer.cpp
   src/DownprojectionMultilayer.cpp
   src/MultiInflatedLayer.cpp
+  src/TiltHandle.cpp
 )
 
 add_dependencies(squirrel_costmap_layers
