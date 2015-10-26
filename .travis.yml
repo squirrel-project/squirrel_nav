@@ -19,6 +19,7 @@ install:
   - sudo apt-get install -qq -y python-rosdep python-catkin-tools
   - sudo rosdep init
   - rosdep update
+  - git clone git@github.com:squirrel-project/squirrel_common.git ~/catkin_ws/src/squirrel_common
   # Use rosdep to install all dependencies (including ROS itself)
   - rosdep install --from-paths ./ -i -y --rosdistro $CI_ROS_DISTRO
 script:
