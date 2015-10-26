@@ -28,7 +28,6 @@ script:
   - cd $CATKIN_WS
   - git clone git@github.com:squirrel-project/squirrel_common.git ~/catkin_ws/src/squirrel_common
   - catkin init
-  - catkin_make
   - rosdep install --from-paths src/ -i -y --rosdistro $CI_ROS_DISTRO
   # Enable install space
   #- catkin config --install
