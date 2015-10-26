@@ -19,6 +19,7 @@ install:
   - sudo apt-get install -qq -y python-rosdep python-catkin-tools
   - sudo rosdep init
   - rosdep update
+  - sudo apt-get install ros-indigo-desktop
   # Use rosdep to install all dependencies (including ROS itself)
 script:
   - source /opt/ros/$CI_ROS_DISTRO/setup.bash
