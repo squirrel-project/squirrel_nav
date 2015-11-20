@@ -82,6 +82,7 @@
 
 #include <voxel_grid/voxel_grid.h>
 
+#include "squirrel_navigation/FootprintLayer.h"
 #include "squirrel_navigation/DownprojectionLayerPluginConfig.h"
 #include "squirrel_navigation/TiltHandle.h"
 
@@ -103,9 +104,12 @@ public:
   virtual void reset( void );
 
 protected:
+  FootprintLayer footprint_layer_;
+
   virtual void setupDynamicReconfigure( ros::NodeHandle& );
   virtual void resetMaps( void );
 
+  virtual void onFootprintChanged( void );
 private:
   void reconfigureCB( DownprojectionLayerPluginConfig& , uint32_t );
   void clearNonLethal( double, double, double, double, bool );
