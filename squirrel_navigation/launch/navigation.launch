@@ -46,12 +46,15 @@
   <include file="$(find squirrel_3d_mapping)/launch/3d_mapping.launch" if="$(arg 3d_mapping)"/>
 
   <!-- Run the planner for pushing task -->
-  <include file="$(find squirrel_pushing_planner)/launch/pushing_planner.launch">
-    <arg name="tolerance" value="0.05" />
-    <arg name="robot_radius" value="0.22" />
-    <arg name="start_goal_frame_id" value="/map" />
-    <arg name="plan_frame_id" value="/odom" />
-  </include>
+  <!-- <include file="$(find squirrel_pushing_planner)/launch/pushing_planner.launch"> -->
+  <!--   <arg name="tolerance" value="0.05" /> -->
+  <!--   <arg name="robot_radius" value="0.22" /> -->
+  <!--   <arg name="start_goal_frame_id" value="/map" /> -->
+  <!--   <arg name="plan_frame_id" value="/odom" /> -->
+  <!--   <arg name="costmap_width" value="400"/> -->
+  <!--   <arg name="costmap_height" value="400"/> -->
+  <!--   <arg name="costmap_topic" value="/move_base/global_costmap/costmap"/>  -->
+  <!-- </include> -->
 
   <!-- Run rviz -->
   <include file="$(find squirrel_navigation)/launch/rviz.launch" if="$(arg rviz)">

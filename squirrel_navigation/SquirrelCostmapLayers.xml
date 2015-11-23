@@ -36,6 +36,11 @@
 	Costmap layer for static obstacles
       </description>
     </class>
+    <class type="squirrel_navigation::InflatedLayer" base_class_type="costmap_2d::Layer">
+      <description>
+	Inflation layer for static obstacles
+      </description>
+    </class>
   </library>
 </class_libraries>
 
