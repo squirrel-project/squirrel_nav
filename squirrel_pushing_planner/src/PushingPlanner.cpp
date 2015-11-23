@@ -55,17 +55,6 @@
 
 #include "squirrel_pushing_planner/PushingPlanner.h"
 
-#include <ros/exceptions.h>
-
-#include <tf/tf.h>
-
-#include <geometry_msgs/Quaternion.h>
-#include <geometry_msgs/PoseStamped.h>
-
-#include <climits>
-#include <cmath>
-#include <stdexcept>
-
 namespace squirrel_pushing_planner {
 
 PushingPlanner::PushingPlanner( void )  :
@@ -73,25 +62,37 @@ PushingPlanner::PushingPlanner( void )  :
     tolerance_(1.0),
     robot_radius_(0.22),
     start_goal_frame_id_("/map"),
-    plan_frame_id_("/odom")
+    plan_frame_id_("/odom"),
+    costmap_height_(400),
+    costmap_width_(400),
+    offset_height_(200),
+    offset_width_(200),
+    obstacle_map_(NULL)
 {
   node_name_ = ros::this_node::getName();
   
-  private_nh_.param("tolerance", tolerance_, 1.0);
-  private_nh_.param("robot_radius", robot_radius_, 0.22);
-  private_nh_.param("plan_frame_id", plan_frame_id_, std::string("/odom"));
-  private_nh_.param("start_goal_frame_id", start_goal_frame_id_, std::string("/map"));
-
+  private_nh_.param<double>("tolerance", tolerance_, 1.0);
+  private_nh_.param<double>("robot_radius", robot_radius_, 0.22);
+  private_nh_.param<std::string>("plan_frame_id", plan_frame_id_, "/odom");
+  private_nh_.param<std::string>("start_goal_frame_id", start_goal_frame_id_, "/map");
+  private_nh_.param<int>("costmap_height", costmap_height_, 400);
+  private_nh_.param<int>("costmap_width", costmap_width_, 400);
+  
   plan_.header.frame_id = plan_frame_id_;
   
   pushing_plan_pub_ = private_nh_.advertise<nav_msgs::Path>("pushingPlan", 1000);
-  get_pushing_plan_srv_ = public_nh_.advertiseService("getPushingPlan", &PushingPlanner::getPlan, this); 
+  get_pushing_plan_srv_ = public_nh_.advertiseService("getPushingPlan", &PushingPlanner::getPlan_, this); 
+  costmap_sub_ = public_nh_.subscribe("global_costmap", 1, &PushingPlanner::costmapCallback_, this);
 }
 
 PushingPlanner::~PushingPlanner( void )
 {
+  if ( obstacle_map_ )
+    delete obstacle_map_;
+  
   pushing_plan_pub_.shutdown();
   get_pushing_plan_srv_.shutdown();
+  costmap_sub_.shutdown();
   private_nh_.shutdown();
   public_nh_.shutdown();
 }
@@ -118,10 +119,10 @@ void PushingPlanner::waitForPlannerService( void )
   }
 }
 
-bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req,
+bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req,
                               squirrel_rgbd_mapping_msgs::GetPushingPlan::Response& res )
 {
-  if ( !isNumericValid(req) ) {
+  if ( !isNumericValid_(req) ) {
     std::string node_name = ros::this_node::getName();
     ROS_ERROR("%s: got an invalid request. Cannot create a planner for pushing", node_name.c_str() );
     return false;
@@ -132,12 +133,18 @@ bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reques
   geometry_msgs::Quaternion q_start = tf::createQuaternionMsgFromYaw(req.start.theta);
   geometry_msgs::Quaternion q_goal = tf::createQuaternionMsgFromYaw(req.goal.theta);
 
+  const size_t n = req.object.points.size();
+  
   double object_d = std::numeric_limits<double>::min();
-  for (unsigned int i=0; i<req.object.points.size(); ++i) {
+  for (unsigned int i=0; i<n; ++i) {
     if ( req.object.points[i].x > object_d ) {
       object_d = req.object.points[i].x;
     }
   }
+
+  if ( (req.object.points[0].x != req.object.points[n-1].x) or
+       (req.object.points[0].y != req.object.points[n-1].y)  )
+    req.object.points.push_back(req.object.points[0]);
   
   // GetPlan tolerance
   plan.request.tolerance = tolerance_;
@@ -224,6 +231,43 @@ bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reques
 
       plan_.poses.insert(plan_.poses.end(), plan.response.plan.poses.begin()+smoother+1, plan.response.plan.poses.end());
 
+      if ( not obstacle_map_ ) {
+        ROS_WARN("%s: Costmap is not ready yet. Unable to compute path's clearance.", ros::this_node::getName().c_str());
+        res.clearance = -1.0;
+      } else {
+
+        boost::unique_lock<boost::mutex> lock(costmap_mtx_);
+        
+        for (size_t i=0; i<costmap_height_; ++i) {
+          for (size_t j=0; j<costmap_width_; ++j) {
+            size_t stride = offset_height_*costmap_.info.width + i * costmap_.info.width + offset_width_;         
+            geometry_msgs::Point p;
+            p.x = costmap_.info.resolution * (offset_height_+i);
+            p.y = costmap_.info.resolution * (offset_width_+j);
+            
+            if ( costmap_.data[stride+j] == costmap_2d::LETHAL_OBSTACLE and (not inFootprint_(req.object,p)) ) 
+              obstacle_map_->at<uchar>(i,j) = 255;
+            else
+              obstacle_map_->at<uchar>(i,j) = 0;
+          }
+        }
+
+        cv::Mat dist_map;
+        double min, max;
+        
+        cv::distanceTransform(*obstacle_map_, dist_map, CV_DIST_L2, 3);
+        cv::minMaxLoc(dist_map, &min, &max);
+        cv::normalize(dist_map, dist_map, 0.0, max*costmap_.info.resolution, cv::NORM_MINMAX);
+
+        res.clearance = -std::numeric_limits<double>::max();
+        for (size_t k=0; k<plan_.poses.size(); ++k) {
+          unsigned int i = (costmap_.info.height/2 - plan_.poses[k].pose.position.x/costmap_.info.resolution) - offset_height_;
+          unsigned int j = plan_.poses[k].pose.position.y/costmap_.info.resolution - offset_width_;
+
+          res.clearance = std::min(dist_map.at<float>(i,j),(float)res.clearance); 
+        }
+      }      
+      
       // Create response in plan_frame_id_
       res.plan.header.frame_id = plan_frame_id_;
       for (unsigned int i=0; i<plan_.poses.size(); ++i) { 
@@ -248,7 +292,33 @@ bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reques
   }
 }
 
-bool PushingPlanner::isNumericValid( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req )
+void PushingPlanner::costmapCallback_( const nav_msgs::OccupancyGrid::ConstPtr& costmap_msg )
+{
+  if ( not obstacle_map_ ) {
+    obstacle_map_ = new cv::Mat(costmap_height_,costmap_width_,CV_LOAD_IMAGE_GRAYSCALE);
+
+    costmap_.info.map_load_time = costmap_msg->info.map_load_time;
+    costmap_.info.resolution = costmap_msg->info.resolution;
+    costmap_.info.width = costmap_msg->info.width;
+    costmap_.info.height = costmap_msg->info.height;
+    costmap_.info.origin.position.x = costmap_msg->info.origin.position.x;
+    costmap_.info.origin.position.y = costmap_msg->info.origin.position.y;
+    costmap_.info.origin.position.z = costmap_msg->info.origin.position.z;
+    costmap_.info.origin.orientation.x = costmap_msg->info.origin.orientation.x;
+    costmap_.info.origin.orientation.y = costmap_msg->info.origin.orientation.y;
+    costmap_.info.origin.orientation.z = costmap_msg->info.origin.orientation.z;
+    costmap_.info.origin.orientation.w = costmap_msg->info.origin.orientation.w;
+
+    offset_height_ = costmap_.info.height/2 - costmap_height_/2;
+    offset_width_ = costmap_.info.width/2 - costmap_width_/2;
+
+    costmap_.data.resize(costmap_.info.height*costmap_.info.width);
+  }
+
+  std::copy(costmap_msg->data.begin(),costmap_msg->data.end(),costmap_.data.begin());
+}
+
+bool PushingPlanner::isNumericValid_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req )
 {
   bool is_valid_start = !std::isnan(req.start.x) and !std::isinf(req.start.x)
       and !std::isnan(req.start.y) and !std::isinf(req.start.y)
@@ -259,6 +329,24 @@ bool PushingPlanner::isNumericValid( squirrel_rgbd_mapping_msgs::GetPushingPlan:
       and !std::isnan(req.start.theta) and !std::isinf(req.goal.theta);
 
   return (is_valid_start and is_valid_goal);
+}
+
+bool PushingPlanner::inFootprint_( const geometry_msgs::Polygon& polygon, const geometry_msgs::Point& p )
+{
+  const unsigned int n = polygon.points.size();
+
+  int cn = 0;
+  for (int i=0; i<n; ++i) {    
+    if ( ((polygon.points[i].y <= p.y) and (polygon.points[i+1].y > p.y)) or
+         ((polygon.points[i].y > p.y) and (polygon.points[i+1].y <=  p.y)) )
+    { 
+      double vt = (double)(p.y  - polygon.points[i].y) / (polygon.points[i+1].y - polygon.points[i].y);
+      if ( p.x < polygon.points[i].x+vt*(polygon.points[i+1].x-polygon.points[i].x) ) 
+        ++cn; 
+    }
+  }
+  
+  return !(cn%2);
 }
 
 }  // namespace squirrel_pushing_planner
