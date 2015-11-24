@@ -1,7 +1,7 @@
 <launch>
   <arg name="rviz" default="false" />
   <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
-  <arg name="robot_id" default="robot1" />
+  <arg name="robot_id" default="robotino" />
   <arg name="autolocalization" default="false"/>
   <arg name="3d_mapping" default="false" />
   

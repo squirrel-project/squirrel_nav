@@ -11,6 +11,6 @@
   <!-- Run rviz -->
   <include file="$(find squirrel_navigation)/launch/rviz.launch" if="$(arg rviz)">
     <arg name="mapping" value="true"/>
-    <arg name="robot" value="robot1"/>
+    <arg name="robot" value="robotino"/>
   </include>
 </launch>
