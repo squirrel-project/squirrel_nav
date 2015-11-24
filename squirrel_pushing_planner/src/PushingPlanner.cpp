@@ -64,6 +64,7 @@ PushingPlanner::PushingPlanner( void )  :
     robot_radius_(0.22),
     start_goal_frame_id_("/map"),
     plan_frame_id_("/odom"),
+    object_frame_id_("/base_link"),
     obstacles_map_(NULL),
     costmap_topic_("/move_base/global_costmap/costmap"),
     costmap_updates_topic_("/move_base/global_costmap/costmap_updates"),
@@ -75,9 +76,10 @@ PushingPlanner::PushingPlanner( void )  :
   private_nh_.param<double>("robot_radius", robot_radius_, 0.22);
   private_nh_.param<std::string>("plan_frame_id", plan_frame_id_, "/odom");
   private_nh_.param<std::string>("start_goal_frame_id", start_goal_frame_id_, "/map");
+  private_nh_.param<std::string>("object_frame_id", object_frame_id_,"/base_link");
   private_nh_.param<std::string>("costmap_topic", costmap_topic_, "/move_base/global_costmap/costmap");
-  private_nh_.param<std::string>("costmap_topic", costmap_updates_topic_, "/move_base/global_costmap/costmap_updates");
-  
+  private_nh_.param<std::string>("costmap_updates_topic", costmap_updates_topic_, "/move_base/global_costmap/costmap_updates");
+
   plan_.header.frame_id = plan_frame_id_;
   
   pushing_plan_pub_ = private_nh_.advertise<nav_msgs::Path>("pushingPlan", 1000);
@@ -137,10 +139,7 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
 
   geometry_msgs::PoseStamped start, start_m;
   start.header.frame_id = start_goal_frame_id_;
-  start.pose.orientation.x = q_start.x;
-  start.pose.orientation.y = q_start.y;
-  start.pose.orientation.z = q_start.z;
-  start.pose.orientation.w = q_start.w;
+  start.pose.orientation = q_start;
   start.pose.position.x = req.start.x;
   start.pose.position.y = req.start.y;
 
@@ -148,20 +147,24 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
     tfl_.waitForTransform(start_goal_frame_id_, "/map", ros::Time::now(), ros::Duration(1.0));
     tfl_.transformPose("/map", start, start_m);
     start_m.header.frame_id = "/map";
-  } catch (tf::TransformException ex) {
+  } catch ( tf::TransformException& ex ) {
     ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
     return true;
   }
 
+  double start_theta_m = tf::getYaw(start_m.pose.orientation);
+  
   // Transform polygon in map frame
   const size_t n = req.object.points.size();
   
   geometry_msgs::Polygon object_m;
   for (unsigned int i=0; i<n; ++i) {
     geometry_msgs::PoseStamped vertex, vertex_stamped_m;
-    vertex.header.frame_id = "base_link";
+    vertex.header.frame_id = object_frame_id_;
     vertex.pose.position.x = req.object.points[i].x;
     vertex.pose.position.y = req.object.points[i].y;
+    vertex.pose.orientation.w = 1.0;
+    
     try {
       tfl_.waitForTransform(object_frame_id_, "/map", ros::Time::now(), ros::Duration(1.0));
       tfl_.transformPose("/map", vertex, vertex_stamped_m);
@@ -187,8 +190,15 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
 
   for (unsigned int i=0; i<n; ++i) {
     // Computing the farthest distance from the starting point
-    if ( dist2d_(object_m.points[i],start_m) > object_d )
-      object_d = dist2d_(object_m.points[i],start_m);
+    geometry_msgs::Point32 p,q;
+    p.x = object_m.points[i].x - start_m.pose.position.x;
+    p.y = object_m.points[i].y - start_m.pose.position.y;
+    q.x = std::cos(start_theta_m);
+    q.y = std::sin(start_theta_m);
+    
+    double d = dot_(p,q);
+    if ( d > object_d )
+      object_d = d;
 
     // Computing the patch on the object to remove obstacles
     if ( object_m.points[i].x < object_min_x ) 
@@ -224,7 +234,7 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
     tfl_.waitForTransform(start_goal_frame_id_, "/map", ros::Time::now(), ros::Duration(1.0));
     tfl_.transformPose("/map", start_real, plan.request.start);
     plan.request.start.header.frame_id = "/map";
-  } catch (tf::TransformException ex) {
+  } catch ( tf::TransformException& ex ) {
     ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
     return true;
   }
@@ -243,7 +253,7 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
     tfl_.waitForTransform(start_goal_frame_id_, "/map", ros::Time::now(), ros::Duration(1.0));
     tfl_.transformPose("/map", goal, plan.request.goal);
     plan.request.goal.header.frame_id = "/map";
-  } catch (tf::TransformException ex) {
+  } catch ( tf::TransformException& ex ) {
     ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
     return false;
   }
@@ -263,12 +273,13 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
       // Add the starting point
       p.pose.position.x = start_m.pose.position.x;
       p.pose.position.y = start_m.pose.position.y;
+      p.pose.orientation = start_m.pose.orientation;
       plan_.poses.push_back(p);
 
       // Adjust move base approximation
       plan.response.plan.poses[0].pose.position.x = plan.request.start.pose.position.x;
       plan.response.plan.poses[0].pose.position.y = plan.request.start.pose.position.y;
-      
+
       // smooth connection to the path
       double c = 0.5;
       double toll = 1e-4;
@@ -276,12 +287,12 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
       for (double t=0.5*object_d; (t<object_d-toll && smoother<plan.response.plan.poses.size()); ++smoother, t+=object_d*std::pow(c,smoother)) {
         double dx_s = plan.response.plan.poses[smoother].pose.position.x - plan.response.plan.poses[smoother-1].pose.position.x;
         double dy_s = plan.response.plan.poses[smoother].pose.position.y - plan.response.plan.poses[smoother-1].pose.position.y;
-        p.pose.position.x = plan_.poses[smoother-1].pose.position.x + object_d*std::pow(c,smoother) * std::cos(req.start.theta) + dx_s;
-        p.pose.position.y = plan_.poses[smoother-1].pose.position.y + object_d*std::pow(c,smoother) * std::sin(req.start.theta) + dy_s;
+        p.pose.position.x = plan_.poses[smoother-1].pose.position.x + object_d*std::pow(c,smoother) * std::cos(start_theta_m) + dx_s;
+        p.pose.position.y = plan_.poses[smoother-1].pose.position.y + object_d*std::pow(c,smoother) * std::sin(start_theta_m) + dy_s;
         p.pose.orientation = start_m.pose.orientation;
         plan_.poses.push_back(p);
       }
-
+      
       plan_.poses.insert(plan_.poses.end(), plan.response.plan.poses.begin()+smoother+1, plan.response.plan.poses.end());
 
       if ( not obstacles_map_ ) {
@@ -289,14 +300,15 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
         res.clearance = -1.0;
       } else {
         boost::unique_lock<boost::mutex> lock(obstacles_mtx_);
-
+        
         for (unsigned int i=patch_i_start; i<patch_i_end; ++i) {
-          for (unsigned int j=patch_j_start; i<patch_j_end; ++i) {
+          for (unsigned int j=patch_j_start; j<patch_j_end; ++j) {
             geometry_msgs::Point p;
             p.x = i*costmap_info_.resolution;
             p.y = j*costmap_info_.resolution;
-            if ( inFootprint_(object_m,p) )
-              obstacles_map_->at<uchar>(costmap_info_.height-i-1,j) = 0;
+            if ( inFootprint_(object_m,p) ) {
+              obstacles_map_->at<uchar>(costmap_info_.height/2-j-1,costmap_info_.height/2+i) = 255;
+            }
           }
         }
         
@@ -306,13 +318,13 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
         cv::distanceTransform(*obstacles_map_, dist_map, CV_DIST_L2, 3);
         cv::minMaxLoc(dist_map, &min, &max);
         cv::normalize(dist_map, dist_map, 0.0, max*costmap_info_.resolution, cv::NORM_MINMAX);
-
-        res.clearance = -std::numeric_limits<double>::max();
+        
+        res.clearance = std::numeric_limits<float>::max();
         for (size_t k=0; k<plan_.poses.size(); ++k) {
-          unsigned int i = (costmap_info_.height - plan_.poses[k].pose.position.x/costmap_info_.resolution - 1);
+          unsigned int i = plan_.poses[k].pose.position.x/costmap_info_.resolution;
           unsigned int j = plan_.poses[k].pose.position.y/costmap_info_.resolution;
 
-          res.clearance = std::min(dist_map.at<float>(i,j),(float)res.clearance); 
+          res.clearance = std::min(dist_map.at<float>(costmap_info_.height/2-j-1,costmap_info_.height/2+i),(float)res.clearance); 
         }
       }      
       
@@ -325,7 +337,7 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
           tfl_.transformPose(plan_frame_id_, plan_.poses[i], p);
           p.header.frame_id = plan_frame_id_;
           res.plan.poses.push_back(p);
-        } catch (tf::TransformException ex) {
+        } catch (tf::TransformException& ex) {
           ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
           return false;
         }
@@ -360,9 +372,9 @@ void PushingPlanner::costmapCallback_( const nav_msgs::OccupancyGrid::ConstPtr& 
     for (size_t i=0; i<costmap_info_.height; ++i) {
       for (size_t j=0; j<costmap_info_.width; ++j) {
         if ( costmap_msg->data[costmap_info_.width*i+j] == OBSTACLE ) {
-          obstacles_map_->at<uchar>(costmap_info_.height-i-1,j) = 255;
-        } else
           obstacles_map_->at<uchar>(costmap_info_.height-i-1,j) = 0;
+        } else
+          obstacles_map_->at<uchar>(costmap_info_.height-i-1,j) = 255;
       }
     }
 
@@ -387,7 +399,7 @@ void PushingPlanner::costmapUpdatesCallback_( const map_msgs::OccupancyGridUpdat
     for (unsigned int j=-width/2; j<width/2; ++j) {
       unsigned int x = costmap_info_.height-(i+center_i)-1;
       unsigned int y = j+center_j;
-      obstacles_map_->at<uchar>(x,y) = 255*(updates_msg->data[width*i+j]==OBSTACLE);
+      obstacles_map_->at<uchar>(x,y) = 255*(updates_msg->data[width*i+j]!=OBSTACLE);
     }
   }
   
@@ -409,7 +421,7 @@ bool PushingPlanner::isNumericValid_( squirrel_rgbd_mapping_msgs::GetPushingPlan
 
 bool PushingPlanner::inFootprint_( const geometry_msgs::Polygon& polygon, const geometry_msgs::Point& p )
 {
-  const unsigned int n = polygon.points.size();
+  const unsigned int n = polygon.points.size()-1;
 
   int cn = 0;
   for (int i=0; i<n; ++i) {    

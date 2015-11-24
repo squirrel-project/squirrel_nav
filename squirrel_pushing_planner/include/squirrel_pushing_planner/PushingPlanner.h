@@ -133,11 +133,15 @@ class PushingPlanner
   void costmapUpdatesCallback_( const map_msgs::OccupancyGridUpdate::ConstPtr& );
   bool isNumericValid_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& );
   bool inFootprint_( const geometry_msgs::Polygon&, const geometry_msgs::Point& );
-  inline double dist2d_( const geometry_msgs::Point32& p, const geometry_msgs::PoseStamped& q )
+  // inline double dist2d_( const geometry_msgs::Point32& p, const geometry_msgs::PoseStamped& q )
+  // {
+  //   double dx = p.x-q.pose.position.x;
+  //   double dy = p.y-q.pose.position.y;
+  //   return std::sqrt(dx*dx+dy*dy);
+  // };
+  inline double dot_( const geometry_msgs::Point32& p, const geometry_msgs::Point32& q )
   {
-    double dx = p.x-q.pose.position.x;
-    double dy = p.y-q.pose.position.y;
-    return std::sqrt(dx*dx+dy*dy);
+    return p.x*q.x+p.y*q.y;
   };
 };
 
