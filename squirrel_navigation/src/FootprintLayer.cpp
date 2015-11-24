@@ -5,7 +5,7 @@
 // Author: Federico Boniardi
 // Maintainer: boniardi@informatik.uni-freiburg.de
 // Created: Fri Nov 20 13:57:41 2015 (+0100)
-// Version: 
+// Version: 0.1.0
 // Last-Updated: 
 //           By: 
 //     Update #: 0

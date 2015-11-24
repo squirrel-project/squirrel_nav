@@ -30,6 +30,7 @@ obstacles_layer:
   publish_voxel_map: true
   robot_height: 0.47
   floor_threshold: 0.04
+
 perception_layer:
   obstacle_range: 1.5
   raytrace_range: 3.0

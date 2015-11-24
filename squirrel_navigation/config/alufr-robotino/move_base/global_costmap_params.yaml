@@ -2,7 +2,7 @@
 # 
 # Filename: global_costmap_params.yaml
 # Description: Costmap parameters for the global Planner (Dijkstra)
-# Created: Thu Feb 26 18:02:55 2015 (+0100)
+# Created: Tue Nov 24 14:33:45 2015 (+0100)
 # Maintainer: boniardi@cs.uni-freiburg.de
 #
 # Code:
@@ -20,5 +20,6 @@ global_costmap: {
   inflation_layer/inflation_radius: 0.6,
   inflation_layer/cost_scaling_factor: 10.0
 }
+
 #
 # global_costmap_params.yaml ends here

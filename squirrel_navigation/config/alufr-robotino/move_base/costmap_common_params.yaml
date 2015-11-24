@@ -2,7 +2,7 @@
 # 
 # Filename: costmap_common_params.yaml
 # Description: Global parameters for layered costmap
-# Created: Thu Feb 26 18:02:16 2015 (+0100)
+# Created: Tue Nov 24 14:33:55 2015 (+0100)
 # Maintainer: boniardi@cs.uni-freiburg.de
 #
 # Code:
@@ -23,7 +23,7 @@ map_layer:
 obstacles_layer:
   obstacle_range: 1.5
   raytrace_range: 3.0 
-  observation_sources: laser_scan # rgbd_scan
+  observation_sources: laser_scan rgbd_scan
   rgbd_scan: {sensor_frame: kinect_depth_optical_frame, data_type: PointCloud2, topic: rgbdscan, marking: true, clearing: false}
   laser_scan: {sensor_frame: hokuyo_link, data_type: LaserScan, topic: scan, marking: true, clearing: true} 
   publish_voxel_map: true

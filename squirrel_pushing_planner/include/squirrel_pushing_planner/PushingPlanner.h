@@ -6,9 +6,9 @@
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Mon Dec  8 13:36:41 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: 
-//           By: 
-//     Update #: 0
+// Last-Updated: Tue Nov 24 14:36:59 2015 (+0100)
+//           By: Federico Boniardi
+//     Update #: 1
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -133,16 +133,7 @@ class PushingPlanner
   void costmapUpdatesCallback_( const map_msgs::OccupancyGridUpdate::ConstPtr& );
   bool isNumericValid_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& );
   bool inFootprint_( const geometry_msgs::Polygon&, const geometry_msgs::Point& );
-  // inline double dist2d_( const geometry_msgs::Point32& p, const geometry_msgs::PoseStamped& q )
-  // {
-  //   double dx = p.x-q.pose.position.x;
-  //   double dy = p.y-q.pose.position.y;
-  //   return std::sqrt(dx*dx+dy*dy);
-  // };
-  inline double dot_( const geometry_msgs::Point32& p, const geometry_msgs::Point32& q )
-  {
-    return p.x*q.x+p.y*q.y;
-  };
+  inline double dot_( const geometry_msgs::Point32& p, const geometry_msgs::Point32& q ) { return p.x*q.x+p.y*q.y; };
 };
 
 }  // namespace squirrel_pushing_planner
