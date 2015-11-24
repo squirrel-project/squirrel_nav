@@ -109,7 +109,6 @@ protected:
   virtual void setupDynamicReconfigure( ros::NodeHandle& );
   virtual void resetMaps( void );
 
-  virtual void onFootprintChanged( void );
 private:
   void reconfigureCB( DownprojectionLayerPluginConfig& , uint32_t );
   void clearNonLethal( double, double, double, double, bool );

@@ -69,7 +69,9 @@
 
 #include <geometry_msgs/Polygon.h>
 #include <geometry_msgs/Quaternion.h>
+#include <geometry_msgs/Point32.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <map_msgs/OccupancyGridUpdate.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/GetPlan.h>
 #include <nav_msgs/OccupancyGrid.h>
@@ -105,7 +107,7 @@ class PushingPlanner
   ros::NodeHandle public_nh_, private_nh_;
   ros::Publisher pushing_plan_pub_;
   ros::ServiceServer get_pushing_plan_srv_;
-  ros::Subscriber costmap_sub_;
+  ros::Subscriber costmap_sub_, costmap_updates_sub_;
   
   nav_msgs::Path plan_;
   
@@ -115,20 +117,32 @@ class PushingPlanner
   
   // Parameters
   double tolerance_, robot_radius_;
-  std::string plan_frame_id_, start_goal_frame_id_;
-  int costmap_height_, costmap_width_;
-
-  nav_msgs::OccupancyGrid costmap_;
-
-  cv::Mat* obstacle_map_;
-  size_t offset_height_, offset_width_;
+  std::string plan_frame_id_, start_goal_frame_id_, object_frame_id_;
+  std::string costmap_topic_, costmap_updates_topic_;
   
-  boost::mutex costmap_mtx_;
+  nav_msgs::MapMetaData costmap_info_;
+  cv::Mat* obstacles_map_;
+  bool obstacles_map_ready_;
+  
+  boost::mutex obstacles_mtx_;
+
+  const unsigned int OBSTACLE;
   
   bool getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request&, squirrel_rgbd_mapping_msgs::GetPushingPlan::Response& );
   void costmapCallback_( const nav_msgs::OccupancyGrid::ConstPtr& );
+  void costmapUpdatesCallback_( const map_msgs::OccupancyGridUpdate::ConstPtr& );
   bool isNumericValid_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& );
   bool inFootprint_( const geometry_msgs::Polygon&, const geometry_msgs::Point& );
+  // inline double dist2d_( const geometry_msgs::Point32& p, const geometry_msgs::PoseStamped& q )
+  // {
+  //   double dx = p.x-q.pose.position.x;
+  //   double dy = p.y-q.pose.position.y;
+  //   return std::sqrt(dx*dx+dy*dy);
+  // };
+  inline double dot_( const geometry_msgs::Point32& p, const geometry_msgs::Point32& q )
+  {
+    return p.x*q.x+p.y*q.y;
+  };
 };
 
 }  // namespace squirrel_pushing_planner
