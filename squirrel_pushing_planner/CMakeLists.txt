@@ -10,6 +10,7 @@ set(squirrel_pushing_planner_DEPENDENCIES
   roscpp
   squirrel_rgbd_mapping_msgs
   tf
+  map_msgs
 )
 
 
@@ -17,6 +18,8 @@ find_package(catkin REQUIRED
   COMPONENTS
   ${squirrel_pushing_planner_DEPENDENCIES}
 )
+
+find_package(OpenCV REQUIRED)
 
 catkin_package(
  INCLUDE_DIRS include
@@ -30,6 +33,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 add_executable(pushing_planner_node
@@ -43,6 +47,7 @@ add_dependencies(pushing_planner_node
 
 target_link_libraries(pushing_planner_node
   ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
 )
 
 #############

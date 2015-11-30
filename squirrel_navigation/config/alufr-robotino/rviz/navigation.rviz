@@ -20,7 +20,7 @@ Panels:
         - /Axes1
         - /MarkerArray1
       Splitter Ratio: 0.5
-    Tree Height: 589
+    Tree Height: 769
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties

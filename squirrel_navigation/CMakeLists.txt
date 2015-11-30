@@ -69,6 +69,7 @@ add_library(squirrel_local_planner
 
 add_library(squirrel_costmap_layers
   src/MapLayer.cpp
+  src/FootprintLayer.cpp
   src/InflatedLayer.cpp
   src/DownprojectionLayer.cpp
   src/DownprojectionMultilayer.cpp
