@@ -111,7 +111,6 @@ void InflatedLayer::updateInflatedBounds( double robot_x, double robot_y, double
     *min_y = -std::numeric_limits<float>::max();
     *max_x = std::numeric_limits<float>::max();
     *max_y = std::numeric_limits<float>::max();
-    need_reinflation_ = false;
   }
 }
 
@@ -166,18 +165,14 @@ void InflatedLayer::updateInflatedCosts( costmap_2d::Costmap2D& master_grid,
 
     inflation_queue_.pop();
 
-    if ( mx > 0 ) {
+    if ( mx > 0 ) 
       enqueue(master_array, index - 1, mx - 1, my, sx, sy);
-    }
-    if ( my > 0 ) {
+    if ( my > 0 ) 
       enqueue(master_array, index - size_x, mx, my - 1, sx, sy);
-    }
-    if ( mx < size_x - 1 ) {
+    if ( mx < size_x - 1 ) 
       enqueue(master_array, index + 1, mx + 1, my, sx, sy);
-    }
-    if ( my < size_y - 1 ) {
+    if ( my < size_y - 1 ) 
       enqueue(master_array, index + size_x, mx, my + 1, sx, sy);
-    }
   }
 }
 

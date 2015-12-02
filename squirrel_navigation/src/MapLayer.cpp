@@ -158,6 +158,7 @@ void MapLayer::reconfigureCB( MapLayerPluginConfig &config, uint32_t level )
     inflation_radius_ = config.inflation_radius;
     cell_inflation_radius_ = cellDistance(inflation_radius_);
     weight_ = config.cost_scaling_factor;
+    has_updated_data_ = true;
     need_reinflation_ = true;
     computeCaches();
   }
@@ -301,12 +302,20 @@ void MapLayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i, int m
     return;
   }
 
-  if (!use_maximum_) {
+  if ( need_reinflation_ ) {
+    min_i = 0;
+    min_j = 0;
+    max_i = master_grid.getSizeInCellsX();
+    max_j = master_grid.getSizeInCellsY();
+    need_reinflation_ = false;
+  }
+  
+  if ( not use_maximum_ ) {
     updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
   } else {
     updateWithMax(master_grid, min_i, min_j, max_i, max_j);
   }
-
+  
   updateInflatedCosts(master_grid, min_i, min_j, max_i, max_j);
 }
 
