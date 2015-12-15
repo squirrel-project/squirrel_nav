@@ -1,28 +1,32 @@
-// PointCloudFilter.h --- 
+// JointHandle.h --- 
 // 
-// Filename: PointCloudFilter.h
-// Description: Publish a light PointCloud2 for 2D navigation
+// Filename: JointHandle.h
+// Description: 
 // Author: Federico Boniardi
-// Maintainer: boniardi@informatik.uni-freiburg.de
-// Created: Mon Nov 17 21:31:45 2014 (+0100)
-// Version: 0.1.0
-// Last-Updated: Wed Nov 26 15:51:05 2014 (+0100)
-//           By: Federico Boniardi
-//     Update #: 1
+// Maintainer: 
+// Created: Tue Dec 15 10:36:27 2015 (+0100)
+// Version: 
+// Last-Updated: 
+//           By: 
+//     Update #: 0
 // URL: 
 // Keywords: 
 // Compatibility: 
-//   ROS Hydro, ROS Indigo
+// 
 // 
 
 // Commentary: 
-//   Tested on: - ROS Hydro on Ubuntu 12.04
-//              - ROS Indigo on Ubuntu 14.04
-//   RGBD source: ASUS Xtion pro
+// 
+// 
 // 
 // 
 
-// Copyright (c) 2014, Federico Boniardi
+// Change Log:
+// 
+// 
+// 
+// 
+// Copyright (c) 2015, Federico Boniardi
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -35,7 +39,7 @@
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
 // 
-// * Neither the name of the {organization} nor the names of its
+// * Neither the name of the University of Freiburg nor the names of its
 //   contributors may be used to endorse or promote products derived from
 //   this software without specific prior written permission.
 // 
@@ -54,55 +58,51 @@
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_POINTCLOUDFILTER_H_
-#define SQUIRREL_NAVIGATION_POINTCLOUDFILTER_H_
+#ifndef SQUIRREL_NAVIGATION_JOINTHANDLE_H_
+#define SQUIRREL_NAVIGATION_JOINTHANDLE_H_
 
 #include <ros/ros.h>
 
-#include <sensor_msgs/PointCloud2.h>
+#include <dynamixel_msgs/JointState.h>
+#include <std_msgs/Float64.h>
 
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
-#include <pcl_ros/filters/filter.h>
-
-#include <sstream>
+#include <algorithm>
+#include <cmath>
 #include <string>
-#include <stdexcept>
-#include <vector>
+
+#include "squirrel_navigation/Common.h"
 
 namespace squirrel_navigation {
 
-class PointCloudFilter
+class JointHandle
 {
  public:
-  PointCloudFilter( void );
-  virtual ~PointCloudFilter( void );
+  JointHandle( void );
+  JointHandle( const std::string& );
+  virtual ~JointHandle( void );
 
-  void spin( double hz=20.0 );
+  inline bool gotMotionCommand( void ) const;
+  inline bool isMoving( void ) const;
   
  private:
   ros::NodeHandle nh_;
-  ros::Subscriber sub_;
-  ros::Publisher pointcloud_pub_;
+  ros::Subscriber command_sub_, state_sub_;
   
-  int filter_step_, seq_;
-
-  std::string nodename_;
+  double command_;
+  bool moving_, info_;
   
-  // Parameters
-  std::string pointcloud_in_topic_;
-  std::string pointcloud_out_topic_;
-  std::string pointcloud_size_;
-  bool nanfree_; 
+  // Params
+  std::string command_topic_, state_topic_;
+  double reset_angle_;
+  bool verbose_;
   
-  void pointCloud2Callback_( const sensor_msgs::PointCloud2::ConstPtr& );
-  void getFilterStep_( void );
+  void stateCallback_( const dynamixel_msgs::JointState::ConstPtr& );
+  void commandCallback_( const std_msgs::Float64::ConstPtr& );
 };
 
-}  // namspace squirrel_navigation
+}  // namespace squirrel_navigation
 
-#endif /* SQUIRREL_NAVIGATION_POINTCLOUDFILTER_H_ */
+#endif /* SQUIRREL_NAVIGATION_JOINTHANDLE_H_ */
 
 // 
-// PointCloudFilter.h ends here
+// JointHandle.h ends here

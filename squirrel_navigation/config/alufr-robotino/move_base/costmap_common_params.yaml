@@ -30,6 +30,12 @@ obstacles_layer:
   robot_height: 0.47
   floor_threshold: 0.04
   robot_diameter: 0.5
+  kinect_tilt_joint/command: /tilt_controller/command
+  kinect_tilt_joint/state: /tilt_controller/state
+  kinect_tilt_joint/reset_angle: 0.7
+  kinect_pan_joint/command: /pan_controller/command
+  kinect_pan_joint/state: /pan_controller/state
+  kinect_pan_joint/reset_angle: 0.0
 
 # robot_radius: 0.07 # smallest radius in the stack
 # perception_layer:

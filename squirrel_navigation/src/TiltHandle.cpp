@@ -53,9 +53,6 @@
 // Code:
 
 #include "squirrel_navigation/TiltHandle.h"
-#include "squirrel_navigation/Common.h"
-
-#include <algorithm>
 
 namespace squirrel_navigation {
 
@@ -64,8 +61,12 @@ TiltHandle::TiltHandle( void ) :
     tilt_moving_(false),
     info_(false)
 {
-  tilt_state_sub_ = public_nh_.subscribe("/tilt_controller/state", 2, &TiltHandle::updateTiltState, this);
-  tilt_command_sub_ = public_nh_.subscribe("/tilt_controller/command", 2, &TiltHandle::updateTiltCommand, this);
+  ros::NodeHandle pnh("~");
+  pnh.param<std::string>("state_topic", state_topic_, "/tilt_controller/state");
+  pnh.param<std::string>("command_topic", command_topic_, "/tilt_controller/command");
+  
+  tilt_state_sub_ = nh_.subscribe(state_topic_, 2, &TiltHandle::stateCallback_, this);
+  tilt_command_sub_ = nh_.subscribe(command_topic_, 2, &TiltHandle::commandCallback_, this);
 }
 
 TiltHandle::~TiltHandle( void )
@@ -84,7 +85,7 @@ bool TiltHandle::isMoving( void )
   return tilt_moving_;
 }
 
-void TiltHandle::printROSMsg( const char* msg  )
+void TiltHandle::printROSMsg( const char* msg )
 {
   if ( !info_ ) {
     ROS_INFO("%s: Kinect has been tilted. %s", ros::this_node::getName().c_str(), msg);
@@ -94,12 +95,12 @@ void TiltHandle::printROSMsg( const char* msg  )
   }
 }
 
-void TiltHandle::updateTiltState( const dynamixel_msgs::JointState::ConstPtr& tilt_state_msg )
+void TiltHandle::stateCallback_( const dynamixel_msgs::JointState::ConstPtr& tilt_state_msg )
 {
   tilt_moving_ = tilt_state_msg->is_moving;
 }
 
-void TiltHandle::updateTiltCommand( const std_msgs::Float64::ConstPtr& tilt_cmd_msg )
+void TiltHandle::commandCallback_( const std_msgs::Float64::ConstPtr& tilt_cmd_msg )
 {
   tilt_command_ = tilt_cmd_msg->data;
   info_ = false;

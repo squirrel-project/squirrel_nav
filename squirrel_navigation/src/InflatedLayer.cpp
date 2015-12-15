@@ -66,13 +66,6 @@
 
 #include "squirrel_navigation/InflatedLayer.h"
 
-#include <costmap_2d/costmap_math.h>
-#include <costmap_2d/footprint.h>
-
-#include <pluginlib/class_list_macros.h>
-
-#include <cmath>
-
 PLUGINLIB_EXPORT_CLASS(squirrel_navigation::InflatedLayer, costmap_2d::Layer)
 
 namespace squirrel_navigation {
@@ -86,20 +79,9 @@ InflatedLayer::InflatedLayer( void ) :
   access_ = new boost::shared_mutex();
 }
 
-void InflatedLayer::matchInflatedSize( void )
+InflatedLayer::~InflatedLayer( void )
 {
-  boost::unique_lock < boost::shared_mutex > lock(*access_);
-  costmap_2d::Costmap2D* costmap = layered_costmap_->getCostmap();
-  resolution_ = costmap->getResolution();
-  cell_inflation_radius_ = cellDistance(inflation_radius_);
-  computeCaches();
-
-  unsigned int size_x = costmap->getSizeInCellsX(), size_y = costmap->getSizeInCellsY();
-  if ( seen_ ) {
-    delete seen_;
-  }
-
-  seen_ = new bool[size_x * size_y];
+  deleteKernels_();
 }
 
 void InflatedLayer::updateInflatedBounds( double robot_x, double robot_y, double robot_yaw, double* min_x,
@@ -112,13 +94,6 @@ void InflatedLayer::updateInflatedBounds( double robot_x, double robot_y, double
     *max_x = std::numeric_limits<float>::max();
     *max_y = std::numeric_limits<float>::max();
   }
-}
-
-void InflatedLayer::onFootprintChanged( void )
-{
-  cell_inflation_radius_ = cellDistance( inflation_radius_ );
-  computeCaches();
-  need_reinflation_ = true;
 }
 
 void InflatedLayer::updateInflatedCosts( costmap_2d::Costmap2D& master_grid,
@@ -149,12 +124,12 @@ void InflatedLayer::updateInflatedCosts( costmap_2d::Costmap2D& master_grid,
       unsigned char cost = master_array[index];
       bool to_be_inflated = obstacles_.find(index) != obstacles_.end();
       if ( cost == costmap_2d::LETHAL_OBSTACLE && to_be_inflated ) {
-        enqueue(master_array, index, i, j, i, j);
+        enqueue_(master_array, index, i, j, i, j);
       }
     }
   }
 
-  while ( !inflation_queue_.empty() ) {
+  while ( not inflation_queue_.empty() ) {
     const CellData& current_cell = inflation_queue_.top();
 
     unsigned int index = current_cell.index_;
@@ -166,38 +141,52 @@ void InflatedLayer::updateInflatedCosts( costmap_2d::Costmap2D& master_grid,
     inflation_queue_.pop();
 
     if ( mx > 0 ) 
-      enqueue(master_array, index - 1, mx - 1, my, sx, sy);
+      enqueue_(master_array, index - 1, mx - 1, my, sx, sy);
     if ( my > 0 ) 
-      enqueue(master_array, index - size_x, mx, my - 1, sx, sy);
+      enqueue_(master_array, index - size_x, mx, my - 1, sx, sy);
     if ( mx < size_x - 1 ) 
-      enqueue(master_array, index + 1, mx + 1, my, sx, sy);
+      enqueue_(master_array, index + 1, mx + 1, my, sx, sy);
     if ( my < size_y - 1 ) 
-      enqueue(master_array, index + size_x, mx, my + 1, sx, sy);
+      enqueue_(master_array, index + size_x, mx, my + 1, sx, sy);
   }
 }
 
-inline void InflatedLayer::enqueue( unsigned char* grid, unsigned int index, unsigned int mx, unsigned int my,
-                                    unsigned int src_x, unsigned int src_y )
+void InflatedLayer::matchInflatedSize( void )
 {
-  if ( !seen_[index] ) {
-    double distance = distanceLookup(mx, my, src_x, src_y);
+  boost::unique_lock < boost::shared_mutex > lock(*access_);
+  costmap_2d::Costmap2D* costmap = layered_costmap_->getCostmap();
+  resolution_ = costmap->getResolution();
+  cell_inflation_radius_ = cellDistance(inflation_radius_);
+  computeCaches();
 
-    if ( distance > cell_inflation_radius_ ) {
-      return;
-    }
-    
-    unsigned char cost = costLookup(mx, my, src_x, src_y);
-    unsigned char old_cost = grid[index];
-
-    if ( old_cost == costmap_2d::NO_INFORMATION && cost >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE ) {
-      grid[index] = cost;
-    } else {
-      grid[index] = std::max(old_cost, cost);
-    }
-    seen_[index] = true;
-    CellData data(distance, index, mx, my, src_x, src_y);
-    inflation_queue_.push(data);
+  unsigned int size_x = costmap->getSizeInCellsX(), size_y = costmap->getSizeInCellsY();
+  if ( seen_ ) {
+    delete seen_;
   }
+
+  seen_ = new bool[size_x * size_y];
+}
+
+inline unsigned char computeCost(double distance) const
+{
+  unsigned char cost = 0;
+  if ( distance == 0 ) {
+    cost = costmap_2d::LETHAL_OBSTACLE;
+  } else if ( distance * resolution_ <= inscribed_radius_ ) {
+    cost = costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
+  } else {
+      double euclidean_distance = distance * resolution_;
+      double factor = exp(-1.0 * weight_ * (euclidean_distance - inscribed_radius_));
+      cost = (unsigned char)((costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
+  }
+  return cost;
+}
+
+void InflatedLayer::onFootprintChanged( void )
+{
+  cell_inflation_radius_ = cellDistance( inflation_radius_ );
+  computeCaches();
+  need_reinflation_ = true;
 }
 
 void InflatedLayer::computeCaches( void )
@@ -208,7 +197,7 @@ void InflatedLayer::computeCaches( void )
   
   if ( cell_inflation_radius_ != cached_cell_inflation_radius_ ) {
     if ( cached_cell_inflation_radius_ > 0 ) {
-      deleteKernels();
+      deleteKernels_();
     }
 
     cached_costs_ = new unsigned char*[cell_inflation_radius_ + 2];
@@ -232,7 +221,12 @@ void InflatedLayer::computeCaches( void )
   }
 }
 
-void InflatedLayer::deleteKernels( void )
+unsigned int cellDistance( double world_dist )
+{
+    return layered_costmap_->getCostmap()->cellDistance(world_dist);
+};
+
+void InflatedLayer::deleteKernels_( void )
 {
   if ( cached_distances_ != NULL ) {
     for (unsigned int i = 0; i <= cached_cell_inflation_radius_ + 1; ++i) {
@@ -246,6 +240,44 @@ void InflatedLayer::deleteKernels( void )
       delete[] cached_costs_[i];
     }
     delete[] cached_costs_;
+  }
+}
+
+inline double distanceLookup_( int mx, int my, int src_x, int src_y )
+{
+  unsigned int dx = std::abs(mx - src_x);
+  unsigned int dy = std::abs(my - src_y);
+  return cached_distances_[dx][dy];
+}
+
+inline unsigned char costLookup_( int mx, int my, int src_x, int src_y )
+{
+  unsigned int dx = abs(mx - src_x);
+  unsigned int dy = abs(my - src_y);
+  return cached_costs_[dx][dy];
+}
+
+inline void InflatedLayer::enqueue_( unsigned char* grid, unsigned int index, unsigned int mx, unsigned int my,
+                                    unsigned int src_x, unsigned int src_y )
+{
+  if ( not seen_[index] ) {
+    double distance = distanceLookup_(mx, my, src_x, src_y);
+
+    if ( distance > cell_inflation_radius_ ) {
+      return;
+    }
+    
+    unsigned char cost = costLookup_(mx, my, src_x, src_y);
+    unsigned char old_cost = grid[index];
+
+    if ( old_cost == costmap_2d::NO_INFORMATION && cost >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE ) {
+      grid[index] = cost;
+    } else {
+      grid[index] = std::max(old_cost, cost);
+    }
+    seen_[index] = true;
+    CellData data(distance, index, mx, my, src_x, src_y);
+    inflation_queue_.push(data);
   }
 }
 

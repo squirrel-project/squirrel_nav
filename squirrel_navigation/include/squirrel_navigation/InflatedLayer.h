@@ -67,16 +67,20 @@
 #ifndef SQUIRREL_NAVIGATION_INFLATEDLAYER_H_
 #define SQUIRREL_NAVIGATION_INFLATEDLAYER_H_
 
-#include "squirrel_navigation/CellData.h"
-
 #include <ros/ros.h>
 
+#include <costmap_2d/costmap_math.h>
 #include <costmap_2d/costmap_layer.h>
+#include <costmap_2d/footprint.h>
 #include <costmap_2d/layered_costmap.h>
+
+#include <pluginlib/class_list_macros.h>
 
 #include <cmath>
 #include <queue>
 #include <set>
+
+#include "squirrel_navigation/CellData.h"
 
 namespace squirrel_navigation {
   
@@ -84,41 +88,14 @@ class InflatedLayer : public costmap_2d::CostmapLayer
 {
  public:
   InflatedLayer( void );
+  virtual ~InflatedLayer( void );
   
-  virtual ~InflatedLayer( void )
-  {
-    deleteKernels();
-  }
-
   virtual void updateInflatedBounds( double, double, double, double*, double*, double*, double* );
-  virtual void updateInflatedCosts(costmap_2d::Costmap2D& master_grid, int, int, int, int );
-  
+  virtual void updateInflatedCosts(costmap_2d::Costmap2D&, int, int, int, int );
   virtual void matchInflatedSize( void );
-
-  inline unsigned char computeCost(double distance) const
-  {
-    unsigned char cost = 0;
-    if ( distance == 0 ) {
-      cost = costmap_2d::LETHAL_OBSTACLE;
-    } else if ( distance * resolution_ <= inscribed_radius_ ) {
-      cost = costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
-    } else {
-      double euclidean_distance = distance * resolution_;
-      double factor = exp(-1.0 * weight_ * (euclidean_distance - inscribed_radius_));
-      cost = (unsigned char)((costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
-    }
-    return cost;
-  }
+  inline unsigned char computeCost( double ) const
 
  protected:
-  virtual void onFootprintChanged( void );
-  virtual void computeCaches( void );
-
-  virtual unsigned int cellDistance(double world_dist)
-  {
-    return layered_costmap_->getCostmap()->cellDistance(world_dist);
-  }
-
   std::set<unsigned int> obstacles_;
   
   double inflation_radius_, inscribed_radius_, weight_;
@@ -129,31 +106,20 @@ class InflatedLayer : public costmap_2d::CostmapLayer
 
   boost::shared_mutex* access_;
 
- private:
-  inline double distanceLookup( int mx, int my, int src_x, int src_y )
-  {
-    unsigned int dx = std::abs(mx - src_x);
-    unsigned int dy = std::abs(my - src_y);
-    return cached_distances_[dx][dy];
-  }
-
-  inline unsigned char costLookup( int mx, int my, int src_x, int src_y )
-  {
-    unsigned int dx = abs(mx - src_x);
-    unsigned int dy = abs(my - src_y);
-    return cached_costs_[dx][dy];
-  }
-
-  void deleteKernels( void );
-  void inflate_area( int, int, int, int, unsigned char* );
-
-  inline void enqueue(unsigned char*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
-
-  std::priority_queue<CellData> inflation_queue_;
-    
+  virtual void onFootprintChanged( void );
+  virtual void computeCaches( void );
+  virtual inline unsigned int cellDistance( double world_dist );
   
+ private:
+  std::priority_queue<CellData> inflation_queue_;
+      
   unsigned char** cached_costs_;
   double** cached_distances_;
+
+  void deleteKernels_( void );
+  inline double distanceLookup_( int, int, int, int );
+  inline unsigned char costLookup_( int, int, int, int );
+  inline void enqueue_(unsigned char*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
 };
 
 }  // namespace squirrel_navigation

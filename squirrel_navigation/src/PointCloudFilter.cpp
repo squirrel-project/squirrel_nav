@@ -56,68 +56,65 @@
 
 #include "squirrel_navigation/PointCloudFilter.h"
 
-#include <ros/time.h>
-
-#include <sstream>
-#include <stdexcept>
-
 namespace squirrel_navigation {
 
 PointCloudFilter::PointCloudFilter( void ) :
-    private_nh_("~"),
     pointcloud_in_topic_("/cloud_in"),
     pointcloud_out_topic_("/cloud_out"),
     pointcloud_size_("4500")
+    nodename_(ros::this_node::getName()),
+    seq_(0),
+    nanfree_(false)
 {
-  private_nh_.param("pointcloud_in", pointcloud_in_topic_, std::string("/cloud_in"));
-  private_nh_.param("pointcloud_out", pointcloud_out_topic_, std::string("/cloud_out"));
-  private_nh_.param("pointcloud_size", pointcloud_size_, std::string("4500"));
-
-  node_name_ = ros::this_node::getName();
+  Ros::NodeHandle pnh("~");  
+  pnh.param<std::string>("pointcloud_in", pointcloud_in_topic_, "/cloud_in");
+  pnh.param<std::string>("pointcloud_out", pointcloud_out_topic_, "/cloud_out");
+  pnh.param<std::string>("pointcloud_size", pointcloud_size_, "4500");
+  pnh.param<std::string>("nan_free", nanfree_, false);
   
-  filter_step_ = getFilterStep();
-  seq_ = 0;
+  getFilterStep_();
   
-  sub_ = public_nh_.subscribe(pointcloud_in_topic_, 1, &PointCloudFilter::filterPointCloud, this);
+  sub_ = nh_.subscribe(pointcloud_in_topic_, 1, &PointCloudFilter::pointCloud2Callback_, this);
 
-  pointcloud_pub_ = public_nh_.advertise<sensor_msgs::PointCloud2>(pointcloud_out_topic_, 1);
+  pointcloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(pointcloud_out_topic_, 1);
 }
 
 PointCloudFilter::~PointCloudFilter( void )
 {
   sub_.shutdown();
   pointcloud_pub_.shutdown();
+  nh_.shutdown();
 }
 
-void PointCloudFilter::spin( void )
+void PointCloudFilter::spin( double hz )
 {
-  ros::Rate lr(10);
+  ros::Rate lr(hz);
   while ( ros::ok() ) {     
     try {
       ros::spinOnce();
       lr.sleep();
     } catch ( std::runtime_error& err ) {
-      ROS_ERROR("%s: %s", node_name_.c_str(), err.what());
-      std::exit(1);
+      ROS_ERROR("%s: %s", nodename_.c_str(), err.what());
     }
   }
 }
 
-void PointCloudFilter::filterPointCloud( const sensor_msgs::PointCloud2ConstPtr& pointcloud_in_msg )
+void PointCloudFilter::pointCloud2Callback_( const sensor_msgs::PointCloud2::ConstPtr& pointcloud_in_msg )
 {
-  ROS_DEBUG("%s: filtering pointcloud... ", node_name_.c_str());
+  ROS_DEBUG("%s: filtering pointcloud... ", nodename_.c_str());
   
   pcl::PointCloud<pcl::PointXYZ> pointcloud_raw;
   pcl::fromROSMsg(*pointcloud_in_msg, pointcloud_raw);
 
-  std::vector<int> nan_filter;
-  pcl::removeNaNFromPointCloud(pointcloud_raw, pointcloud_raw, nan_filter);
+  if ( not nanfree_ ) { 
+    std::vector<int> nan_filter;
+    pcl::removeNaNFromPointCloud(pointcloud_raw, pointcloud_raw, nan_filter);
+  }
 
   pcl::PointCloud<pcl::PointXYZ> pointcloud_filtered;
 
-  for (unsigned int i=0; i<pointcloud_raw.points.size(); i+=filter_step_) {
+  for (unsigned int i=0; i<pointcloud_raw.points.size(); i+=filter_step_)
     pointcloud_filtered.points.push_back(pointcloud_raw[i]);
-  }
 
   sensor_msgs::PointCloud2 pointcloud_out_msg;
   toROSMsg(pointcloud_filtered, pointcloud_out_msg);
@@ -127,18 +124,18 @@ void PointCloudFilter::filterPointCloud( const sensor_msgs::PointCloud2ConstPtr&
 
   pointcloud_pub_.publish(pointcloud_out_msg);
 
-  ROS_DEBUG("%s: pointcloud published", node_name_.c_str());
+  ROS_DEBUG("%s: pointcloud published", nodename_.c_str());
 }
 
-int PointCloudFilter::getFilterStep( void )
+void PointCloudFilter::getFilterStep_( void )
 {
   if ( pointcloud_size_.compare("full") == 0 ) {
-    ROS_WARN("%s: chosen 'full pointcloud'. Consider reducing size of the pointcloud.", node_name_.c_str());
-    return 1;
+    ROS_WARN("%s: chosen 'full pointcloud'. Consider reducing size of the pointcloud.", nodename_.c_str());
+    filter_step_ = 1;
   } else {
     int size;
     std::istringstream(pointcloud_size_) >> size;
-    return std::max(300000/std::max(1,size),1);
+    filter_step_ = std::max(300000/std::max(1,size),1);
   }
 }
 

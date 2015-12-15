@@ -60,6 +60,10 @@
 #include <dynamixel_msgs/JointState.h>
 #include <std_msgs/Float64.h>
 
+#include <algorithm>
+
+#include "squirrel_navigation/Common.h"
+
 namespace squirrel_navigation {
 
 class TiltHandle
@@ -74,14 +78,17 @@ class TiltHandle
   void printROSMsg( const char* );
   
  private:
-  ros::NodeHandle public_nh_;
+  ros::NodeHandle nh_;
   ros::Subscriber tilt_command_sub_, tilt_state_sub_;
 
   double tilt_command_;
   bool tilt_moving_, info_;
+
+  // Parameters
+  std::string command_topic_, state_topic_;
   
-  void updateTiltState( const dynamixel_msgs::JointState::ConstPtr& );
-  void updateTiltCommand( const std_msgs::Float64::ConstPtr& );
+  void stateCallback_( const dynamixel_msgs::JointState::ConstPtr& );
+  void commandCallback_( const std_msgs::Float64::ConstPtr& );
 };
 
 }  // namespace squirrel_navigation
