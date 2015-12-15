@@ -60,7 +60,7 @@
 
 #include "squirrel_navigation/JointHandle.h"
 
-namespace suirrel_navigation {
+namespace squirrel_navigation {
 
 JointHandle::JointHandle( void ) :
     info_(false),
@@ -76,13 +76,13 @@ JointHandle::JointHandle( const std::string& name )  :
     moving_(false),
     verbose_(false)
 {
-  ros::NodeHandle pnh("~/"+name);
+  ros::NodeHandle pnh("~/"+name_);
   pnh.param<std::string>("command_topic", command_topic_, name+"/command");
   pnh.param<std::string>("state_topic", state_topic_, name+"/state");
   pnh.param<double>("reset_angle", reset_angle_, 0.5);
-  pnh.param<double>("verbose", verbose_, false);
+  pnh.param<bool>("verbose", verbose_, false);
   
-  state_sub_ = nh_.subscibe(state_topic_, 1, &JointHandle::stateCallback_, this);
+  state_sub_ = nh_.subscribe(state_topic_, 1, &JointHandle::stateCallback_, this);
   command_sub_ = nh_.subscribe(command_topic_, 1, &JointHandle::commandCallback_, this);
 }
 
@@ -93,28 +93,29 @@ JointHandle::~JointHandle( void )
 
 inline bool JointHandle::gotMotionCommand( void ) const
 {
-  return std::abs(reset_angle_-tilt_command_)>1e-3);
-
+  return std::abs(reset_angle_-command_)>1e-3;
+}
 
 inline bool JointHandle::isMoving( void ) const
 {
-  return tilt_command_;
+  return moving_;
 }
 
 void JointHandle::stateCallback_( const dynamixel_msgs::JointState::ConstPtr& joint_state )
 {
   moving_ = joint_state->is_moving;
   if ( verbose_ )
-    ROS_INFO_STREAM(ros::this_node::getName() << "/" << name << ": joint is moving.");
+    ROS_INFO_STREAM(ros::this_node::getName() << "/" << name_ << ": joint is moving.");
 }
 
 void JointHandle::commandCallback_( const std_msgs::Float64::ConstPtr& cmd )
 {
   command_ = cmd->data;
   if ( verbose_ )
-    ROS_INFO_STREAM(ros::this_node::getName() << "/" << name ": got motion command.");
+    ROS_INFO_STREAM(ros::this_node::getName() << "/" << name_ << ": got motion command.");
 }
 
-}  // namespace suirrel_navigation
+}  // namespace squirrel_navigation
+
 // 
 // JointHandle.cpp ends here

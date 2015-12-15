@@ -81,8 +81,8 @@ class JointHandle
   JointHandle( const std::string& );
   virtual ~JointHandle( void );
 
-  inline bool gotMotionCommand( void ) const;
-  inline bool isMoving( void ) const;
+  bool gotMotionCommand( void ) const;
+  bool isMoving( void ) const;
   
  private:
   ros::NodeHandle nh_;
@@ -90,6 +90,7 @@ class JointHandle
   
   double command_;
   bool moving_, info_;
+  std::string name_;
   
   // Params
   std::string command_topic_, state_topic_;

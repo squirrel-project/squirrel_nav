@@ -61,16 +61,16 @@ namespace squirrel_navigation {
 PointCloudFilter::PointCloudFilter( void ) :
     pointcloud_in_topic_("/cloud_in"),
     pointcloud_out_topic_("/cloud_out"),
-    pointcloud_size_("4500")
+    pointcloud_size_("4500"),
     nodename_(ros::this_node::getName()),
     seq_(0),
     nanfree_(false)
 {
-  Ros::NodeHandle pnh("~");  
+  ros::NodeHandle pnh("~");  
   pnh.param<std::string>("pointcloud_in", pointcloud_in_topic_, "/cloud_in");
   pnh.param<std::string>("pointcloud_out", pointcloud_out_topic_, "/cloud_out");
   pnh.param<std::string>("pointcloud_size", pointcloud_size_, "4500");
-  pnh.param<std::string>("nan_free", nanfree_, false);
+  pnh.param<bool>("nan_free", nanfree_, false);
   
   getFilterStep_();
   

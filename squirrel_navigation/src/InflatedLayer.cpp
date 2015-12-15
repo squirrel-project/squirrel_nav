@@ -167,7 +167,7 @@ void InflatedLayer::matchInflatedSize( void )
   seen_ = new bool[size_x * size_y];
 }
 
-inline unsigned char computeCost(double distance) const
+inline unsigned char InflatedLayer::computeCost(double distance) const
 {
   unsigned char cost = 0;
   if ( distance == 0 ) {
@@ -221,7 +221,7 @@ void InflatedLayer::computeCaches( void )
   }
 }
 
-unsigned int cellDistance( double world_dist )
+unsigned int InflatedLayer::cellDistance( double world_dist )
 {
     return layered_costmap_->getCostmap()->cellDistance(world_dist);
 };
@@ -243,14 +243,14 @@ void InflatedLayer::deleteKernels_( void )
   }
 }
 
-inline double distanceLookup_( int mx, int my, int src_x, int src_y )
+inline double InflatedLayer::distanceLookup_( int mx, int my, int src_x, int src_y )
 {
   unsigned int dx = std::abs(mx - src_x);
   unsigned int dy = std::abs(my - src_y);
   return cached_distances_[dx][dy];
 }
 
-inline unsigned char costLookup_( int mx, int my, int src_x, int src_y )
+inline unsigned char InflatedLayer::costLookup_( int mx, int my, int src_x, int src_y )
 {
   unsigned int dx = abs(mx - src_x);
   unsigned int dy = abs(my - src_y);

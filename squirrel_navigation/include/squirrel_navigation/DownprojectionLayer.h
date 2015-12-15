@@ -106,7 +106,7 @@ public:
 
   virtual void onInitialize( void );
   virtual void updateBounds( double, double, double, double*, double*, double*, double* );
-  void updateOrigin( double, double );
+  virtual void updateOrigin( double, double );
   virtual void matchSize( void );
   virtual void reset( void );
   inline bool isDiscretized( void ) { return true; };
@@ -140,53 +140,11 @@ private:
   
   void reconfigureCallback_( DownprojectionLayerPluginConfig& , uint32_t );
   void clearNonLethal_( double, double, double, double, bool );
-  virtual void raytraceFreespace_( const costmap_2d::Observation&, double*, double*, double*, double* );
-  
-  inline bool worldToMap3DFloat_( double wx, double wy, double wz, double& mx, double& my, double& mz )
-  {
-    if ( wx < origin_x_ or wy < origin_y_ or wz < origin_z_ ) {
-      return false;
-    }
-
-    mx = ((wx - origin_x_) / resolution_);
-    my = ((wy - origin_y_) / resolution_);
-    mz = ((wz - origin_z_) / z_resolution_);
-
-    if (mx < size_x_ and my < size_y_ and mz < size_z_) {
-      return true;
-    }
-    
-    return false;
-  };
-
-  inline bool worldToMap3D_( double wx, double wy, double wz, unsigned int& mx, unsigned int& my, unsigned int& mz )
-  {
-    if ( wx < origin_x_ or wy < origin_y_ or wz < origin_z_ ) {
-      return false;
-    }
-    
-    mx = (int)((wx - origin_x_) / resolution_);
-    my = (int)((wy - origin_y_) / resolution_);
-    mz = (int)((wz - origin_z_) / z_resolution_);
-
-    if (mx < size_x_ and my < size_y_ and mz < size_z_) {
-      return true;
-    }
-
-    return false;
-  };
-
-  inline void mapToWorld3D_( unsigned int mx, unsigned int my, unsigned int mz, double& wx, double& wy, double& wz )
-  {
-    wx = origin_x_ + (mx + 0.5) * resolution_;
-    wy = origin_y_ + (my + 0.5) * resolution_;
-    wz = origin_z_ + (mz + 0.5) * z_resolution_;
-  };
-
-  inline double dist_( double x0, double y0, double z0, double x1, double y1, double z1 )
-  {
-    return std::sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0) + (z1-z0)*(z1-z0));
-  };
+  void raytraceFreespace_( const costmap_2d::Observation&, double*, double*, double*, double* );
+  bool worldToMap3DFloat_( double, double, double, double&, double&, double& );
+  bool worldToMap3D_( double, double, double, unsigned int&, unsigned int&, unsigned int& );
+  void mapToWorld3D_( unsigned int, unsigned int, unsigned int, double&, double&, double& );
+  double dist_( double, double, double, double, double, double );
 };
 
 }  // namespace squirrel_navigation

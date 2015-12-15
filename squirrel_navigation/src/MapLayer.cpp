@@ -100,12 +100,12 @@ void MapLayer::onInitialize( void )
   int temp_lethal_threshold, temp_unknown_cost_value;
   pnh.param<int>("lethal_cost_threshold", temp_lethal_threshold, 100);
   pnh.param<int>("unknown_cost_value", temp_unknown_cost_value, -1);
-  pnh.param<int>("trinary_costmap", trinary_costmap_, true);
+  pnh.param<bool>("trinary_costmap", trinary_costmap_, true);
 
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
   unknown_cost_value_ = temp_unknown_cost_value;
 
-  ROS_INFO("%s: Requesting the map...", name_.c_str());
+  ROS_INFO("%s/%s: Requesting the map...", ros::this_node::getName().c_str(), name_.c_str());
   map_sub_ = nh.subscribe(map_topic, 1, &MapLayer::mapCallback_, this);
   map_received_ = false;
   has_updated_data_ = false;
@@ -116,10 +116,11 @@ void MapLayer::onInitialize( void )
     lr.sleep();
   }
 
-  ROS_INFO("%s: Received a %d X %d map at %f m/pix", name_.c_str(), getSizeInCellsX(), getSizeInCellsY(), getResolution());
+  ROS_INFO("%s/%s: Received a %d X %d map at %f m/pix", ros::this_node::getName().c_str(), name_.c_str(),
+           getSizeInCellsX(), getSizeInCellsY(), getResolution());
   
   if ( subscribe_to_updates_ ) {
-    ROS_INFO("%s: Subscribing to updates", name_.c_str());
+    ROS_INFO("%s/%s: Subscribing to updates", ros::this_node::getName().c_str(), name_.c_str());
     map_update_sub_ = nh.subscribe(map_topic + "_updates", 10, &MapLayer::mapUpdateCallback_, this);
   }
 
@@ -218,7 +219,10 @@ void MapLayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i, int m
 
 void MapLayer::reconfigureCallback_( MapLayerPluginConfig &config, uint32_t level )
 {
-  if ( weight_ != config.cost_scaling_factor || inflation_radius_ != config.inflation_radius ) {
+  has_updated_data_ = true;
+  inscribed_radius_ = config.robot_link_radius;
+
+  if ( weight_ != config.cost_scaling_factor or (inflation_radius_ != config.inflation_radius) ) {
     inflation_radius_ = config.inflation_radius;
     cell_inflation_radius_ = cellDistance(inflation_radius_);
     weight_ = config.cost_scaling_factor;
@@ -226,8 +230,6 @@ void MapLayer::reconfigureCallback_( MapLayerPluginConfig &config, uint32_t leve
     need_reinflation_ = true;
     computeCaches();
   }
-
-  inscribed_radius_ = config.robot_link_radius;
   
   if ( config.enabled != enabled_ ) {
     enabled_ = config.enabled;
@@ -249,7 +251,8 @@ void MapLayer::mapCallback_( const nav_msgs::OccupancyGridConstPtr& new_map )
   if ( master->getSizeInCellsX() != size_x or master->getSizeInCellsY() != size_y or
        master->getResolution() != new_map->info.resolution or master->getOriginX() != new_map->info.origin.position.x or
        master->getOriginY() != new_map->info.origin.position.y or !layered_costmap_->isSizeLocked() ){
-    ROS_INFO("%s: Resizing costmap to %d X %d at %f m/pix", name_.c_str(), size_x, size_y, new_map->info.resolution);
+    ROS_INFO("%s/%s: Resizing costmap to %d X %d at %f m/pix", ros::this_node::getName().c_str(), name_.c_str(),
+             size_x, size_y, new_map->info.resolution);
     layered_costmap_->resizeMap(size_x, size_y, new_map->info.resolution, new_map->info.origin.position.x, new_map->info.origin.position.y, true);
   } else if ( size_x_ != size_x or size_y_ != size_y or
               resolution_ != new_map->info.resolution or

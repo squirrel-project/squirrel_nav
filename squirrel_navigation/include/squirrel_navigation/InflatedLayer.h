@@ -93,7 +93,7 @@ class InflatedLayer : public costmap_2d::CostmapLayer
   virtual void updateInflatedBounds( double, double, double, double*, double*, double*, double* );
   virtual void updateInflatedCosts(costmap_2d::Costmap2D&, int, int, int, int );
   virtual void matchInflatedSize( void );
-  inline unsigned char computeCost( double ) const
+  unsigned char computeCost( double ) const;
 
  protected:
   std::set<unsigned int> obstacles_;
@@ -108,7 +108,7 @@ class InflatedLayer : public costmap_2d::CostmapLayer
 
   virtual void onFootprintChanged( void );
   virtual void computeCaches( void );
-  virtual inline unsigned int cellDistance( double world_dist );
+  virtual unsigned int cellDistance( double world_dist );
   
  private:
   std::priority_queue<CellData> inflation_queue_;
@@ -117,9 +117,9 @@ class InflatedLayer : public costmap_2d::CostmapLayer
   double** cached_distances_;
 
   void deleteKernels_( void );
-  inline double distanceLookup_( int, int, int, int );
-  inline unsigned char costLookup_( int, int, int, int );
-  inline void enqueue_(unsigned char*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
+  double distanceLookup_( int, int, int, int );
+  unsigned char costLookup_( int, int, int, int );
+  void enqueue_(unsigned char*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
 };
 
 }  // namespace squirrel_navigation
