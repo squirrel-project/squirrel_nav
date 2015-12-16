@@ -125,7 +125,7 @@ void PushingPlanner::waitForPlannerService( void )
 //   }
 }
 
-void PushingPlanner::updateCostmap_( double offset )
+void PushingPlanner::updateCostmap_( double offset ) const
 {
   bool ok_radius, ok_inflation;
 
@@ -149,8 +149,9 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
     return false;
   }
 
-  updateCostmap_(req.object_radius);
-  updateCostmap_(req.object_radius);
+  double object_radius = getObjectRadius_(req.object);
+  updateCostmap_(object_radius);
+  updateCostmap_(object_radius);
 
   // ros::Duration(3.0).sleep(); /* wait costmap to be updated (bad but no other way)*/ 
   
@@ -431,7 +432,7 @@ void PushingPlanner::costmapUpdatesCallback_( const map_msgs::OccupancyGridUpdat
   return;
 }
     
-bool PushingPlanner::isNumericValid_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req )
+bool PushingPlanner::isNumericValid_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req ) const
 {
   bool is_valid_start = !std::isnan(req.start.x) and !std::isinf(req.start.x)
       and !std::isnan(req.start.y) and !std::isinf(req.start.y)
@@ -444,7 +445,7 @@ bool PushingPlanner::isNumericValid_( squirrel_rgbd_mapping_msgs::GetPushingPlan
   return (is_valid_start and is_valid_goal);
 }
 
-bool PushingPlanner::inFootprint_( const geometry_msgs::Polygon& polygon, const geometry_msgs::Point& p )
+bool PushingPlanner::inFootprint_( const geometry_msgs::Polygon& polygon, const geometry_msgs::Point& p ) const
 {
   const unsigned int n = polygon.points.size()-1;
 
@@ -462,6 +463,26 @@ bool PushingPlanner::inFootprint_( const geometry_msgs::Polygon& polygon, const 
   return !(cn%2);
 }
 
+double PushingPlanner::getObjectRadius_( const geometry_msgs::Polygon& poly ) const
+{
+  const size_t nvertices = poly.points.size();
+
+  geometry_msgs::Point32 mean;
+
+  for (size_t i=0; i<nvertices; ++i) {
+    mean.x += poly.points[i].x/nvertices;
+    mean.y += poly.points[i].y/nvertices;
+  }
+
+  double radius = -std::numeric_limits<double>::max();
+  for (size_t i=0; i<nvertices; ++i) {
+    double dist = linearDistance_(mean,poly.points[i]);
+    radius = dist > radius ? dist : radius;
+  }
+
+  return radius;
+}
+   
 }  // namespace squirrel_pushing_planner
 
 // 

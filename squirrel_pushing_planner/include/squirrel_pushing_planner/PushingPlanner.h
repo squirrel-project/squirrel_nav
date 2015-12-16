@@ -79,10 +79,6 @@
 
 #include <costmap_2d/cost_values.h>
 
-#include <dynamic_reconfigure/Config.h>
-#include <dynamic_reconfigure/DoubleParameter.h>
-#include <dynamic_reconfigure/Reconfigure.h>
-
 #include <algorithm>
 #include <climits>
 #include <cmath>
@@ -133,13 +129,20 @@ class PushingPlanner
 
   const unsigned int OBSTACLE;
 
-  void updateCostmap_( double );
+  void updateCostmap_( double ) const;
   bool getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request&, squirrel_rgbd_mapping_msgs::GetPushingPlan::Response& );
   void costmapCallback_( const nav_msgs::OccupancyGrid::ConstPtr& );
   void costmapUpdatesCallback_( const map_msgs::OccupancyGridUpdate::ConstPtr& );
-  bool isNumericValid_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& );
-  bool inFootprint_( const geometry_msgs::Polygon&, const geometry_msgs::Point& );
+  bool isNumericValid_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& ) const;
+  bool inFootprint_( const geometry_msgs::Polygon&, const geometry_msgs::Point& ) const;
+  double getObjectRadius_( const geometry_msgs::Polygon& ) const;
   inline double dot_( const geometry_msgs::Point32& p, const geometry_msgs::Point32& q ) { return p.x*q.x+p.y*q.y; };
+  inline double linearDistance_( const geometry_msgs::Point32& p, const geometry_msgs::Point32& q ) const
+  {
+    double dx = p.x-q.x;
+    double dy = p.y-q.y;
+    return std::sqrt(dx*dx+dy*dy);
+  };
 };
 
 }  // namespace squirrel_pushing_planner
