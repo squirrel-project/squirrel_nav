@@ -79,7 +79,7 @@ JointHandle::JointHandle( const std::string& name )  :
   ros::NodeHandle pnh("~/"+name_);
   pnh.param<std::string>("command_topic", command_topic_, name+"/command");
   pnh.param<std::string>("state_topic", state_topic_, name+"/state");
-  pnh.param<double>("reset_angle", reset_angle_, 0.5);
+  pnh.param<double>("reset_angle", reset_angle_, 0.0);
   pnh.param<bool>("verbose", verbose_, false);
   
   state_sub_ = nh_.subscribe(state_topic_, 1, &JointHandle::stateCallback_, this);
@@ -91,19 +91,10 @@ JointHandle::~JointHandle( void )
   // Empty
 }
 
-inline bool JointHandle::gotMotionCommand( void ) const
-{
-  return std::abs(reset_angle_-command_)>1e-3;
-}
-
-inline bool JointHandle::isMoving( void ) const
-{
-  return moving_;
-}
-
 void JointHandle::stateCallback_( const dynamixel_msgs::JointState::ConstPtr& joint_state )
 {
   moving_ = joint_state->is_moving;
+  cur_angle_ = joint_state->current_pos;
   if ( verbose_ )
     ROS_INFO_STREAM(ros::this_node::getName() << "/" << name_ << ": joint is moving.");
 }

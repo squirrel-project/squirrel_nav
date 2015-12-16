@@ -79,15 +79,15 @@ DownprojectionLayer::DownprojectionLayer( void ) :
     obstacles_persistence_(60.0)
 {
   costmap_ = NULL;
+  
   kinect_jh_["tilt"] = JointHandle("kinect_tilt_joint");
   kinect_jh_["pan"] = JointHandle("kinect_pan_joint");
 }
 
 DownprojectionLayer::~DownprojectionLayer( void )
 {
-  if( dsrv_ ) {
+  if( dsrv_ )
     delete dsrv_;
-  }
 }
 
 void DownprojectionLayer::onInitialize( void )
@@ -106,12 +106,7 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
     return;
   }
 
-  if ( kinect_jh_["tilt"].isMoving() ) {
-    ROS_INFO("%s/%s: Skipping costmap's update.", ros::this_node::getName().c_str(), name_.c_str());
-    return;
-  }
-
-  if ( kinect_jh_["tilt"].gotMotionCommand() ) {
+  if ( kinect_jh_["tilt"].isMoving() or  kinect_jh_["tilt"].gotMotionCommand() ) {
     ROS_INFO("%s/%s: Skipping costmap's update.", ros::this_node::getName().c_str(), name_.c_str());
     return;
   }
@@ -413,51 +408,6 @@ void DownprojectionLayer::raytraceFreespace_( const costmap_2d::Observation& cle
   }
 }
 
-inline bool DownprojectionLayer::worldToMap3DFloat_( double wx, double wy, double wz, double& mx, double& my, double& mz )
-{
-  if ( wx < origin_x_ or wy < origin_y_ or wz < origin_z_ ) {
-    return false;
-  }
-
-  mx = ((wx - origin_x_) / resolution_);
-  my = ((wy - origin_y_) / resolution_);
-  mz = ((wz - origin_z_) / z_resolution_);
-
-  if (mx < size_x_ and my < size_y_ and mz < size_z_) {
-    return true;
-  }
-    
-  return false;
-};
-
-inline bool DownprojectionLayer::worldToMap3D_( double wx, double wy, double wz, unsigned int& mx, unsigned int& my, unsigned int& mz )
-{
-  if ( wx < origin_x_ or wy < origin_y_ or wz < origin_z_ ) {
-    return false;
-  }
-    
-  mx = (int)((wx - origin_x_) / resolution_);
-  my = (int)((wy - origin_y_) / resolution_);
-  mz = (int)((wz - origin_z_) / z_resolution_);
-
-  if (mx < size_x_ and my < size_y_ and mz < size_z_) {
-    return true;
-  }
-
-  return false;
-};
-
-inline void DownprojectionLayer::mapToWorld3D_( unsigned int mx, unsigned int my, unsigned int mz, double& wx, double& wy, double& wz )
-{
-  wx = origin_x_ + (mx + 0.5) * resolution_;
-  wy = origin_y_ + (my + 0.5) * resolution_;
-  wz = origin_z_ + (mz + 0.5) * z_resolution_;
-};
-
-inline double DownprojectionLayer::dist_( double x0, double y0, double z0, double x1, double y1, double z1 )
-{
-  return std::sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0) + (z1-z0)*(z1-z0));
-};
 
 }  // namespace squirrel_navigation
 

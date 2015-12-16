@@ -59,7 +59,6 @@ namespace squirrel_pushing_planner {
 
 PushingPlanner::PushingPlanner( void )  :
     OBSTACLE(100),
-    private_nh_("~"),
     tolerance_(1.0),
     robot_radius_(0.22),
     start_goal_frame_id_("/map"),
@@ -68,24 +67,28 @@ PushingPlanner::PushingPlanner( void )  :
     obstacles_map_(NULL),
     costmap_topic_("/move_base/global_costmap/costmap"),
     costmap_updates_topic_("/move_base/global_costmap/costmap_updates"),
-    obstacles_map_ready_(false)
+    obstacles_map_ready_(false),
+    node_name_(ros::this_node::getName())
 {
-  node_name_ = ros::this_node::getName();
+  ros::NodeHandle pnh("~");
   
-  private_nh_.param<double>("tolerance", tolerance_, 1.0);
-  private_nh_.param<double>("robot_radius", robot_radius_, 0.22);
-  private_nh_.param<std::string>("plan_frame_id", plan_frame_id_, "/odom");
-  private_nh_.param<std::string>("start_goal_frame_id", start_goal_frame_id_, "/map");
-  private_nh_.param<std::string>("object_frame_id", object_frame_id_,"/base_link");
-  private_nh_.param<std::string>("costmap_topic", costmap_topic_, "/move_base/global_costmap/costmap");
-  private_nh_.param<std::string>("costmap_updates_topic", costmap_updates_topic_, "/move_base/global_costmap/costmap_updates");
+  pnh.param<double>("tolerance", tolerance_, 1.0);
+  pnh.param<std::string>("plan_frame_id", plan_frame_id_, "/odom");
+  pnh.param<std::string>("start_goal_frame_id", start_goal_frame_id_, "/map");
+  pnh.param<std::string>("object_frame_id", object_frame_id_,"/base_link");
+  pnh.param<std::string>("costmap_topic", costmap_topic_, "/move_base/global_costmap/costmap");
+  pnh.param<std::string>("costmap_updates_topic", costmap_updates_topic_, "/move_base/global_costmap/costmap_updates");
 
   plan_.header.frame_id = plan_frame_id_;
   
-  pushing_plan_pub_ = private_nh_.advertise<nav_msgs::Path>("pushingPlan", 1000);
-  get_pushing_plan_srv_ = public_nh_.advertiseService("getPushingPlan", &PushingPlanner::getPlan_, this); 
-  costmap_sub_ = public_nh_.subscribe("/move_base/global_costmap/costmap", 1, &PushingPlanner::costmapCallback_, this);
-  costmap_updates_sub_ = public_nh_.subscribe("/move_base/global_costmap/costmap_updates", 1, &PushingPlanner::costmapUpdatesCallback_, this);
+  pushing_plan_pub_ = pnh.advertise<nav_msgs::Path>("pushingPlan", 1000);
+
+  get_pushing_plan_srv_ = nh_.advertiseService("getPushingPlan", &PushingPlanner::getPlan_, this); 
+  costmap_sub_ = nh_.subscribe("/move_base/global_costmap/costmap", 1, &PushingPlanner::costmapCallback_, this);
+  costmap_updates_sub_ = nh_.subscribe("/move_base/global_costmap/costmap_updates", 1, &PushingPlanner::costmapUpdatesCallback_, this);
+
+  nh_.param<double>("/move_base/global_costmap/inflation_layer/inflation_radius", inflation_radius_, 0.6);
+  nh_.param<double>("/move_base/global_costmap/robot_radius", robot_radius_, 0.16);
 }
 
 PushingPlanner::~PushingPlanner( void )
@@ -97,8 +100,7 @@ PushingPlanner::~PushingPlanner( void )
   get_pushing_plan_srv_.shutdown();
   costmap_sub_.shutdown();
   costmap_updates_sub_.shutdown();
-  private_nh_.shutdown();
-  public_nh_.shutdown();
+  nh_.shutdown();
 }
 
 void PushingPlanner::spin( void )
@@ -117,10 +119,25 @@ void PushingPlanner::spin( void )
 
 void PushingPlanner::waitForPlannerService( void )
 {
-  if ( !ros::service::waitForService("/move_base/make_plan", ros::Duration(60.0)) ) {
-    ROS_ERROR("%s: Service [/move_base/make_service] unavailable, shutting down the node...", node_name_.c_str());
-    ros::shutdown();
-  }
+ //  if ( !ros::service::waitForService("/move_base/make_plan", ros::Duration(60.0)) ) {
+//     ROS_ERROR("%s: Service [/move_base/make_plan] unavailable, shutting down the node...", node_name_.c_str());
+//     ros::shutdown();
+//   }
+}
+
+void PushingPlanner::updateCostmap_( double offset )
+{
+  bool ok_radius, ok_inflation;
+
+  std::ostringstream oss_infl, oss_rad;
+  oss_rad << "rosrun dynamic_reconfigure dynparam set /move_base/global_costmap robot_radius " << (robot_radius_+offset);
+  oss_infl << "rosrun dynamic_reconfigure dynparam set /move_base/global_costmap/inflation_layer inflation_radius " << (inflation_radius_+offset);
+
+  // ROS_INFO_STREAM(oss_rad.str());
+  std::system(oss_rad.str().c_str());
+  
+  // ROS_INFO_STREAM(oss_infl.str());
+  std::system(oss_infl.str().c_str());
 }
 
 bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req,
@@ -132,6 +149,11 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
     return false;
   }
 
+  updateCostmap_(req.object_radius);
+  updateCostmap_(req.object_radius);
+
+  // ros::Duration(3.0).sleep(); /* wait costmap to be updated (bad but no other way)*/ 
+  
   nav_msgs::GetPlan plan;
 
   // Transform starting position in map frame
@@ -344,6 +366,9 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
       }
       
       pushing_plan_pub_.publish(res.plan);
+
+      updateCostmap_(0.0);
+
       return true;
     }
   } else {

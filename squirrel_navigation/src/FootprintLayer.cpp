@@ -132,6 +132,7 @@ void FootprintLayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i,
 {
   if ( not enabled_)
     return;
+  
   std::vector<geometry_msgs::Point> footprint_points = costmap_2d::toPointVector(footprint_.polygon);
   master_grid.setConvexPolygonCost(footprint_points, costmap_2d::FREE_SPACE);
 }

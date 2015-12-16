@@ -81,18 +81,18 @@ class JointHandle
   JointHandle( const std::string& );
   virtual ~JointHandle( void );
 
-  bool gotMotionCommand( void ) const;
-  bool isMoving( void ) const;
+  inline bool gotMotionCommand( void ) const { return std::abs(reset_angle_-cur_angle_)>1e-3; };
+  inline bool isMoving( void ) const { return moving_; };
   
  private:
   ros::NodeHandle nh_;
   ros::Subscriber command_sub_, state_sub_;
   
-  double command_;
+  double command_, cur_angle_;
   bool moving_, info_;
   std::string name_;
   
-  // Params
+  // Parameters
   std::string command_topic_, state_topic_;
   double reset_angle_;
   bool verbose_;
