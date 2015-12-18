@@ -134,10 +134,10 @@ void PushingPlanner::updateCostmap_( double offset ) const
   oss_infl << "rosrun dynamic_reconfigure dynparam set /move_base/global_costmap/inflation_layer inflation_radius " << (inflation_radius_+offset);
 
   // ROS_INFO_STREAM(oss_rad.str());
-  std::system(oss_rad.str().c_str());
+  int foo1 = std::system(oss_rad.str().c_str());
   
   // ROS_INFO_STREAM(oss_infl.str());
-  std::system(oss_infl.str().c_str());
+  // int foo2 = std::system(oss_infl.str().c_str());
 }
 
 bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req,
@@ -187,7 +187,7 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
     vertex.pose.position.x = req.object.points[i].x;
     vertex.pose.position.y = req.object.points[i].y;
     vertex.pose.orientation.w = 1.0;
-    
+
     try {
       tfl_.waitForTransform(object_frame_id_, "/map", ros::Time::now(), ros::Duration(1.0));
       tfl_.transformPose("/map", vertex, vertex_stamped_m);
@@ -204,7 +204,7 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
     object_m.points.push_back(vertex_m);
   }
 
-  // Getting info from polygon000
+  // Getting info from polygon
   double object_d = -std::numeric_limits<double>::max();
   double object_min_x = std::numeric_limits<double>::max(),
       object_max_x = -std::numeric_limits<double>::max(),
@@ -247,11 +247,13 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
   plan.request.tolerance = tolerance_;
 
   // GetPlan start
+  object_d += 0.2*object_d+robot_radius_+object_radius;
+  
   geometry_msgs::PoseStamped start_real;
   start_real.header.frame_id = start_goal_frame_id_;
   start_real.pose.orientation = q_start;
-  start_real.pose.position.x = req.start.x + object_d*std::cos(req.start.theta);
-  start_real.pose.position.y = req.start.y + object_d*std::sin(req.start.theta);
+  start_real.pose.position.x = start_m.pose.position.x + object_d*std::cos(req.start.theta);
+  start_real.pose.position.y = start_m.pose.position.y + object_d*std::sin(req.start.theta);
 
   try {
     tfl_.waitForTransform(start_goal_frame_id_, "/map", ros::Time::now(), ros::Duration(1.0));
@@ -307,11 +309,14 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
       double c = 0.5;
       double toll = 1e-4;
       int smoother = 1;
+
+      polarCoordinates_(plan.response.plan.poses[2], start_m, object_d, start_theta_m);
+      
       for (double t=0.5*object_d; (t<object_d-toll && smoother<plan.response.plan.poses.size()); ++smoother, t+=object_d*std::pow(c,smoother)) {
-        double dx_s = plan.response.plan.poses[smoother].pose.position.x - plan.response.plan.poses[smoother-1].pose.position.x;
-        double dy_s = plan.response.plan.poses[smoother].pose.position.y - plan.response.plan.poses[smoother-1].pose.position.y;
-        p.pose.position.x = plan_.poses[smoother-1].pose.position.x + object_d*std::pow(c,smoother) * std::cos(start_theta_m) + dx_s;
-        p.pose.position.y = plan_.poses[smoother-1].pose.position.y + object_d*std::pow(c,smoother) * std::sin(start_theta_m) + dy_s;
+        double dx_s = plan.response.plan.poses[2+smoother].pose.position.x - plan.response.plan.poses[2+smoother-1].pose.position.x;
+        double dy_s = plan.response.plan.poses[2+smoother].pose.position.y - plan.response.plan.poses[2+smoother-1].pose.position.y;
+        p.pose.position.x = plan_.poses[smoother-1].pose.position.x + object_d * std::pow(c,smoother) * std::cos(start_theta_m) + dx_s;
+        p.pose.position.y = plan_.poses[smoother-1].pose.position.y + object_d * std::pow(c,smoother) * std::sin(start_theta_m) + dy_s;
         p.pose.orientation = start_m.pose.orientation;
         plan_.poses.push_back(p);
       }
@@ -353,7 +358,7 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
       
       // Create response in plan_frame_id_
       res.plan.header.frame_id = plan_frame_id_;
-      for (unsigned int i=0; i<plan_.poses.size(); ++i) { 
+      for (unsigned int i=0; i<plan_.poses.size()-3; ++i) { 
         try {
           geometry_msgs::PoseStamped p;
           tfl_.waitForTransform("/map", plan_frame_id_, ros::Time::now(), ros::Duration(0.5));

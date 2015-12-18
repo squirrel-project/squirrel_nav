@@ -136,12 +136,25 @@ class PushingPlanner
   bool isNumericValid_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& ) const;
   bool inFootprint_( const geometry_msgs::Polygon&, const geometry_msgs::Point& ) const;
   double getObjectRadius_( const geometry_msgs::Polygon& ) const;
-  inline double dot_( const geometry_msgs::Point32& p, const geometry_msgs::Point32& q ) { return p.x*q.x+p.y*q.y; };
+
+  inline double dot_( const geometry_msgs::Point32& p, const geometry_msgs::Point32& q )
+  {
+    return p.x*q.x+p.y*q.y;
+  };
+
   inline double linearDistance_( const geometry_msgs::Point32& p, const geometry_msgs::Point32& q ) const
   {
     double dx = p.x-q.x;
     double dy = p.y-q.y;
     return std::sqrt(dx*dx+dy*dy);
+  };
+
+  inline void polarCoordinates_( const geometry_msgs::PoseStamped& p, const geometry_msgs::PoseStamped& q, double& rho, double& th )
+  {
+    double dx = p.pose.position.x - q.pose.position.x;
+    double dy = p.pose.position.y - q.pose.position.y;
+    rho = std::sqrt(dx*dx + dy*dy);
+    th = std::atan2(dy,dx);
   };
 };
 
