@@ -5,8 +5,11 @@
   <description>
     Monte Carlo Localisation with KLD sampling 
   </description>  
+
   <author email="roewekae@cs.uni-freiburg.de">Joerg Roewekaemper</author>
+
   <maintainer email="boniardi@cs.uni-freiburg.de">Federico Boniardi</maintainer>
+  
   <license>TBD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
@@ -41,6 +44,7 @@
   <run_depend>rosbag</run_depend>
   <run_depend>message_runtime</run_depend>
   <run_depend>message_generation</run_depend>
+  <run_depend>scan_tools</run_depend>
   <run_depend>squirrel_localizer_msgs</run_depend>
 
   <export>
