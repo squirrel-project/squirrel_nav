@@ -63,9 +63,9 @@ public:
   void start_rand_noise( void );
   void place_robot( const Transformation3&, double, bool usePoseTheta = false );
 
-  void update_motion( const Transformation3& );
+  void update_motion( const Transformation3&, const Transformation3& );
 
-  bool update_laser( const std::vector<Vector3f>&, const Transformation3&, const double& );
+  bool update_laser( const std::vector<Vector3f>&, const Transformation3&, const Transformation3&, const double& );
 
   void particles( int );
 
@@ -133,8 +133,8 @@ public:
 
   void propagate_particles( void );
 
-  void update_filter( BasicSensor&, const Transformation3&, const double& );
-  void update_state( const Transformation3&, const double& );
+  void update_filter( BasicSensor&, const Transformation3&, const Transformation3&, const double& );
+  void update_state( const Transformation3&, const Transformation3&, const double& );
   void compute_mean( void );
   void compute_covariance( void );
   void determine_convergence( void );
