@@ -71,22 +71,27 @@
 #include <ros/ros.h>
 
 #include <costmap_2d/costmap_layer.h>
-#include <costmap_2d/layered_costmap.h>
+#include <costmap_2d/costmap_math.h>
 #include <costmap_2d/GenericPluginConfig.h>
+#include <costmap_2d/layered_costmap.h>
+#include <costmap_2d/static_layer.h>
 
 #include <dynamic_reconfigure/server.h>
 
-#include <nav_msgs/OccupancyGrid.h>
 #include <map_msgs/OccupancyGridUpdate.h>
+#include <nav_msgs/OccupancyGrid.h>
 
 #include <message_filters/subscriber.h>
 
-#include "squirrel_navigation/CellData.h"
-#include "squirrel_navigation/MapLayerPluginConfig.h"
-#include "squirrel_navigation/InflatedLayer.h"
+#include <pluginlib/class_list_macros.h>
 
 #include <algorithm>
+#include <cmath>
 #include <set>
+
+#include "squirrel_navigation/CellData.h"
+#include "squirrel_navigation/InflatedLayer.h"
+#include "squirrel_navigation/MapLayerPluginConfig.h"
 
 namespace squirrel_navigation {
 
@@ -95,6 +100,7 @@ class MapLayer : public InflatedLayer
  public:
   MapLayer( void );
   virtual ~MapLayer( void );
+  
   virtual void onInitialize( void );
   virtual void activate( void );
   virtual void deactivate( void );
@@ -102,20 +108,10 @@ class MapLayer : public InflatedLayer
 
   virtual void updateBounds( double, double, double, double*, double*, double*, double* );
   virtual void updateCosts( costmap_2d::Costmap2D&, int, int, int, int );
-
-  virtual void matchSize( void );
-  
-  inline bool isDiscretized( void ) {
-    return true;
-  }
+  virtual void matchSize( void );  
+  inline bool isDiscretized( void ) { return true; };
     
  private:  
-  void incomingMap( const nav_msgs::OccupancyGridConstPtr& );
-  void incomingUpdate( const map_msgs::OccupancyGridUpdateConstPtr& );
-  void reconfigureCB( MapLayerPluginConfig&, uint32_t );
-
-  unsigned char interpretValue( unsigned char );
-
   std::string global_frame_;
   bool subscribe_to_updates_;
   bool map_received_;
@@ -129,7 +125,12 @@ class MapLayer : public InflatedLayer
   unsigned char lethal_threshold_, unknown_cost_value_;
   
   mutable boost::recursive_mutex lock_;
-  dynamic_reconfigure::Server<MapLayerPluginConfig> *dsrv_;
+  dynamic_reconfigure::Server<MapLayerPluginConfig>* dsrv_;
+
+  void mapCallback_( const nav_msgs::OccupancyGridConstPtr& );
+  void mapUpdateCallback_( const map_msgs::OccupancyGridUpdateConstPtr& );
+  void reconfigureCallback_( MapLayerPluginConfig&, uint32_t );
+  unsigned char interpretValue_( unsigned char );
 };
   
 }  // namespace squirrel_navigation

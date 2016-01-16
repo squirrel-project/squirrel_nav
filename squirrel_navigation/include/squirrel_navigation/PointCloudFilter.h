@@ -61,15 +61,14 @@
 
 #include <sensor_msgs/PointCloud2.h>
 
-#include <tf/tf.h>
-#include <tf/transform_listener.h>
-
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/filters/filter.h>
 
+#include <sstream>
 #include <string>
+#include <stdexcept>
 #include <vector>
 
 namespace squirrel_navigation {
@@ -79,29 +78,26 @@ class PointCloudFilter
  public:
   PointCloudFilter( void );
   virtual ~PointCloudFilter( void );
-  void spin( void );
+
+  void spin( double hz=20.0 );
   
  private:
-  void filterPointCloud( const sensor_msgs::PointCloud2ConstPtr& );
-  int getFilterStep( void );
-
-  ros::NodeHandle private_nh_, public_nh_;
-  
+  ros::NodeHandle nh_;
   ros::Subscriber sub_;
-  
   ros::Publisher pointcloud_pub_;
-  
-  tf::TransformListener tf_;
-  tf::StampedTransform tf_k2m_, tf_m2k_;
   
   int filter_step_, seq_;
 
-  std::string node_name_;
+  std::string nodename_;
   
   // Parameters
   std::string pointcloud_in_topic_;
   std::string pointcloud_out_topic_;
   std::string pointcloud_size_;
+  bool nanfree_; 
+  
+  void pointCloud2Callback_( const sensor_msgs::PointCloud2::ConstPtr& );
+  void getFilterStep_( void );
 };
 
 }  // namspace squirrel_navigation

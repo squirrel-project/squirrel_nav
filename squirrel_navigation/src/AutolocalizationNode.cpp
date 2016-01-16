@@ -60,9 +60,11 @@ using squirrel_navigation::Autolocalization;
 int main( int argc, char *argv[] )
 {
   ros::init(argc, argv, "autolocalization");
+
   Autolocalization al;
   al.waitForStarting();
   al.spin();
+
   return 0;
 }
 

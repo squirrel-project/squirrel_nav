@@ -20,5 +20,6 @@ global_costmap: {
   inflation_layer/inflation_radius: 0.6,
   inflation_layer/cost_scaling_factor: 10.0
 }
+
 #
 # global_costmap_params.yaml ends here

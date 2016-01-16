@@ -1,0 +1,20 @@
+# move_base_params.yaml --- 
+# 
+# Filename: move_base_params.yaml
+# Description: Parameters for move_base node 
+# Created: Tue Nov 18 00:05:26 2014 (+0100)
+# Maintainer: boniardi@cs.uni-freiburg.de
+#
+# Code:
+
+base_local_planner: "squirrel_navigation/LocalPlanner"
+controller_frequency: 5.0
+planner_frequency: 1.5
+shutdown_costmaps: false
+recovery_behavior: 
+  - {name: rotate_recovery, type: "rotate_recovery/RotateRecovery"}
+planner_patience: 3.0
+controller_patience: 5.0
+
+# 
+# move_base.yaml ends here

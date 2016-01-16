@@ -7,9 +7,9 @@
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Wed Feb 4 10:14:10 2015 (+0100)
 // Version: 0.1.0
-// Last-Updated: Mon Feb 9 11:51:05 2015 (+0100)
+// Last-Updated: Tue Nov 24 14:36:10 2015 (+0100)
 //           By: Federico Boniardi
-//     Update #: 5
+//     Update #: 6
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -79,14 +79,19 @@
 
 #include <dynamic_reconfigure/server.h>
 
-#include "squirrel_navigation/FootprintLayer.h"
-#include "squirrel_navigation/MultiInflatedLayer.h"
-#include "squirrel_navigation/DownprojectionMultilayerPluginConfig.h"
-#include "squirrel_navigation/TiltHandle.h"
+#include <pluginlib/class_list_macros.h>
 
-#include <map>
-#include <cmath>
+#include <pcl_conversions/pcl_conversions.h>
+
+#include "squirrel_navigation/Common.h"
+#include "squirrel_navigation/DownprojectionMultilayerPluginConfig.h"
+#include "squirrel_navigation/FootprintLayer.h"
+#include "squirrel_navigation/JointHandle.h"
+#include "squirrel_navigation/MultiInflatedLayer.h"
+
 #include <algorithm>
+#include <cmath>
+#include <map>
 #include <sstream>
 #include <vector>
 
@@ -131,6 +136,29 @@ public:
   };
   
  private:
+  dynamic_reconfigure::Server<DownprojectionMultilayerPluginConfig> *dsrv_;
+
+  // time based costmap layer
+  std::map<unsigned int, ros::Time> clearing_index_stamped_;
+
+  ros::NodeHandle nh_;
+  ros::Publisher voxel_pub_, clearing_endpoints_pub_;
+  ros::Subscriber tilt_state_sub_, tilt_command_sub_;
+  
+  voxel_grid::VoxelGrid voxel_grid_;
+  double z_resolution_, origin_z_;
+
+  unsigned int unknown_threshold_, mark_threshold_, size_z_;
+  double max_obstacle_height_, min_obstacle_height_,  obstacles_persistence_;
+
+  sensor_msgs::PointCloud clearing_endpoints_;
+
+  std::vector<double> robot_link_radii_;
+  std::vector<double> layers_levels_;
+  std::map<unsigned int, bool> observed_;
+
+  std::map<std::string,JointHandle> kinect_jh_;
+
   void reconfigureCB( DownprojectionMultilayerPluginConfig&, uint32_t );
   void clearNonLethal( double, double, double, double, bool );
   virtual void raytraceFreespace( const costmap_2d::Observation&, double*, double*, double*, double* );
@@ -194,29 +222,6 @@ public:
       }
     }
   }
-  
-  dynamic_reconfigure::Server<DownprojectionMultilayerPluginConfig> *dsrv_;
-
-  // time based costmap layer
-  std::map<unsigned int, ros::Time> clearing_index_stamped_;
-
-  ros::NodeHandle nh_;
-  ros::Publisher voxel_pub_, clearing_endpoints_pub_;
-  ros::Subscriber tilt_state_sub_, tilt_command_sub_;
-  
-  voxel_grid::VoxelGrid voxel_grid_;
-  double z_resolution_, origin_z_;
-
-  unsigned int unknown_threshold_, mark_threshold_, size_z_;
-  double max_obstacle_height_, min_obstacle_height_,  obstacles_persistence_;
-
-  sensor_msgs::PointCloud clearing_endpoints_;
-
-  std::vector<double> robot_link_radii_;
-  std::vector<double> layers_levels_;
-  std::map<unsigned int, bool> observed_;
-
-  TiltHandle kinect_th_;
 };
 
 }  // namespace squirrel_navigation

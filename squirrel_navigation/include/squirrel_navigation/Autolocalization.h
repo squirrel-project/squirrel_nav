@@ -62,17 +62,24 @@
 
 #include <ros/ros.h>
 
+#include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Twist.h>
-#include <geometry_msgs/Pose2D.h>
-#include <nav_msgs/Odometry.h>
 #include <sensor_msgs/PointCloud.h>
+#include <nav_msgs/Odometry.h>
+#include <std_srvs/Empty.h>
 
 #include <tf/tf.h>
 
+#include <angles/angles.h>
+
+#include <boost/bind.hpp>
+
+#include <limits>
+#include <stdexcept>
 #include <vector>
 
-#include "Common.h"
+#include "squirrel_navigation/Common.h"
 
 namespace squirrel_navigation {
 
@@ -86,22 +93,9 @@ class Autolocalization
  private:
   typedef struct { double rho; double theta; } polar_t;
   typedef enum {STOP, ROTATING, LINEAR} state_t;
-
-  void getPoseWithCovariance( const geometry_msgs::PoseWithCovarianceStampedConstPtr&, std::string);
-  void getOdomPose( const nav_msgs::OdometryConstPtr& );
-  void getDistanceSensorsValues( const sensor_msgs::PointCloudConstPtr& );
-  void clearCostmapAndShutdown( void );
-  void checkCovariance( geometry_msgs::PoseWithCovarianceStamped );
-  void setInitialCovariance( void );
-  void calcCmdVel( void );
-  void move( void );
-  void stop( void );
-  void checkCollisions( std::vector<polar_t> );
   
   ros::NodeHandle private_nh_, public_nh_;
-  
   ros::Subscriber amcl_pose_sub_, initial_pose_sub_, odom_sub_, distance_sensors_sub_;
-
   ros::Publisher twist_pub_;
 
   std::string node_name_;
@@ -127,6 +121,17 @@ class Autolocalization
   double max_vel_ang_, max_vel_lin_;
   double tolerance_var_x_, tolerance_var_y_, tolerance_var_th_;
   std::string initial_pose_topic_, amcl_pose_topic_, odom_topic_, distance_sensors_topic_; 
+
+  void getPoseWithCovariance( const geometry_msgs::PoseWithCovarianceStampedConstPtr&, std::string);
+  void getOdomPose( const nav_msgs::OdometryConstPtr& );
+  void getDistanceSensorsValues( const sensor_msgs::PointCloudConstPtr& );
+  void clearCostmapAndShutdown( void );
+  void checkCovariance( geometry_msgs::PoseWithCovarianceStamped );
+  void setInitialCovariance( void );
+  void calcCmdVel( void );
+  void move( void );
+  void stop( void );
+  void checkCollisions( std::vector<polar_t> );
 };
 
 }  // namespace squirrel_navigation

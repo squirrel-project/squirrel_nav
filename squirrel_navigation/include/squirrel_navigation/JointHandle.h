@@ -1,11 +1,11 @@
-// TiltHandle.h --- 
+// JointHandle.h --- 
 // 
-// Filename: TiltHandle.h
-// Description: Check wheter the kinect is tilted or not
+// Filename: JointHandle.h
+// Description: 
 // Author: Federico Boniardi
-// Maintainer: boniardi@cs.uni-freiburg.de
-// Created: Thu Mar 12 13:00:04 2015 (+0100)
-// Version: 0.1.0
+// Maintainer: 
+// Created: Tue Dec 15 10:36:27 2015 (+0100)
+// Version: 
 // Last-Updated: 
 //           By: 
 //     Update #: 0
@@ -21,13 +21,18 @@
 // 
 // 
 
+// Change Log:
+// 
+// 
+// 
+// 
 // Copyright (c) 2015, Federico Boniardi
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 // 
-// * redistributions of source code must retain the above copyright notice, this
+// * Redistributions of source code must retain the above copyright notice, this
 //   list of conditions and the following disclaimer.
 // 
 // * Redistributions in binary form must reproduce the above copyright notice,
@@ -48,45 +53,57 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// 
+// 
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_TILTHANDLER_H_
-#define SQUIRREL_NAVIGATION_TILTHANDLER_H_
+#ifndef SQUIRREL_NAVIGATION_JOINTHANDLE_H_
+#define SQUIRREL_NAVIGATION_JOINTHANDLE_H_
 
 #include <ros/ros.h>
 
 #include <dynamixel_msgs/JointState.h>
 #include <std_msgs/Float64.h>
 
+#include <algorithm>
+#include <cmath>
+#include <string>
+
+#include "squirrel_navigation/Common.h"
+
 namespace squirrel_navigation {
 
-class TiltHandle
+class JointHandle
 {
  public:
-  TiltHandle( void );
-  virtual ~TiltHandle( void );
+  JointHandle( void );
+  JointHandle( const std::string& );
+  virtual ~JointHandle( void );
 
-  bool gotMotionCommand( void );
-  bool isMoving( void );
-
-  void printROSMsg( const char* );
+  inline bool gotMotionCommand( void ) const { return std::abs(reset_angle_-cur_angle_)>1e-3; };
+  inline bool isMoving( void ) const { return moving_; };
   
  private:
-  ros::NodeHandle public_nh_;
-  ros::Subscriber tilt_command_sub_, tilt_state_sub_;
-
-  double tilt_command_;
-  bool tilt_moving_, info_;
+  ros::NodeHandle nh_;
+  ros::Subscriber command_sub_, state_sub_;
   
-  void updateTiltState( const dynamixel_msgs::JointState::ConstPtr& );
-  void updateTiltCommand( const std_msgs::Float64::ConstPtr& );
+  double command_, cur_angle_;
+  bool moving_, info_;
+  std::string name_;
+  
+  // Parameters
+  std::string command_topic_, state_topic_;
+  double reset_angle_;
+  bool verbose_;
+  
+  void stateCallback_( const dynamixel_msgs::JointState::ConstPtr& );
+  void commandCallback_( const std_msgs::Float64::ConstPtr& );
 };
 
 }  // namespace squirrel_navigation
 
-#endif /* SQUIRREL_NAVIGATION_TILTHANDLER_H_ */
+#endif /* SQUIRREL_NAVIGATION_JOINTHANDLE_H_ */
 
 // 
-// TiltHandle.h ends here
+// JointHandle.h ends here

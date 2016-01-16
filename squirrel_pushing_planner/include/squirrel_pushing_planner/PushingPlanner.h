@@ -6,9 +6,9 @@
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Mon Dec  8 13:36:41 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: 
-//           By: 
-//     Update #: 0
+// Last-Updated: Tue Nov 24 14:36:59 2015 (+0100)
+//           By: Federico Boniardi
+//     Update #: 1
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -82,6 +82,7 @@
 #include <algorithm>
 #include <climits>
 #include <cmath>
+#include <cstdlib>
 #include <stdexcept>
 
 #include <opencv2/opencv.hpp>
@@ -104,7 +105,7 @@ class PushingPlanner
   void waitForPlannerService( void );
   
  private:  
-  ros::NodeHandle public_nh_, private_nh_;
+  ros::NodeHandle nh_;
   ros::Publisher pushing_plan_pub_;
   ros::ServiceServer get_pushing_plan_srv_;
   ros::Subscriber costmap_sub_, costmap_updates_sub_;
@@ -116,32 +117,44 @@ class PushingPlanner
   std::string node_name_;
   
   // Parameters
-  double tolerance_, robot_radius_;
+  double tolerance_, robot_radius_, inflation_radius_;
   std::string plan_frame_id_, start_goal_frame_id_, object_frame_id_;
   std::string costmap_topic_, costmap_updates_topic_;
   
   nav_msgs::MapMetaData costmap_info_;
-  cv::Mat* obstacles_map_;
+  cv::Mat* obstacles_map_; 
   bool obstacles_map_ready_;
   
   boost::mutex obstacles_mtx_;
 
   const unsigned int OBSTACLE;
-  
+
+  void updateCostmap_( double ) const;
   bool getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request&, squirrel_rgbd_mapping_msgs::GetPushingPlan::Response& );
   void costmapCallback_( const nav_msgs::OccupancyGrid::ConstPtr& );
   void costmapUpdatesCallback_( const map_msgs::OccupancyGridUpdate::ConstPtr& );
-  bool isNumericValid_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& );
-  bool inFootprint_( const geometry_msgs::Polygon&, const geometry_msgs::Point& );
-  // inline double dist2d_( const geometry_msgs::Point32& p, const geometry_msgs::PoseStamped& q )
-  // {
-  //   double dx = p.x-q.pose.position.x;
-  //   double dy = p.y-q.pose.position.y;
-  //   return std::sqrt(dx*dx+dy*dy);
-  // };
+  bool isNumericValid_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& ) const;
+  bool inFootprint_( const geometry_msgs::Polygon&, const geometry_msgs::Point& ) const;
+  double getObjectRadius_( const geometry_msgs::Polygon& ) const;
+
   inline double dot_( const geometry_msgs::Point32& p, const geometry_msgs::Point32& q )
   {
     return p.x*q.x+p.y*q.y;
+  };
+
+  inline double linearDistance_( const geometry_msgs::Point32& p, const geometry_msgs::Point32& q ) const
+  {
+    double dx = p.x-q.x;
+    double dy = p.y-q.y;
+    return std::sqrt(dx*dx+dy*dy);
+  };
+
+  inline void polarCoordinates_( const geometry_msgs::PoseStamped& p, const geometry_msgs::PoseStamped& q, double& rho, double& th )
+  {
+    double dx = p.pose.position.x - q.pose.position.x;
+    double dy = p.pose.position.y - q.pose.position.y;
+    rho = std::sqrt(dx*dx + dy*dy);
+    th = std::atan2(dy,dx);
   };
 };
 

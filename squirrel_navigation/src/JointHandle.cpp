@@ -1,11 +1,11 @@
-// TiltHandle.cpp --- 
+// JointHandle.cpp --- 
 // 
-// Filename: TiltHandle.cpp
-// Description: Check wheter the kinect is tilted or not
+// Filename: JointHandle.cpp
+// Description: 
 // Author: Federico Boniardi
-// Maintainer: boniardi@cs.uni-freiburg.de
-// Created: Thu Mar 12 13:00:04 2015 (+0100)
-// Version: 0.1.0
+// Maintainer: 
+// Created: Tue Dec 15 10:56:20 2015 (+0100)
+// Version: 
 // Last-Updated: 
 //           By: 
 //     Update #: 0
@@ -21,19 +21,24 @@
 // 
 // 
 
+// Change Log:
+// 
+// 
+// 
+// 
 // Copyright (c) 2015, Federico Boniardi
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 // 
-// * redistributions of source code must retain the above copyright notice, this
+// * Redistributions of source code must retain the above copyright notice, this
 //   list of conditions and the following disclaimer.
 // 
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
-// 
+
 // * Neither the name of the University of Freiburg nor the names of its
 //   contributors may be used to endorse or promote products derived from
 //   this software without specific prior written permission.
@@ -48,64 +53,60 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// 
+// 
 
 // Code:
 
-#include "squirrel_navigation/TiltHandle.h"
-#include "squirrel_navigation/Common.h"
-
-#include <algorithm>
+#include "squirrel_navigation/JointHandle.h"
 
 namespace squirrel_navigation {
 
-TiltHandle::TiltHandle( void ) :
-    tilt_command_(KINECT_NAVIGATION_ANGLE),
-    tilt_moving_(false),
-    info_(false)
+JointHandle::JointHandle( void ) :
+    info_(false),
+    moving_(false),
+    verbose_(false)
 {
-  tilt_state_sub_ = public_nh_.subscribe("/tilt_controller/state", 2, &TiltHandle::updateTiltState, this);
-  tilt_command_sub_ = public_nh_.subscribe("/tilt_controller/command", 2, &TiltHandle::updateTiltCommand, this);
+  // Empty
 }
 
-TiltHandle::~TiltHandle( void )
+JointHandle::JointHandle( const std::string& name )  :
+    name_(name),
+    info_(false),
+    moving_(false),
+    verbose_(false)
 {
-  tilt_state_sub_.shutdown();
-  tilt_command_sub_.shutdown();
+  ros::NodeHandle pnh("~/"+name_);
+  pnh.param<std::string>("command_topic", command_topic_, name+"/command");
+  pnh.param<std::string>("state_topic", state_topic_, name+"/state");
+  pnh.param<double>("reset_angle", reset_angle_, 0.0);
+  pnh.param<bool>("verbose", verbose_, false);
+  
+  state_sub_ = nh_.subscribe(state_topic_, 1, &JointHandle::stateCallback_, this);
+  command_sub_ = nh_.subscribe(command_topic_, 1, &JointHandle::commandCallback_, this);
 }
 
-bool TiltHandle::gotMotionCommand( void )
+JointHandle::~JointHandle( void )
 {
-  return (std::abs(KINECT_NAVIGATION_ANGLE - tilt_command_) > 1e-3);
+  // Empty
 }
 
-bool TiltHandle::isMoving( void )
+void JointHandle::stateCallback_( const dynamixel_msgs::JointState::ConstPtr& joint_state )
 {
-  return tilt_moving_;
+  moving_ = joint_state->is_moving;
+  cur_angle_ = joint_state->current_pos;
+  if ( verbose_ )
+    ROS_INFO_STREAM(ros::this_node::getName() << "/" << name_ << ": joint is moving.");
 }
 
-void TiltHandle::printROSMsg( const char* msg  )
+void JointHandle::commandCallback_( const std_msgs::Float64::ConstPtr& cmd )
 {
-  if ( !info_ ) {
-    ROS_INFO("%s: Kinect has been tilted. %s", ros::this_node::getName().c_str(), msg);
-    info_ = true;
-  } else {
-    return;
-  }
-}
-
-void TiltHandle::updateTiltState( const dynamixel_msgs::JointState::ConstPtr& tilt_state_msg )
-{
-  tilt_moving_ = tilt_state_msg->is_moving;
-}
-
-void TiltHandle::updateTiltCommand( const std_msgs::Float64::ConstPtr& tilt_cmd_msg )
-{
-  tilt_command_ = tilt_cmd_msg->data;
-  info_ = false;
+  command_ = cmd->data;
+  if ( verbose_ )
+    ROS_INFO_STREAM(ros::this_node::getName() << "/" << name_ << ": got motion command.");
 }
 
 }  // namespace squirrel_navigation
 
 // 
-// TiltHandle.cpp ends here
+// JointHandle.cpp ends here
