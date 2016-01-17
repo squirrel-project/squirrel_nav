@@ -1,0 +1,17 @@
+GlobalPlanner: {
+  verbose: true,
+  dijkstra/allow_unknown: false,
+  dijkstra/default_tolerance: 0.0,
+  dijkstra/old_navfn_behavior: false,
+  dijkstra/use_quadratice: true,
+  dijkstra/use_grid_path: false,
+  dijkstra/visualize_potential: false,
+  lattice/planner_type: ARAPlanner,
+  lattice/environment_type: XYThetaLattice,
+  lattice/primitive_filename: motion_primitives.mprim,
+  lattice/allocated_time: 5.0,
+  lattice/initial_epsilon: 3.0,
+  lattice/force_scratch_limit: 500,
+  lattice/forward_search: false,
+  lattice/lethal_obstacle: 20,
+}

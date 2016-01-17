@@ -76,6 +76,7 @@ qtcreator-*
 squirrel_navigation/maps/test_maps
 # don't update the map files
 squirrel_navigation/maps/test_maps
+squirrel_pushing_planner/scripts/debug_pushing_plan.sh
 squirrel_pushing_planner/src/pushing_planner_test.cpp
 squirrel_pushing_planner/scripts
 squirrel_navigator

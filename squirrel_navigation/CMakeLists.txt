@@ -6,6 +6,8 @@ set(ROS_BUILD_TYPE Release)
 ## Package dependencies
 set(squirrel_navigation_DEPENDENCIES
   actionlib
+  base_local_planner
+  clear_costmap_recovery
   costmap_2d
   dynamic_reconfigure
   dynamixel_msgs
@@ -14,22 +16,32 @@ set(squirrel_navigation_DEPENDENCIES
   move_base_msgs
   nav_core
   nav_msgs
+  navfn
+  octomap_msgs
+  pcl_conversions
+  pcl_ros
+  pluginlib
+  roscpp
+  rotate_recovery
   std_msgs
   std_srvs
   tf
   visualization_msgs
-  octomap_msgs
-  base_local_planner
-  clear_costmap_recovery
-  navfn
-  pcl_conversions
-  rotate_recovery
-  pcl_ros
-  roscpp
-  pluginlib
-  octomap_msgs
-  dynamixel_msgs
 )
+
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(SBPL REQUIRED 
+  sbpl
+)
+
+find_library(SBPL_LIBRARY 
+  NAMES sbpl 
+  PATHS ${SBPL_LIBRARY_DIRS} 
+  NO_DEFAULT_PATH
+)
+
+set(SBPL_LIBRARIES ${SBPL_LIBRARY})
 
 ############
 ## catkin ##
@@ -48,9 +60,9 @@ generate_dynamic_reconfigure_options(
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES sqiurrel_local_planner squirrel_costamp_layers
+  LIBRARIES sqiurrel_planners squirrel_costmap_layers
   CATKIN_DEPENDS ${squirrel_navigation_DEPENDENCIES}
-  #  DEPENDS system_lib
+  DEPENDS SBPL
 )
 
 ###########
@@ -60,11 +72,24 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${SBPL_INCLUDE_DIRS}
+)
+
+link_directories(
+  ${catkin_LIBRARY_DIRS} 
+  ${SBPL_LIBRARY_DIRS}
 )
 
 ## Compiling and linking the plugins
-add_library(squirrel_local_planner
+add_library(squirrel_planners
   src/LocalPlanner.cpp
+  src/GlobalPlanner.cpp
+  src/LatticeSCQ.cpp
+)
+
+add_dependencies(squirrel_planners
+  squirrel_nav_msgs_generate_messages_cpp
+  ${PROJECT_NAME}_gencfg
 )
 
 add_library(squirrel_costmap_layers
@@ -109,7 +134,7 @@ target_link_libraries(pointcloud_filter_node
 #############
 
 install(TARGETS  
-  squirrel_local_planner 
+  squirrel_planners 
   squirrel_costmap_layers 
   pointcloud_filter_node 
   autolocalization_node
