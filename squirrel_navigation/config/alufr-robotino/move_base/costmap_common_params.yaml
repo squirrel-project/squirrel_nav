@@ -7,6 +7,7 @@
 #
 # Code:
 robot_radius: 0.16
+footprint: [[0.22,0.22],[-0.22,0.22,],[-0.22,-0.22],[0.22,-0.22]]
 
 # costmap_2d plugins declaration.
 plugins:

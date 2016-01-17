@@ -8,7 +8,7 @@
 # Code:
 
 global_costmap: {
-  robot_radius: 0.16,
+  robot_radius: 0.22,
   global_frame: /map,
   robot_base_frame: /base_link,
   update_frequency: 5.0,
