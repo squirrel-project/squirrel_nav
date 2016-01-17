@@ -18,6 +18,7 @@ set(squirrel_localizer_DEPENDENCIES
   laser_geometry
   pcl_ros
   rosbag
+  robotino_msgs
   message_runtime
   message_generation
   squirrel_localizer_msgs
@@ -76,6 +77,7 @@ target_link_libraries(squirrel_localizer_localization_node
 
 add_dependencies(squirrel_localizer_localization_node
   squirrel_localizer_msgs_generate_messages_cpp
+  robotino_msgs_generate_messages_cpp
 )
 
 add_executable(squirrel_localizer_tf_pose_node

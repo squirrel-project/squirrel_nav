@@ -64,7 +64,7 @@
 #include <ros/ros.h>
 
 #include <std_msgs/Bool.h>
-#include <squirrel_nav_msgs/PlannerUpdate.h>
+#include <squirrel_navigation_msgs/PlannerUpdate.h>
 
 #include <stdexcept>
 
@@ -83,8 +83,8 @@ class PlannerUpdateHandle
   ros::Publisher update_pub_;
   ros::ServiceServer update_srv_;
   
-  bool dispatchPlannerUpdate_( squirrel_nav_msgs::PlannerUpdate::Request&,
-                               squirrel_nav_msgs::PlannerUpdate::Response& );
+  bool dispatchPlannerUpdate_( squirrel_navigation_msgs::PlannerUpdate::Request&,
+                               squirrel_navigation_msgs::PlannerUpdate::Response& );
 };
 
 }  // namespace squirrel_navigation

@@ -81,8 +81,8 @@ void PlannerUpdateHandle::spin( double hz )
   ros::spin();
 }
 
-bool PlannerUpdateHandle::dispatchPlannerUpdate_( squirrel_nav_msgs::PlannerUpdate::Request& req,
-                                                  squirrel_nav_msgs::PlannerUpdate::Response& res )
+bool PlannerUpdateHandle::dispatchPlannerUpdate_( squirrel_navigation_msgs::PlannerUpdate::Request& req,
+                                                  squirrel_navigation_msgs::PlannerUpdate::Response& res )
 {
   std_msgs::Bool plan_with_footprint;
   plan_with_footprint.data = req.plan_with_footprint.data;

@@ -208,7 +208,7 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
 
     ROS_INFO_STREAM(name << ": Initialized successfully" );
     plan_pub_ = pnh.advertise<nav_msgs::Path>("plan", 1);
-    stats_pub_ = pnh.advertise<squirrel_nav_msgs::GlobalPlannerStats>("lattice_planner_stats", 1);
+    stats_pub_ = pnh.advertise<squirrel_navigation_msgs::GlobalPlannerStats>("lattice_planner_stats", 1);
 
     update_sub_ = nh_.subscribe("/plan_with_footprint", 1, &GlobalPlanner::updatePlannerCallback_, this);
     
@@ -441,7 +441,7 @@ void GlobalPlanner::publishStats_( int solution_cost, int solution_size,
                                  const geometry_msgs::PoseStamped& goal )
 {
   // Fill up statistics and publish
-  squirrel_nav_msgs::GlobalPlannerStats stats;
+  squirrel_navigation_msgs::GlobalPlannerStats stats;
   stats.initial_epsilon = initial_epsilon_;
   stats.plan_to_first_solution = false;
   stats.final_number_of_expands = lattice_planner_->get_n_expands();

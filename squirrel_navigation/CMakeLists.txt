@@ -23,6 +23,7 @@ set(squirrel_navigation_DEPENDENCIES
   pluginlib
   roscpp
   rotate_recovery
+  squirrel_navigation_msgs
   std_msgs
   std_srvs
   tf
@@ -130,7 +131,7 @@ add_executable(planner_update_handle_node
 )
 
 add_dependencies(planner_update_handle_node
-  squirrel_nav_msgs_generate_messages_cpp
+  squirrel_navigation_msgs_generate_messages_cpp
 )
 
 target_link_libraries(planner_update_handle_node

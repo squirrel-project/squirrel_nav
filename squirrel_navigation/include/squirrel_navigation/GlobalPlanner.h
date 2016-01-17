@@ -69,7 +69,7 @@
 
 #include <geometry_msgs/Polygon.h>
 #include <nav_msgs/Path.h>
-#include <squirrel_nav_msgs/GlobalPlannerStats.h>
+#include <squirrel_navigation_msgs/GlobalPlannerStats.h>
 #include <std_msgs/Bool.h>
 
 #include <sbpl/headers.h>
