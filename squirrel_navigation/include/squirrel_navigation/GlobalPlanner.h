@@ -70,7 +70,7 @@
 #include <geometry_msgs/Polygon.h>
 #include <nav_msgs/Path.h>
 #include <squirrel_nav_msgs/GlobalPlannerStats.h>
-#include <squirrel_nav_msgs/UpdateGlobalPlanner.h>
+#include <std_msgs/Bool.h>
 
 #include <sbpl/headers.h>
 
@@ -96,12 +96,14 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
                          std::vector<geometry_msgs::PoseStamped>& );
   
  private:
-  enum planner_t_ {DIJKSTRA, LATTICE};
+  typedef enum {DIJKSTRA, LATTICE} planner_t;
+
+  ros::NodeHandle nh_;
   
   std::string name_;
   bool initialized_;
 
-  planner_t_ curr_planner_;
+  planner_t curr_planner_;
   navfn::NavfnROS* dijkstra_planner_;
   SBPLPlanner* lattice_planner_;
 
@@ -126,7 +128,7 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
   costmap_2d::Costmap2DROS* costmap_ros_; 
   
   ros::Publisher plan_pub_, stats_pub_;
-  ros::ServiceServer update_srv_;
+  ros::Subscriber update_sub_;
   
   std::vector<geometry_msgs::Point> footprint_;
 
@@ -136,7 +138,7 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
   
   unsigned char costMapCostToSBPLCost_( unsigned char );
   void publishStats_( int, int , const geometry_msgs::PoseStamped&, const geometry_msgs::PoseStamped& );
-  bool updatePlanner_( squirrel_nav_msgs::UpdateGlobalPlanner::Request&, squirrel_nav_msgs::UpdateGlobalPlanner::Response& );
+  void updatePlannerCallback_( const std_msgs::Bool::ConstPtr& );
 };
 
 }  // namespace squirrel_navigation

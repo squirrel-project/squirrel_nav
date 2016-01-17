@@ -64,25 +64,16 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
  public:
   LocalPlanner( void );
   ~LocalPlanner( void );
-  void initialize( std::string, tf::TransformListener*, costmap_2d::Costmap2DROS* );
+
   bool computeVelocityCommands( geometry_msgs::Twist& );
+  void initialize( std::string, tf::TransformListener*, costmap_2d::Costmap2DROS* );
   bool isGoalReached( void );
   bool setPlan( const std::vector<geometry_msgs::PoseStamped>& );
 
- private:
-  void odomCallback( const nav_msgs::OdometryConstPtr& );
-  void publishNextHeading( bool show = true );
-  bool rotateToStart( geometry_msgs::Twist& );
-  bool move( geometry_msgs::Twist& );
-  bool rotateToGoal( geometry_msgs::Twist& );
-  void computeNextHeadingIndex( void );
-  double calLinearVel( void );
-  double calRotationVel( double );
-  double linearDistance( geometry_msgs::Point, geometry_msgs::Point );
-  double mapToMinusPIToPI( double );
-  
+ private:  
   typedef enum { ROTATING_TO_START, MOVING, ROTATING_TO_GOAL, FINISHED } state_t;
-
+  typedef enum { DIJKSTRA, LATTICE } planner_t;
+  
   tf::TransformListener* tf_;
 
   std::vector<geometry_msgs::PoseStamped> global_plan_;
@@ -91,8 +82,8 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   
   nav_msgs::Path global_plan_msg_;
   
-  ros::Subscriber odom_sub_;
-
+  ros::Subscriber odom_sub_, update_sub_;
+  
   ros::Publisher next_heading_pub_;
   
   state_t state_;
@@ -100,6 +91,8 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   boost::mutex odom_lock_;
 
   int curr_heading_index_, next_heading_index_;
+
+  planner_t planner_type_;
   
   // Parameters
   double heading_lookahead_;
@@ -109,7 +102,19 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   int num_window_points_;
 
   // Name and references
-  std::string node_name_, namespace_;
+  std::string name_;
+
+  bool move_( geometry_msgs::Twist& );
+  bool rotateToGoal_( geometry_msgs::Twist& );
+  bool rotateToStart_( geometry_msgs::Twist& );
+  double calLinearVel_( void );
+  double calRotationVel_( double );
+  double linearDistance_( geometry_msgs::Point, geometry_msgs::Point );
+  double mapToMinusPIToPI_( double );
+  void computeNextHeadingIndex_( void );
+  void odomCallback_( const nav_msgs::OdometryConstPtr& );
+  void plannerUpdateCallback_( const std_msgs::Bool::ConstPtr& );
+  void publishNextHeading_( bool show = true );
 };
 
 } // namespace squirrel_navigation

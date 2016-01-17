@@ -25,11 +25,11 @@ obstacles_layer:
   obstacle_range: 1.5
   raytrace_range: 3.0 
   observation_sources: laser_scan rgbd_scan
-  rgbd_scan: {sensor_frame: kinect_depth_optical_frame, data_type: PointCloud2, topic: rgbdscan, marking: true, clearing: true}
-  laser_scan: {sensor_frame: hokuyo_link, data_type: LaserScan, topic: scan, marking: true, clearing: true} 
+  rgbd_scan: {sensor_frame: kinect_depth_optical_frame, data_type: PointCloud2, topic: rgbdscan, marking: true, clearing: false}
+  laser_scan: {sensor_frame: hokuyo_link, data_type: LaserScan, topic: scan, marking: true, clearing: false} 
   publish_voxel_map: true
   robot_height: 0.47
-  floor_threshold: 0.04
+  floor_threshold: 0.03
   robot_diameter: 0.5
 
 #

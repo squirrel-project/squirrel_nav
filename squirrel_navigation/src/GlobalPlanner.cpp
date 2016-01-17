@@ -209,7 +209,8 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
     ROS_INFO_STREAM(name << ": Initialized successfully" );
     plan_pub_ = pnh.advertise<nav_msgs::Path>("plan", 1);
     stats_pub_ = pnh.advertise<squirrel_nav_msgs::GlobalPlannerStats>("lattice_planner_stats", 1);
-    update_srv_ = pnh.advertiseService("update", &GlobalPlanner::updatePlanner_, this);
+
+    update_sub_ = nh_.subscribe("/plan_with_footprint", 1, &GlobalPlanner::updatePlannerCallback_, this);
     
     initialized_ = true;
   }
@@ -459,18 +460,15 @@ void GlobalPlanner::publishStats_( int solution_cost, int solution_size,
   stats_pub_.publish(stats);
 }
 
-bool GlobalPlanner::updatePlanner_( squirrel_nav_msgs::UpdateGlobalPlanner::Request& req,
-                                    squirrel_nav_msgs::UpdateGlobalPlanner::Response& res )
+void GlobalPlanner::updatePlannerCallback_( const std_msgs::Bool::ConstPtr& footprint_on_msg )
 {
-  if ( req.plan_with_footprint.data == true ) {
+  if ( footprint_on_msg->data == true ) {
     curr_planner_ = LATTICE;
     ROS_INFO_STREAM(name_ << ": Planning with footprint using a lattice planner.");
   } else {
     curr_planner_ = DIJKSTRA;
     ROS_INFO_STREAM(name_ << ": Planning using standard Dijkstra.");
   }
-  
-  return true;
 }
 
 }  // namespace squirrel_navigation

@@ -47,6 +47,7 @@ namespace squirrel_navigation {
 LocalPlanner::LocalPlanner( void ) :
     tf_(NULL),
     state_(FINISHED),
+    planner_type_(DIJKSTRA),
     curr_heading_index_(0),
     next_heading_index_(0),
     max_linear_vel_(0.0),
@@ -63,31 +64,7 @@ LocalPlanner::~LocalPlanner( void )
 {
   odom_sub_.shutdown();
   next_heading_pub_.shutdown();
-}
-
-void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, costmap_2d::Costmap2DROS* costmap_ros )
-{
-  tf_ = tf;
-  
-  ros::NodeHandle private_nh("~/" + name);
-  private_nh.param("heading_lookahead", heading_lookahead_, 0.3);
-  private_nh.param("max_linear_vel", max_linear_vel_, 0.2);
-  private_nh.param("min_linear_vel", min_linear_vel_, 0.0);
-  private_nh.param("max_rotation_vel", max_rotation_vel_, 0.5);
-  private_nh.param("max_in_place_rotation_vel", max_in_place_rotation_vel_, 1.0);
-  private_nh.param("min_rotation_vel", min_rotation_vel_, 0.0);
-  private_nh.param("yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
-  private_nh.param("xy_goal_tolerance", xy_goal_tolerance_, 0.10);
-  private_nh.param("num_window_points", num_window_points_, 10);
-
-  if ( max_rotation_vel_ <= 0 ) {
-    ROS_WARN("max_rotation_vel has been chosen to be non positive. Reverting to 0.3 (rad/s)");
-    max_rotation_vel_ = 0.3;
-  }
-  
-  ros::NodeHandle global_node;
-  odom_sub_ = global_node.subscribe<nav_msgs::Odometry>("odom", 1, &LocalPlanner::odomCallback, this);
-  next_heading_pub_ = private_nh.advertise<visualization_msgs::Marker>("marker", 10);
+  update_sub_.shutdown();
 }
 
 bool LocalPlanner::computeVelocityCommands( geometry_msgs::Twist& cmd_vel )
@@ -104,30 +81,71 @@ bool LocalPlanner::computeVelocityCommands( geometry_msgs::Twist& cmd_vel )
   // Set the default return value as false
   bool ret = false;
 
-  // We need to compute the next heading point from the global plan
-  computeNextHeadingIndex();
+  switch ( planner_type_ ) {
 
-  switch(state_)
-  {
-    case ROTATING_TO_START:
-      ret = rotateToStart( cmd_vel );
-      break;
-    case MOVING:
-      ret = move( cmd_vel );
-      break;
-    case ROTATING_TO_GOAL:
-      ret = rotateToGoal( cmd_vel );
-      break;
-    default:
+    case DIJKSTRA: {
+      // We need to compute the next heading point from the global plan  
+      computeNextHeadingIndex_();
+      switch( state_ ) {
+        case ROTATING_TO_START:
+          ret = rotateToStart_( cmd_vel );
+          break;
+        case MOVING:
+          ret = move_( cmd_vel );
+          break;
+        case ROTATING_TO_GOAL:
+          ret = rotateToGoal_( cmd_vel );
+          break;
+        default:
+          return true;
+      }
+    }
+
+    case LATTICE: {
+      // to be decided
       return true;
-  }
-
+    }
+  }      
+  
   return ret;
+}
+
+void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, costmap_2d::Costmap2DROS* costmap_ros )
+{
+  name_ = name;
+  
+  tf_ = tf;
+  
+  ros::NodeHandle pnh("~/" + name);
+  pnh.param("heading_lookahead", heading_lookahead_, 0.3);
+  pnh.param("max_linear_vel", max_linear_vel_, 0.2);
+  pnh.param("min_linear_vel", min_linear_vel_, 0.0);
+  pnh.param("max_rotation_vel", max_rotation_vel_, 0.5);
+  pnh.param("max_in_place_rotation_vel", max_in_place_rotation_vel_, 1.0);
+  pnh.param("min_rotation_vel", min_rotation_vel_, 0.0);
+  pnh.param("yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
+  pnh.param("xy_goal_tolerance", xy_goal_tolerance_, 0.10);
+  pnh.param("num_window_points", num_window_points_, 10);
+
+  if ( max_rotation_vel_ <= 0 ) {
+    ROS_WARN("max_rotation_vel has been chosen to be non positive. Reverting to 0.3 (rad/s)");
+    max_rotation_vel_ = 0.3;
+  }
+  
+  ros::NodeHandle nh;
+  odom_sub_ = nh.subscribe<nav_msgs::Odometry>("odom", 1, &LocalPlanner::odomCallback_, this);
+  update_sub_ = nh.subscribe("/plan_with_footprint", 1, &LocalPlanner::plannerUpdateCallback_, this);
+  next_heading_pub_ = pnh.advertise<visualization_msgs::Marker>("marker", 10);
 }
 
 bool LocalPlanner::isGoalReached( void )
 {
-  return (state_ == FINISHED);
+  if ( state_ == FINISHED ) {
+    ROS_INFO("%s: Goal reached.", name_.c_str());
+    return true;
+  } else {
+    return false;
+  }
 }
 
 bool LocalPlanner::setPlan( const std::vector<geometry_msgs::PoseStamped>& global_plan )
@@ -151,7 +169,250 @@ bool LocalPlanner::setPlan( const std::vector<geometry_msgs::PoseStamped>& globa
   return true;
 }
 
-void LocalPlanner::odomCallback( const nav_msgs::OdometryConstPtr& msg )
+bool LocalPlanner::move_( geometry_msgs::Twist& cmd_vel )
+{
+  publishNextHeading_();
+
+  geometry_msgs::PoseStamped move__goal;
+  ros::Time now = ros::Time::now();
+  global_plan_[next_heading_index_].header.stamp = now;
+
+  try {
+    boost::mutex::scoped_lock lock(odom_lock_);
+    tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[next_heading_index_].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
+    tf_->transformPose( base_odom_.header.frame_id, global_plan_[next_heading_index_], move__goal );
+  } catch ( tf::LookupException& ex ) {
+    ROS_ERROR("%s: Lookup Error: %s", name_.c_str(), ex.what());
+    return false;
+  } catch ( tf::ConnectivityException& ex ) {
+    ROS_ERROR("%s: Connectivity Error: %s", name_.c_str(), ex.what());
+    return false;
+  } catch ( tf::ExtrapolationException& ex ) {
+    ROS_ERROR("%s: Extrapolation Error: %s", name_.c_str(), ex.what());
+    return false;
+  }
+
+  // Create a vector between the current odom pose to the next heading pose
+  double x = move__goal.pose.position.x - base_odom_.pose.position.x;
+  double y = move__goal.pose.position.y - base_odom_.pose.position.y;
+
+  // Calculate the rotation between the current odom and the vector created above
+  double rotation = (::atan2(y,x) - tf::getYaw(base_odom_.pose.orientation ) );
+
+  rotation = mapToMinusPIToPI_( rotation );
+
+  double vel_th = fabs( rotation ) < yaw_goal_tolerance_ ? 0.0 : calRotationVel_(rotation);
+  double vel_x = calLinearVel_() * ( rotation < 0.5*PI/2 && rotation > -0.5*PI);
+  
+  cmd_vel.linear.x = vel_x;
+  cmd_vel.angular.z = vel_th;
+  
+  // The distance from the robot's current pose to the next heading pose
+  double distance_to_next_heading = linearDistance_(base_odom_.pose.position, move__goal.pose.position );
+
+  // We are approaching the goal position, slow down
+  if( next_heading_index_ == (int) global_plan_.size()-1) {
+    // Reached the goal, now we can stop and rotate the robot to the goal position
+    if( distance_to_next_heading < xy_goal_tolerance_ ) {
+      cmd_vel.linear.x = 0.0;
+      cmd_vel.angular.z = 0.0;
+      state_ = ROTATING_TO_GOAL;
+      return true;
+    }
+  }
+  return true;
+}
+
+bool LocalPlanner::rotateToGoal_( geometry_msgs::Twist& cmd_vel )
+{
+  geometry_msgs::PoseStamped rotate_goal;
+  
+  ros::Time now = ros::Time::now();
+  global_plan_[next_heading_index_].header.stamp = now;
+  
+  try {
+    boost::mutex::scoped_lock lock(odom_lock_);
+    tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[next_heading_index_].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
+    tf_->transformPose( base_odom_.header.frame_id, global_plan_[next_heading_index_], rotate_goal );
+  } catch ( tf::LookupException& ex ) {
+    ROS_ERROR("%s: Lookup Error: %s", name_.c_str(), ex.what());
+    return false;
+  } catch ( tf::ConnectivityException& ex ) {
+    ROS_ERROR("%s: Connectivity Error: %s", name_.c_str(), ex.what());
+    return false;
+  } catch ( tf::ExtrapolationException& ex ) {
+    ROS_ERROR("%s: Extrapolation Error: %s", name_.c_str(), ex.what());
+    return false;
+  }
+  
+  double rotation = tf::getYaw( rotate_goal.pose.orientation ) -
+      tf::getYaw( base_odom_.pose.orientation );
+
+  if( fabs( rotation ) < yaw_goal_tolerance_ ) {
+    if ( global_plan_.size() > 0 ) {
+      global_plan_.clear();
+    }
+    state_ = FINISHED;
+    cmd_vel.angular.z = 0.0;
+    return true;
+  }
+  
+  cmd_vel.angular.z = ( max_in_place_rotation_vel_ / max_rotation_vel_ ) * calRotationVel_( rotation ) ;
+
+  return true;
+}
+
+bool LocalPlanner::rotateToStart_( geometry_msgs::Twist& cmd_vel )
+{
+  geometry_msgs::PoseStamped rotate_goal;
+
+  ros::Time now = ros::Time::now();
+  global_plan_[next_heading_index_].header.stamp = now;
+  
+  try {
+    boost::mutex::scoped_lock lock(odom_lock_);
+    tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[next_heading_index_].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
+    tf_->transformPose( base_odom_.header.frame_id, global_plan_[next_heading_index_], rotate_goal );
+  } catch ( tf::LookupException& ex ) {
+    ROS_ERROR("%s: Lookup Error: %s", name_.c_str(), ex.what());
+    return false;
+  } catch ( tf::ConnectivityException& ex ) {
+    ROS_ERROR("%s: Connectivity Error: %s", name_.c_str(), ex.what());
+    return false;
+  } catch ( tf::ExtrapolationException& ex ) {
+    ROS_ERROR("%s: Extrapolation Error: %s", name_.c_str(), ex.what());
+    return false;
+  }
+
+  // Create a vector between the current odom pose to the next heading pose
+  double x = rotate_goal.pose.position.x - base_odom_.pose.position.x;
+  double y = rotate_goal.pose.position.y - base_odom_.pose.position.y;
+
+  // Calculate the rotation between the current odom and the vector created above
+  double rotation = (::atan2(y,x) - tf::getYaw(base_odom_.pose.orientation ) );
+
+  rotation = mapToMinusPIToPI_( rotation );
+
+  if( fabs( rotation ) < yaw_goal_tolerance_ ) {
+    state_ = MOVING;
+    return true;
+  }
+
+  cmd_vel.angular.z = ( max_in_place_rotation_vel_ / max_rotation_vel_ ) * calRotationVel_( rotation );
+
+  return true;
+}
+
+double LocalPlanner::calLinearVel_( void )
+{
+  double vel = 0.0;
+
+  int effective_num_window_points =  std::min(num_window_points_, int(global_plan_.size()-1));
+  
+  if( next_heading_index_ < effective_num_window_points ) {
+    return vel;
+  }
+  
+  unsigned int beg_index = next_heading_index_ - effective_num_window_points;
+
+  double straight_dist = linearDistance_(global_plan_[beg_index].pose.position,
+                                        global_plan_[next_heading_index_].pose.position);
+
+  double path_dist = 0.0;
+
+  for(unsigned int i = beg_index; i < (unsigned int)next_heading_index_; ++i) {
+    path_dist = path_dist + linearDistance_(global_plan_[i].pose.position, global_plan_[i + 1].pose.position);
+  }
+
+  double diff = path_dist - straight_dist;
+
+  vel = 0.001 * ( 1 / diff );
+
+  if( vel > max_linear_vel_ )
+    vel = max_linear_vel_;
+
+  if( vel < min_linear_vel_ )
+    vel = min_linear_vel_;
+
+  return vel;
+}
+
+double LocalPlanner::calRotationVel_( double rotation )
+{
+  double vel = 0.0;
+
+  int sign = 1;
+
+  if( rotation < 0.0 )
+    sign = -1;
+
+  if( fabs(rotation) > max_rotation_vel_) {
+    vel = sign * max_rotation_vel_;
+  } else if ( fabs(rotation) < min_rotation_vel_ ) {
+    vel = sign * min_rotation_vel_;
+  } else {
+    vel = rotation;
+  }
+
+  return vel;
+}
+
+double LocalPlanner::linearDistance_( geometry_msgs::Point p1, geometry_msgs::Point p2 )
+{
+  return std::sqrt( std::pow( p2.x - p1.x, 2) + std::pow( p2.y - p1.y, 2)  );
+}
+
+double LocalPlanner::mapToMinusPIToPI_( double angle )
+{
+  double angle_overflow = static_cast<double>( static_cast<int>(angle / PI ) );
+
+  if( angle_overflow > 0.0 ) {
+    angle_overflow = ceil( angle_overflow / 2.0 );
+  } else {
+    angle_overflow = floor( angle_overflow / 2.0 );
+  }
+
+  angle -= 2 * PI * angle_overflow;
+  return angle;
+}
+
+void LocalPlanner::computeNextHeadingIndex_( void )
+{
+  geometry_msgs::PoseStamped next_heading_pose;
+
+  for( unsigned int i = curr_heading_index_; i < global_plan_.size() - 1; ++i ) {
+    boost::mutex::scoped_lock lock(odom_lock_);
+    ros::Time now = ros::Time::now();
+    global_plan_[i].header.stamp = now;
+
+    try {
+      tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[i].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
+      tf_->transformPose( base_odom_.header.frame_id, global_plan_[i], next_heading_pose );
+    } catch ( tf::LookupException& ex ) {
+      ROS_ERROR("%s: Lookup Error: %s", name_.c_str(), ex.what());
+      return;
+    } catch ( tf::ConnectivityException& ex ) {
+      ROS_ERROR("%s: Connectivity Error: %s", name_.c_str(), ex.what());
+      return;
+    } catch ( tf::ExtrapolationException& ex ) {
+      ROS_ERROR("%s: Extrapolation Error: %s", name_.c_str(), ex.what());
+      return;
+    }
+
+    double dist = linearDistance_( base_odom_.pose.position,
+                                  next_heading_pose.pose.position );
+
+    if( dist > heading_lookahead_) {
+      next_heading_index_ = i;
+      return;
+    } else {
+      curr_heading_index_++;
+    }
+  }
+  next_heading_index_ = global_plan_.size() - 1;
+}
+
+void LocalPlanner::odomCallback_( const nav_msgs::OdometryConstPtr& msg )
 {
   //we assume that the odometry is published in the frame of the base
   boost::mutex::scoped_lock lock(odom_lock_);
@@ -160,7 +421,16 @@ void LocalPlanner::odomCallback( const nav_msgs::OdometryConstPtr& msg )
   base_odom_.pose.orientation = msg->pose.pose.orientation;
 }
 
-void LocalPlanner::publishNextHeading( bool show )
+void LocalPlanner::plannerUpdateCallback_( const std_msgs::Bool::ConstPtr& use_footprint_msg )
+{
+  if ( use_footprint_msg->data == true ) {
+    planner_type_ = LATTICE;
+  } else {
+    planner_type_ = DIJKSTRA;
+  }
+}
+
+void LocalPlanner::publishNextHeading_( bool show )
 {
   const geometry_msgs::PoseStamped& next_pose = global_plan_[next_heading_index_];
 
@@ -185,250 +455,6 @@ void LocalPlanner::publishNextHeading( bool show )
     marker.action = visualization_msgs::Marker::DELETE;
   }
   next_heading_pub_.publish(marker);
-}
-
-bool LocalPlanner::rotateToStart( geometry_msgs::Twist& cmd_vel )
-{
-  geometry_msgs::PoseStamped rotate_goal;
-
-  ros::Time now = ros::Time::now();
-  global_plan_[next_heading_index_].header.stamp = now;
-  
-  try {
-    boost::mutex::scoped_lock lock(odom_lock_);
-    tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[next_heading_index_].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
-    tf_->transformPose( base_odom_.header.frame_id, global_plan_[next_heading_index_], rotate_goal );
-  } catch( tf::LookupException& ex ) {
-    ROS_ERROR("Lookup Error: %s", ex.what());
-    return false;
-  } catch(tf::ConnectivityException& ex) {
-    ROS_ERROR("Connectivity Error: %s", ex.what());
-    return false;
-  } catch(tf::ExtrapolationException& ex) {
-    ROS_ERROR("Extrapolation Error: %s", ex.what());
-    return false;
-  }
-
-  // Create a vector between the current odom pose to the next heading pose
-  double x = rotate_goal.pose.position.x - base_odom_.pose.position.x;
-  double y = rotate_goal.pose.position.y - base_odom_.pose.position.y;
-
-  // Calculate the rotation between the current odom and the vector created above
-  double rotation = (::atan2(y,x) - tf::getYaw(base_odom_.pose.orientation ) );
-
-  rotation = mapToMinusPIToPI( rotation );
-
-  if( fabs( rotation ) < yaw_goal_tolerance_ ) {
-    state_ = MOVING;
-    return true;
-  }
-
-  cmd_vel.angular.z = ( max_in_place_rotation_vel_ / max_rotation_vel_ ) * calRotationVel( rotation );
-
-  return true;
-}
-
-bool LocalPlanner::move( geometry_msgs::Twist& cmd_vel )
-{
-  publishNextHeading();
-
-  geometry_msgs::PoseStamped move_goal;
-  ros::Time now = ros::Time::now();
-  global_plan_[next_heading_index_].header.stamp = now;
-
-  try {
-    boost::mutex::scoped_lock lock(odom_lock_);
-    tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[next_heading_index_].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
-    tf_->transformPose( base_odom_.header.frame_id, global_plan_[next_heading_index_], move_goal );
-  } catch( tf::LookupException& ex ) {
-    ROS_ERROR("Lookup Error: %s", ex.what());
-    return false;
-  } catch(tf::ConnectivityException& ex) {
-    ROS_ERROR("Connectivity Error: %s", ex.what());
-    return false;
-  } catch(tf::ExtrapolationException& ex) {
-    ROS_ERROR("Extrapolation Error: %s", ex.what());
-    return false;
-  }
-
-  // Create a vector between the current odom pose to the next heading pose
-  double x = move_goal.pose.position.x - base_odom_.pose.position.x;
-  double y = move_goal.pose.position.y - base_odom_.pose.position.y;
-
-  // Calculate the rotation between the current odom and the vector created above
-  double rotation = (::atan2(y,x) - tf::getYaw(base_odom_.pose.orientation ) );
-
-  rotation = mapToMinusPIToPI( rotation );
-
-  double vel_th = fabs( rotation ) < yaw_goal_tolerance_ ? 0.0 : calRotationVel(rotation);
-  double vel_x = calLinearVel() * ( rotation < 0.5*PI/2 && rotation > -0.5*PI);
-  
-  cmd_vel.linear.x = vel_x;
-  cmd_vel.angular.z = vel_th;
-  
-  // The distance from the robot's current pose to the next heading pose
-  double distance_to_next_heading = linearDistance(base_odom_.pose.position, move_goal.pose.position );
-
-  // We are approaching the goal position, slow down
-  if( next_heading_index_ == (int) global_plan_.size()-1) {
-    // Reached the goal, now we can stop and rotate the robot to the goal position
-    if( distance_to_next_heading < xy_goal_tolerance_ ) {
-      cmd_vel.linear.x = 0.0;
-      cmd_vel.angular.z = 0.0;
-      ROS_INFO("rotate to goal");
-      state_ = ROTATING_TO_GOAL;
-      return true;
-    }
-  }
-  return true;
-}
-
-bool LocalPlanner::rotateToGoal( geometry_msgs::Twist& cmd_vel )
-{
-  geometry_msgs::PoseStamped rotate_goal;
-  
-  ros::Time now = ros::Time::now();
-  global_plan_[next_heading_index_].header.stamp = now;
-  
-  try {
-    boost::mutex::scoped_lock lock(odom_lock_);
-    tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[next_heading_index_].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
-    tf_->transformPose( base_odom_.header.frame_id, global_plan_[next_heading_index_], rotate_goal );
-  } catch( tf::LookupException& ex ) {
-    ROS_ERROR("Lookup Error: %s", ex.what());
-    return false;
-  } catch(tf::ConnectivityException& ex) {
-    ROS_ERROR("Connectivity Error: %s", ex.what());
-    return false;
-  } catch(tf::ExtrapolationException& ex) {
-    ROS_ERROR("Extrapolation Error: %s", ex.what());
-    return false;
-  }
-  
-  double rotation = tf::getYaw( rotate_goal.pose.orientation ) -
-      tf::getYaw( base_odom_.pose.orientation );
-
-  if( fabs( rotation ) < yaw_goal_tolerance_ ) {
-    if ( global_plan_.size() > 0 ) {
-      global_plan_.clear();
-    }
-    state_ = FINISHED;
-    cmd_vel.angular.z = 0.0;
-    return true;
-  }
-  
-  cmd_vel.angular.z = ( max_in_place_rotation_vel_ / max_rotation_vel_ ) * calRotationVel( rotation ) ;
-
-  return true;
-}
-
-void LocalPlanner::computeNextHeadingIndex( void )
-{
-  geometry_msgs::PoseStamped next_heading_pose;
-
-  for( unsigned int i = curr_heading_index_; i < global_plan_.size() - 1; ++i ) {
-    boost::mutex::scoped_lock lock(odom_lock_);
-    ros::Time now = ros::Time::now();
-    global_plan_[i].header.stamp = now;
-
-    try {
-      tf_->waitForTransform( base_odom_.header.frame_id, global_plan_[i].header.frame_id, now, ros::Duration( TRANSFORM_TIMEOUT ) );
-      tf_->transformPose( base_odom_.header.frame_id, global_plan_[i], next_heading_pose );
-    } catch( tf::LookupException& ex ) {
-      ROS_ERROR("Lookup Error: %s", ex.what());
-      return;
-    } catch(tf::ConnectivityException& ex) {
-      ROS_ERROR("Connectivity Error: %s", ex.what());
-      return;
-    } catch(tf::ExtrapolationException& ex) {
-      ROS_ERROR("Extrapolation Error: %s", ex.what());
-      return;
-    }
-
-    double dist = linearDistance( base_odom_.pose.position,
-                                  next_heading_pose.pose.position );
-
-    if( dist > heading_lookahead_) {
-      next_heading_index_ = i;
-      return;
-    } else {
-      curr_heading_index_++;
-    }
-  }
-  next_heading_index_ = global_plan_.size() - 1;
-}
-
-double LocalPlanner::calLinearVel( void )
-{
-  double vel = 0.0;
-
-  int effective_num_window_points =  std::min(num_window_points_, int(global_plan_.size()-1));
-  
-  if( next_heading_index_ < effective_num_window_points ) {
-    return vel;
-  }
-  
-  unsigned int beg_index = next_heading_index_ - effective_num_window_points;
-
-  double straight_dist = linearDistance(global_plan_[beg_index].pose.position,
-                                        global_plan_[next_heading_index_].pose.position);
-
-  double path_dist = 0.0;
-
-  for(unsigned int i = beg_index; i < (unsigned int)next_heading_index_; ++i) {
-    path_dist = path_dist + linearDistance(global_plan_[i].pose.position, global_plan_[i + 1].pose.position);
-  }
-
-  double diff = path_dist - straight_dist;
-
-  vel = 0.001 * ( 1 / diff );
-
-  if( vel > max_linear_vel_ )
-    vel = max_linear_vel_;
-
-  if( vel < min_linear_vel_ )
-    vel = min_linear_vel_;
-
-  return vel;
-}
-
-double LocalPlanner::calRotationVel( double rotation )
-{
-  double vel = 0.0;
-
-  int sign = 1;
-
-  if( rotation < 0.0 )
-    sign = -1;
-
-  if( fabs(rotation) > max_rotation_vel_) {
-    vel = sign * max_rotation_vel_;
-  } else if ( fabs(rotation) < min_rotation_vel_ ) {
-    vel = sign * min_rotation_vel_;
-  } else {
-    vel = rotation;
-  }
-
-  return vel;
-}
-
-double LocalPlanner::linearDistance( geometry_msgs::Point p1, geometry_msgs::Point p2 )
-{
-  return std::sqrt( std::pow( p2.x - p1.x, 2) + std::pow( p2.y - p1.y, 2)  );
-}
-
-double LocalPlanner::mapToMinusPIToPI( double angle )
-{
-  double angle_overflow = static_cast<double>( static_cast<int>(angle / PI ) );
-
-  if( angle_overflow > 0.0 ) {
-    angle_overflow = ceil( angle_overflow / 2.0 );
-  } else {
-    angle_overflow = floor( angle_overflow / 2.0 );
-  }
-
-  angle -= 2 * PI * angle_overflow;
-  return angle;
 }
 
 } // Namespace squirrel_navigation

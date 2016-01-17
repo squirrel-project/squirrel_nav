@@ -87,11 +87,6 @@ add_library(squirrel_planners
   src/LatticeSCQ.cpp
 )
 
-add_dependencies(squirrel_planners
-  squirrel_nav_msgs_generate_messages_cpp
-  ${PROJECT_NAME}_gencfg
-)
-
 add_library(squirrel_costmap_layers
   src/MapLayer.cpp
   src/FootprintLayer.cpp
@@ -116,6 +111,10 @@ add_executable(pointcloud_filter_node
   src/PointCloudFilter.cpp
 )
 
+target_link_libraries(pointcloud_filter_node
+  ${catkin_LIBRARIES}
+)
+
 add_executable(autolocalization_node
   src/AutolocalizationNode.cpp
   src/Autolocalization.cpp
@@ -125,7 +124,16 @@ target_link_libraries(autolocalization_node
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(pointcloud_filter_node
+add_executable(planner_update_handle_node
+  src/PlannerUpdateHandleNode.cpp
+  src/PlannerUpdateHandle.cpp
+)
+
+add_dependencies(planner_update_handle_node
+  squirrel_nav_msgs_generate_messages_cpp
+)
+
+target_link_libraries(planner_update_handle_node
   ${catkin_LIBRARIES}
 )
 
@@ -157,7 +165,7 @@ install(DIRECTORY
 )
 
 install(FILES 
-  SquirrelLocalPlanner.xml 
+  SquirrelPlanners.xml 
   SquirrelCostmapLayers.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
