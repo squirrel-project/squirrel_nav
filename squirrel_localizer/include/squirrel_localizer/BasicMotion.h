@@ -29,7 +29,7 @@ class BasicMotion
   virtual ~BasicMotion() {};
 
   virtual bool perform_update() const = 0;
-  virtual void update_motion(const Transformation3 &motion);
+  virtual void update_motion(const Transformation3 &motion, const Transformation3& );
   virtual void reset();
 
   double linear_motion() const;
@@ -40,6 +40,8 @@ class BasicMotion
   double                          m_linear_motion;
   double                          m_angular_motion;
   Transformation3                 m_cummulative_motion;
+
+  Transformation3 fuseMotions_( const Transformation3&, const Transformation3& );
 };
 
 #endif /* SQUIRREL_LOCALIZER_BASIC_MOTION_H_ */

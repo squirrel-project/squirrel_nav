@@ -60,6 +60,7 @@ Ais_localizer_node::Ais_localizer_node() :
   private_nh_.param("front_laser_frame_ID", front_laser_frame_ID_, (std::string) "/laserFront_frame");
   private_nh_.param("rear_laser_frame_ID", back_laser_frame_ID_, (std::string) "/laserRear_frame");
   private_nh_.param("base_link_frame_ID", base_link_frame_ID_, (std::string) "/base_link");
+  private_nh_.param("base_link_encoders_frame_ID", base_link_encoders_frame_ID_, (std::string) "/base_link_encoders");
   private_nh_.param("odom_frame_ID", odom_frame_ID_, (std::string) "/odom");
   private_nh_.param("map_frame_ID", map_frame_ID_, (std::string) "/map");
 
@@ -218,6 +219,8 @@ void Ais_localizer_node::initialPoseCallback( const geometry_msgs::PoseWithCovar
   localizer_.set_localized(false);
   localizer_.place_robot(Transformation3::fromVector(vec), sigma, usePoseTheta);
 
+  robotino_msgs::ResetOdometry zero;
+  ros::service::call("/reset_odometry", zero);
 }
 
 
@@ -244,6 +247,7 @@ bool Ais_localizer_node::updateParameterCallback( std_srvs::Empty::Request& req,
   private_nh_.param("front_laser_frame_ID", front_laser_frame_ID_, (std::string) "/laserFront_frame");
   private_nh_.param("rear_laser_frame_ID", back_laser_frame_ID_, (std::string) "/laserRear_frame");
   private_nh_.param("base_link_frame_ID", base_link_frame_ID_, (std::string) "/base_link");
+  private_nh_.param("base_link_encoders_frame_ID", base_link_encoders_frame_ID_, (std::string) "/base_link_encoders");
   private_nh_.param("odom_frame_ID", odom_frame_ID_, (std::string) "/odom");
   private_nh_.param("map_frame_ID", map_frame_ID_, (std::string) "/map");
 
@@ -284,6 +288,7 @@ void Ais_localizer_node::localize( void )
   scan_back_new_ = false;
 
   tf::StampedTransform transform_odom2baseLink_frontTime;
+  tf::StampedTransform transform_odom2baseLinkEncoders_frontTime;
   tf::StampedTransform transform_Front_laser;
   tf::StampedTransform transform_odom2baseLink_backTime;
   tf::StampedTransform transform_Back_laser;
@@ -320,15 +325,21 @@ void Ais_localizer_node::localize( void )
   try {
     tf_listener_.lookupTransform(odom_frame_ID_, base_link_frame_ID_, scan_front_.header.stamp, transform_odom2baseLink_frontTime);
   } catch (tf::TransformException& ex) {
-    std::string ns = ros::this_node::getNamespace();
     std::string node_name = ros::this_node::getName();
     ROS_ERROR("%s: %s", node_name.c_str(), ex.what());
     return;
   }
 
   try {
+    tf_listener_.lookupTransform(odom_frame_ID_, base_link_encoders_frame_ID_, scan_front_.header.stamp, transform_odom2baseLinkEncoders_frontTime);
+  } catch (tf::TransformException& ex) {
+    std::string node_name = ros::this_node::getName();
+    ROS_ERROR("%s: %s", node_name.c_str(), ex.what());
+    return;
+  }
+  
+  try {
     tf_listener_.lookupTransform(base_link_frame_ID_, front_laser_frame_ID_, scan_front_.header.stamp, transform_Front_laser);
-
   } catch (tf::TransformException& ex) {
     std::string ns = ros::this_node::getNamespace();
     std::string node_name = ros::this_node::getName();
@@ -396,16 +407,21 @@ void Ais_localizer_node::localize( void )
                  transform_odom2baseLink_frontTime.getRotation().getZ(), transform_odom2baseLink_frontTime.getRotation().getW());  
   Transformation3 pose(tr,rot);
 
+  Vector3 tr_encoders(transform_odom2baseLinkEncoders_frontTime.getOrigin().getX(), transform_odom2baseLinkEncoders_frontTime.getOrigin().getY(), 0.0); 
+  Quaternion rot_encoders(transform_odom2baseLinkEncoders_frontTime.getRotation().getX(), transform_odom2baseLinkEncoders_frontTime.getRotation().getY(),
+                 transform_odom2baseLinkEncoders_frontTime.getRotation().getZ(), transform_odom2baseLinkEncoders_frontTime.getRotation().getW());  
+  Transformation3 pose_encoders(tr_encoders,rot_encoders);
+
   bool updated = false;
   if ( endPoints.size() > 0 ) {
     if ( !localizer_.isInitialized() ) {
-      localizer_.update_state(pose, robotLaser.m_timeStamp);
+      // Localizer not initialized, we use one of the poses
+      localizer_.update_state(pose,pose_encoders,robotLaser.m_timeStamp);
       localizer_.isInitialized() = true;
     } else {
-      localizer_.update_motion(pose);
-      updated = localizer_.update_laser(endPoints, pose, robotLaser.m_timeStamp);
+      localizer_.update_motion(pose,pose_encoders);
+      updated = localizer_.update_laser(endPoints, pose, pose_encoders, robotLaser.m_timeStamp);
     }
-
   }
 
   mean = localizer_.getMeanInterp();

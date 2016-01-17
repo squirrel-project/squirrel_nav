@@ -57,6 +57,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 
 #include <std_srvs/Empty.h>
+#include <robotino_msgs/ResetOdometry.h>
 
 /* #include "squirrel_localizer_msgs/PreciseLocation.h" */
 #include "squirrel_localizer_msgs/RefScan.h"
@@ -174,6 +175,7 @@ private:
   std::string front_laser_frame_ID_;
   std::string back_laser_frame_ID_;
   std::string base_link_frame_ID_;
+  std::string base_link_encoders_frame_ID_;
   std::string odom_frame_ID_;
   std::string map_frame_ID_;
 

@@ -1,7 +1,7 @@
 <launch>
   <arg name="rviz" default="false" />
   <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
-  <arg name="robot_id" default="robotino" />
+  <arg name="robot_id" default="alufr-robotino" />
   <arg name="autolocalization" default="false"/>
   <arg name="3d_mapping" default="false" />
   
@@ -47,10 +47,10 @@
 
   <!-- Run the planner for pushing task -->
   <include file="$(find squirrel_pushing_planner)/launch/pushing_planner.launch">
-    <arg name="tolerance" value="0.05" />
+    <arg name="tolerance" value="0.025" />
     <arg name="start_goal_frame_id" value="/map" />
     <arg name="plan_frame_id" value="/map" />
-    <arg name="object_frame_id" value="/base_link"/>
+    <arg name="object_frame_id" value="/map"/>
     <arg name="costmap_topic" value="/move_base/global_costmap/costmap"/>
     <arg name="costmap_updates_topic" value="/move_base/global_costmap/costmap"/> 
   </include>
