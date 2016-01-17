@@ -56,7 +56,7 @@ LocalPlanner::LocalPlanner( void ) :
     min_rotation_vel_(0.0),
     num_window_points_(10)
 {
-  ROS_INFO("LocalPlanner started");
+  ROS_INFO("squirrel_navigation::LocalPlanner started");
 }
 
 LocalPlanner::~LocalPlanner( void )

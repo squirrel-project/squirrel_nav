@@ -18,7 +18,7 @@ global_costmap: {
   ostacles_layer/enabled: true,
   inflation_layer/enabled: true,
   inflation_layer/inflation_radius: 0.6,
-  inflation_layer/cost_scaling_factor: 10.0
+  inflation_layer/cost_scaling_factor: 10.0,
 }
 
 #
