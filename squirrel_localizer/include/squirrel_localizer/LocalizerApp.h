@@ -168,6 +168,7 @@ private:
 
   // make use of both scanners
   bool use_second_laser_;
+  bool use_laser_odom_;
   bool scan_front_new_;
   bool scan_back_new_;
   sensor_msgs::LaserScan scan_front_;

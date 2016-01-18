@@ -1,5 +1,5 @@
 // GlobalPlanner.cpp --- 
-// 
+//
 // Filename: GlobalPlanner.cpp
 // Description: Global planner using ARA*/AD* on motion primitive lattice
 // Author: Federico Boniardi
@@ -94,12 +94,15 @@ GlobalPlanner::~GlobalPlanner( void )
 
 void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* costmap_ros )
 {
+  name_ = name;
+  
   if( not initialized_ ) {
-    ros::NodeHandle pnh("~|"+name);
+    ros::NodeHandle pnh("~/"+name);
     pnh.param<bool>("verbose", verbose_, false);
 
     // Initializing the Dijkstra planner
-    dijkstra_planner_ = new navfn::NavfnROS(name+"/dijkstra",costmap_ros);
+    if ( not dijkstra_planner_ )
+      dijkstra_planner_ = new navfn::NavfnROS(name+"/dijkstra",costmap_ros);
     
     // Initializing the Lattice Planner
     ros::NodeHandle pnh_l("~/"+name+"/lattice");
@@ -111,6 +114,9 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
     pnh_l.param<double>("initial_epsilon",initial_epsilon_,3.0);
     pnh_l.param<int>("force_scratch_limit", force_scratch_limit_, 500);
     pnh_l.param<bool>("forward_search", forward_search_, false);
+
+    if ( verbose_ )
+      ROS_INFO_STREAM(name << ": Loading primitive file: " << primitive_filename_ );
     
     double nominalvel_mpersecs, timetoturn45degsinplace_secs;
     pnh_l.param<double>("nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
@@ -181,14 +187,14 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
                                 perimeterptsV, costmap_ros_->getCostmap()->getResolution(), nominalvel_mpersecs,
                                 timetoturn45degsinplace_secs, obst_cost_thresh,
                                 primitive_filename_.c_str());
-    } catch( SBPL_Exception e ){
-      ROS_ERROR_STREAM( name << ": [SBPL] Encountered a fatal exception!" );
+    } catch( SBPL_Exception* e ) {
+      ROS_ERROR_STREAM( name << ": [SBPL] " << e->what() );
       ret = false;
     }
     
     if( not ret ) {
       ROS_ERROR_STREAM( name << ": [SBPL] initialization failed!");
-      std::exit(1);
+      std::exit(EXIT_FAILURE);
     }
     
     for (ssize_t ix(0); ix < costmap_ros_->getCostmap()->getSizeInCellsX(); ++ix)
@@ -210,6 +216,9 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
     plan_pub_ = pnh.advertise<nav_msgs::Path>("plan", 1);
     stats_pub_ = pnh.advertise<squirrel_navigation_msgs::GlobalPlannerStats>("lattice_planner_stats", 1);
 
+    if ( verbose_ )
+      pose_plan_pub_ = pnh.advertise<geometry_msgs::PoseArray>("poses", 1);
+    
     update_sub_ = nh_.subscribe("/plan_with_footprint", 1, &GlobalPlanner::updatePlannerCallback_, this);
     
     initialized_ = true;
@@ -225,21 +234,34 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
     return false;
   }
 
-  plan.clear();
-
   if ( verbose_ ) {
     ROS_INFO("%s: Getting start point (%g,%g) goal point (%g,%g)", name_.c_str(), start.pose.position.x,
              start.pose.position.y,goal.pose.position.x, goal.pose.position.y);
   }
 
+  // if ( not currentPlanOccluded_() and (not plan_.empty()) ) {
+  //   plan.clear();
+  //   plan = plan_;
+  //   return true;
+  // } else {
+  //   plan_.clear();
+  //   plan.clear();
+  // }
+
+  plan_.clear();
+  plan.clear();
+
   boost::unique_lock<boost::mutex> lock(all_);
   
   nav_msgs::Path gui_path;
+  geometry_msgs::PoseArray gui_poses;
   
   switch ( curr_planner_ ) {
     case DIJKSTRA: {
       dijkstra_planner_->makePlan(start, goal, plan);
 
+      plan_ = plan;
+      
       // Publish the path
       ros::Time plan_time = ros::Time::now();
       
@@ -261,8 +283,8 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
           ROS_ERROR_STREAM( name_ << ": Failed to set start state" );
           return false;
         }
-      } catch( SBPL_Exception e ) {
-        ROS_ERROR_STREAM(name_ << ": [SBPL] encountered a fatal exception while setting the start state");
+      } catch( SBPL_Exception* e ) {
+        ROS_ERROR_STREAM( name_ << ": [SBPL] " << e->what() );
         return false;
       }
 
@@ -272,8 +294,8 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
           ROS_ERROR_STREAM(name_ << ": Failed to set goal state");
           return false;
         }
-      } catch ( SBPL_Exception e ) {
-        ROS_ERROR_STREAM(name_ << ": [SBPL] encountered a fatal exception while setting the goal state");
+      } catch ( SBPL_Exception* e ) {
+        ROS_ERROR_STREAM( name_ << ": [SBPL] " << e->what() );
         return false;
       }
 
@@ -322,8 +344,8 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
 
         if ( allCount > force_scratch_limit_ ) 
           lattice_planner_->force_planning_from_scratch();
-      } catch ( SBPL_Exception e ) {
-        ROS_ERROR_STREAM(name_ << ": [SBPL] failed to update the costmap");
+      } catch ( SBPL_Exception* e ) {
+        ROS_ERROR_STREAM(name_ << ": [SBPL] " << e->what() );
         return false;
       }
 
@@ -344,14 +366,14 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
         int ret = lattice_planner_->replan(allocated_time_, &solution_stateIDs, &solution_cost);
         if ( ret )
           if ( verbose_ ) 
-            ROS_INFO_STREAM(name_ << ": Solution is found" );
+            ROS_INFO_STREAM( name_ << ": Solution is found" );
           else {
-            ROS_WARN_STREAM(name_ << ": Solution not found.");
+            ROS_WARN_STREAM( name_ << ": Solution not found." );
             publishStats_(solution_cost, 0, start, goal);
             return false;
           }
-      } catch( SBPL_Exception e ) {
-        ROS_ERROR_STREAM(name_ << ": [SBPL] encountered a fatal exception while planning" );
+      } catch( SBPL_Exception* e ) {
+        ROS_ERROR_STREAM( name_ << ": [SBPL] " << e->what() );
         return false;
       }
 
@@ -362,8 +384,8 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
       std::vector<EnvNAVXYTHETALAT3Dpt_t> sbpl_path;
       try{
         env_->ConvertStateIDPathintoXYThetaPath(&solution_stateIDs, &sbpl_path);
-      } catch ( SBPL_Exception e ) {
-        ROS_ERROR_STREAM(name_ << ": [SBPL] encountered a fatal exception while reconstructing the path");
+      } catch ( SBPL_Exception* e ) {
+        ROS_ERROR_STREAM( name_ << ": [SBPL] " << e->what() );
         return false;
       }
 
@@ -371,8 +393,17 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
         ROS_INFO("Plan has %d points.\n", (int)sbpl_path.size());
   
       ros::Time plan_time = ros::Time::now();
-
+      
       //create a message for the plan
+      if ( verbose_ ) {
+        gui_poses.header.frame_id = costmap_ros_->getGlobalFrameID();
+        gui_poses.header.stamp = plan_time;
+        gui_poses.poses.resize(sbpl_path.size());
+      }
+
+      plan_.resize(sbpl_path.size());
+      plan.resize(sbpl_path.size());
+      
       gui_path.poses.resize(sbpl_path.size());
       gui_path.header.frame_id = costmap_ros_->getGlobalFrameID();
       gui_path.header.stamp = plan_time;
@@ -392,29 +423,27 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
         pose.pose.orientation.z = temp.getZ();
         pose.pose.orientation.w = temp.getW();
 
-        plan.push_back(pose);
+        plan_[i] = pose;
+        plan[i] = pose;
 
         gui_path.poses[i].pose.position.x = plan[i].pose.position.x;
         gui_path.poses[i].pose.position.y = plan[i].pose.position.y;
         gui_path.poses[i].pose.position.z = plan[i].pose.position.z;
+
+        if ( verbose_ ) 
+          gui_poses.poses[i] = pose.pose;
       }
 
+
+      if ( verbose_ )
+        pose_plan_pub_.publish(gui_poses);
+      
       publishStats_(solution_cost, sbpl_path.size(), start, goal);
       break;
     }
       
     default: {
-      dijkstra_planner_->makePlan(start, goal, plan);
-
-      // Publish the path
-      ros::Time plan_time = ros::Time::now();
-      
-      gui_path.poses.resize(plan.size());
-      gui_path.header.frame_id = costmap_ros_->getGlobalFrameID();
-      gui_path.header.stamp = plan_time;
-      gui_path.poses = plan;
-      
-      break;
+      return false;
     }
   }      
  
@@ -469,6 +498,22 @@ void GlobalPlanner::updatePlannerCallback_( const std_msgs::Bool::ConstPtr& foot
     curr_planner_ = DIJKSTRA;
     ROS_INFO_STREAM(name_ << ": Planning using standard Dijkstra.");
   }
+}
+
+bool GlobalPlanner::currentPlanOccluded_( void )
+{
+  unsigned int ix, iy;
+  for (size_t i=0; i<plan_.size(); ++i) {
+    double wx = plan_[i].pose.position.x;
+    double wy = plan_[i].pose.position.y;
+    
+    costmap_ros_->getCostmap()->worldToMap(wx,wy,ix,iy);
+    
+    if ( costmap_ros_->getCostmap()->getCost(ix,iy) > 100 )
+      return true;
+  }
+
+  return false;
 }
 
 }  // namespace squirrel_navigation

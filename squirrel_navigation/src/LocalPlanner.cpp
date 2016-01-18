@@ -45,6 +45,7 @@ PLUGINLIB_DECLARE_CLASS(squirrel_navigation, LocalPlanner, squirrel_navigation::
 namespace squirrel_navigation {
 
 LocalPlanner::LocalPlanner( void ) :
+    trajectory_planner_(NULL),
     tf_(NULL),
     state_(FINISHED),
     planner_type_(DIJKSTRA),
@@ -62,9 +63,45 @@ LocalPlanner::LocalPlanner( void ) :
 
 LocalPlanner::~LocalPlanner( void )
 {
+  if ( trajectory_planner_ )
+    delete trajectory_planner_;
   odom_sub_.shutdown();
   next_heading_pub_.shutdown();
   update_sub_.shutdown();
+}
+
+void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, costmap_2d::Costmap2DROS* costmap_ros )
+{
+  name_ = name;
+  
+  tf_ = tf;
+
+  if ( not trajectory_planner_ )
+    trajectory_planner_ = new base_local_planner::TrajectoryPlannerROS(name+"/trajectory_planner",tf,costmap_ros);
+
+  ros::NodeHandle pnh("~/"+name);
+  pnh.param<bool>("verbose", verbose_, false);
+  
+  ros::NodeHandle pnh_tt("~/" + name+"/trajectory_tracker");
+  pnh_tt.param<double>("heading_lookahead", heading_lookahead_, 0.3);
+  pnh_tt.param<double>("max_linear_vel", max_linear_vel_, 0.2);
+  pnh_tt.param<double>("min_linear_vel", min_linear_vel_, 0.0);
+  pnh_tt.param<double>("max_rotation_vel", max_rotation_vel_, 0.5);
+  pnh_tt.param<double>("max_in_place_rotation_vel", max_in_place_rotation_vel_, 1.0);
+  pnh_tt.param<double>("min_rotation_vel", min_rotation_vel_, 0.0);
+  pnh_tt.param<double>("yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
+  pnh_tt.param<double>("xy_goal_tolerance", xy_goal_tolerance_, 0.10);
+  pnh_tt.param<int>("num_window_points", num_window_points_, 10);
+
+  if ( max_rotation_vel_ <= 0 ) {
+    ROS_WARN("max_rotation_vel has been chosen to be non positive. Reverting to 0.3 (rad/s)");
+    max_rotation_vel_ = 0.3;
+  }
+  
+  ros::NodeHandle nh;
+  odom_sub_ = nh.subscribe<nav_msgs::Odometry>("odom", 1, &LocalPlanner::odomCallback_, this);
+  update_sub_ = nh.subscribe<std_msgs::Bool>("/plan_with_footprint", 1, &LocalPlanner::plannerUpdateCallback_, this);
+  next_heading_pub_ = pnh_tt.advertise<visualization_msgs::Marker>("marker", 10);
 }
 
 bool LocalPlanner::computeVelocityCommands( geometry_msgs::Twist& cmd_vel )
@@ -99,43 +136,16 @@ bool LocalPlanner::computeVelocityCommands( geometry_msgs::Twist& cmd_vel )
         default:
           return true;
       }
+      return true;
     }
 
     case LATTICE: {
-      // to be decided
+      trajectory_planner_->computeVelocityCommands(cmd_vel);
       return true;
     }
   }      
   
   return ret;
-}
-
-void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, costmap_2d::Costmap2DROS* costmap_ros )
-{
-  name_ = name;
-  
-  tf_ = tf;
-  
-  ros::NodeHandle pnh("~/" + name);
-  pnh.param("heading_lookahead", heading_lookahead_, 0.3);
-  pnh.param("max_linear_vel", max_linear_vel_, 0.2);
-  pnh.param("min_linear_vel", min_linear_vel_, 0.0);
-  pnh.param("max_rotation_vel", max_rotation_vel_, 0.5);
-  pnh.param("max_in_place_rotation_vel", max_in_place_rotation_vel_, 1.0);
-  pnh.param("min_rotation_vel", min_rotation_vel_, 0.0);
-  pnh.param("yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
-  pnh.param("xy_goal_tolerance", xy_goal_tolerance_, 0.10);
-  pnh.param("num_window_points", num_window_points_, 10);
-
-  if ( max_rotation_vel_ <= 0 ) {
-    ROS_WARN("max_rotation_vel has been chosen to be non positive. Reverting to 0.3 (rad/s)");
-    max_rotation_vel_ = 0.3;
-  }
-  
-  ros::NodeHandle nh;
-  odom_sub_ = nh.subscribe<nav_msgs::Odometry>("odom", 1, &LocalPlanner::odomCallback_, this);
-  update_sub_ = nh.subscribe("/plan_with_footprint", 1, &LocalPlanner::plannerUpdateCallback_, this);
-  next_heading_pub_ = pnh.advertise<visualization_msgs::Marker>("marker", 10);
 }
 
 bool LocalPlanner::isGoalReached( void )
@@ -153,11 +163,11 @@ bool LocalPlanner::setPlan( const std::vector<geometry_msgs::PoseStamped>& globa
   if ( global_plan_.empty() ) {
     state_ = ROTATING_TO_START;
   } 
-
+      
   global_plan_msg_.header.seq = 0;
   global_plan_msg_.header.stamp = ros::Time::now();
   global_plan_msg_.header.frame_id = std::string("map");
-  
+      
   // Make our copy of the global plan
   global_plan_.clear();
   global_plan_ = global_plan;
@@ -165,7 +175,9 @@ bool LocalPlanner::setPlan( const std::vector<geometry_msgs::PoseStamped>& globa
   
   curr_heading_index_ = 0;
   next_heading_index_ = 0;
-  
+
+  trajectory_planner_->setPlan(global_plan); 
+      
   return true;
 }
 
@@ -425,8 +437,12 @@ void LocalPlanner::plannerUpdateCallback_( const std_msgs::Bool::ConstPtr& use_f
 {
   if ( use_footprint_msg->data == true ) {
     planner_type_ = LATTICE;
+    if ( verbose_ )
+      ROS_INFO_STREAM(name_ << ": Using TrajectoryPlanner as controller.");
   } else {
     planner_type_ = DIJKSTRA;
+    if ( verbose_ )
+      ROS_INFO_STREAM(name_ << ": Using TrajectoryTracker as controller.");
   }
 }
 

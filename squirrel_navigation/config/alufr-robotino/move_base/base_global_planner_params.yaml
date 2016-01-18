@@ -8,7 +8,7 @@ GlobalPlanner: {
   dijkstra/visualize_potential: false,
   lattice/planner_type: ARAPlanner,
   lattice/environment_type: XYThetaLattice,
-  lattice/primitive_filename: motion_primitives.mprim,
+  lattice/primitive_filename: /home/boniardi/Development/squirrel_ws/src/squirrel_nav/squirrel_navigation/config/alufr-robotino/move_base/motion_primitves.mprim,
   lattice/allocated_time: 5.0,
   lattice/initial_epsilon: 3.0,
   lattice/force_scratch_limit: 500,

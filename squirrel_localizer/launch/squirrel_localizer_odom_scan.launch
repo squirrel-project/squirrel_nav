@@ -39,6 +39,7 @@
     <param name="dMapTheshold" value="2"/>
     <param name="observationSigma" value="0.6"/>
     <param name="use_second_laser" value="false"/>
+    <param name="use_laser_odom" value="true"/>
     <param name="base_link_frame_ID" value="base_link"/>
     <param name="base_link_encoders_frame_ID" value="base_link_encoder"/>
     <param name="odom_frame_ID" value="odom"/>

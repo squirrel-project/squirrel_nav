@@ -64,6 +64,8 @@ Ais_localizer_node::Ais_localizer_node() :
   private_nh_.param("odom_frame_ID", odom_frame_ID_, (std::string) "/odom");
   private_nh_.param("map_frame_ID", map_frame_ID_, (std::string) "/map");
 
+  private_nh_.param("use_laser_odom", use_laser_odom_, bool(false));
+  
   //---------------------------------------------------------------------------
   // Parameter for particle filter
   private_nh_.param("dMapTheshold", _dMapThreshold, 2.0); //2.0
@@ -330,12 +332,14 @@ void Ais_localizer_node::localize( void )
     return;
   }
 
-  try {
-    tf_listener_.lookupTransform(odom_frame_ID_, base_link_encoders_frame_ID_, scan_front_.header.stamp, transform_odom2baseLinkEncoders_frontTime);
-  } catch (tf::TransformException& ex) {
-    std::string node_name = ros::this_node::getName();
-    ROS_ERROR("%s: %s", node_name.c_str(), ex.what());
-    return;
+  if ( use_laser_odom_ ) {
+    try {
+      tf_listener_.lookupTransform(odom_frame_ID_, base_link_encoders_frame_ID_, scan_front_.header.stamp, transform_odom2baseLinkEncoders_frontTime);
+    } catch (tf::TransformException& ex) {
+      std::string node_name = ros::this_node::getName();
+      ROS_ERROR("%s: %s", node_name.c_str(), ex.what());
+      return;
+    }
   }
   
   try {
@@ -412,6 +416,9 @@ void Ais_localizer_node::localize( void )
                  transform_odom2baseLinkEncoders_frontTime.getRotation().getZ(), transform_odom2baseLinkEncoders_frontTime.getRotation().getW());  
   Transformation3 pose_encoders(tr_encoders,rot_encoders);
 
+  if ( not use_laser_odom_ )
+    pose_encoders = pose;
+  
   bool updated = false;
   if ( endPoints.size() > 0 ) {
     if ( !localizer_.isInitialized() ) {

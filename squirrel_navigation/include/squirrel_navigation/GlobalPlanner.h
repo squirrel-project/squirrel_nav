@@ -68,6 +68,7 @@
 #include <navfn/navfn_ros.h>
 
 #include <geometry_msgs/Polygon.h>
+#include <geometry_msgs/PoseArray.h>
 #include <nav_msgs/Path.h>
 #include <squirrel_navigation_msgs/GlobalPlannerStats.h>
 #include <std_msgs/Bool.h>
@@ -127,8 +128,10 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
 
   costmap_2d::Costmap2DROS* costmap_ros_; 
   
-  ros::Publisher plan_pub_, stats_pub_;
+  ros::Publisher plan_pub_, stats_pub_, pose_plan_pub_;
   ros::Subscriber update_sub_;
+
+  std::vector<geometry_msgs::PoseStamped> plan_;
   
   std::vector<geometry_msgs::Point> footprint_;
 
@@ -139,6 +142,7 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
   unsigned char costMapCostToSBPLCost_( unsigned char );
   void publishStats_( int, int , const geometry_msgs::PoseStamped&, const geometry_msgs::PoseStamped& );
   void updatePlannerCallback_( const std_msgs::Bool::ConstPtr& );
+  bool currentPlanOccluded_( void );
 };
 
 }  // namespace squirrel_navigation

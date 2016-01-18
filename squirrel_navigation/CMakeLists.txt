@@ -88,6 +88,11 @@ add_library(squirrel_planners
   src/LatticeSCQ.cpp
 )
 
+target_link_libraries(squirrel_planners
+  ${catkin_LIBRARIES}
+  ${SBPL_LIBRARIES}
+)
+
 add_library(squirrel_costmap_layers
   src/MapLayer.cpp
   src/FootprintLayer.cpp

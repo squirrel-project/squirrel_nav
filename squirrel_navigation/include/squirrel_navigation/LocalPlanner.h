@@ -39,6 +39,7 @@
 
 #include <ros/ros.h>
 
+#include <base_local_planner/trajectory_planner_ros.h>
 #include <nav_core/base_local_planner.h>
 
 #include <costmap_2d/costmap_2d_ros.h>
@@ -65,14 +66,17 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   LocalPlanner( void );
   ~LocalPlanner( void );
 
-  bool computeVelocityCommands( geometry_msgs::Twist& );
   void initialize( std::string, tf::TransformListener*, costmap_2d::Costmap2DROS* );
+
+  bool computeVelocityCommands( geometry_msgs::Twist& );
   bool isGoalReached( void );
   bool setPlan( const std::vector<geometry_msgs::PoseStamped>& );
 
  private:  
   typedef enum { ROTATING_TO_START, MOVING, ROTATING_TO_GOAL, FINISHED } state_t;
   typedef enum { DIJKSTRA, LATTICE } planner_t;
+
+  base_local_planner::TrajectoryPlannerROS* trajectory_planner_;
   
   tf::TransformListener* tf_;
 
@@ -93,6 +97,8 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   int curr_heading_index_, next_heading_index_;
 
   planner_t planner_type_;
+
+  bool verbose_;
   
   // Parameters
   double heading_lookahead_;
