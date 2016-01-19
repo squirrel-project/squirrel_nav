@@ -13,7 +13,8 @@ robot_radius: 0.16
 # costmap_2d plugins declaration.
 plugins:
   - {name: map_layer, type: "squirrel_navigation::MapLayer"}
-  - {name: perception_layer, type: "squirrel_navigation::DownprojectionMultilayer"}
+  - {name: obstacles_layer, type: "squirrel_navigation::DownprojectionLayer"}
+  - {name: inflation_layer, type: "costmap_2d::InflationLayer"
 
 map_layer:
   robot_link_radius: 0.22
@@ -30,6 +31,8 @@ obstacles_layer:
   publish_voxel_map: true
   robot_height: 0.47
   floor_threshold: 0.04
+  kinect_tilt_joint: { command_topic: /tilt_controller/command, state_topic: /tilt_controller/state, use_navigation_angle: true, navigation_angle: 0.6 }
+  kinect_pan_joint: { command_topic: /tilt_controller/command, state_topic: /tilt_controller/state, use_navigation_angle: false }
 
 perception_layer:
   obstacle_range: 1.5
@@ -47,17 +50,8 @@ perception_layer:
   inflation_radii: "0.6, 0.3"
   cost_scaling_factors: "10.0, 10.0"
   inscribed_radii: "0.18, 0.05"
-
-# obstacles_layer:
-#   obstacle_range: 1.5
-#   raytrace_range: 3.0 
-#   observation_sources: laser_scan 
-#   rgbd_scan: {sensor_frame: kinect_depth_optical_frame, data_type: PointCloud2, topic: rgbdscan, marking: true, clearing: false}
-#   laser_scan: {sensor_frame: hokuyo_link, data_type: LaserScan, topic: scan, marking: true, clearing: false} 
-#   publish_voxel_map: true
-#   robot_height: 0.47
-#   floor_threshold: 0.04
-
+  kinect_tilt_joint: { command_topic: /tilt_controller/command, state_topic: /tilt_controller/state, use_navigation_angle: true, navigation_angle: 0.6 }
+  kinect_pan_joint: { command_topic: /tilt_controller/command, state_topic: /tilt_controller/state, use_navigation_angle: false }
 
 #
 # costmap_common_params.yaml ends here

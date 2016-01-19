@@ -1,14 +1,14 @@
 // JointHandle.cpp --- 
 // 
 // Filename: JointHandle.cpp
-// Description: 
+// Description: Handle the movement of the joint
 // Author: Federico Boniardi
-// Maintainer: 
+// Maintainer: boniardi@informatik.uni-freiburg.de
 // Created: Tue Dec 15 10:56:20 2015 (+0100)
-// Version: 
-// Last-Updated: 
-//           By: 
-//     Update #: 0
+// Version: 0.1.0
+// Last-Updated: Tue Jan 19 16:06:52 2016 (+0100)
+//           By: Federico Boniardi
+//     Update #: 1
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -79,7 +79,8 @@ JointHandle::JointHandle( const std::string& name )  :
   ros::NodeHandle pnh("~/"+name_);
   pnh.param<std::string>("command_topic", command_topic_, name+"/command");
   pnh.param<std::string>("state_topic", state_topic_, name+"/state");
-  pnh.param<double>("reset_angle", reset_angle_, 0.0);
+  pnh.param<double>("navigation_angle", navigation_angle_, 0.6);
+  pnh.param<bool>("use_navigation_angle", use_navigation_angle_, true);
   pnh.param<bool>("verbose", verbose_, false);
   
   state_sub_ = nh_.subscribe(state_topic_, 1, &JointHandle::stateCallback_, this);

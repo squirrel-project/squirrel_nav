@@ -3,12 +3,12 @@
 // Filename: JointHandle.h
 // Description: 
 // Author: Federico Boniardi
-// Maintainer: 
+// Maintainer: boniardi@informatik.uni-freiburg.de
 // Created: Tue Dec 15 10:36:27 2015 (+0100)
-// Version: 
-// Last-Updated: 
-//           By: 
-//     Update #: 0
+// Version: 0.1.0
+// Last-Updated: Tue Jan 19 16:08:17 2016 (+0100)
+//           By: Federico Boniardi
+//     Update #: 1
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -81,8 +81,13 @@ class JointHandle
   JointHandle( const std::string& );
   virtual ~JointHandle( void );
 
-  inline bool gotMotionCommand( void ) const { return std::abs(reset_angle_-cur_angle_)>1e-3; };
-  inline bool isMoving( void ) const { return moving_; };
+  inline bool skipData( void )
+  {
+    if ( not use_navigation_angle_ )
+      return false;
+    else
+      return (isMoving_() or gotMotionCommand_());
+  };
   
  private:
   ros::NodeHandle nh_;
@@ -94,11 +99,13 @@ class JointHandle
   
   // Parameters
   std::string command_topic_, state_topic_;
-  double reset_angle_;
-  bool verbose_;
+  double navigation_angle_;
+  bool use_navigation_angle_, verbose_;
   
   void stateCallback_( const dynamixel_msgs::JointState::ConstPtr& );
   void commandCallback_( const std_msgs::Float64::ConstPtr& );
+  inline bool gotMotionCommand_( void ) const { return std::abs(navigation_angle_-cur_angle_)>1e-3; };
+  inline bool isMoving_( void ) const { return moving_; };
 };
 
 }  // namespace squirrel_navigation
