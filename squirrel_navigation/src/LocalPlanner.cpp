@@ -160,7 +160,7 @@ bool LocalPlanner::isGoalReached( void )
 
 bool LocalPlanner::setPlan( const std::vector<geometry_msgs::PoseStamped>& global_plan )
 {
-  if ( global_plan_.empty() ) {
+  if ( global_plan_.empty() or newGoal_(global_plan) ) {
     state_ = ROTATING_TO_START;
   } 
       
@@ -317,6 +317,16 @@ bool LocalPlanner::rotateToStart_( geometry_msgs::Twist& cmd_vel )
   return true;
 }
 
+bool LocalPlanner::newGoal_( const std::vector<geometry_msgs::PoseStamped>& plan )
+{
+  if ( plan.empty() )
+    return false;
+
+  double dist = linearDistance_(global_plan_.back().pose.position,plan.back().pose.position);
+
+  return ( dist > 0.05 );
+}
+
 double LocalPlanner::calLinearVel_( void )
 {
   double vel = 0.0;
@@ -369,11 +379,6 @@ double LocalPlanner::calRotationVel_( double rotation )
   }
 
   return vel;
-}
-
-double LocalPlanner::linearDistance_( geometry_msgs::Point p1, geometry_msgs::Point p2 )
-{
-  return std::sqrt( std::pow( p2.x - p1.x, 2) + std::pow( p2.y - p1.y, 2)  );
 }
 
 void LocalPlanner::computeNextHeadingIndex_( void )

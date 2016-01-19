@@ -50,6 +50,7 @@
 
 #include <angles/angles.h>
 
+#include <tf/tf.h>
 #include <tf/transform_listener.h>
 
 #include <geometry_msgs/Twist.h>
@@ -120,20 +121,31 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   bool move_( geometry_msgs::Twist& );
   bool rotateToGoal_( geometry_msgs::Twist& );
   bool rotateToStart_( geometry_msgs::Twist& );
+  bool newGoal_( const std::vector<geometry_msgs::PoseStamped>& );
   double calLinearVel_( void );
   double calRotationVel_( double );
-  double linearDistance_( geometry_msgs::Point, geometry_msgs::Point );
   double mapToMinusPIToPI_( double );
   void computeNextHeadingIndex_( void );
   void odomCallback_( const nav_msgs::OdometryConstPtr& );
   void plannerUpdateCallback_( const std_msgs::Bool::ConstPtr& );
   void publishNextHeading_( bool show = true );
 
+  inline double linearDistance_( const geometry_msgs::Point p1, const geometry_msgs::Point p2 )
+  {
+    double dx=p1.x-p2.x, dy=p1.y-p2.y;
+    return std::sqrt(dx*dx+dy*dy);
+  }
+
+  inline double angularDistance_( const geometry_msgs::Quaternion& p1, const geometry_msgs::Quaternion& p2 )
+  {
+    double da=tf::getYaw(p1)-tf::getYaw(p2);
+    return std::abs(angles::normalize_angle(da));
+  }
+
   inline double cutOff_( double a )
   {
     double th = angles::normalize_angle(a);
-    // just a good shape bell shape
-    return std::pow(0.5+0.5*std::cos(a),6);
+    return std::pow(0.5+0.5*std::cos(a),6); // just a good shape bell shape
   };
 };
 

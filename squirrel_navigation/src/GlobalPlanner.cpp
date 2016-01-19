@@ -16,6 +16,10 @@
 // 
 
 // Commentary:
+//
+//   Most of the code is adapted from SBPL_lattice_planner.cpp released
+//   under BSD license.
+// 
 // /*********************************************************************
 // *
 // * Software License Agreement (BSD License)
@@ -52,6 +56,10 @@
 // *
 // * Author: Mike Phillips
 // *********************************************************************/
+//
+// **TODO:
+//  - too many for loops on the plan
+//  
 
 // Code:
 
