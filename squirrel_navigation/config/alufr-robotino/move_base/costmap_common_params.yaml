@@ -18,7 +18,7 @@ plugins:
 map_layer:
   robot_link_radius: 0.22
   inflation_radius: 0.6
-  cost_scaling_factor: 10.0
+  cost_scaling_factor: 20.0
 
 # Parameters for squirrel_navigation::ObstacleLayer
 obstacles_layer:

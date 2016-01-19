@@ -1,5 +1,5 @@
 GlobalPlanner: {
-  verbose: true,
+  verbose: false,
   replanning_thresh: 0.2,
   dijkstra/allow_unknown: false,
   dijkstra/default_tolerance: 0.0,
@@ -9,7 +9,6 @@ GlobalPlanner: {
   dijkstra/visualize_potential: false,
   lattice/planner_type: ARAPlanner,
   lattice/environment_type: XYThetaLattice,
-  lattice/primitive_filename: /home/federico/Development/Ros/squirrel_ws/src/squirrel_nav/squirrel_navigation/config/alufr-robotino/move_base/motion_primitives.mprim,
   lattice/allocated_time: 5.0,
   lattice/initial_epsilon: 3.0,
   lattice/force_scratch_limit: 500,

@@ -156,15 +156,15 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
   bool newGoal_( const geometry_msgs::PoseStamped& );
   bool conditionallyUpdatePlan_( std::vector<geometry_msgs::PoseStamped>&, nav_msgs::Path& );
   
-  inline double linearDistance_( const geometry_msgs::Pose& p, const geometry_msgs::Pose& q )
+  inline double linearDistance_( const geometry_msgs::Point& p1, const geometry_msgs::Point& p2 )
   {
-    double dx = p.position.x-q.position.x, dy = p.position.y-q.position.y;
+    double dx=p1.x-p2.x, dy=p1.y-p2.y;
     return std::sqrt(dx*dx+dy*dy);
   }
 
-  inline double angularDistance_( const geometry_msgs::Pose& p, const geometry_msgs::Pose& q )
+  inline double angularDistance_( const geometry_msgs::Quaternion& q1, const geometry_msgs::Quaternion& q2 )
   {
-    double da = tf::getYaw(p.orientation)-tf::getYaw(q.orientation);
+    double da = tf::getYaw(q1)-tf::getYaw(q2);
     return std::abs(angles::normalize_angle(da));
   }
 };

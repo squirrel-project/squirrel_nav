@@ -495,8 +495,9 @@ void GlobalPlanner::updatePlannerCallback_( const std_msgs::Bool::ConstPtr& foot
 
 bool GlobalPlanner::newGoal_( const geometry_msgs::PoseStamped& goal )
 {
-  if ( linearDistance_(goal.pose,goal_.pose) > 0.05 or
-       angularDistance_(goal.pose,goal_.pose) > 0.05 ) {
+  double lin_dist = linearDistance_(goal.pose.position,goal_.pose.position);
+  double ang_dist = angularDistance_(goal.pose.orientation,goal_.pose.orientation);
+  if ( (lin_dist > 0.05) or (ang_dist > 0.05) ) {
     goal_ = goal;
     return true;
   } else {
@@ -514,14 +515,14 @@ bool GlobalPlanner::conditionallyUpdatePlan_( std::vector<geometry_msgs::PoseSta
     return true;
   }
 
-  offset_ += linearDistance_(new_plan[0].pose,plan_[current_index_].pose);
+  offset_ += linearDistance_(new_plan[0].pose.position,plan_[current_index_].pose.position);
 
   double new_plan_length = 0.0, plan_length = -offset_;
   for (size_t i=0; i<std::max(new_plan.size(),plan_.size())-1; ++i) {
     if ( i<new_plan.size()-1 )
-      new_plan_length += linearDistance_(new_plan[i].pose,new_plan[i+1].pose);
+      new_plan_length += linearDistance_(new_plan[i].pose.position,new_plan[i+1].pose.position);
     if ( i<plan_.size()-1 ) {
-      plan_length += linearDistance_(plan_[i].pose,plan_[i+1].pose);
+      plan_length += linearDistance_(plan_[i].pose.position,plan_[i+1].pose.position);
       if ( plan_length <= 0 ) {
         current_index_ = i;
       }
