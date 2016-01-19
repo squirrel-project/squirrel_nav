@@ -7,8 +7,8 @@ Monte Carlo Localization for SQUIRREL
 
 The package provides two nodes
 
-1. `squirrel_localizer_localization_node`: Perform AMCL.
-2. `squirrel_localizer_tf_pose_node`: Broadcast the tranform `/map` to `/odom`
+- `squirrel_localizer_localization_node`: Perform AMCL.
+- `squirrel_localizer_tf_pose_node`: Broadcast the tranform `/map` to `/odom`
 
 ### Localization node
 
