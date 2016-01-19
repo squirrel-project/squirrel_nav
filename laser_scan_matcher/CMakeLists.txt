@@ -26,7 +26,7 @@ pkg_check_modules(csm REQUIRED csm)
 
 # Set include directories
 include_directories(include ${catkin_INCLUDE_DIRS} ${csm_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
-link_directories(${csm_LIBRARY_DIRS})
+link_directories(${csm_LIBRARY_DIRS} ${PCL_LIBRARY_DIRS})
 
 # Declare info that other packages need to import library generated here
 catkin_package(
@@ -36,10 +36,10 @@ catkin_package(
 )
 
 #Create library
-add_library(laser_scan_matcher src/ab_filter.cpp src/laser_scan_matcher.cpp )
+add_library(laser_scan_matcher src/ab_filter.cpp src/laser_scan_matcher.cpp)
 
 #Note we don't link against pcl as we're using header-only parts of the library
-target_link_libraries( laser_scan_matcher ${catkin_LIBRARIES} ${csm_LIBRARIES})
+target_link_libraries( laser_scan_matcher ${catkin_LIBRARIES} ${csm_LIBRARIES} ${PCL_LIBRARY_DIRS})
 add_dependencies(laser_scan_matcher ${csm_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 #Create nodelet
