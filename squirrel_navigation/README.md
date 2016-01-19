@@ -42,7 +42,7 @@ The package provides the following nodes and plugins for [move_base](http://wiki
 
 ### Global Planner
 
-Uses [navfn::NavfnROS](http://wiki.ros.org/navfn) and
+Uses [navfn](http://wiki.ros.org/navfn) and
 [sbpl_lattice_planner](http://wiki.ros.org/sbpl).
 
 #### Subscribed topic
@@ -56,7 +56,7 @@ Uses [navfn::NavfnROS](http://wiki.ros.org/navfn) and
 #### Parameters
 - `~/verbose`: verbosity.
 - `~/replanning_thresh`: replanning factor.
-- `~/dijkstra/<params>`: see paramters for [NavfnROS](http://wiki.ros.org/navfn).
+- `~/dijkstra/<params>`: see paramters for [navfn](http://wiki.ros.org/navfn).
 - `~/lattice/<param>`: see parameters for [sbpl_lattice_planner](http://wiki.ros.org/sbpl_lattice_planner).
 
 
