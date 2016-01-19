@@ -39,7 +39,7 @@ catkin_package(
 add_library(laser_scan_matcher src/ab_filter.cpp src/laser_scan_matcher.cpp)
 
 #Note we don't link against pcl as we're using header-only parts of the library
-target_link_libraries( laser_scan_matcher ${catkin_LIBRARIES} ${csm_LIBRARIES} ${PCL_LIBRARY_DIRS})
+target_link_libraries( laser_scan_matcher ${catkin_LIBRARIES} ${csm_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(laser_scan_matcher ${csm_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 #Create nodelet

@@ -28,6 +28,8 @@ find_package(catkin REQUIRED
   ${squirrel_localizer_DEPENDENCIES}
 )
 
+find_package(PCL REQUIRED QUIET)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -44,6 +46,11 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
+)
+
+link_directories(
+  ${PCL_LIBRARY_DIRS}
 )
 
 add_executable(squirrel_localizer_localization_node
@@ -72,6 +79,7 @@ add_executable(squirrel_localizer_localization_node
 
 target_link_libraries(squirrel_localizer_localization_node
   ${catkin_LIBRARIES}  
+  ${PCL_LIBRARIES}
 )
 
 add_dependencies(squirrel_localizer_localization_node

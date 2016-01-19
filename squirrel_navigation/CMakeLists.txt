@@ -30,6 +30,8 @@ set(squirrel_navigation_DEPENDENCIES
   visualization_msgs
 )
 
+find_package(PCL REQUIRED QUIET)
+
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(SBPL REQUIRED sbpl)
@@ -72,6 +74,11 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${SBPL_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
+)
+
+link_directories(
+  ${PCL_LIBRARY_DIRS}
 )
 
 ## Compiling and linking the plugins
@@ -84,6 +91,7 @@ add_library(squirrel_planners
 target_link_libraries(squirrel_planners
   ${catkin_LIBRARIES}
   ${SBPL_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 add_library(squirrel_costmap_layers
@@ -102,6 +110,7 @@ add_dependencies(squirrel_costmap_layers
 
 target_link_libraries(squirrel_costmap_layers
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 ## Compiling and linking the nodes 
