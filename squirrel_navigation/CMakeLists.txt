@@ -32,9 +32,7 @@ set(squirrel_navigation_DEPENDENCIES
 
 find_package(PkgConfig REQUIRED)
 
-pkg_check_modules(SBPL REQUIRED 
-  sbpl
-)
+pkg_check_modules(SBPL REQUIRED sbpl)
 
 find_library(SBPL_LIBRARY 
   NAMES sbpl 
@@ -61,7 +59,7 @@ generate_dynamic_reconfigure_options(
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES sqiurrel_planners squirrel_costmap_layers
+  LIBRARIES squirrel_costmap_layers sqiurrel_planners
   CATKIN_DEPENDS ${squirrel_navigation_DEPENDENCIES}
   DEPENDS SBPL
 )
@@ -76,16 +74,11 @@ include_directories(
   ${SBPL_INCLUDE_DIRS}
 )
 
-link_directories(
-  ${catkin_LIBRARY_DIRS} 
-  ${SBPL_LIBRARY_DIRS}
-)
-
 ## Compiling and linking the plugins
 add_library(squirrel_planners
-  src/LocalPlanner.cpp
   src/GlobalPlanner.cpp
   src/LatticeSCQ.cpp
+  src/LocalPlanner.cpp
 )
 
 target_link_libraries(squirrel_planners
@@ -94,13 +87,13 @@ target_link_libraries(squirrel_planners
 )
 
 add_library(squirrel_costmap_layers
-  src/MapLayer.cpp
-  src/FootprintLayer.cpp
-  src/InflatedLayer.cpp
   src/DownprojectionLayer.cpp
   src/DownprojectionMultilayer.cpp
-  src/MultiInflatedLayer.cpp
+  src/FootprintLayer.cpp
+  src/InflatedLayer.cpp
   src/JointHandle.cpp
+  src/MapLayer.cpp
+  src/MultiInflatedLayer.cpp
 )
 
 add_dependencies(squirrel_costmap_layers
@@ -113,8 +106,8 @@ target_link_libraries(squirrel_costmap_layers
 
 ## Compiling and linking the nodes 
 add_executable(pointcloud_filter_node
-  src/PointCloudFilterNode.cpp
   src/PointCloudFilter.cpp
+  src/PointCloudFilterNode.cpp
 )
 
 target_link_libraries(pointcloud_filter_node
@@ -122,8 +115,8 @@ target_link_libraries(pointcloud_filter_node
 )
 
 add_executable(autolocalization_node
-  src/AutolocalizationNode.cpp
   src/Autolocalization.cpp
+  src/AutolocalizationNode.cpp
 )
 
 target_link_libraries(autolocalization_node
@@ -131,8 +124,8 @@ target_link_libraries(autolocalization_node
 )
 
 add_executable(planner_update_handle_node
-  src/PlannerUpdateHandleNode.cpp
   src/PlannerUpdateHandle.cpp
+  src/PlannerUpdateHandleNode.cpp
 )
 
 add_dependencies(planner_update_handle_node
@@ -148,10 +141,11 @@ target_link_libraries(planner_update_handle_node
 #############
 
 install(TARGETS  
-  squirrel_planners 
-  squirrel_costmap_layers 
-  pointcloud_filter_node 
   autolocalization_node
+  planner_update_handle_node
+  pointcloud_filter_node   
+  squirrel_costmap_layers
+  squirrel_planners 
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -171,8 +165,8 @@ install(DIRECTORY
 )
 
 install(FILES 
-  SquirrelPlanners.xml 
   SquirrelCostmapLayers.xml
+  SquirrelPlanners.xml 
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 

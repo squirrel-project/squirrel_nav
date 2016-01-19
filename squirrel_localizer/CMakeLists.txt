@@ -4,24 +4,23 @@ project(squirrel_localizer)
 set(ROS_BUILD_TYPE Release)
 
 ## Package dependencies
-set(squirrel_localizer_DEPENDENCIES
-  roslib
-  roscpp
-  rospy
-  tf
-  std_msgs
-  message_generation
-  nav_msgs
+set(squirrel_localizer_DEPENDENCIES 
   geometry_msgs
-  sensor_msgs
-  std_srvs
   laser_geometry
-  pcl_ros
-  rosbag
-  robotino_msgs
-  message_runtime
   message_generation
+  message_runtime
+  nav_msgs
+  pcl_ros
+  robotino_msgs
+  rosbag
+  roscpp
+  roslib
+  rospy
+  sensor_msgs
   squirrel_localizer_msgs
+  std_msgs
+  std_srvs
+  tf
 )
 
 find_package(catkin REQUIRED 
@@ -48,27 +47,27 @@ include_directories(
 )
 
 add_executable(squirrel_localizer_localization_node
-  src/LocalizerApp.cpp
+  src/BasicMotion.cpp
+  src/BasicSensor.cpp
+  src/CommandArgs.cpp
+  src/DistanceWeight.cpp
+  src/FilesysTools.cpp
+  src/FloatMap.cpp
+  src/Geometry.cpp
+  src/KLDSampling.cpp
+  src/LaserSensor2D.cpp
   src/Localization.cpp
+  src/LocalizerApp.cpp
+  src/OSSpecific.cpp
+  src/PermutationSampler.cpp
   src/RawLaser.cpp
   src/RobotLaser.cpp
-  src/Geometry.cpp
-  src/DistanceWeight.cpp
-  src/BasicMotion.cpp
-  src/SimpleMotionModel.cpp
-  src/BasicSensor.cpp
-  src/LaserSensor2D.cpp
-  src/PermutationSampler.cpp
-  src/Stat.cpp
-  src/CommandArgs.cpp
-  src/OSSpecific.cpp
-  src/FilesysTools.cpp
   src/RuntimeError.cpp
+  src/ScanMatcher.cpp
+  src/SimpleMotionModel.cpp
+  src/Stat.cpp
   src/StringTools.cpp
   src/TimeUtil.cpp
-  src/KLDSampling.cpp
-  src/ScanMatcher.cpp
-  src/FloatMap.cpp
 )
 
 target_link_libraries(squirrel_localizer_localization_node
