@@ -66,7 +66,9 @@ GlobalPlanner::GlobalPlanner( void ) :
     costmap_ros_(NULL),
     dijkstra_planner_(NULL),
     lattice_planner_(NULL),
-    curr_planner_(DIJKSTRA)
+    curr_planner_(DIJKSTRA),
+    offset_(0.0),
+    current_index_(0)
 {
   ROS_INFO("squirrel_localizer::GlobalPlanner started.");
 }
@@ -77,7 +79,9 @@ GlobalPlanner::GlobalPlanner( std::string name, costmap_2d::Costmap2DROS* costma
     dijkstra_planner_(NULL),
     lattice_planner_(NULL),
     curr_planner_(DIJKSTRA),
-    name_(name)
+    name_(name),
+    offset_(0.0),
+    current_index_(0)
 {
   initialize(name, costmap_ros);
 }
@@ -99,7 +103,11 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
   if( not initialized_ ) {
     ros::NodeHandle pnh("~/"+name);
     pnh.param<bool>("verbose", verbose_, false);
+    pnh.param<double>("replanning_thresh", replanning_thresh_, 0.2);
 
+    if ( replanning_thresh_ < 0.0 )
+      ROS_WARN_STREAM(name << "paramter replanning_thrs is negative. Replanning anytime.");
+    
     // Initializing the Dijkstra planner
     if ( not dijkstra_planner_ )
       dijkstra_planner_ = new navfn::NavfnROS(name+"/dijkstra",costmap_ros);
@@ -238,38 +246,15 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
     ROS_INFO("%s: Getting start point (%g,%g) goal point (%g,%g)", name_.c_str(), start.pose.position.x,
              start.pose.position.y,goal.pose.position.x, goal.pose.position.y);
   }
-
-  // if ( not currentPlanOccluded_() and (not plan_.empty()) ) {
-  //   plan.clear();
-  //   plan = plan_;
-  //   return true;
-  // } else {
-  //   plan_.clear();
-  //   plan.clear();
-  // }
-
-  plan_.clear();
+  
   plan.clear();
 
   boost::unique_lock<boost::mutex> lock(all_);
-  
-  nav_msgs::Path gui_path;
-  geometry_msgs::PoseArray gui_poses;
-  
+    
   switch ( curr_planner_ ) {
+    
     case DIJKSTRA: {
-      dijkstra_planner_->makePlan(start, goal, plan);
-
-      plan_ = plan;
-      
-      // Publish the path
-      ros::Time plan_time = ros::Time::now();
-      
-      gui_path.poses.resize(plan.size());
-      gui_path.header.frame_id = costmap_ros_->getGlobalFrameID();
-      gui_path.header.stamp = plan_time;
-      gui_path.poses = plan;
-      
+      dijkstra_planner_->makePlan(start, goal, plan);          
       break;
     }  
 
@@ -395,18 +380,8 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
       ros::Time plan_time = ros::Time::now();
       
       //create a message for the plan
-      if ( verbose_ ) {
-        gui_poses.header.frame_id = costmap_ros_->getGlobalFrameID();
-        gui_poses.header.stamp = plan_time;
-        gui_poses.poses.resize(sbpl_path.size());
-      }
-
-      plan_.resize(sbpl_path.size());
       plan.resize(sbpl_path.size());
       
-      gui_path.poses.resize(sbpl_path.size());
-      gui_path.header.frame_id = costmap_ros_->getGlobalFrameID();
-      gui_path.header.stamp = plan_time;
       for(unsigned int i=0; i<sbpl_path.size(); i++){
         geometry_msgs::PoseStamped pose;
         pose.header.stamp = plan_time;
@@ -423,20 +398,8 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
         pose.pose.orientation.z = temp.getZ();
         pose.pose.orientation.w = temp.getW();
 
-        plan_[i] = pose;
         plan[i] = pose;
-
-        gui_path.poses[i].pose.position.x = plan[i].pose.position.x;
-        gui_path.poses[i].pose.position.y = plan[i].pose.position.y;
-        gui_path.poses[i].pose.position.z = plan[i].pose.position.z;
-
-        if ( verbose_ ) 
-          gui_poses.poses[i] = pose.pose;
       }
-
-
-      if ( verbose_ )
-        pose_plan_pub_.publish(gui_poses);
       
       publishStats_(solution_cost, sbpl_path.size(), start, goal);
       break;
@@ -446,10 +409,40 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
       return false;
     }
   }      
- 
-  plan_pub_.publish(gui_path);
+
+  ros::Time plan_stamp = ros::Time::now();
   
-  return true;
+  nav_msgs::Path gui_plan;
+  gui_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
+  gui_plan.header.stamp = plan_stamp;
+
+  geometry_msgs::PoseArray gui_poses;
+  gui_poses.header.frame_id = costmap_ros_->getGlobalFrameID();
+  gui_poses.header.stamp = plan_stamp;
+
+  double update;
+  if ( newGoal_(goal) ) {
+    plan_ = plan;
+    gui_plan.poses = plan;
+    offset_ = 0.0;
+    current_index_ = 0;
+    update = true;
+  } else {
+    update = conditionallyUpdatePlan_(plan,gui_plan);
+  }
+
+  if ( update ) {
+    plan_pub_.publish(gui_plan);
+  
+    if ( curr_planner_ == LATTICE ) {
+      gui_poses.poses.resize(plan_.size());
+      for (size_t i=0; i<plan_.size(); ++i)
+      gui_poses.poses[i] = plan_[i].pose;
+      pose_plan_pub_.publish(gui_poses);
+    }
+  }
+  
+  return update;
 }
 
 unsigned char GlobalPlanner::costMapCostToSBPLCost_( unsigned char newcost )
@@ -500,20 +493,52 @@ void GlobalPlanner::updatePlannerCallback_( const std_msgs::Bool::ConstPtr& foot
   }
 }
 
-bool GlobalPlanner::currentPlanOccluded_( void )
+bool GlobalPlanner::newGoal_( const geometry_msgs::PoseStamped& goal )
 {
-  unsigned int ix, iy;
-  for (size_t i=0; i<plan_.size(); ++i) {
-    double wx = plan_[i].pose.position.x;
-    double wy = plan_[i].pose.position.y;
-    
-    costmap_ros_->getCostmap()->worldToMap(wx,wy,ix,iy);
-    
-    if ( costmap_ros_->getCostmap()->getCost(ix,iy) > 100 )
-      return true;
+  if ( linearDistance_(goal.pose,goal_.pose) > 0.05 or
+       angularDistance_(goal.pose,goal_.pose) > 0.05 ) {
+    goal_ = goal;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool GlobalPlanner::conditionallyUpdatePlan_( std::vector<geometry_msgs::PoseStamped>& new_plan,
+                                              nav_msgs::Path& gui_path_msg )
+{
+  if ( new_plan.size() == 0 ) {
+    plan_.clear();
+    offset_ = 0.0;
+    current_index_ = 0;
+    return true;
   }
 
-  return false;
+  offset_ += linearDistance_(new_plan[0].pose,plan_[current_index_].pose);
+
+  double new_plan_length = 0.0, plan_length = -offset_;
+  for (size_t i=0; i<std::max(new_plan.size(),plan_.size())-1; ++i) {
+    if ( i<new_plan.size()-1 )
+      new_plan_length += linearDistance_(new_plan[i].pose,new_plan[i+1].pose);
+    if ( i<plan_.size()-1 ) {
+      plan_length += linearDistance_(plan_[i].pose,plan_[i+1].pose);
+      if ( plan_length <= 0 ) {
+        current_index_ = i;
+      }
+    }
+  }
+  
+  if ( std::abs(new_plan_length/plan_length - 1.0) > replanning_thresh_ ) {
+    plan_ = new_plan;
+    gui_path_msg.poses = new_plan;
+    offset_ = 0.0;
+    current_index_ = 0;
+    if ( verbose_ )
+      ROS_INFO_STREAM(name_ << ": Replanned a new path.");
+    return true;
+  } else {
+    return false;
+  }
 }
 
 }  // namespace squirrel_navigation

@@ -75,8 +75,14 @@
 
 #include <sbpl/headers.h>
 
+#include <tf/tf.h>
+
+#include <angles/angles.h>
+
 #include "squirrel_navigation/LatticeSCQ.h"
 
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <vector>
 
@@ -130,11 +136,16 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
   
   ros::Publisher plan_pub_, stats_pub_, pose_plan_pub_;
   ros::Subscriber update_sub_;
-
-  std::vector<geometry_msgs::PoseStamped> plan_;
   
   std::vector<geometry_msgs::Point> footprint_;
 
+  // replanning 
+  double replanning_thresh_;
+  geometry_msgs::PoseStamped goal_;
+  std::vector<geometry_msgs::PoseStamped> plan_;
+  double offset_;
+  int current_index_;
+  
   bool verbose_;
 
   boost::mutex all_;
@@ -142,7 +153,20 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
   unsigned char costMapCostToSBPLCost_( unsigned char );
   void publishStats_( int, int , const geometry_msgs::PoseStamped&, const geometry_msgs::PoseStamped& );
   void updatePlannerCallback_( const std_msgs::Bool::ConstPtr& );
-  bool currentPlanOccluded_( void );
+  bool newGoal_( const geometry_msgs::PoseStamped& );
+  bool conditionallyUpdatePlan_( std::vector<geometry_msgs::PoseStamped>&, nav_msgs::Path& );
+  
+  inline double linearDistance_( const geometry_msgs::Pose& p, const geometry_msgs::Pose& q )
+  {
+    double dx = p.position.x-q.position.x, dy = p.position.y-q.position.y;
+    return std::sqrt(dx*dx+dy*dy);
+  }
+
+  inline double angularDistance_( const geometry_msgs::Pose& p, const geometry_msgs::Pose& q )
+  {
+    double da = tf::getYaw(p.orientation)-tf::getYaw(q.orientation);
+    return std::abs(angles::normalize_angle(da));
+  }
 };
 
 }  // namespace squirrel_navigation

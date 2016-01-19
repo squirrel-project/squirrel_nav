@@ -211,10 +211,10 @@ bool LocalPlanner::move_( geometry_msgs::Twist& cmd_vel )
   // Calculate the rotation between the current odom and the vector created above
   double rotation = (::atan2(y,x) - tf::getYaw(base_odom_.pose.orientation ) );
 
-  rotation = mapToMinusPIToPI_( rotation );
+  rotation = angles::normalize_angle( rotation );
 
   double vel_th = fabs( rotation ) < yaw_goal_tolerance_ ? 0.0 : calRotationVel_(rotation);
-  double vel_x = calLinearVel_() * ( rotation < 0.5*PI/2 && rotation > -0.5*PI);
+  double vel_x = calLinearVel_() * cutOff_( rotation );
   
   cmd_vel.linear.x = vel_x;
   cmd_vel.angular.z = vel_th;
@@ -260,6 +260,8 @@ bool LocalPlanner::rotateToGoal_( geometry_msgs::Twist& cmd_vel )
   double rotation = tf::getYaw( rotate_goal.pose.orientation ) -
       tf::getYaw( base_odom_.pose.orientation );
 
+  rotation = angles::normalize_angle(rotation);
+  
   if( fabs( rotation ) < yaw_goal_tolerance_ ) {
     if ( global_plan_.size() > 0 ) {
       global_plan_.clear();
@@ -303,7 +305,7 @@ bool LocalPlanner::rotateToStart_( geometry_msgs::Twist& cmd_vel )
   // Calculate the rotation between the current odom and the vector created above
   double rotation = (::atan2(y,x) - tf::getYaw(base_odom_.pose.orientation ) );
 
-  rotation = mapToMinusPIToPI_( rotation );
+  rotation = angles::normalize_angle( rotation );
 
   if( fabs( rotation ) < yaw_goal_tolerance_ ) {
     state_ = MOVING;
@@ -372,20 +374,6 @@ double LocalPlanner::calRotationVel_( double rotation )
 double LocalPlanner::linearDistance_( geometry_msgs::Point p1, geometry_msgs::Point p2 )
 {
   return std::sqrt( std::pow( p2.x - p1.x, 2) + std::pow( p2.y - p1.y, 2)  );
-}
-
-double LocalPlanner::mapToMinusPIToPI_( double angle )
-{
-  double angle_overflow = static_cast<double>( static_cast<int>(angle / PI ) );
-
-  if( angle_overflow > 0.0 ) {
-    angle_overflow = ceil( angle_overflow / 2.0 );
-  } else {
-    angle_overflow = floor( angle_overflow / 2.0 );
-  }
-
-  angle -= 2 * PI * angle_overflow;
-  return angle;
 }
 
 void LocalPlanner::computeNextHeadingIndex_( void )

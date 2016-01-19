@@ -30,6 +30,10 @@
 //   Tested on: - ROS Hydro on Ubuntu 12.04
 //               - ROS Indigo on Ubuntu 14.04
 //    RGBD source: ASUS Xtion pro
+//
+//   *WARNING*: the following controller implements simple pure pursuit trajectory tracker. No
+//              velocity profile is used.
+//      *TODO*: compute a velocity profile for proper controller      
 // 
 
 // Code:
@@ -44,6 +48,8 @@
 
 #include <costmap_2d/costmap_2d_ros.h>
 
+#include <angles/angles.h>
+
 #include <tf/transform_listener.h>
 
 #include <geometry_msgs/Twist.h>
@@ -54,6 +60,7 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -121,6 +128,13 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   void odomCallback_( const nav_msgs::OdometryConstPtr& );
   void plannerUpdateCallback_( const std_msgs::Bool::ConstPtr& );
   void publishNextHeading_( bool show = true );
+
+  inline double cutOff_( double a )
+  {
+    double th = angles::normalize_angle(a);
+    // just a good shape bell shape
+    return std::pow(0.5+0.5*std::cos(a),6);
+  };
 };
 
 } // namespace squirrel_navigation
