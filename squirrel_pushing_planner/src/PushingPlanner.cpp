@@ -130,7 +130,7 @@ void PushingPlanner::updateCostmap_( double offset ) const
   bool ok_radius, ok_inflation;
 
   std::ostringstream oss_infl, oss_rad;
-  oss_rad << "rosrun dynamic_reconfigure dynparam set /move_base/global_costmap robot_radius " << (robot_radius_+offset);
+  oss_rad << "rosrun dynamic_reconfigure dynparam set /move_base/global_costmap/inflation_layer inscribed_radius " << (robot_radius_+offset);
   oss_infl << "rosrun dynamic_reconfigure dynparam set /move_base/global_costmap/inflation_layer inflation_radius " << (inflation_radius_+offset);
 
   // ROS_INFO_STREAM(oss_rad.str());

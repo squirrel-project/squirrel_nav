@@ -56,6 +56,7 @@ find_package(catkin REQUIRED
 generate_dynamic_reconfigure_options(
   cfg/DownprojectionLayerPlugin.cfg
   cfg/DownprojectionMultilayerPlugin.cfg
+  cfg/InflationLayerPlugin.cfg
   cfg/MapLayerPlugin.cfg
 )
 
@@ -97,6 +98,7 @@ add_library(squirrel_costmap_layers
   src/MapLayer.cpp
   src/FootprintLayer.cpp
   src/InflatedLayer.cpp
+  src/InflationLayer.cpp
   src/DownprojectionLayer.cpp
   src/DownprojectionMultilayer.cpp
   src/MultiInflatedLayer.cpp
