@@ -61,7 +61,7 @@ generate_dynamic_reconfigure_options(
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES squirrel_costmap_layers sqiurrel_planners
+  LIBRARIES squirrel_costmap_layers squirrel_planners
   CATKIN_DEPENDS ${squirrel_navigation_DEPENDENCIES}
   DEPENDS SBPL
 )
@@ -79,6 +79,10 @@ include_directories(
 
 link_directories(
   ${PCL_LIBRARY_DIRS}
+)
+
+link_directories(
+  ${SBPL_LIBRARY_DIRS}
 )
 
 ## Compiling and linking the plugins
