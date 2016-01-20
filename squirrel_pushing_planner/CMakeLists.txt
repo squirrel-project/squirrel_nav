@@ -12,6 +12,8 @@ set(squirrel_pushing_planner_DEPENDENCIES
   roscpp
   squirrel_rgbd_mapping_msgs
   tf
+
+  std_srvs
 )
 
 

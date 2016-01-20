@@ -131,7 +131,6 @@ void PushingPlanner::updateCostmap_( double offset ) const
   
   { // Updating the inscribed radius
     dynamic_reconfigure::Config config;
-
     dynamic_reconfigure::ReconfigureRequest req;
     dynamic_reconfigure::ReconfigureResponse res;
     dynamic_reconfigure::DoubleParameter param;
@@ -142,7 +141,7 @@ void PushingPlanner::updateCostmap_( double offset ) const
 
     req.config = config;
 
-    inscribed_radius_updated = ros::service::call("/move_base/global_costmap/inflation_layers/set_parameters", req, res);
+    inscribed_radius_updated = ros::service::call("/move_base/global_costmap/inflation_layer/set_parameters", req, res);
   }
 
   { // Updating the inflation radius
@@ -152,19 +151,19 @@ void PushingPlanner::updateCostmap_( double offset ) const
     dynamic_reconfigure::ReconfigureResponse res;
     dynamic_reconfigure::DoubleParameter param;
 
-    param.name = "inflated_radius";
+    param.name = "inflation_radius";
     param.value = inflation_radius_ + offset;
     config.doubles.push_back(param);
 
     req.config = config;
 
-    inflation_radius_updated = ros::service::call("/move_base/global_costmap/inflation_layers/set_parameters", req, res);
+    inflation_radius_updated = ros::service::call("/move_base/global_costmap/inflation_layer/set_parameters", req, res);
   }
 
   if ( not inscribed_radius_updated )
-    ROS_WARN_STREAM( node_name_ << ": Unable to update parameters /move_base/global_costmap/inflation_layers/inscribed_radius.");
+    ROS_WARN_STREAM( node_name_ << ": Unable to update parameters /move_base/global_costmap/inflation_layer/inscribed_radius.");
   if ( not inflation_radius_updated )
-    ROS_WARN_STREAM( node_name_ << ": Unable to update parameters /move_base/global_costmap/inflation_layers/inflation_radius.");
+    ROS_WARN_STREAM( node_name_ << ": Unable to update parameters /move_base/global_costmap/inflation_layer/inflation_radius.");
 }
 
 bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req,
