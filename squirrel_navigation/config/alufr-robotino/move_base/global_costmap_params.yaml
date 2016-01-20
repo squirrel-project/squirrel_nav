@@ -8,17 +8,18 @@
 # Code:
 
 global_costmap: {
-  robot_radius: 0.16,
+  robot_radius: 0.22,
   global_frame: /map,
   robot_base_frame: /base_link,
   update_frequency: 5.0,
   publish_frequency: 5.0,
+  resoltion: 0.025,
   static_map: false,
   map_layer/enabled: true,
   ostacles_layer/enabled: true,
   inflation_layer/enabled: true,
   inflation_layer/inflation_radius: 0.6,
-  inflation_layer/cost_scaling_factor: 10.0
+  inflation_layer/cost_scaling_factor: 10.0,
 }
 
 #

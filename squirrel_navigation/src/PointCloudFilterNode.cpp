@@ -62,8 +62,10 @@ using squirrel_navigation::PointCloudFilter;
 int main( int argc, char *argv[] )
 {
   ros::init(argc, argv, "pointcloud_filter");
+
   PointCloudFilter pf;
-  pf.spin();
+  pf.spin(10.0);
+
   return 0;
 }
 

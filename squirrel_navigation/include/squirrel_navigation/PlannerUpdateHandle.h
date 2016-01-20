@@ -1,10 +1,10 @@
-// TiltHandle.h --- 
+// PlannerUpdateHandle.h --- 
 // 
-// Filename: TiltHandle.h
-// Description: Check wheter the kinect is tilted or not
+// Filename: PlannerUpdateHandle.h
+// Description: Relé the update signal for both planners
 // Author: Federico Boniardi
-// Maintainer: boniardi@cs.uni-freiburg.de
-// Created: Thu Mar 12 13:00:04 2015 (+0100)
+// Maintainer: boniardi@informatik.uni-freiburg.de
+// Created: Sun Jan 17 22:14:33 2016 (+0100)
 // Version: 0.1.0
 // Last-Updated: 
 //           By: 
@@ -21,13 +21,18 @@
 // 
 // 
 
-// Copyright (c) 2015, Federico Boniardi
+// Change Log:
+// 
+// 
+// 
+// 
+// Copyright (c) 2016, Federico Boniardi
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 // 
-// * redistributions of source code must retain the above copyright notice, this
+// * Redistributions of source code must retain the above copyright notice, this
 //   list of conditions and the following disclaimer.
 // 
 // * Redistributions in binary form must reproduce the above copyright notice,
@@ -48,45 +53,43 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// 
+// 
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_TILTHANDLER_H_
-#define SQUIRREL_NAVIGATION_TILTHANDLER_H_
+#ifndef SQUIRREL_NAVIGATION_PLANNERUPDATEHANDLE_H_
+#define SQUIRREL_NAVIGATION_PLANNERUPDATEHANDLE_H_
 
 #include <ros/ros.h>
 
-#include <dynamixel_msgs/JointState.h>
-#include <std_msgs/Float64.h>
+#include <std_msgs/Bool.h>
+#include <squirrel_navigation_msgs/PlannerUpdate.h>
+
+#include <stdexcept>
 
 namespace squirrel_navigation {
 
-class TiltHandle
+class PlannerUpdateHandle
 {
  public:
-  TiltHandle( void );
-  virtual ~TiltHandle( void );
-
-  bool gotMotionCommand( void );
-  bool isMoving( void );
-
-  void printROSMsg( const char* );
+  PlannerUpdateHandle( void );
+  virtual ~PlannerUpdateHandle( void );
+  
+  void spin( double hz=5.0 );
   
  private:
-  ros::NodeHandle public_nh_;
-  ros::Subscriber tilt_command_sub_, tilt_state_sub_;
-
-  double tilt_command_;
-  bool tilt_moving_, info_;
+  ros::NodeHandle nh_;
+  ros::Publisher update_pub_;
+  ros::ServiceServer update_srv_;
   
-  void updateTiltState( const dynamixel_msgs::JointState::ConstPtr& );
-  void updateTiltCommand( const std_msgs::Float64::ConstPtr& );
+  bool dispatchPlannerUpdate_( squirrel_navigation_msgs::PlannerUpdate::Request&,
+                               squirrel_navigation_msgs::PlannerUpdate::Response& );
 };
 
 }  // namespace squirrel_navigation
 
-#endif /* SQUIRREL_NAVIGATION_TILTHANDLER_H_ */
+#endif /* SQUIRREL_NAVIGATION_PLANNERUPDATEHANDLE_H_ */
 
 // 
-// TiltHandle.h ends here
+// PlannerUpdateHandle.h ends here

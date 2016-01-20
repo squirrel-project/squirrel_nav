@@ -1,5 +1,4 @@
 <launch>   	
-
   <!-- Pose Transformer -->
   <node name="scan_odom_tf_pub" pkg="squirrel_localizer" type="squirrel_localizer_tf_pose_node" output="screen">
     <param name="pose_topic" value="squirrel_localizer_odom_pose"/>
@@ -10,17 +9,17 @@
   <!-- Localiser -->
   <node name="localizer" pkg="squirrel_localizer" type="squirrel_localizer_localization_node" output="screen">
     <param name="verbose" value="false"/>
-    <param name="number_of_particles" value="5000"/>
-    <param name="maxLocalizationRange" value="20.0"/>
-    <param name="maxRange" value="21.0"/>
-    <param name="motion_param_magnitude" value="1.5"/>
+    <param name="number_of_particles" value="1000"/>
+    <param name="maxLocalizationRange" value="5.0"/>
+    <param name="maxRange" value="6.0"/>
+    <param name="motion_param_magnitude" value="0.5"/>
     <param name="motion_param_ff" value="0.2"/> 
     <param name="motion_param_fs" value="0.1"/> 
     <param name="motion_param_fr" value="0.2"/> 
     <param name="motion_param_rr" value="0.2"/> 
-    <param name="motion_param_sth" value="0.0"/> 
-    <param name="motion_param_sx" value="0.0"/> 
-    <param name="motion_param_sy" value="0.0"/> 
+    <param name="motion_param_sth" value="1.0"/> 
+    <param name="motion_param_sx" value="1.0"/> 
+    <param name="motion_param_sy" value="1.0"/> 
     <param name="dMapTheshold" value="2"/>
     <param name="observationSigma" value="0.6"/>
     <param name="use_second_laser" value="false"/>
@@ -35,7 +34,7 @@
     <param name="dMapTheshold" value="0.3"/>
     <param name="observationPointDensity" value="0.5"/>
     <param name="use_last_pose" value="false"/>
-    <param name="use_scan_to_map_matching" value="true"/>
+    <param name="use_scan_to_map_matching" value="false"/>
     <param name="sm_filter_gain" value="0.825"/>
   </node>
 

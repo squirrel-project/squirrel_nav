@@ -31,6 +31,7 @@ struct LocalizerState
   };
   double reference_timestamp;
   Transformation3 reference_odom;
+  Transformation3 reference_other_odom;
   Transformation3 reference_pose;
   bool localized;
   mutable bool initialized;

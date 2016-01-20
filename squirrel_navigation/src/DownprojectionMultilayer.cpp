@@ -7,9 +7,9 @@
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Wed Nov 19 18:57:41 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Tue Nov 24 14:35:22 2015 (+0100)
+// Last-Updated: Tue Jan 19 16:07:03 2016 (+0100)
 //           By: Federico Boniardi
-//     Update #: 7
+//     Update #: 8
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -86,13 +86,15 @@ DownprojectionMultilayer::DownprojectionMultilayer( void ) :
     dsrv_(NULL)
 {
   costmap_ = NULL;
+
+  kinect_jh_["tilt"] = JointHandle("kinect_tilt_joint");
+  kinect_jh_["pan"] = JointHandle("kinect_pan_joint");
 }
 
 DownprojectionMultilayer::~DownprojectionMultilayer( void )
 {
-  if ( dsrv_ ) {
+  if ( dsrv_ )
     delete dsrv_;
-  }
 }
 
 void DownprojectionMultilayer::onInitialize( void )
@@ -104,21 +106,14 @@ void DownprojectionMultilayer::onInitialize( void )
 void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
                                              double* min_x, double* min_y, double* max_x, double* max_y )
 {
-  if ( rolling_window_ ) {
+  if ( rolling_window_ )
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
-  }
 
-  if ( !enabled_ ) {
+  if ( !enabled_ )
     return;
-  }
 
-  if ( kinect_th_.isMoving() ) {
-    kinect_th_.printROSMsg("Skipping costmap's update");
-    return;
-  }
-
-  if ( kinect_th_.gotMotionCommand() ) { 
-    kinect_th_.printROSMsg("Skipping costmap's update");
+  if ( kinect_jh_["tilt"].skipData() or  kinect_jh_["pan"].skipData() ) {
+    ROS_INFO("%s/%s: Skipping costmap's update. Kinect is moving.", ros::this_node::getName().c_str(), name_.c_str());
     return;
   }
   

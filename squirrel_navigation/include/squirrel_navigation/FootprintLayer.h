@@ -81,19 +81,18 @@ namespace squirrel_navigation {
 class FootprintLayer : public costmap_2d::Layer
 {
 public:
-  virtual void onInitialize();
-  virtual ~FootprintLayer();
-
-  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y, double* max_x,
-                             double* max_y);
-  virtual void updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j);
+  virtual void onInitialize( void );
+  virtual ~FootprintLayer( void );
+  virtual void updateBounds( double, double, double, double*, double*, double*, double* );
+  virtual void updateCosts( costmap_2d::Costmap2D&, int, int, int, int );
 
 private:
-  geometry_msgs::PolygonStamped footprint_; ///< Storage for polygon being published.
-  void publishFootprint();
-  void reconfigureCB(costmap_2d::GenericPluginConfig &config, uint32_t level);
   ros::Publisher footprint_pub_;
-  dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig> *dsrv_;
+  geometry_msgs::PolygonStamped footprint_; ///< Storage for polygon being published.
+  dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>* dsrv_;
+
+  void publishFootprint( void );
+  void reconfigureCB( costmap_2d::GenericPluginConfig &config, uint32_t level );
 };
 
 }  // namespace squirrel_navigation

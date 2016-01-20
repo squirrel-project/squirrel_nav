@@ -6,7 +6,8 @@
 # Maintainer: boniardi@cs.uni-freiburg.de
 #
 # Code:
-robot_radius: 0.16
+robot_radius: 0.22
+footprint: [[0.35, 0.0], [0.2009800006813722, 0.08948206147667603], [0.14720873339894883, 0.1634918616050267], [0.06798373876248844, 0.2092324335849338], [-0.022996261918883733, 0.21879481698102016], [-0.10999999999999995, 0.1905255888325765], [-0.1779837387624884, 0.12931275550434412], [-0.21519247216143722, 0.04574057197990714], [-0.21519247216143725, -0.045740571979906997], [-0.17798373876248846, -0.12931275550434407], [-0.1100000000000001, -0.19052558883257645], [-0.02299626191888393, -0.21879481698102013], [0.10815594803123152, -0.33286978070330375], [0.2341957122256002, -0.2601006889170881], [0.3197409101749102, -0.1423578250765303]]
 
 # costmap_2d plugins declaration.
 plugins:
@@ -17,7 +18,7 @@ plugins:
 map_layer:
   robot_link_radius: 0.22
   inflation_radius: 0.6
-  cost_scaling_factor: 10.0
+  cost_scaling_factor: 20.0
 
 # Parameters for squirrel_navigation::ObstacleLayer
 obstacles_layer:
@@ -25,30 +26,11 @@ obstacles_layer:
   raytrace_range: 3.0 
   observation_sources: laser_scan rgbd_scan
   rgbd_scan: {sensor_frame: kinect_depth_optical_frame, data_type: PointCloud2, topic: rgbdscan, marking: true, clearing: false}
-  laser_scan: {sensor_frame: hokuyo_link, data_type: LaserScan, topic: scan, marking: true, clearing: true} 
+  laser_scan: {sensor_frame: hokuyo_link, data_type: LaserScan, topic: scan, marking: true, clearing: false} 
   publish_voxel_map: true
   robot_height: 0.47
-  floor_threshold: 0.04
+  floor_threshold: 0.03
   robot_diameter: 0.5
-
-# robot_radius: 0.07 # smallest radius in the stack
-# perception_layer:
-#   obstacle_range: 1.5
-#   raytrace_range: 3.0
-#   observation_sources: rgbd_scan laser_scan
-#   laser_scan: {sensor_frame: hokuyo_link, data_type: LaserScan, topic: scan, marking: true, clearing: false} 
-#   rgbd_scan: {sensor_frame: kinect_rgb_optical_frame, data_type: PointCloud2, topic: rgbdscan, marking: true, clearing: false}
-#   publish_voxel_map: false
-#   num_layers: 2
-#   robot_link_radii: "0.22, 0.07"
-#   layers_levels: "0.03, 0.26" 
-#   max_obstacle_height: 0.76
-#   min_obstacle_height: 0.03
-#   obstacles_persistence: 30.0
-#   inflation_radii: "0.6, 0.3"
-#   cost_scaling_factors: "10.0, 10.0"
-#   inscribed_radii: "0.18, 0.05"
-
 
 #
 # costmap_common_params.yaml ends here

@@ -89,9 +89,8 @@ bool LaserSensor::perform_update(double linear_motion, double angular_motion) co
  */
 void LaserSensor::set_map(AISNavigation::FloatMap *map)
 {
-  std::string ns = ros::this_node::getNamespace();
-  std::string nn = ros::this_node::getName();
-  ROS_INFO("%s/%s: Setting the map", ns.c_str(), nn.c_str());
+  std::string ns = ros::this_node::getName();
+  ROS_INFO("%s: Setting the map.", ns.c_str());
   m_map = map;
   m_distanceMapComputed = false;
 }
@@ -99,14 +98,14 @@ void LaserSensor::set_map(AISNavigation::FloatMap *map)
 void LaserSensor::handle_sensor_disagreement(ParticleVector &particles)
 {
   (void)particles; // Get rid of compiler warning
-  cerr << "LaserSensor::handle_sensor_disagreement not implemented" << endl;
+  ROS_ERROR_STREAM( ros::this_node::getName() << ": LaserSensor::handle_sensor_disagreement not implemented.");
 }
 
 void LaserSensor::resample_particles(ParticleVector &particles, int count)
 {
   (void)particles; // Get rid of compiler warning
   (void)count; // Get rid of compiler warning
-  cerr << "LaserSensor::resample_particles not implemented" << endl;
+  ROS_ERROR_STREAM( ros::this_node::getName() << ": LaserSensor::resample_particles not implemented");
 }
 
 
@@ -204,9 +203,8 @@ double LaserSensor::particle_weight(const LocalizerParticle &p)
 AISNavigation::FloatMap* LaserSensor::distance_map(const LocalizerParticle &p)
 {
   if(!m_distanceMapComputed){
-    std::string ns = ros::this_node::getNamespace();
-    std::string nn = ros::this_node::getName();
-    ROS_INFO("%s/%s: Computing the distance map.", ns.c_str(), nn.c_str());
+    std::string ns = ros::this_node::getName();
+    ROS_INFO("%s: Computing the distance map.", ns.c_str());
     m_map->computeDistanceMap(*m_distanceMap, m_maxDistance, m_minOccupancy, m_markUnknown);
     m_distanceMapComputed = true;
   }

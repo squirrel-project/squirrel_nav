@@ -108,7 +108,7 @@ void Localization::place_robot(const Transformation3 &pose, double sigma, bool u
   particles(m_localizer_params.particles);
   for(ParticleVector::iterator it=m_particles.begin(); it!=m_particles.end(); ++it) {
     if(usePoseTheta){
-      //Apllying theta from pose 
+      //Apllying theta from pose  
       Vector6 newPose = it->pose.toVector();
       newPose[5] = pose.toVector()[5];
       it->pose = Transformation3::fromVector(newPose);
@@ -137,16 +137,18 @@ void Localization::place_robot(const Transformation3 &pose, double sigma, bool u
  *
  * \param motion recently performed motion
  */
-void Localization::update_motion(const Transformation3 &odometry)
+void Localization::update_motion(const Transformation3 &odometry, const Transformation3 &other_odometry)
 {
-  Transformation3 motion = m_state.reference_odom.inverse() * odometry; 
-  m_motion_model.update_motion(motion);
+  Transformation3 motion = m_state.reference_odom.inverse() * odometry;
+  Transformation3 other_motion = m_state.reference_other_odom.inverse() * other_odometry;
+  m_motion_model.update_motion(motion, other_motion);
   //     m_gps.update_motion(motion);
   //     m_laser.update_motion(motion);
   //     m_vision.update_motion(motion);
 
   // Node id update handling
   Vector6 motion6d = motion.toVector();
+  Vector6 other_motion6d = motion.toVector();
 }
 
 
@@ -160,7 +162,7 @@ void Localization::update_motion(const Transformation3 &odometry)
  *        computation
  * \return true if an update was performed, false otherwise
  */
-bool Localization::update_laser(const std::vector<Vector3f>& endpoints, const Transformation3& odomPose, const double& timestamp)
+bool Localization::update_laser(const std::vector<Vector3f>& endpoints, const Transformation3& odomPose, const Transformation3& otherOdomPose, const double& timestamp)
 {
 
   // Perform global localization, even while standing still if the system
@@ -177,7 +179,7 @@ bool Localization::update_laser(const std::vector<Vector3f>& endpoints, const Tr
       it->pose *= jitter;
     }
     m_laser.compute_weights(m_particles, endpoints);
-    update_filter(m_laser, odomPose, timestamp);
+    update_filter(m_laser, odomPose, otherOdomPose, timestamp);
     if(m_active_localization_laser_count < 500){
       m_active_localization = !m_laser.localized();
     } else {
@@ -195,7 +197,7 @@ bool Localization::update_laser(const std::vector<Vector3f>& endpoints, const Tr
 
   propagate_particles();
   m_laser.compute_weights(m_particles, endpoints);
-  update_filter(m_laser, odomPose, timestamp);
+  update_filter(m_laser, odomPose, otherOdomPose, timestamp);
   set_localized(m_laser.localized());
   reset_motion();
     
@@ -336,7 +338,7 @@ void Localization::propagate_particles()
 /**
  * \brief Updates the internal state of the filter.
  */
-void Localization::update_state(const Transformation3& odomPose, const double& timestamp)
+void Localization::update_state(const Transformation3& odomPose, const Transformation3& otherOdomPose, const double& timestamp)
 {
   compute_mean();
   compute_covariance();
@@ -345,6 +347,7 @@ void Localization::update_state(const Transformation3& odomPose, const double& t
 
   m_state.reference_pose = m_mean;
   m_state.reference_odom = odomPose;
+  m_state.reference_other_odom = otherOdomPose;
   m_state.reference_timestamp = timestamp;
 }
 
@@ -491,7 +494,7 @@ void Localization::reset_motion()
  *
  * \param sensor sensor model to reset the motion
  */
-void Localization::update_filter(BasicSensor &sensor,  const Transformation3& odomPose, const double& timestamp)
+void Localization::update_filter(BasicSensor &sensor,  const Transformation3& odomPose, const Transformation3& otherOdomPose, const double& timestamp)
 {
   m_particles_old = m_particles;
 
@@ -500,7 +503,7 @@ void Localization::update_filter(BasicSensor &sensor,  const Transformation3& od
   if(neff < (m_localizer_params.resample_variance * m_particles.size())) {
     perform_resampling();
   }
-  update_state(odomPose, timestamp);
+  update_state(odomPose, otherOdomPose, timestamp);
   //     m_motion_model.reset();
 }
 

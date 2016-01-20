@@ -5,23 +5,23 @@ set(ROS_BUILD_TYPE Release)
 
 ## Package dependencies
 set(squirrel_3d_mapping_DEPENDENCIES
-  roscpp
-  visualization_msgs
-  sensor_msgs
-  pcl_ros
-  pcl_conversions
-  nav_msgs
-  std_msgs
-  std_srvs
-  octomap_ros
-  octomap_msgs
   dynamic_reconfigure
-  nodelet
   geometry_msgs
+  message_generation 
   message_runtime
-  message_generation
+  nav_msgs
+  nodelet
+  octomap_msgs  
+  octomap_ros
+  pcl_conversions 
+  pcl_ros
+  roscpp
+  sensor_msgs
   squirrel_3d_mapping_msgs
   squirrel_rgbd_mapping_msgs
+  std_msgs
+  std_srvs
+  visualization_msgs
 )
 
 ############
@@ -40,10 +40,10 @@ find_package(catkin REQUIRED
 find_package(PCL REQUIRED 
   QUIET COMPONENTS 
   common 
-  sample_consensus 
-  io 
-  segmentation 
   filters
+  io 
+  sample_consensus 
+  segmentation 
 )
 
 #############
@@ -112,14 +112,15 @@ target_link_libraries(octomap_server_nodelet ${PROJECT_NAME} ${LINK_LIBS} dynami
 ## Install ##
 #############
 
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS
   dynamic_edt
-  octomap_server_node
-  octomap_server_static
-  octomap_server_multilayer
   octomap_saver
-  octomap_tracking_server_node
+  octomap_server_multilayer
+  octomap_server_node
   octomap_server_nodelet
+  octomap_server_static
+  octomap_tracking_server_node
+  squirrel_3d_mapping
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

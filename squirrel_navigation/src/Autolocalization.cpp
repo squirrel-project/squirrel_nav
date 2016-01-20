@@ -54,15 +54,6 @@
 
 #include "squirrel_navigation/Autolocalization.h"
 
-#include <std_srvs/Empty.h>
-
-#include <angles/angles.h>
-
-#include <boost/bind.hpp>
-
-#include <limits>
-#include <stdexcept>
-
 namespace squirrel_navigation {
 
 Autolocalization::Autolocalization( void ) :

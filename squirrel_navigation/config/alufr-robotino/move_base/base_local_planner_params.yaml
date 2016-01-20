@@ -1,11 +1,27 @@
-LocalPlanner:
-  max_linear_vel: 0.2
-  min_linear_vel: 0.0
-  max_rotation_vel: 0.3
-  max_in_place_rotation_vel: 0.5
-  min_rotation_vel: 0.0
-  yaw_goal_tolerance: 0.05
-  xy_goal_tolerance: 0.05
-  heading_lookahead: 0.3
-  num_window_points: 10
-  holonomic_robot: true
+LocalPlanner: {
+  verbose: true,
+  trajectory_planner/meter_scoring: true,
+  trajectory_planner/max_vel_x: 0.2,
+  trajectory_planner/min_vel_x: 0.0,
+  trajectory_planner/max_rotational_vel: 1.0,
+  trajectory_planner/min_in_place_rotational_vel: 0.4,
+  trajectory_planner/yaw_goal_tolerance: 0.05,
+  trajectory_planner/xy_goal_tolerance: 0.10,
+  trajectory_planner/acc_lim_th: 3.2,
+  trajectory_planner/acc_lim_x: 2.5,
+  trajectory_planner/acc_lim_y: 2.5,
+  trajectory_planner/gdist_scale: 2.0,
+  trajectory_planner/pdist_scale: 2.0,
+  trajectory_planner/heading_lookahead: 0.10,
+  trajectory_planner/holonomic_robot: true,
+  trajectory_tracker/max_linear_vel: 0.3,
+  trajectory_tracker/min_linear_vel: 0.0,
+  trajectory_tracker/max_rotation_vel: 0.5,
+  trajectory_tracker/max_in_place_rotation_vel: 0.5,
+  trajectory_tracker/min_rotation_vel: 0.0,
+  trajectory_tracker/yaw_goal_tolerance: 0.05,
+  trajectory_tracker/xy_goal_tolerance: 0.10,
+  trajectory_tracker/heading_lookahead: 0.3,
+  trajectory_tracker/num_window_points: 10,
+  trajectory_tracker/holonomic_robot: true,
+}
