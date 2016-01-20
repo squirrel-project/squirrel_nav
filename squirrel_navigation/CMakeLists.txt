@@ -100,11 +100,11 @@ add_library(squirrel_costmap_layers
   src/FootprintLayer.cpp
   src/InflatedLayer.cpp
   src/InflationLayer.cpp
+  src/JointHandle.cpp
   src/DownprojectionLayer.cpp
   src/DownprojectionMultilayer.cpp
-  src/MultiInflatedLayer.cpp
   src/MapLayer.cpp
-  src/JointHandle.cpp
+  src/MultiInflatedLayer.cpp
 )
 
 add_dependencies(squirrel_costmap_layers
@@ -118,8 +118,8 @@ target_link_libraries(squirrel_costmap_layers
 
 ## Compiling and linking the nodes 
 add_executable(pointcloud_filter_node
-  src/PointCloudFilterNode.cpp
   src/PointCloudFilter.cpp
+  src/PointCloudFilterNode.cpp
 )
 
 target_link_libraries(pointcloud_filter_node
@@ -127,8 +127,8 @@ target_link_libraries(pointcloud_filter_node
 )
 
 add_executable(autolocalization_node
-  src/AutolocalizationNode.cpp
   src/Autolocalization.cpp
+  src/AutolocalizationNode.cpp
 )
 
 target_link_libraries(autolocalization_node
@@ -136,8 +136,8 @@ target_link_libraries(autolocalization_node
 )
 
 add_executable(planner_update_handle_node
-  src/PlannerUpdateHandleNode.cpp
   src/PlannerUpdateHandle.cpp
+  src/PlannerUpdateHandleNode.cpp
 )
 
 add_dependencies(planner_update_handle_node
