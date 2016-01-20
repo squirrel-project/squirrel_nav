@@ -7,9 +7,9 @@
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Wed Nov 19 18:57:41 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Tue Nov 24 14:35:06 2015 (+0100)
+// Last-Updated: Tue Jan 19 16:07:19 2016 (+0100)
 //           By: Federico Boniardi
-//     Update #: 5
+//     Update #: 6
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -106,8 +106,8 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
     return;
   }
 
-  if ( kinect_jh_["tilt"].isMoving() or  kinect_jh_["tilt"].gotMotionCommand() ) {
-    ROS_INFO("%s/%s: Skipping costmap's update.", ros::this_node::getName().c_str(), name_.c_str());
+  if ( kinect_jh_["tilt"].skipData() or  kinect_jh_["pan"].skipData() ) {
+    ROS_INFO("%s/%s: Skipping costmap's update. Kinect is moving.", ros::this_node::getName().c_str(), name_.c_str());
     return;
   }
   
