@@ -85,9 +85,9 @@ link_directories(
 
 ## Compiling and linking the plugins
 add_library(squirrel_planners
-  src/LocalPlanner.cpp
   src/GlobalPlanner.cpp
   src/LatticeSCQ.cpp
+  src/LocalPlanner.cpp
 )
 
 target_link_libraries(squirrel_planners
@@ -97,12 +97,12 @@ target_link_libraries(squirrel_planners
 )
 
 add_library(squirrel_costmap_layers
+  src/DownprojectionLayer.cpp
+  src/DownprojectionMultilayer.cpp
   src/FootprintLayer.cpp
   src/InflatedLayer.cpp
   src/InflationLayer.cpp
   src/JointHandle.cpp
-  src/DownprojectionLayer.cpp
-  src/DownprojectionMultilayer.cpp
   src/MapLayer.cpp
   src/MultiInflatedLayer.cpp
 )
