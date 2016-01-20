@@ -5,12 +5,13 @@ set(ROS_BUILD_TYPE Release)
 
 ## Package dependencies
 set(squirrel_pushing_planner_DEPENDENCIES
-  geometry_msgs
+  dynamic_reconfigure
+  geometry_msgs 
+  map_msgs
   nav_msgs
   roscpp
   squirrel_rgbd_mapping_msgs
   tf
-  map_msgs
 )
 
 

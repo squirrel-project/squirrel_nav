@@ -79,6 +79,10 @@
 
 #include <costmap_2d/cost_values.h>
 
+#include <dynamic_reconfigure/DoubleParameter.h>
+#include <dynamic_reconfigure/Reconfigure.h>
+#include <dynamic_reconfigure/Config.h>
+
 #include <algorithm>
 #include <climits>
 #include <cmath>

@@ -127,17 +127,44 @@ void PushingPlanner::waitForPlannerService( void )
 
 void PushingPlanner::updateCostmap_( double offset ) const
 {
-  bool ok_radius, ok_inflation;
-
-  std::ostringstream oss_infl, oss_rad;
-  oss_rad << "rosrun dynamic_reconfigure dynparam set /move_base/global_costmap/inflation_layer inscribed_radius " << (robot_radius_+offset);
-  oss_infl << "rosrun dynamic_reconfigure dynparam set /move_base/global_costmap/inflation_layer inflation_radius " << (inflation_radius_+offset);
-
-  // ROS_INFO_STREAM(oss_rad.str());
-  int foo1 = std::system(oss_rad.str().c_str());
+  bool inscribed_radius_updated, inflation_radius_updated;
   
-  // ROS_INFO_STREAM(oss_infl.str());
-  // int foo2 = std::system(oss_infl.str().c_str());
+  { // Updating the inscribed radius
+    dynamic_reconfigure::Config config;
+
+    dynamic_reconfigure::ReconfigureRequest req;
+    dynamic_reconfigure::ReconfigureResponse res;
+    dynamic_reconfigure::DoubleParameter param;
+
+    param.name = "inscribed_radius";
+    param.value = robot_radius_ + offset;
+    config.doubles.push_back(param);
+
+    req.config = config;
+
+    inscribed_radius_updated = ros::service::call("/move_base/global_costmap/inflation_layers/set_parameters", req, res);
+  }
+
+  { // Updating the inflation radius
+    dynamic_reconfigure::Config config;
+
+    dynamic_reconfigure::ReconfigureRequest req;
+    dynamic_reconfigure::ReconfigureResponse res;
+    dynamic_reconfigure::DoubleParameter param;
+
+    param.name = "inflated_radius";
+    param.value = inflation_radius_ + offset;
+    config.doubles.push_back(param);
+
+    req.config = config;
+
+    inflation_radius_updated = ros::service::call("/move_base/global_costmap/inflation_layers/set_parameters", req, res);
+  }
+
+  if ( not inscribed_radius_updated )
+    ROS_WARN_STREAM( node_name_ << ": Unable to update parameters /move_base/global_costmap/inflation_layers/inscribed_radius.");
+  if ( not inflation_radius_updated )
+    ROS_WARN_STREAM( node_name_ << ": Unable to update parameters /move_base/global_costmap/inflation_layers/inflation_radius.");
 }
 
 bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req,
