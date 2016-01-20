@@ -16,10 +16,10 @@ install:
   - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
   - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
   - sudo apt-get update -qq
-  - sudo apt-get install -qq -y python-rosdep python-catkin-tools ros-indigo-pcl-conversions
+  - sudo apt-get install -qq -y python-rosdep python-catkin-tools
   - sudo rosdep init
   - rosdep update
-  - sudo apt-get install ros-indigo-desktop
+  - sudo apt-get install ros-indigo-desktop ros-indigo-pcl-conversions ros-indigo-pcl-ros
   # Use rosdep to install all dependencies (including ROS itself)
 script:
   - source /opt/ros/$CI_ROS_DISTRO/setup.bash
