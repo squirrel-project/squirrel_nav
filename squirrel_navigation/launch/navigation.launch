@@ -42,7 +42,7 @@
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/base_local_planner_params.yaml" command="load" />
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/base_global_planner_params.yaml" command="load" />
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/move_base_params.yaml" command="load" />
-    <param name="GlobalPlanner/lattice/primitive_filename" value="$(find squirrel_navigation)/config/alufr-robotino/move_base/motion-primitives/default-primitives.mprim"/>
+    <param name="GlobalPlanner/lattice/primitive_filename" value="$(find squirrel_navigation)/config/alufr-robotino/move_base/motion-primitives/motion_primitives_50mm.mprim"/>
   </node>
   
   <!-- Run the octomap server and the 3d collision check -->
