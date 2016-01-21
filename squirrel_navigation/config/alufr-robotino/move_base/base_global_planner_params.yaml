@@ -1,6 +1,6 @@
 GlobalPlanner: {
   verbose: false,
-  replanning_thresh: 0.1,
+  replanning_thresh: 0.2,
   dijkstra/allow_unknown: false,
   dijkstra/default_tolerance: 0.0,
   dijkstra/old_navfn_behavior: false,

@@ -58,8 +58,8 @@
 
 // Code:
 
-#ifndef PUSHINGPLANNER_H_
-#define PUSHINGPLANNER_H_
+#ifndef SQUIRREL_PUSHING_PLANNER_PUSHINGPLANNER_H_
+#define SQUIRREL_PUSHING_PLANNER_PUSHINGPLANNER_H_
 
 #include <ros/ros.h>
 #include <ros/exceptions.h>
@@ -76,8 +76,13 @@
 #include <nav_msgs/GetPlan.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/MapMetaData.h>
+#include <std_srvs/Empty.h>
 
 #include <costmap_2d/cost_values.h>
+
+#include <dynamic_reconfigure/DoubleParameter.h>
+#include <dynamic_reconfigure/Reconfigure.h>
+#include <dynamic_reconfigure/Config.h>
 
 #include <algorithm>
 #include <climits>
@@ -160,7 +165,7 @@ class PushingPlanner
 
 }  // namespace squirrel_pushing_planner
 
-#endif /* PUSHINGPLANNER_H_ */
+#endif /* SQUIRREL_PUSHING_PLANNER_PUSHINGPLANNER_H_ */
 
 // 
 // PushingPlanner.h ends here

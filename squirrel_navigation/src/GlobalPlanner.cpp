@@ -133,6 +133,12 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
 
     if ( verbose_ )
       ROS_INFO_STREAM(name << ": Loading primitive file: " << primitive_filename_ );
+
+    std::ifstream primf(primitive_filename_.c_str());
+    if ( not primf.good() ) {
+      ROS_ERROR_STREAM( name << ": Invalid file" << primitive_filename_.c_str() <<". Shutting down." );
+      std::exit(EXIT_FAILURE);
+    }
     
     double nominalvel_mpersecs, timetoturn45degsinplace_secs;
     pnh_l.param<double>("nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
@@ -169,7 +175,8 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
       if ( not inflation_layer )
         continue;
 
-      cost_possibly_circumscribed_tresh = inflation_layer->computeCost(costmap_ros_->getLayeredCostmap()->getCircumscribedRadius());
+      double cell_circumscribed_radius = costmap_ros_->getLayeredCostmap()->getCircumscribedRadius()/costmap_ros_->getCostmap()->getResolution();
+      cost_possibly_circumscribed_tresh = inflation_layer->computeCost(cell_circumscribed_radius);
     }
 
     if( not env_->SetEnvParameter("cost_inscribed_thresh",costMapCostToSBPLCost_(costmap_2d::INSCRIBED_INFLATED_OBSTACLE)) ) {
@@ -204,7 +211,7 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
                                 timetoturn45degsinplace_secs, obst_cost_thresh,
                                 primitive_filename_.c_str());
     } catch( SBPL_Exception* e ) {
-      ROS_ERROR_STREAM( name << ": [SBPL] " << e->what() );
+      ROS_ERROR_STREAM( name << ": [SBPL] " << e->what() << " Is the resolution of the map matching the resolution of the primitives?" );
       ret = false;
     }
     
@@ -232,8 +239,7 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
     plan_pub_ = pnh.advertise<nav_msgs::Path>("plan", 1);
     stats_pub_ = pnh.advertise<squirrel_navigation_msgs::GlobalPlannerStats>("lattice_planner_stats", 1);
 
-    if ( verbose_ )
-      pose_plan_pub_ = pnh.advertise<geometry_msgs::PoseArray>("poses", 1);
+    pose_plan_pub_ = pnh.advertise<geometry_msgs::PoseArray>("poses", 1);
     
     update_sub_ = nh_.subscribe("/plan_with_footprint", 1, &GlobalPlanner::updatePlannerCallback_, this);
     
@@ -357,23 +363,23 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
       int solution_cost;
       try{
         int ret = lattice_planner_->replan(allocated_time_, &solution_stateIDs, &solution_cost);
-        if ( ret )
-          if ( verbose_ ) 
+        if ( ret ) {
+          if ( verbose_ )
             ROS_INFO_STREAM( name_ << ": Solution is found" );
-          else {
-            ROS_WARN_STREAM( name_ << ": Solution not found." );
-            publishStats_(solution_cost, 0, start, goal);
-            return false;
-          }
+        } else {
+          ROS_WARN_STREAM( name_ << ": Solution not found." );
+          publishStats_(solution_cost, 0, start, goal);
+          return false;
+        }
       } catch( SBPL_Exception* e ) {
         ROS_ERROR_STREAM( name_ << ": [SBPL] " << e->what() );
         return false;
       }
-
+      
       if ( verbose_ ) {
         ROS_INFO("%s: Size of solution: %d", name_.c_str(), (int)solution_stateIDs.size());
       }
-
+      
       std::vector<EnvNAVXYTHETALAT3Dpt_t> sbpl_path;
       try{
         env_->ConvertStateIDPathintoXYThetaPath(&solution_stateIDs, &sbpl_path);
@@ -381,7 +387,7 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
         ROS_ERROR_STREAM( name_ << ": [SBPL] " << e->what() );
         return false;
       }
-
+      
       if ( verbose_ )
         ROS_INFO("Plan has %d points.\n", (int)sbpl_path.size());
   
@@ -394,7 +400,7 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
         geometry_msgs::PoseStamped pose;
         pose.header.stamp = plan_time;
         pose.header.frame_id = costmap_ros_->getGlobalFrameID();
-
+        
         pose.pose.position.x = sbpl_path[i].x + costmap_ros_->getCostmap()->getOriginX();
         pose.pose.position.y = sbpl_path[i].y + costmap_ros_->getCostmap()->getOriginY();
         pose.pose.position.z = start.pose.position.z;
@@ -445,7 +451,7 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
     if ( curr_planner_ == LATTICE ) {
       gui_poses.poses.resize(plan_.size());
       for (size_t i=0; i<plan_.size(); ++i)
-      gui_poses.poses[i] = plan_[i].pose;
+        gui_poses.poses[i] = plan_[i].pose;
       pose_plan_pub_.publish(gui_poses);
     }
   }

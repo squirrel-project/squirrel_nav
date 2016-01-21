@@ -220,10 +220,12 @@ void MapLayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i, int m
 void MapLayer::reconfigureCallback_( MapLayerPluginConfig &config, uint32_t level )
 {
   has_updated_data_ = true;
-  inscribed_radius_ = config.robot_link_radius;
 
-  if ( weight_ != config.cost_scaling_factor or (inflation_radius_ != config.inflation_radius) ) {
+  if ( weight_ != config.cost_scaling_factor or
+       inflation_radius_ != config.inflation_radius or
+       inscribed_radius_ != config.robot_link_radius ) {
     inflation_radius_ = config.inflation_radius;
+    inscribed_radius_ = config.robot_link_radius;
     cell_inflation_radius_ = cellDistance(inflation_radius_);
     weight_ = config.cost_scaling_factor;
     has_updated_data_ = true;

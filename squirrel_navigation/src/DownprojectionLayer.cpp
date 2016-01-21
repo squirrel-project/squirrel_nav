@@ -77,9 +77,10 @@ DownprojectionLayer::DownprojectionLayer( void ) :
     robot_height_(1.0),
     floor_threshold_(0.0),
     obstacles_persistence_(60.0)
+
 {
   costmap_ = NULL;
-  
+
   kinect_jh_["tilt"] = JointHandle("kinect_tilt_joint");
   kinect_jh_["pan"] = JointHandle("kinect_pan_joint");
 }
@@ -291,7 +292,7 @@ void DownprojectionLayer::reconfigureCallback_( DownprojectionLayerPluginConfig&
   } else if ( obstacles_persistence_ == 0) {
     ROS_WARN("%s/%s: obstacle_persistance is chosen to be 0(s). Reset to 60.0(s). ", ros::this_node::getName().c_str(), name_.c_str());
   } 
-
+  
   matchSize();
 }
 

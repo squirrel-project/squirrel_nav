@@ -56,6 +56,7 @@ find_package(catkin REQUIRED
 generate_dynamic_reconfigure_options(
   cfg/DownprojectionLayerPlugin.cfg
   cfg/DownprojectionMultilayerPlugin.cfg
+  cfg/InflationLayerPlugin.cfg
   cfg/MapLayerPlugin.cfg
 )
 
@@ -78,10 +79,7 @@ include_directories(
 )
 
 link_directories(
-  ${PCL_LIBRARY_DIRS}
-)
-
-link_directories(
+  ${catkin_LIBRARY_DIRS} 
   ${SBPL_LIBRARY_DIRS}
 )
 
@@ -103,6 +101,7 @@ add_library(squirrel_costmap_layers
   src/DownprojectionMultilayer.cpp
   src/FootprintLayer.cpp
   src/InflatedLayer.cpp
+  src/InflationLayer.cpp
   src/JointHandle.cpp
   src/MapLayer.cpp
   src/MultiInflatedLayer.cpp

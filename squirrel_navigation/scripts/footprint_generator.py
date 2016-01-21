@@ -21,6 +21,13 @@ import math
 import sys
 
 def generate_footprint_(inner_radius, outer_radius, n, alpha_max, alpha_min):
+    '''
+    inner_radius: radius of the robot base
+    outer_radius: radius of robot base plus arm occupancy footprint
+               n: number of points in footprint polygon
+       alpha_max: maximum angle of arm occupancy
+       alpha_min: minimum angle of arm occupancy
+    '''
     footprint = []
     a_max = math.fmod(alpha_max,2*math.pi)
     a_min = math.fmod(alpha_min,2*math.pi)
