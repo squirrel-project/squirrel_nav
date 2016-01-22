@@ -90,6 +90,10 @@ add_library(squirrel_planners
   src/LocalPlanner.cpp
 )
 
+add_dependencies(squirrel_planners
+  squirrel_navigation_msgs_generate_messages_cpp
+)
+
 target_link_libraries(squirrel_planners
   ${catkin_LIBRARIES}
   ${SBPL_LIBRARIES}
