@@ -19,13 +19,14 @@
     <param name="use_imu" value="$(arg use_imu)"/>
     <param name="use_odom" value="$(arg use_odom)"/>
     <param name="use_vel" value="$(arg use_vel)"/>
-    <param name="publish_tf" value="$(arg pulish_tf)"/>
+    <param name="publish_tf" value="$(arg publish_tf)"/>
     <param name="publish_pose" value="$(arg publish_pose)"/>
     <param name="publish_pose_stamped" value="$(arg publish_pose_stamped)"/>
     <param name="publish_nav_odom" value="$(arg publish_nav_odom)"/>
     <param name="max_iterations" value="$(arg max_iterations)"/>
     <param name="alpha" value="$(arg alpha)"/>
     <param name="beta" value="$(arg beta)"/>
+    <remap from="/odom_scan" to="/odom"/>
   </node>
 
 </launch>

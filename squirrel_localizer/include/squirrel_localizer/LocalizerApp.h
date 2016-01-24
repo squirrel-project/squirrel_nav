@@ -112,7 +112,8 @@ private:
   void stopLocalization();
 
   bool use_last_pose_2_init_;
-
+  bool reset_odometry_;
+  
   //void writeScanToFile(LDP scan, std::string filename);
 
   // Publisher and Subscriber
