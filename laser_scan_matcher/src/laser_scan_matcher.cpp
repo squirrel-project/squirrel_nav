@@ -107,7 +107,7 @@ LaserScanMatcher::LaserScanMatcher(ros::NodeHandle nh, ros::NodeHandle nh_privat
   if (use_odom_)
   {
     odom_subscriber_ = nh_.subscribe(
-      "odom", 1, &LaserScanMatcher::odomCallback, this);
+      "odom_encoder", 1, &LaserScanMatcher::odomCallback, this);
   }
   if (use_vel_)
   {
@@ -540,8 +540,20 @@ void LaserScanMatcher::processScan(LDP& curr_ldp_scan, const ros::Time& time)
     }
     if (publish_tf_)
     {
-      tf::StampedTransform transform_msg (f2b_, time, fixed_frame_, base_frame_);
-      tf_broadcaster_.sendTransform (transform_msg);
+      tf::Transform f2bp, bp2b;
+      // Set /odom -> /odomp transformation
+      f2bp.setOrigin(f2b_.getOrigin());
+      f2bp.setRotation(tf::Quaternion(0,0,0,1));
+
+      tf::StampedTransform transform_f2bp_msg (f2bp, time, fixed_frame_, fixed_frame_+std::string("p"));
+      tf_broadcaster_.sendTransform (transform_f2bp_msg);
+
+      // Set /odomp -> /base_link
+      bp2b.setOrigin(tf::Vector3(0,0,0));
+      bp2b.setRotation(f2b_.getRotation());
+
+      tf::StampedTransform transform_bp2b_msg (bp2b, time, fixed_frame_+std::string("p"), base_frame_);
+      tf_broadcaster_.sendTransform (transform_bp2b_msg);
     }
   }
   else

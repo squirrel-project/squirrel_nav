@@ -25,6 +25,7 @@
 Ais_localizer_node::Ais_localizer_node() :
     verbose_(false),
     use_last_pose_2_init_(true),
+    reset_odometry_(false),
     scan_front_new_(false),
     scan_back_new_(false)
 {
@@ -55,6 +56,7 @@ Ais_localizer_node::Ais_localizer_node() :
   private_nh_.param("localizer_on", localizer_on_, true);
   private_nh_.param("verbose",verbose_,false);
   private_nh_.param("use_last_pose",use_last_pose_2_init_,use_last_pose_2_init_);
+  private_nh_.param("reset_odometry",reset_odometry_,reset_odometry_);
 
   private_nh_.param("use_second_laser", use_second_laser_, true);
   private_nh_.param("front_laser_frame_ID", front_laser_frame_ID_, (std::string) "/laserFront_frame");
@@ -169,6 +171,11 @@ Ais_localizer_node::Ais_localizer_node() :
     localizer_.set_localized(true);
     localizer_.place_robot(Transformation3::fromVector(vec), sigma, usePoseTheta);
   }
+
+  if ( reset_odometry_ ) {
+    robotino_msgs::ResetOdometry zero;
+    ros::service::call("/reset_odometry", zero);
+  }
 }
 
 void Ais_localizer_node::entryRunning( void )
@@ -221,8 +228,10 @@ void Ais_localizer_node::initialPoseCallback( const geometry_msgs::PoseWithCovar
   localizer_.set_localized(false);
   localizer_.place_robot(Transformation3::fromVector(vec), sigma, usePoseTheta);
 
-  robotino_msgs::ResetOdometry zero;
-  ros::service::call("/reset_odometry", zero);
+  if ( reset_odometry_ ) {
+    robotino_msgs::ResetOdometry zero;
+    ros::service::call("/reset_odometry", zero);
+  }
 }
 
 
