@@ -4,6 +4,7 @@
   <arg name="robot_id" default="alufr-robotino" />
   <arg name="autolocalization" default="false"/>
   <arg name="3d_mapping" default="false" />
+  <arg name="use_scan_matcher_odom" default="false"/>
   
   <!--- Run mapserver -->
   <include file="$(find squirrel_navigation)/launch/map_server.launch">
@@ -11,7 +12,9 @@
   </include>
   
   <!-- Run Monte Carlo Localization (many parameters in squirrel_localizer.launch) -->
-  <include file="$(find squirrel_localizer)/launch/squirrel_localizer.launch"/>
+  <include file="$(find squirrel_localizer)/launch/squirrel_localizer.launch">
+    <arg name="use_scan_matcher_odom" value="$(arg use_scan_matcher_odom)"/>
+  </include>
 
   <!-- Run pointcloud_filter_node: filter the PointCloud to speed up planning -->
   <node pkg="squirrel_navigation" type="pointcloud_filter_node" name="pointcloud_filter" output="screen" respawn="true">
