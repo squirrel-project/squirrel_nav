@@ -104,8 +104,16 @@ class JointHandle
   
   void stateCallback_( const dynamixel_msgs::JointState::ConstPtr& );
   void commandCallback_( const std_msgs::Float64::ConstPtr& );
-  inline bool gotMotionCommand_( void ) const { return std::abs(navigation_angle_-cur_angle_)>1e-3; };
-  inline bool isMoving_( void ) const { return moving_; };
+  
+  inline bool gotMotionCommand_( void ) const
+  {
+    return (std::abs(navigation_angle_-cur_angle_)>1e-3) or command_;
+  };
+
+  inline bool isMoving_( void ) const
+  {
+    return moving_;
+  };
 };
 
 }  // namespace squirrel_navigation
