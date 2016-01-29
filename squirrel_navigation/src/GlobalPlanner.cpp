@@ -533,9 +533,9 @@ bool GlobalPlanner::conditionallyUpdatePlan_( std::vector<geometry_msgs::PoseSta
 
   double new_plan_length = 0.0, plan_length = -offset_;
   for (size_t i=0; i<std::max(new_plan.size(),plan_.size())-1; ++i) {
-    if ( i<new_plan.size()-1 )
+    if ( i<new_plan.size()-2 )
       new_plan_length += linearDistance_(new_plan[i].pose.position,new_plan[i+1].pose.position);
-    if ( i<plan_.size()-1 ) {
+    if ( i<plan_.size()-2 ) {
       plan_length += linearDistance_(plan_[i].pose.position,plan_[i+1].pose.position);
       if ( plan_length <= 0 ) {
         current_index_ = i;

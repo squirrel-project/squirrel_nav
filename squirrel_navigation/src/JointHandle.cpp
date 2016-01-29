@@ -65,7 +65,8 @@ namespace squirrel_navigation {
 JointHandle::JointHandle( void ) :
     info_(false),
     moving_(false),
-    verbose_(false)
+    verbose_(false),
+    command_(false)
 {
   // Empty
 }
@@ -74,7 +75,8 @@ JointHandle::JointHandle( const std::string& name ) :
     name_(name),
     info_(false),
     moving_(false),
-    verbose_(false)
+    verbose_(false),
+    command_(false)
 {
   ros::NodeHandle pnh("~/"+name_);
   pnh.param<std::string>("command_topic", command_topic_, name_+"/command");
@@ -82,6 +84,8 @@ JointHandle::JointHandle( const std::string& name ) :
   pnh.param<double>("navigation_angle", navigation_angle_, 0.6);
   pnh.param<bool>("use_navigation_angle", use_navigation_angle_, true);
   pnh.param<bool>("verbose", verbose_, false);
+
+  cur_angle_ = navigation_angle_;
   
   state_sub_ = nh_.subscribe(state_topic_, 1, &JointHandle::stateCallback_, this);
   command_sub_ = nh_.subscribe(command_topic_, 1, &JointHandle::commandCallback_, this);
