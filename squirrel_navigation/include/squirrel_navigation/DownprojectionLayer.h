@@ -99,7 +99,7 @@ namespace squirrel_navigation {
 
 class DownprojectionLayer : public costmap_2d::ObstacleLayer
 {
-public:
+ public:
   DownprojectionLayer( void );
   virtual ~DownprojectionLayer( void );
 
@@ -110,13 +110,13 @@ public:
   virtual void reset( void );
   inline bool isDiscretized( void ) { return true; };
   
-protected:
+ protected:
   FootprintLayer footprint_layer_;
 
   virtual void setupDynamicReconfigure( ros::NodeHandle& );
   virtual void resetMaps( void );
 
-private:
+ private:
   dynamic_reconfigure::Server<DownprojectionLayerPluginConfig> *dsrv_;
 
   // time based costmap layer
@@ -130,12 +130,13 @@ private:
   unsigned int unknown_threshold_, mark_threshold_, size_z_;
 
   sensor_msgs::PointCloud clearing_endpoints_;
-  
+
+  bool verbose_;
   double robot_diameter_, robot_height_;
   double floor_threshold_,  obstacles_persistence_;
 
   // TiltHandle kinect_th_;
-  std::map<std::string,JointHandle> kinect_jh_;
+  JointHandle kinect_tilt_h_, kinect_pan_h_;
   
   void reconfigureCallback_( DownprojectionLayerPluginConfig& , uint32_t );
   void clearNonLethal_( double, double, double, double, bool );

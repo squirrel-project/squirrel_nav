@@ -76,13 +76,12 @@ DownprojectionLayer::DownprojectionLayer( void ) :
     robot_diameter_(0.5),
     robot_height_(1.0),
     floor_threshold_(0.0),
-    obstacles_persistence_(60.0)
-
+    obstacles_persistence_(60.0),
+    kinect_tilt_h_("kinect_tilt_joint"),
+    kinect_pan_h_("kinect_pan_joint"),
+    verbose_(false)
 {
   costmap_ = NULL;
-
-  kinect_jh_["tilt"] = JointHandle("kinect_tilt_joint");
-  kinect_jh_["pan"] = JointHandle("kinect_pan_joint");
 }
 
 DownprojectionLayer::~DownprojectionLayer( void )
@@ -107,8 +106,9 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
     return;
   }
 
-  if ( kinect_jh_["tilt"].skipData() or  kinect_jh_["pan"].skipData() ) {
-    ROS_INFO("%s/%s: Skipping costmap's update. Kinect is moving.", ros::this_node::getName().c_str(), name_.c_str());
+  if ( kinect_tilt_h_.skipData() or  kinect_pan_h_.skipData() ) {
+    if ( verbose_ )
+      ROS_INFO("%s/%s: Skipping costmap's update. Kinect is moving.", ros::this_node::getName().c_str(), name_.c_str());
     return;
   }
   
@@ -287,6 +287,8 @@ void DownprojectionLayer::reconfigureCallback_( DownprojectionLayerPluginConfig&
   floor_threshold_ = config.floor_threshold;
   obstacles_persistence_ = config.obstacles_persistence;
 
+  verbose_ = config.verbose;
+  
   if ( obstacles_persistence_ > 0 ) {
     ROS_INFO("%s/%s: obstacle persistence: %f(s)", ros::this_node::getName().c_str(), name_.c_str(), obstacles_persistence_);
   } else if ( obstacles_persistence_ == 0) {
