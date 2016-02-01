@@ -73,7 +73,7 @@ namespace squirrel_navigation {
 
 DownprojectionLayer::DownprojectionLayer( void ) :
     voxel_grid_(0, 0, 0),
-    robot_diameter_(0.5),
+    robot_radius_(0.22),
     robot_height_(1.0),
     floor_threshold_(0.0),
     obstacles_persistence_(60.0),
@@ -97,7 +97,7 @@ void DownprojectionLayer::onInitialize( void )
 
 void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
                                         double* min_x, double* min_y, double* max_x, double* max_y )
-{
+{  
   if ( rolling_window_ ) {
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
   }
@@ -106,10 +106,10 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
     return;
   }
 
-  if ( kinect_tilt_h_.skipData() or  kinect_pan_h_.skipData() ) {
+  bool skip_kinect_data = kinect_tilt_h_.skipData() or kinect_pan_h_.skipData();
+  if ( skip_kinect_data ) {
     if ( verbose_ )
       ROS_INFO("%s/%s: Skipping costmap's update. Kinect is moving.", ros::this_node::getName().c_str(), name_.c_str());
-    return;
   }
   
   // This function doesn't compile with older versions of ROS-navigation (just comment it out)
@@ -142,29 +142,30 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
     const costmap_2d::Observation& obs = *it;
 
     const pcl::PointCloud<pcl::PointXYZ>& cloud = *(obs.cloud_);
-    
+
+    if ( skip_kinect_data )
+      continue;
+
     double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
 
-    for (unsigned int i = 0; i < cloud.points.size(); ++i) {
+    for (unsigned int i = 0; i < cloud.points.size(); ++i) {      
       if ( cloud.points[i].z > robot_height_ or cloud.points[i].z > max_obstacle_height_ ) {
         continue;
       }
       
-      double sq_dist_orig = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x)
-          + (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y)
-          + (cloud.points[i].z - obs.origin_.z) * (cloud.points[i].z - obs.origin_.z);
-
-      if ( sq_dist_orig >= sq_obstacle_range ) {
-        continue;
-      }
-
-      double sq_dist_robot = (cloud.points[i].x - robot_x) * (cloud.points[i].x - robot_x)
+      double sq_dist_robot_xy = (cloud.points[i].x - robot_x) * (cloud.points[i].x - robot_x)
           + (cloud.points[i].y - robot_y) * (cloud.points[i].y - robot_y);
 
-      if ( sq_dist_orig <= std::pow(0.5*robot_diameter_, 2) ) {
+      if ( sq_dist_robot_xy >= sq_obstacle_range ) {
         continue;
       }
+
+      double filter_radius = robot_radius_+0.05;
       
+      if ( sq_dist_robot_xy <=  filter_radius * filter_radius) {
+        continue;
+      }
+            
       unsigned int mx, my, mz;
       if ( cloud.points[i].z < origin_z_ ) {
         if ( not worldToMap3D_(cloud.points[i].x, cloud.points[i].y, origin_z_, mx, my, mz) ) {
@@ -175,7 +176,7 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
       }
 
       unsigned int index = getIndex(mx, my);
-      if ( cloud.points[i].z < floor_threshold_ and !free_space_lock[index] ) {
+      if ( cloud.points[i].z < floor_threshold_ and (not free_space_lock[index]) ) {
         index_free_space.insert(index); 
       }
  
@@ -191,9 +192,16 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
       }
     }
   }
-  
+
   for (std::set<unsigned int>::iterator i=index_free_space.begin(); i!=index_free_space.end(); ++i) {
+    unsigned int mx, my;
+    indexToCells(*i,mx,my);
+    
+    double wx,wy;
+    mapToWorld(mx,my,wx,wy);
+
     costmap_[*i] = costmap_2d::FREE_SPACE; 
+    touch(wx, wy, min_x, min_y, max_x, max_y);
   }
   
   footprint_layer_.updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
@@ -283,7 +291,7 @@ void DownprojectionLayer::reconfigureCallback_( DownprojectionLayerPluginConfig&
   mark_threshold_ = config.mark_threshold;
   combination_method_ = config.combination_method;
   
-  robot_diameter_ = config.robot_diameter;
+  robot_radius_ = config.robot_radius;
   floor_threshold_ = config.floor_threshold;
   obstacles_persistence_ = config.obstacles_persistence;
 
@@ -317,7 +325,7 @@ void DownprojectionLayer::clearNonLethal_( double wx, double wy, double w_size_x
 
   unsigned int map_sx, map_sy, map_ex, map_ey;
 
-  if ( not worldToMap(start_x, start_y, map_sx, map_sy) or !worldToMap(end_x, end_y, map_ex, map_ey))
+  if ( not worldToMap(start_x, start_y, map_sx, map_sy) or not worldToMap(end_x, end_y, map_ex, map_ey))
     return;
   
   unsigned int index = getIndex(map_sx, map_sy);
@@ -352,7 +360,7 @@ void DownprojectionLayer::raytraceFreespace_( const costmap_2d::Observation& cle
   if ( not worldToMap3DFloat_(ox, oy, oz, sensor_x, sensor_y, sensor_z)) {
     ROS_WARN_THROTTLE(
         1.0,
-        "The origin for the sensor at (%.2f, %.2f, %.2f) is out of map bounds. So, the costmap cannot raytrace for it.",
+        "The origin for the sensor at (%.2f, %.2f, %.2f) is out of map bounds. So, the costmap cannot raytrce for it.",
         ox, oy, oz);
     return;
   }
