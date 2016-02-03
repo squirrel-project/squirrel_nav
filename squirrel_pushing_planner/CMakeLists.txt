@@ -48,7 +48,7 @@ add_dependencies(pushing_planner_node
 
 target_link_libraries(pushing_planner_node
   ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
+  ${OpenCV_LIBS}
 )
 
 #############
