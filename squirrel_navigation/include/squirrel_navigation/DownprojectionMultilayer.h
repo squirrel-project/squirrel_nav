@@ -148,6 +148,7 @@ public:
   voxel_grid::VoxelGrid voxel_grid_;
   double z_resolution_, origin_z_;
 
+  bool verbose_;
   unsigned int unknown_threshold_, mark_threshold_, size_z_;
   double max_obstacle_height_, min_obstacle_height_,  obstacles_persistence_;
 
@@ -157,7 +158,7 @@ public:
   std::vector<double> layers_levels_;
   std::map<unsigned int, bool> observed_;
 
-  std::map<std::string,JointHandle> kinect_jh_;
+  JointHandle kinect_tilt_h_, kinect_pan_h_;
 
   void reconfigureCB( DownprojectionMultilayerPluginConfig&, uint32_t );
   void clearNonLethal( double, double, double, double, bool );

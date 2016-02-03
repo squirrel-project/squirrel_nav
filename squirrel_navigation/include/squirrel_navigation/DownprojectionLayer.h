@@ -1,4 +1,4 @@
- // DownprojectionLayer.h --- 
+// DownprojectionLayer.h --- 
 // 
 // Filename: DownprojectionLayer.h
 // Description: Dynamic mapping of obstacles with RGBD
@@ -99,7 +99,7 @@ namespace squirrel_navigation {
 
 class DownprojectionLayer : public costmap_2d::ObstacleLayer
 {
-public:
+ public:
   DownprojectionLayer( void );
   virtual ~DownprojectionLayer( void );
 
@@ -108,15 +108,19 @@ public:
   virtual void updateOrigin( double, double );
   virtual void matchSize( void );
   virtual void reset( void );
-  inline bool isDiscretized( void ) { return true; };
+
+  inline bool isDiscretized( void )
+  {
+    return true;
+  };
   
-protected:
+ protected:
   FootprintLayer footprint_layer_;
 
   virtual void setupDynamicReconfigure( ros::NodeHandle& );
   virtual void resetMaps( void );
 
-private:
+ private:
   dynamic_reconfigure::Server<DownprojectionLayerPluginConfig> *dsrv_;
 
   // time based costmap layer
@@ -130,17 +134,20 @@ private:
   unsigned int unknown_threshold_, mark_threshold_, size_z_;
 
   sensor_msgs::PointCloud clearing_endpoints_;
-  
-  double robot_diameter_, robot_height_;
-  double floor_threshold_,  obstacles_persistence_;
+
+  bool verbose_;
+  double robot_radius_, robot_height_;
+  double floor_threshold_, obstacles_persistence_;
 
   // TiltHandle kinect_th_;
-  std::map<std::string,JointHandle> kinect_jh_;
+  JointHandle kinect_tilt_h_, kinect_pan_h_;
+  std::string kinect_observation_frame_;
+  geometry_msgs::Point kinect_origin_;
   
   void reconfigureCallback_( DownprojectionLayerPluginConfig& , uint32_t );
   void clearNonLethal_( double, double, double, double, bool );
   void raytraceFreespace_( const costmap_2d::Observation&, double*, double*, double*, double* );
-
+  
   inline bool worldToMap3DFloat_( double wx, double wy, double wz, double& mx, double& my, double& mz )
   {
     if ( wx < origin_x_ or wy < origin_y_ or wz < origin_z_ ) {

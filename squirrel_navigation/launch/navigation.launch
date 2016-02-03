@@ -3,7 +3,7 @@
   <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
   <arg name="robot_id" default="alufr-robotino" />
   <arg name="autolocalization" default="false"/>
-  <arg name="3d_mapping" default="false" />
+  <arg name="3d_mapping" default="true" />
   <arg name="use_scan_matcher_odom" default="false"/>
   
   <!--- Run mapserver -->
