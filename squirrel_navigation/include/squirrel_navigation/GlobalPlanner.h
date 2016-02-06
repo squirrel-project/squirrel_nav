@@ -69,6 +69,7 @@
 
 #include <geometry_msgs/Polygon.h>
 #include <geometry_msgs/PoseArray.h>
+#include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
 #include <squirrel_navigation_msgs/GlobalPlannerStats.h>
 #include <std_msgs/Bool.h>
@@ -80,14 +81,14 @@
 #include <angles/angles.h>
 
 #include "squirrel_navigation/LatticeSCQ.h"
+#include "squirrel_navigation/TrajectoryPlanner.h"
 
 #include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <thread>
 #include <vector>
-
-#include <boost/thread.hpp>
 
 namespace squirrel_navigation {
 
@@ -114,7 +115,8 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
   planner_t curr_planner_;
   navfn::NavfnROS* dijkstra_planner_;
   SBPLPlanner* lattice_planner_;
-
+  TrajectoryPlanner* trajectory_;
+  
   EnvironmentNAVXYTHETALAT* env_;
   
   std::string lattice_planner_type_;
@@ -136,7 +138,9 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
   costmap_2d::Costmap2DROS* costmap_ros_; 
   
   ros::Publisher plan_pub_, stats_pub_, pose_plan_pub_;
-  ros::Subscriber update_sub_;
+  ros::Subscriber update_sub_, odom_sub_;
+
+  nav_msgs::Odometry odom_;
   
   std::vector<geometry_msgs::Point> footprint_;
 
@@ -149,13 +153,12 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
   
   bool verbose_;
 
-  boost::mutex all_;
+  std::mutex guard_;
   
   unsigned char costMapCostToSBPLCost_( unsigned char );
   void publishStats_( int, int , const geometry_msgs::PoseStamped&, const geometry_msgs::PoseStamped& );
   void updatePlannerCallback_( const std_msgs::Bool::ConstPtr& );
-  bool newGoal_( const geometry_msgs::PoseStamped& );
-  bool conditionallyUpdatePlan_( std::vector<geometry_msgs::PoseStamped>&, nav_msgs::Path& );
+  void odometryCallback_( const nav_msgs::Odometry::ConstPtr& );
   
   inline double linearDistance_( const geometry_msgs::Point& p1, const geometry_msgs::Point& p2 )
   {

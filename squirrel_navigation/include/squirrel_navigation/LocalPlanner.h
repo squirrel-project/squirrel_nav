@@ -1,39 +1,59 @@
 // LocalPlanner.h --- 
 // 
 // Filename: LocalPlanner.h
-// Description: Local planner based on robotino_local_planner
-// Author: indorewala@servicerobotics.eu
-// Maintainer: Federico Boniardi (boniardi@cs.uni-freiburg.de)
-// Created: Fri Nov 14 01:10:39 2014 (+0100)
-// Version: 0.1.0
-// Last-Updated: Wed Nov 26 15:47:36 2014 (+0100)
-//           By: Federico Boniardi
-//     Update #: 3
+// Description: 
+// Author: Federico Boniardi
+// Maintainer: 
+// Created: Sat Feb  6 19:28:38 2016 (+0100)
+// Version: 
+// Last-Updated: 
+//           By: 
+//     Update #: 0
 // URL: 
 // Keywords: 
 // Compatibility: 
-//   ROS Hydro, ROS Indigo
+// 
 // 
 
 // Commentary: 
-//   
-//   The code therein is adapted from the package robotino_local_planner
-//   by indorewala@servicerobotics.eu, available at
+// 
+// 
+// 
+// 
+
+// Change Log:
+// 
+// 
+// 
 //
-//     http://svn.openrobotino.org/robotino-ros-pkg/branches/robotino_navigation/robotino_navigation/
-//
-//   and licensed under BSD software license. Further documentation available at
-//
-//     http://wiki.ros.org/robotino_local_planner
-//
-//     
-//   Tested on: - ROS Hydro on Ubuntu 12.04
-//               - ROS Indigo on Ubuntu 14.04
-//    RGBD source: ASUS Xtion pro
-//
-//   *WARNING*: the following controller implements simple pure pursuit trajectory tracker. No
-//              velocity profile is used.
-//      *TODO*: compute a velocity profile for proper controller      
+// Copyright (c) 2016, Federico Boniardi
+// All rights reserved.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// 
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+// 
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+// 
+// * Neither the name of the University of Freiburg nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 // 
 
 // Code:
@@ -43,113 +63,110 @@
 
 #include <ros/ros.h>
 
-#include <base_local_planner/trajectory_planner_ros.h>
 #include <nav_core/base_local_planner.h>
 
 #include <costmap_2d/costmap_2d_ros.h>
 
+#include <tf/tf.h>
+
 #include <angles/angles.h>
 
-#include <tf/tf.h>
-#include <tf/transform_listener.h>
+#include <pluginlib/class_list_macros.h>
 
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
-#include <geometry_msgs/Point32.h>
 #include <nav_msgs/Odometry.h>
-#include <nav_msgs/Path.h>
-#include <std_msgs/Bool.h>
 #include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
-
-#include <cmath>
-#include <string>
-#include <vector>
 
 #include "squirrel_navigation/Common.h"
+#include "squirrel_navigation/ControllerPD.h"
+#include "squirrel_navigation/TrajectoryPlanner.h"
+
+#include <string>
+#include <thread>
+#include <vector>
 
 namespace squirrel_navigation {
-  
-class LocalPlanner : public nav_core::BaseLocalPlanner {
+
+class LocalPlanner : public nav_core::BaseLocalPlanner
+{
  public:
   LocalPlanner( void );
-  ~LocalPlanner( void );
-
+  virtual ~LocalPlanner( void );
+  
   void initialize( std::string, tf::TransformListener*, costmap_2d::Costmap2DROS* );
 
   bool computeVelocityCommands( geometry_msgs::Twist& );
   bool isGoalReached( void );
   bool setPlan( const std::vector<geometry_msgs::PoseStamped>& );
-
- private:  
-  typedef enum { ROTATING_TO_START, MOVING, ROTATING_TO_GOAL, FINISHED } state_t;
-  typedef enum { DIJKSTRA, LATTICE } planner_t;
-
-  base_local_planner::TrajectoryPlannerROS* trajectory_planner_;
   
+ private:
+  TrajectoryPlanner* trajectory_;
+
   tf::TransformListener* tf_;
 
-  std::vector<geometry_msgs::PoseStamped> global_plan_;
-
-  geometry_msgs::PoseStamped base_odom_;
+  costmap_2d::Costmap2DROS* costmap_ros_;
   
-  nav_msgs::Path global_plan_msg_;
-  
-  ros::Subscriber odom_sub_, update_sub_;
-  
-  ros::Publisher next_heading_pub_;
-  
-  state_t state_;
+  ros::Subscriber odom_sub_;
+  ros::Publisher traj_pub_;
 
-  boost::mutex odom_lock_;
+  std::mutex guard_;
 
-  int curr_heading_index_, next_heading_index_;
+  double cmd_[3];
 
-  planner_t planner_type_;
+  geometry_msgs::Pose* goal_;
 
-  bool verbose_;
+  ControllerPD controller_;
   
   // Parameters
-  double heading_lookahead_;
-  double max_linear_vel_, min_linear_vel_;
-  double max_rotation_vel_, min_rotation_vel_, max_in_place_rotation_vel_;
-  double yaw_goal_tolerance_, xy_goal_tolerance_;
-  int num_window_points_;
+  ControllerPID::Gain gains_;
+  double max_linear_vel_, max_angular_vel_;
+  double yaw_goal_tolerance_, xy_goal_tolerance_; 
+  bool verbose_;
 
-  // Name and references
   std::string name_;
 
-  bool move_( geometry_msgs::Twist& );
-  bool rotateToGoal_( geometry_msgs::Twist& );
-  bool rotateToStart_( geometry_msgs::Twist& );
-  bool newGoal_( const std::vector<geometry_msgs::PoseStamped>& );
-  double calLinearVel_( void );
-  double calRotationVel_( double );
-  double mapToMinusPIToPI_( double );
-  void computeNextHeadingIndex_( void );
-  void odomCallback_( const nav_msgs::OdometryConstPtr& );
-  void plannerUpdateCallback_( const std_msgs::Bool::ConstPtr& );
-  void publishNextHeading_( bool show = true );
+  void odometryCallback_( const nav_msgs::Odometry::ConstPtr& );
 
-  inline double linearDistance_( const geometry_msgs::Point p1, const geometry_msgs::Point p2 )
+  inline void normalizeCommand_( void )
   {
-    double dx=p1.x-p2.x, dy=p1.y-p2.y;
-    return std::sqrt(dx*dx+dy*dy);
-  }
-
-  inline double angularDistance_( const geometry_msgs::Quaternion& p1, const geometry_msgs::Quaternion& p2 )
+    double lin_norm = std::hypot(u[0],u[1]);
+    double ang_norm = std::abs(u[2]);
+    double lin_rescaler = lin_norm > max_linear_vel_ ? max_linear_vel_/lin_norm : 1.0;
+    double ang_rescaler =  ang_norm > max_angular_vel_ ? max_angular_vel_/ang_norm : 1.0;
+    
+    u[0] *= lin_rescaler;
+    u[1] *= lin_rescaler;
+    u[2] *= ang_riscaler;
+  };
+  
+  inline void publishTrajectoryPose_( const TrajectoryPlanner::Profile& p, const ros::Time& t )
   {
-    double da=tf::getYaw(p1)-tf::getYaw(p2);
-    return std::abs(angles::normalize_angle(da));
-  }
-
-  inline double cutOff_( double a )
-  {
-    double th = angles::normalize_angle(a);
-    return std::pow(0.5+0.5*std::cos(a),6); // just a good shape bell shape
+    visualization_msgs::Marker marker;
+    marker.id = 0;
+    marker.header.stamp = t;
+    marker.header.frame_id= "/map";
+    marker.ns = "waypoints";
+    marker.type = visualization_msgs::Marker::ARROW;
+    
+    marker.action = visualization_msgs::Marker::MODIFY;
+    marker.pose.position.x = p.x;
+    marker.pose.position.y = p.y;
+    marker.pose.position.z = 0.0;
+    marker.pose.orientation = tf::createQuaternionMsgFromYaw(p.yaw);
+    marker.scale.x = 0.22;
+    marker.scale.y = 0.035;
+    marker.scale.z = 0.0;
+    marker.color.a = 0.5;
+    marker.color.r = 0.0;
+    marker.color.g = 1.0;
+    marker.color.b = 0.0;
+    
+    traj_pub_.publish(marker);
   };
 };
 
-} // namespace squirrel_navigation
+}  // namespace squirrel_navigation
 
 #endif /* SQUIRREL_NAVIGATION_LOCALPLANNER_H_ */
 
