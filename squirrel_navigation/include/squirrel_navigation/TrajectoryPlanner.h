@@ -66,14 +66,17 @@
 #include <ros/publisher.h>
 #include <ros/time.h>
 
-#include <tf/tf.h>
-
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <visualization_msgs/Marker.h>
 
+#include <tf/tf.h>
+
+#include <angles/angles.h>
+
 #include <cassert>
 #include <cmath>
+#include <mutex>
 #include <thread>
 #include <vector>
 
@@ -83,7 +86,7 @@ class TrajectoryPlanner
 {
  protected:
   TrajectoryPlanner( void );
-
+  
  public:
   class Profile
   {
@@ -104,13 +107,11 @@ class TrajectoryPlanner
   
   size_t getNodePose( ros::Time&, geometry_msgs::PoseStamped& ) const;
   
-  Profile getProfile( const ros::Time& ) const;
+  Profile getProfile( const ros::Time& );
 
-  inline bool isActive( void ) { return ( dt_ != nullptr ); };
-
- private:
-  static TrajectoryPlanner* trajectory_ptr_;
+  inline bool isActive( void ) { return ( t0_ != nullptr ); };
   
+ private:
   class Pose2D
   {
    public:
@@ -120,9 +121,11 @@ class TrajectoryPlanner
     double x,y,yaw,t;
   };
 
-  ros::Time* t0_;
+  static TrajectoryPlanner* trajectory_ptr_;
 
-  std::vector<Pose2D>* poses_;
+  static ros::Time* t0_;
+
+  static std::vector<Pose2D>* poses_;
 
   double max_linear_vel_, max_angular_vel_;
 

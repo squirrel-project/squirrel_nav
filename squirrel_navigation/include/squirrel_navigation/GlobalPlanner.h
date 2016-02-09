@@ -145,11 +145,9 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
   std::vector<geometry_msgs::Point> footprint_;
 
   // replanning 
-  double replanning_thresh_;
   geometry_msgs::PoseStamped goal_;
   std::vector<geometry_msgs::PoseStamped> plan_;
-  double offset_;
-  int current_index_;
+  double heading_lookahead_;
   
   bool verbose_;
 

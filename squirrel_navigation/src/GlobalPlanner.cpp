@@ -75,8 +75,7 @@ GlobalPlanner::GlobalPlanner( void ) :
     dijkstra_planner_(NULL),
     lattice_planner_(NULL),
     curr_planner_(DIJKSTRA),
-    offset_(0.0),
-    current_index_(0)
+    heading_lookahead_(1.0)
 {
   ROS_INFO("squirrel_localizer::GlobalPlanner started.");
 }
@@ -88,8 +87,7 @@ GlobalPlanner::GlobalPlanner( std::string name, costmap_2d::Costmap2DROS* costma
     lattice_planner_(NULL),
     curr_planner_(DIJKSTRA),
     name_(name),
-    offset_(0.0),
-    current_index_(0)
+    heading_lookahead_(1.0)
 {
   initialize(name, costmap_ros);
 }
@@ -113,11 +111,8 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
   if( not initialized_ ) {
     ros::NodeHandle pnh("~/"+name);
     pnh.param<bool>("verbose", verbose_, false);
-    pnh.param<double>("replanning_thresh", replanning_thresh_, 0.2);
-
-    if ( replanning_thresh_ < 0.0 )
-      ROS_WARN_STREAM(name << "paramter replanning_thrs is negative. Replanning anytime.");
-
+    pnh.param<double>("heading_lookahead", heading_lookahead_, 1.0);
+    
     // Initializing the trajectory planner
     trajectory_ = TrajectoryPlanner::getTrajectory();
     
@@ -253,7 +248,7 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
   }
 }
 
-bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& starting,
+bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
                               const geometry_msgs::PoseStamped& goal,
                               std::vector<geometry_msgs::PoseStamped>& plan )
 {
@@ -269,15 +264,15 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& starting,
   
   plan.clear();
 
-  std::unique_lock<st::mutex> lock(guard_);
+  std::unique_lock<std::mutex> lock(guard_);
 
   ros::Time plan_time = ros::Time::now();    
   
   switch ( curr_planner_ ) {
     
     case DIJKSTRA: {
-      if ( not trjactory_->isActive() ) {
-        dijkstra_planner_->makePlan(starting, goal, plan);
+      if ( not trajectory_->isActive() ) {
+        dijkstra_planner_->makePlan(start, goal, plan);
 
         double dx, dy, yaw;
         plan[0].pose.orientation = odom_.pose.pose.orientation;
@@ -285,12 +280,12 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& starting,
           dx = plan[i+1].pose.position.x-plan[i-1].pose.position.x;
           dy = plan[i+1].pose.position.y-plan[i-1].pose.position.y;
           yaw = std::atan2(dy,dx);
-          plan[0].pose.orientation = tf::createQuaternionMsFromYaw(yaw);
+          plan[0].pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
         }
 
         trajectory_->makeTrajectory(plan);
 
-        break;
+        break;        
       } else {
         double vx = odom_.twist.twist.linear.x;
         double vy = odom_.twist.twist.linear.y;
@@ -299,11 +294,10 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& starting,
       
         ros::Time lookahead_time = plan_time + ros::Duration(dt);
 
-        geometry_msgs::PoseStamped start;
+        geometry_msgs::PoseStamped lookahead_start;
+        size_t i = trajectory_->getNodePose(lookahead_time,lookahead_start);
 
-        size_t i = trajectory_->getPose(lookahead_time,start);
-
-        dijkstra_planner_->makePlan(start, goal, plan);          
+        dijkstra_planner_->makePlan(lookahead_start, goal, plan);          
 
         double dx, dy, yaw;
         plan[0].pose.orientation = odom_.pose.pose.orientation;
@@ -311,13 +305,14 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& starting,
           dx = plan[i+1].pose.position.x-plan[i-1].pose.position.x;
           dy = plan[i+1].pose.position.y-plan[i-1].pose.position.y;
           yaw = std::atan2(dy,dx);
-          plan[0].pose.orientation = tf::createQuaternionMsFromYaw(yaw);
+          plan[0].pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
         }
 
         trajectory_->updateTrajectory(plan,i);
                 
-      break;
-    }  
+        break;
+      }
+    }
 
     case LATTICE: {
       double theta_start = 2 * atan2(start.pose.orientation.z, start.pose.orientation.w);

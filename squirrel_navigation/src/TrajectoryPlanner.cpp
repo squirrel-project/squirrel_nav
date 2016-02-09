@@ -63,10 +63,8 @@
 namespace squirrel_navigation {
 
 TrajectoryPlanner::TrajectoryPlanner( void ) :
-    t0_(nullptr),
-    poses_(nullptr),
-    max_linear_vel(1.0),
-    max_angular_vel(2*M_PI)
+    max_linear_vel_(1.0),
+    max_angular_vel_(2*M_PI)
 {
   if ( not poses_ )
     poses_ = new std::vector<Pose2D>;
@@ -74,7 +72,7 @@ TrajectoryPlanner::TrajectoryPlanner( void ) :
   ROS_INFO("squirrel_navigation::TrajectoryPlanner started");
 }
 
-TrajectoryPLanner* TrajectoryPlanner::getTrajectory( void )
+TrajectoryPlanner* TrajectoryPlanner::getTrajectory( void )
 {
   if ( not trajectory_ptr_ )
     trajectory_ptr_ = new TrajectoryPlanner;
@@ -95,8 +93,8 @@ void TrajectoryPlanner::deleteTrajectory( void )
 
 void TrajectoryPlanner::setVelocityBounds( double linear_vel, double angular_vel )
 {
-  max_linear_vel = linear_vel;
-  max_angular_vel = angular_vel
+  max_linear_vel_ = linear_vel;
+  max_angular_vel_ = angular_vel;
 }
 
 void TrajectoryPlanner::makeTrajectory( const std::vector<geometry_msgs::PoseStamped>& plan )
@@ -113,7 +111,7 @@ void TrajectoryPlanner::makeTrajectory( const std::vector<geometry_msgs::PoseSta
     (*poses_)[i].y = plan[i].pose.position.y;
     (*poses_)[i].yaw = tf::getYaw(plan[i].pose.orientation);
     if ( i>0 )
-      (*poses_)[i].t = (*poses_)[i] + timeIncrement_((*poses_-)[i],(*poses_)[i-1]);
+      (*poses_)[i].t = (*poses_)[i].t + timeIncrement_((*poses_)[i],(*poses_)[i-1]);
   }
 }
 
@@ -125,20 +123,19 @@ void TrajectoryPlanner::updateTrajectory( const std::vector<geometry_msgs::PoseS
     return;
 
   std::vector<Pose2D> new_poses(init+n-1);
-  new_poses(new_poses.begin(),poses_->begin(),poses_->begin()+init);
+  new_poses.insert(new_poses.begin(),poses_->begin(),poses_->begin()+init);
 
   for (size_t i=init,pi=0; i<init+n-1; ++i,++pi) {
     new_poses[i].x = plan[pi].pose.position.x;
     new_poses[i].y = plan[pi].pose.position.y;
     new_poses[i].yaw = tf::getYaw(plan[pi].pose.orientation);
-    new_poses[i].t = new_poses[i-1] + timeIncrement(new_poses[i],new_poses[i-1]);
+    new_poses[i].t = new_poses[i-1].t + timeIncrement_(new_poses[i],new_poses[i-1]);
   }
 
   delete poses_;
   poses_ = new std::vector<Pose2D>;
-  poses_ = new_poses;
+  *poses_ = new_poses;
 }
-
 
 size_t TrajectoryPlanner::getNodePose( ros::Time& t, geometry_msgs::PoseStamped& p ) const
 {
@@ -148,12 +145,12 @@ size_t TrajectoryPlanner::getNodePose( ros::Time& t, geometry_msgs::PoseStamped&
   
   p.pose.position.x = (*poses_)[i].x;
   p.pose.position.y = (*poses_)[i].y;
-  p.orientation = tf::createQuaternionMsgFromYaw((*poses_)[i].yaw);
+  p.pose.orientation = tf::createQuaternionMsgFromYaw((*poses_)[i].yaw);
 
   return i;
 }
 
-TrajectoryPlanner::Profile TrajectoryPlanner::getProfile( const ros::Time& t ) const
+TrajectoryPlanner::Profile TrajectoryPlanner::getProfile( const ros::Time& t )
 { 
   std::unique_lock<std::mutex> lock(guard_);
 
@@ -170,7 +167,7 @@ TrajectoryPlanner::Profile TrajectoryPlanner::getProfile( const ros::Time& t ) c
     out.x = poses_->back().x;
     out.y = poses_->back().y;
     out.yaw = poses_->back().yaw;
-    return out
+    return out;
   }
 
   size_t i = matchIndex_(tau)-1;
@@ -197,7 +194,7 @@ size_t TrajectoryPlanner::matchIndex_( double t ) const
   
   size_t i=poses_->size()/2, l=0, u=poses_->size();
   do {
-    if ( t>(*poses_)[i] ) {
+    if ( t>(*poses_)[i].t ) {
       l = i;
     } else {
       u = i;
@@ -207,8 +204,12 @@ size_t TrajectoryPlanner::matchIndex_( double t ) const
   return i;
 };
 
-TrajectoryPLanner* TrajectoryPLanner::trajectory_ptr_ = nullptr;
-    
+TrajectoryPlanner* TrajectoryPlanner::trajectory_ptr_ = nullptr;
+
+ros::Time* TrajectoryPlanner::t0_ = nullptr;
+
+std::vector<TrajectoryPlanner::Pose2D>* TrajectoryPlanner::poses_ = nullptr;
+
 }  // namespace squirrel_navigation
 
 // 

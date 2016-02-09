@@ -101,10 +101,9 @@ class LocalPlanner : public nav_core::BaseLocalPlanner
   bool setPlan( const std::vector<geometry_msgs::PoseStamped>& );
   
  private:
+  ControllerPD* controller_;
   TrajectoryPlanner* trajectory_;
-
   tf::TransformListener* tf_;
-
   costmap_2d::Costmap2DROS* costmap_ros_;
   
   ros::Subscriber odom_sub_;
@@ -113,13 +112,12 @@ class LocalPlanner : public nav_core::BaseLocalPlanner
   std::mutex guard_;
 
   double cmd_[3];
-
+  
+  nav_msgs::Odometry odom_;
   geometry_msgs::Pose* goal_;
-
-  ControllerPD controller_;
   
   // Parameters
-  ControllerPID::Gain gains_;
+  ControllerPD::Gain gains_;
   double max_linear_vel_, max_angular_vel_;
   double yaw_goal_tolerance_, xy_goal_tolerance_; 
   bool verbose_;
@@ -128,16 +126,16 @@ class LocalPlanner : public nav_core::BaseLocalPlanner
 
   void odometryCallback_( const nav_msgs::Odometry::ConstPtr& );
 
-  inline void normalizeCommand_( void )
+  inline void normalizeCommands_( void )
   {
-    double lin_norm = std::hypot(u[0],u[1]);
-    double ang_norm = std::abs(u[2]);
+    double lin_norm = std::hypot(cmd_[0],cmd_[1]);
+    double ang_norm = std::abs(cmd_[2]);
     double lin_rescaler = lin_norm > max_linear_vel_ ? max_linear_vel_/lin_norm : 1.0;
     double ang_rescaler =  ang_norm > max_angular_vel_ ? max_angular_vel_/ang_norm : 1.0;
     
-    u[0] *= lin_rescaler;
-    u[1] *= lin_rescaler;
-    u[2] *= ang_riscaler;
+    cmd_[0] *= lin_rescaler;
+    cmd_[1] *= lin_rescaler;
+    cmd_[2] *= ang_rescaler;
   };
   
   inline void publishTrajectoryPose_( const TrajectoryPlanner::Profile& p, const ros::Time& t )

@@ -73,9 +73,7 @@ LocalPlanner::LocalPlanner( void ) :
     xy_goal_tolerance_(0.05),
     yaw_goal_tolerance_(0.05),
     verbose_(false)
-{
-  trajectory_ = TrajectoryPlanner::getTrajectory();
-  
+{  
   ROS_INFO("squirrel_navigation::LocalPlanner started");
 };
 
@@ -85,7 +83,10 @@ LocalPlanner::~LocalPlanner( void )
 
   if ( goal_ )
     delete goal_;
-    
+
+  if ( controller_ )
+    delete controller_;
+  
   odom_sub_.shutdown();
   traj_pub_.shutdown();
 }
@@ -96,6 +97,10 @@ void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, cost
   
   tf_ = tf;
   costmap_ros_ = costmap_ros;
+  trajectory_ = TrajectoryPlanner::getTrajectory();
+
+  if ( not controller_ )
+    controller_ = new ControllerPD;
   
   ros::NodeHandle pnh("~/"+name);
   pnh.param<bool>("verbose", verbose_, false);  
@@ -122,11 +127,11 @@ void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, cost
   pnh_c.param<double>("D_linear", gains_.Dxy, 0.1);
   pnh_c.param<double>("D_angular", gains_.Dyaw, 0.1);
 
-  controller_.setGains(gains_);
+  controller_->setGains(gains_);
   
   ros::NodeHandle nh;
   odom_sub_ = nh.subscribe<nav_msgs::Odometry>("odom", 1, &LocalPlanner::odometryCallback_, this);
-  next_heading_pub_ = pnh.advertise<visualization_msgs::Marker>("marker", 10);
+  traj_pub_ = pnh.advertise<visualization_msgs::Marker>("marker", 10);
 }
 
 bool LocalPlanner::computeVelocityCommands( geometry_msgs::Twist& cmd_vel )
@@ -135,29 +140,29 @@ bool LocalPlanner::computeVelocityCommands( geometry_msgs::Twist& cmd_vel )
 
   tf::Stamped<tf::Pose> tf_robot_pose;
   costmap_ros_->getRobotPose(tf_robot_pose);
-
+  
   double odom_vx = odom_.twist.twist.linear.x,
       odom_vy = odom_.twist.twist.linear.y,
       odom_vyaw = odom_.twist.twist.angular.z;
   
-  TrajectoyPlanner::Profile robot_pose, ref_pose;
+  TrajectoryPlanner::Profile robot_pose, ref_pose;
 
   robot_pose.x = tf_robot_pose.getOrigin().getX();
   robot_pose.y = tf_robot_pose.getOrigin().getY();
-  robot_pose.th = tf::getYaw(tf_robot_pose.getRotation());
-  robot_pose.vx = std::cos(robot_pose.th)*odom_vx - std::sin(robot_pose.th)*odom_vy;
-  robot_pose.vy = std::sin(robot_pose.th)*odom_vx + std::cos(robot_pose.th)*odom_vy;
+  robot_pose.yaw = tf::getYaw(tf_robot_pose.getRotation());
+  robot_pose.vx = std::cos(robot_pose.yaw)*odom_vx - std::sin(robot_pose.yaw)*odom_vy;
+  robot_pose.vy = std::sin(robot_pose.yaw)*odom_vx + std::cos(robot_pose.yaw)*odom_vy;
   robot_pose.vyaw = odom_vyaw;
 
   ref_pose = trajectory_->getProfile(odom_.header.stamp);
-  controller_.computeCommands(ref_pose,robot_pose,cmd_);
+  controller_->computeCommands(ref_pose,robot_pose,cmd_);
   normalizeCommands_();
 
-  cmd_vel.linear.x = std::cos(-robot_pose.th)*cmd_[0] - std::sin(-robot_pose.th)*cmd_[1];
-  cmd_vel.linear.y = std::sin(-robot_pose.th)*cmd_[0] + std::cos(-robot_pose.th)*cmd_[1];
+  cmd_vel.linear.x = std::cos(-robot_pose.yaw)*cmd_[0] - std::sin(-robot_pose.yaw)*cmd_[1];
+  cmd_vel.linear.y = std::sin(-robot_pose.yaw)*cmd_[0] + std::cos(-robot_pose.yaw)*cmd_[1];
   cmd_vel.angular.z = cmd_[2];
   
-  publishTrajectoryPose_(pose,odom_.header.stamp);  
+  publishTrajectoryPose_(ref_pose,odom_.header.stamp);  
 }
 
 bool LocalPlanner::isGoalReached( void )
@@ -172,8 +177,8 @@ bool LocalPlanner::isGoalReached( void )
   
   if ( not goal_ ) {
     return false;
-  } else if ( linearDistance(goal->position,robot_pose.position) < xy_goal_tolerance_ and
-              angularDistance(goal_->orientation,robot_pose.orietatiom) < yaw_goal_tolerance_ ) {
+  } else if ( linearDistance(goal_->position,robot_pose.position) < xy_goal_tolerance_ and
+              angularDistance(goal_->orientation,robot_pose.orientation) < yaw_goal_tolerance_ ) {
     delete goal_;
     return true;
   } else {
@@ -184,10 +189,15 @@ bool LocalPlanner::isGoalReached( void )
 bool LocalPlanner::setPlan( const std::vector<geometry_msgs::PoseStamped>& plan )
 {
   if ( not goal_ )
-    goal = new geometry_msgs::Pose;
+    goal_ = new geometry_msgs::Pose;
   *goal_ = plan.back().pose;
 
-  return false
+  return true;
+}
+
+void LocalPlanner::odometryCallback_( const nav_msgs::Odometry::ConstPtr& odom )
+{
+  odom_ = *odom;
 }
 
 }  // namespace squirrel_navigation
