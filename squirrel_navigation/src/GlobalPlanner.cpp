@@ -114,7 +114,7 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
     pnh.param<double>("heading_lookahead", heading_lookahead_, 1.0);
     
     // Initializing the trajectory planner
-    trajectory_ = TrajectoryPlanner::getTrajectory();
+    // trajectory_ = TrajectoryPlanner::getTrajectory();
     
     // Initializing the Dijkstra planner
     if ( not dijkstra_planner_ )

@@ -137,7 +137,7 @@ class TrajectoryPlanner
   {
     double dl,da;
 
-    dl = std::sqrt((p1.x-p2.x)*(p1.x-p2.x)+(p1.y-p2.y)*(p1.y-p2.y));
+    dl = std::hypot(p1.x-p2.x,p1.y-p2.y);
     da = std::abs(angles::normalize_angle(p1.yaw-p2.yaw));
     
     return 1.25*std::max(dl/max_linear_vel_,da/max_angular_vel_);
