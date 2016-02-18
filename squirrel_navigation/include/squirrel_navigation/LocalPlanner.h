@@ -114,6 +114,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner
   double cmd_[3];
   
   nav_msgs::Odometry odom_;
+
   geometry_msgs::Pose* goal_;
   
   // Parameters

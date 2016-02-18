@@ -71,9 +71,9 @@ namespace squirrel_navigation {
 
 GlobalPlanner::GlobalPlanner( void ) :
     initialized_(false),
-    costmap_ros_(NULL),
-    dijkstra_planner_(NULL),
-    lattice_planner_(NULL),
+    costmap_ros_(nullptr),
+    dijkstra_planner_(nullptr),
+    lattice_planner_(nullptr),
     curr_planner_(DIJKSTRA),
     heading_lookahead_(1.0)
 {
@@ -82,9 +82,9 @@ GlobalPlanner::GlobalPlanner( void ) :
 
 GlobalPlanner::GlobalPlanner( std::string name, costmap_2d::Costmap2DROS* costmap_ros ) :
     initialized_(false),
-    costmap_ros_(NULL),
-    dijkstra_planner_(NULL),
-    lattice_planner_(NULL),
+    costmap_ros_(nullptr),
+    dijkstra_planner_(nullptr),
+    lattice_planner_(nullptr),
     curr_planner_(DIJKSTRA),
     name_(name),
     heading_lookahead_(1.0)
@@ -114,7 +114,7 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
     pnh.param<double>("heading_lookahead", heading_lookahead_, 1.0);
     
     // Initializing the trajectory planner
-    // trajectory_ = TrajectoryPlanner::getTrajectory();
+    trajectory_ = TrajectoryPlanner::getTrajectory();
     
     // Initializing the Dijkstra planner
     if ( not dijkstra_planner_ )
@@ -236,10 +236,10 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
     }
 
     ROS_INFO_STREAM(name << ": Initialized successfully" );
-    plan_pub_ = pnh.advertise<nav_msgs::Path>("plan", 1);
-    stats_pub_ = pnh.advertise<squirrel_navigation_msgs::GlobalPlannerStats>("lattice_planner_stats", 1);
-
-    pose_plan_pub_ = pnh.advertise<geometry_msgs::PoseArray>("poses", 1);
+    
+    stats_pub_ = pnh.advertise<squirrel_navigation_msgs::GlobalPlannerStats>("lattice_planner_stats", 1); 
+    traj_xy_pub_ = pnh.advertise<nav_msgs::Path>("plan", 1);
+    traj_xyth_pub_ = pnh.advertise<geometry_msgs::PoseArray>("poses", 1);
 
     odom_sub_ = nh_.subscribe("/odom", 1, &GlobalPlanner::odometryCallback_, this);
     update_sub_ = nh_.subscribe("/plan_with_footprint", 1, &GlobalPlanner::updatePlannerCallback_, this);
@@ -271,44 +271,53 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
   switch ( curr_planner_ ) {
     
     case DIJKSTRA: {
-      if ( not trajectory_->isActive() ) {
-        dijkstra_planner_->makePlan(start, goal, plan);
+      if ( not trajectory_->isActive() ) {       
+        geometry_msgs::PoseStamped start_unbiased;
+        start_unbiased.header = start.header;
+        start_unbiased.pose.position.x = start.pose.position.x + 0.025; // 0.025 = 0.5*map_resolution
+        start_unbiased.pose.position.y = start.pose.position.y + 0.025;
+        start_unbiased.pose.orientation = start.pose.orientation;
 
+        dijkstra_planner_->makePlan(start_unbiased, goal, plan);
+
+        tf::Stamped<tf::Pose> robot_pose;
+        costmap_ros_->getRobotPose(robot_pose);
+        
         double dx, dy, yaw;
-        plan[0].pose.orientation = odom_.pose.pose.orientation;
+        plan[0].pose.orientation = tf::createQuaternionMsgFromYaw(tf::getYaw(robot_pose.getRotation()));
         for (size_t i=1; i<plan.size()-1; ++i) {
           dx = plan[i+1].pose.position.x-plan[i-1].pose.position.x;
           dy = plan[i+1].pose.position.y-plan[i-1].pose.position.y;
           yaw = std::atan2(dy,dx);
-          plan[0].pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
+          plan[i].pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
         }
-
+        
         trajectory_->makeTrajectory(plan);
 
         break;        
       } else {
-        double vx = odom_.twist.twist.linear.x;
-        double vy = odom_.twist.twist.linear.y;
-        double vl = std::sqrt(vx*vx+vy*vy);
-        double dt = heading_lookahead_/vl;
-      
-        ros::Time lookahead_time = plan_time + ros::Duration(dt);
+        tf::Stamped<tf::Pose> robot_pose;
+        costmap_ros_->getRobotPose(robot_pose);
+        
+        ros::Time lookahead_time = plan_time + ros::Duration(heading_lookahead_);        
 
         geometry_msgs::PoseStamped lookahead_start;
+        lookahead_start.header = start.header;
         size_t i = trajectory_->getNodePose(lookahead_time,lookahead_start);
-
+        lookahead_start.pose.position.x += 0.025;
+        lookahead_start.pose.position.y += 0.025;
+        
         dijkstra_planner_->makePlan(lookahead_start, goal, plan);          
 
         double dx, dy, yaw;
-        plan[0].pose.orientation = odom_.pose.pose.orientation;
         for (size_t i=1; i<plan.size()-1; ++i) {
           dx = plan[i+1].pose.position.x-plan[i-1].pose.position.x;
           dy = plan[i+1].pose.position.y-plan[i-1].pose.position.y;
           yaw = std::atan2(dy,dx);
-          plan[0].pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
+          plan[i].pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
         }
 
-        trajectory_->updateTrajectory(plan,i);
+        trajectory_->updateTrajectory(plan,i);  
                 
         break;
       }
@@ -464,23 +473,8 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
     }
   }      
 
-  ros::Time plan_stamp = ros::Time::now();
-  
-  nav_msgs::Path gui_plan;
-  gui_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
-  gui_plan.header.stamp = plan_stamp;
-
-  geometry_msgs::PoseArray gui_poses;
-  gui_poses.header.frame_id = costmap_ros_->getGlobalFrameID();
-  gui_poses.header.stamp = plan_stamp;
-
-  gui_poses.poses.resize(plan_.size());
-  for (size_t i=0; i<plan_.size(); ++i)
-    gui_poses.poses[i] = plan_[i].pose;
-  
-  
-  plan_pub_.publish(gui_plan);
-  pose_plan_pub_.publish(gui_poses);
+  std::vector<TrajectoryPlanner::Pose2D>* poses = trajectory_->getPoses();
+  publishTrajectory_(poses);
   
   return true;
 }

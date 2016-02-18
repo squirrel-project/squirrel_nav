@@ -65,17 +65,19 @@ namespace squirrel_navigation {
 TrajectoryPlanner::TrajectoryPlanner( void ) :
     max_linear_vel_(1.0),
     max_angular_vel_(2*M_PI)
-{
-  if ( not poses_ )
-    poses_ = new std::vector<Pose2D>;
-  
+{  
   ROS_INFO("squirrel_navigation::TrajectoryPlanner started");
 }
 
 TrajectoryPlanner* TrajectoryPlanner::getTrajectory( void )
 {
-  if ( not trajectory_ptr_ )
+  if ( not trajectory_ptr_ ) {
     trajectory_ptr_ = new TrajectoryPlanner;
+    
+    if ( not poses_ )
+      poses_ = new std::vector<Pose2D>;
+  }
+  
   return trajectory_ptr_;
 }
 
@@ -104,32 +106,44 @@ void TrajectoryPlanner::makeTrajectory( const std::vector<geometry_msgs::PoseSta
   if ( n <= 1 )
     return;
 
+  if ( not t0_ ) 
+    t0_ = new ros::Time(ros::Time::now());
+  
   poses_->resize(n);
-
+  
   for (size_t i=0; i<n; ++i) {
     (*poses_)[i].x = plan[i].pose.position.x;
     (*poses_)[i].y = plan[i].pose.position.y;
     (*poses_)[i].yaw = tf::getYaw(plan[i].pose.orientation);
     if ( i>0 )
-      (*poses_)[i].t = (*poses_)[i].t + timeIncrement_((*poses_)[i],(*poses_)[i-1]);
+      (*poses_)[i].t = (*poses_)[i-1].t + timeIncrement_((*poses_)[i],(*poses_)[i-1]);
   }
 }
 
 void TrajectoryPlanner::updateTrajectory( const std::vector<geometry_msgs::PoseStamped>& plan, size_t init )
 {
   const size_t n = plan.size();
-  
-  if ( init >= n-1 )
+
+  if ( n < 1 )
     return;
+  
+  if ( init >= poses_->size()-1 )
+    return;
+  
+  std::vector<Pose2D> new_poses(n-2);
+  new_poses.insert(new_poses.begin(),poses_->begin(),poses_->begin()+init+1);
 
-  std::vector<Pose2D> new_poses(init+n-1);
-  new_poses.insert(new_poses.begin(),poses_->begin(),poses_->begin()+init);
-
-  for (size_t i=init,pi=0; i<init+n-1; ++i,++pi) {
-    new_poses[i].x = plan[pi].pose.position.x;
-    new_poses[i].y = plan[pi].pose.position.y;
+  double corr_dx = ((*poses_)[init].x - plan[0].pose.position.x);
+  double corr_dy = ((*poses_)[init].y - plan[0].pose.position.y);
+      
+  for (size_t i=init+1,pi=1; i<init+n-1; ++i,++pi) {    
+    double dx = plan[pi].pose.position.x - plan[pi-1].pose.position.x;
+    double dy = plan[pi].pose.position.y - plan[pi-1].pose.position.y;
+        
+    new_poses[i].x = new_poses[i-1].x + dx - std::pow(0.5,pi)*corr_dx;
+    new_poses[i].y = new_poses[i-1].y + dy - std::pow(0.5,pi)*corr_dy;
     new_poses[i].yaw = tf::getYaw(plan[pi].pose.orientation);
-    new_poses[i].t = new_poses[i-1].t + timeIncrement_(new_poses[i],new_poses[i-1]);
+    new_poses[i].t = new_poses[i-1].t + timeIncrement_(new_poses[i],new_poses[i-1]);;
   }
 
   delete poses_;
@@ -139,7 +153,7 @@ void TrajectoryPlanner::updateTrajectory( const std::vector<geometry_msgs::PoseS
 
 size_t TrajectoryPlanner::getNodePose( ros::Time& t, geometry_msgs::PoseStamped& p ) const
 {
-  double tau = (t-*t0_).toSec();
+  double tau = t.toSec()-t0_->toSec();
 
   size_t i = matchIndex_(tau);
   
@@ -154,8 +168,8 @@ TrajectoryPlanner::Profile TrajectoryPlanner::getProfile( const ros::Time& t )
 { 
   std::unique_lock<std::mutex> lock(guard_);
 
-  double tau = (t-*t0_).toSec();
-  
+  double tau = t.toSec()-t0_->toSec();
+
   Profile out;
   
   if ( tau < 0.0 ) {
@@ -174,10 +188,10 @@ TrajectoryPlanner::Profile TrajectoryPlanner::getProfile( const ros::Time& t )
 
   double dt = (*poses_)[i+1].t-(*poses_)[i].t;
   double mu = (tau-(*poses_)[i].t)/dt;
-
-  out.x = (*poses_)[i].x + tau * ((*poses_)[i+1].x-(*poses_)[i].x);
-  out.y = (*poses_)[i].y + tau * ((*poses_)[i+1].y-(*poses_)[i].y);
-  out.yaw = angles::normalize_angle((*poses_)[i].yaw + tau/dt * angles::normalize_angle((*poses_)[i+1].yaw-(*poses_)[i].yaw));
+  
+  out.x = (*poses_)[i].x + mu * ((*poses_)[i+1].x-(*poses_)[i].x);
+  out.y = (*poses_)[i].y + mu * ((*poses_)[i+1].y-(*poses_)[i].y);
+  out.yaw = angles::normalize_angle((*poses_)[i].yaw + mu * angles::normalize_angle((*poses_)[i+1].yaw-(*poses_)[i].yaw));
   out.vx = ((*poses_)[i+1].x-(*poses_)[i].x)/dt;
   out.vy = ((*poses_)[i+1].y-(*poses_)[i].y)/dt;
   out.vyaw = angles::normalize_angle((*poses_)[i+1].yaw-(*poses_)[i].yaw)/dt;
@@ -193,14 +207,14 @@ size_t TrajectoryPlanner::matchIndex_( double t ) const
     return poses_->size();
   
   size_t i=poses_->size()/2, l=0, u=poses_->size();
-  do {
-    if ( t>(*poses_)[i].t ) {
+  while ( not(t>(*poses_)[i-1].t and t<=(*poses_)[i].t) ) {
+    if ( t>(*poses_)[i].t )
       l = i;
-    } else {
+    else
       u = i;
-    }    
     i = (u+l)/2; 
-  } while ( t>(*poses_)[i-1].t and t<=(*poses_)[i].t );
+  } 
+
   return i;
 };
 

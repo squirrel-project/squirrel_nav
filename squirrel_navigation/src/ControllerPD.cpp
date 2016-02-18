@@ -62,7 +62,8 @@
 
 namespace squirrel_navigation {
 
-ControllerPD::ControllerPD( void ) 
+ControllerPD::ControllerPD( void ) :
+    toll_(0.05)
 {
   // Empty
 }
@@ -82,8 +83,11 @@ void ControllerPD::setGains( const ControllerPD::Gain& gains )
 
 void ControllerPD::computeCommands( const TrajectoryPlanner::Profile& ref, const TrajectoryPlanner::Profile& odom, double* u )
 {
-  u[0] = K_.Pxy * (ref.x - odom.x) + K_.Dxy * (ref.vx - odom.vx);
-  u[1] = K_.Pxy * (ref.y - odom.y) + K_.Dxy * (ref.vy - odom.vy);
+  double err_x = ref.x-odom.x > 0 ? std::max(0.0,ref.x-odom.x-toll_) : std::min(0.0,ref.x-odom.x+toll_);
+  double err_y = ref.y-odom.y > 0 ? std::max(0.0,ref.y-odom.y-toll_) : std::min(0.0,ref.y-odom.y+toll_);
+   
+  u[0] = K_.Pxy * err_x + K_.Dxy * (ref.vx - odom.vx);
+  u[1] = K_.Pxy * err_x + K_.Dxy * (ref.vy - odom.vy);
   u[2] = K_.Pyaw * angles::normalize_angle(ref.yaw - odom.yaw) + K_.Dyaw * (ref.vyaw - odom.vyaw);
 }
    

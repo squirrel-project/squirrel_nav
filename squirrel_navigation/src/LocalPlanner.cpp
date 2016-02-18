@@ -65,6 +65,7 @@ PLUGINLIB_DECLARE_CLASS(squirrel_navigation, LocalPlanner, squirrel_navigation::
 namespace squirrel_navigation {
 
 LocalPlanner::LocalPlanner( void ) :
+    controller_(nullptr),
     tf_(nullptr),
     trajectory_(nullptr),
     goal_(nullptr),
@@ -75,7 +76,7 @@ LocalPlanner::LocalPlanner( void ) :
     verbose_(false)
 {  
   ROS_INFO("squirrel_navigation::LocalPlanner started");
-};
+}
 
 LocalPlanner::~LocalPlanner( void )
 {
@@ -120,7 +121,7 @@ void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, cost
   }
 
   trajectory_->setVelocityBounds(max_linear_vel_,max_angular_vel_);
-
+  
   ros::NodeHandle pnh_c("~/"+name+"/controller_gains");
   pnh_c.param<double>("P_linear", gains_.Pxy, 1.0);
   pnh_c.param<double>("P_angular", gains_.Pyaw, 1.0);
@@ -137,7 +138,7 @@ void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, cost
 bool LocalPlanner::computeVelocityCommands( geometry_msgs::Twist& cmd_vel )
 {
   std::unique_lock<std::mutex> lock(guard_);
-
+  
   tf::Stamped<tf::Pose> tf_robot_pose;
   costmap_ros_->getRobotPose(tf_robot_pose);
   
@@ -163,6 +164,8 @@ bool LocalPlanner::computeVelocityCommands( geometry_msgs::Twist& cmd_vel )
   cmd_vel.angular.z = cmd_[2];
   
   publishTrajectoryPose_(ref_pose,odom_.header.stamp);  
+  
+  return true;
 }
 
 bool LocalPlanner::isGoalReached( void )
@@ -180,6 +183,8 @@ bool LocalPlanner::isGoalReached( void )
   } else if ( linearDistance(goal_->position,robot_pose.position) < xy_goal_tolerance_ and
               angularDistance(goal_->orientation,robot_pose.orientation) < yaw_goal_tolerance_ ) {
     delete goal_;
+    goal_ = nullptr;
+    trajectory_->deactivate();
     return true;
   } else {
     return false;

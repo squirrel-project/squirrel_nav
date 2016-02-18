@@ -67,7 +67,9 @@
 #include <ros/time.h>
 
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <nav_msgs/Path.h>
 #include <visualization_msgs/Marker.h>
 
 #include <tf/tf.h>
@@ -97,6 +99,24 @@ class TrajectoryPlanner
     double x,y,yaw,vx,vy,vyaw;
   };
 
+  class Pose2D
+  {
+   public:
+    Pose2D( void ) : x(0), y(0), yaw(0), t(0) {};
+    virtual ~Pose2D( void ) {};
+    
+    static inline geometry_msgs::Pose toPoseMsg( const Pose2D& p )
+    {
+      geometry_msgs::Pose pose;
+      pose.position.x = p.x;
+      pose.position.y = p.y;
+      pose.orientation = tf::createQuaternionMsgFromYaw(p.yaw);
+      return pose;
+    }
+    
+    double x,y,yaw,t;
+  };
+  
   static TrajectoryPlanner* getTrajectory( void );
   static void deleteTrajectory( void );
   
@@ -109,22 +129,27 @@ class TrajectoryPlanner
   
   Profile getProfile( const ros::Time& );
 
-  inline bool isActive( void ) { return ( t0_ != nullptr ); };
-  
- private:
-  class Pose2D
+  inline std::vector<Pose2D>* getPoses( void )
   {
-   public:
-    Pose2D( void ) : x(0), y(0), yaw(0), t(0) {};
-    virtual ~Pose2D( void ) {};
-    
-    double x,y,yaw,t;
+    return poses_;
+  };
+  
+  inline bool isActive( void )
+  {
+    return ( t0_ != nullptr );
   };
 
+  inline void deactivate( void )
+  {
+    if ( t0_ ) {
+      delete t0_;
+      t0_ = nullptr;
+    }
+  };
+
+ public:
   static TrajectoryPlanner* trajectory_ptr_;
-
   static ros::Time* t0_;
-
   static std::vector<Pose2D>* poses_;
 
   double max_linear_vel_, max_angular_vel_;
@@ -143,7 +168,6 @@ class TrajectoryPlanner
     return 1.25*std::max(dl/max_linear_vel_,da/max_angular_vel_);
   };
 };
-
 
 }  // namespace squirrel_navigation
 
