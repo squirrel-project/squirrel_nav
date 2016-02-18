@@ -268,65 +268,40 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
 
   ros::Time plan_time = ros::Time::now();    
 
-
-  if ( trajectory_->isActive() and newGoal_(goal) ) {
+  tf::Stamped<tf::Pose> robot_pose;
+  costmap_ros_->getRobotPose(robot_pose);
+  
+  if ( trajectory_->isActive() and newGoal_(goal) )
     trajectory_->deactivate();
-    ROS_INFO("GOT A NEW GOAL");
+
+  size_t index;
+  geometry_msgs::PoseStamped replan_start;
+  replan_start.header = start.header;  
+  if ( not trajectory_->isActive() ) {
+    replan_start.pose.position = start.pose.position;
+    replan_start.pose.orientation = tf::createQuaternionMsgFromYaw(tf::getYaw(robot_pose.getRotation()));
+    index = 0;
+  } else {
+    ros::Time lookahead_time = plan_time + ros::Duration(heading_lookahead_);            
+    index = trajectory_->getNodePose(lookahead_time,replan_start);
   }
-    
+  
   switch ( curr_planner_ ) {
     
     case DIJKSTRA: {
-      if ( not trajectory_->isActive() ) {       
-        geometry_msgs::PoseStamped start_unbiased;
-        start_unbiased.header = start.header;
-        start_unbiased.pose.position.x = start.pose.position.x + 0.025; // 0.025 = 0.5*map_resolution
-        start_unbiased.pose.position.y = start.pose.position.y + 0.025;
-        start_unbiased.pose.orientation = start.pose.orientation;
 
-        dijkstra_planner_->makePlan(start_unbiased, goal, plan);
-
-        tf::Stamped<tf::Pose> robot_pose;
-        costmap_ros_->getRobotPose(robot_pose);
-        
-        double dx, dy, yaw;
-        plan[0].pose.orientation = tf::createQuaternionMsgFromYaw(tf::getYaw(robot_pose.getRotation()));
-        for (size_t i=1; i<plan.size()-1; ++i) {
-          dx = plan[i+1].pose.position.x-plan[i-1].pose.position.x;
-          dy = plan[i+1].pose.position.y-plan[i-1].pose.position.y;
-          yaw = std::atan2(dy,dx);
-          plan[i].pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
-        }
-        
-        trajectory_->makeTrajectory(plan);
-
-        break;        
-      } else {
-        tf::Stamped<tf::Pose> robot_pose;
-        costmap_ros_->getRobotPose(robot_pose);
-        
-        ros::Time lookahead_time = plan_time + ros::Duration(heading_lookahead_);        
-
-        geometry_msgs::PoseStamped lookahead_start;
-        lookahead_start.header = start.header;
-        size_t i = trajectory_->getNodePose(lookahead_time,lookahead_start);
-        lookahead_start.pose.position.x += 0.025;
-        lookahead_start.pose.position.y += 0.025;
-        
-        dijkstra_planner_->makePlan(lookahead_start, goal, plan);          
-
-        double dx, dy, yaw;
-        for (size_t i=1; i<plan.size()-1; ++i) {
-          dx = plan[i+1].pose.position.x-plan[i-1].pose.position.x;
-          dy = plan[i+1].pose.position.y-plan[i-1].pose.position.y;
-          yaw = std::atan2(dy,dx);
-          plan[i].pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
-        }
-
-        trajectory_->updateTrajectory(plan,i);  
-                
-        break;
+      dijkstra_planner_->makePlan(replan_start,goal,plan);
+      
+      double dx, dy, yaw;
+      plan[0].pose.orientation = tf::createQuaternionMsgFromYaw(tf::getYaw(robot_pose.getRotation()));
+      for (size_t i=1; i<plan.size()-1; ++i) {
+        dx = plan[i+1].pose.position.x-plan[i-1].pose.position.x;
+        dy = plan[i+1].pose.position.y-plan[i-1].pose.position.y;
+        yaw = std::atan2(dy,dx);
+        plan[i].pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
       }
+              
+      break;        
     }
 
     case LATTICE: {
@@ -479,6 +454,8 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
     }
   }      
 
+  trajectory_->makeTrajectory(plan,index);
+  
   std::vector<TrajectoryPlanner::Pose2D>* poses = trajectory_->getPoses();
   publishTrajectory_(poses);
   

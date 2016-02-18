@@ -101,57 +101,13 @@ void TrajectoryPlanner::setVelocityBounds( double linear_vel, double angular_vel
   max_angular_vel_ = angular_vel;
 }
 
-void TrajectoryPlanner::makeTrajectory( const std::vector<geometry_msgs::PoseStamped>& plan )
+void TrajectoryPlanner::makeTrajectory( const std::vector<geometry_msgs::PoseStamped>& plan, size_t i )
 {
-  const size_t n = plan.size();
-
-  if ( n <= 1 )
-    return;
-
-  if ( not t0_ ) 
-    t0_ = new ros::Time(ros::Time::now());
-  
-  poses_->resize(n);
-  
-  for (size_t i=0; i<n; ++i) {
-    (*poses_)[i].x = plan[i].pose.position.x;
-    (*poses_)[i].y = plan[i].pose.position.y;
-    (*poses_)[i].yaw = tf::getYaw(plan[i].pose.orientation);
-    if ( i>0 )
-      (*poses_)[i].t = (*poses_)[i-1].t + timeIncrement_((*poses_)[i],(*poses_)[i-1]);
+  if ( i <= 0 ) {
+    initTrajectory_(plan);
+  } else {
+    updateTrajectory_(plan,i);
   }
-}
-
-void TrajectoryPlanner::updateTrajectory( const std::vector<geometry_msgs::PoseStamped>& plan, size_t init )
-{
-  const size_t n = plan.size();
-
-  if ( n <= heading_lookahead_+1 )
-    return;
-  
-  if ( init >= poses_->size()-heading_lookahead_ )
-    return;
-  
-  
-  std::vector<Pose2D> new_poses(n-heading_lookahead_+1);
-  new_poses.insert(new_poses.begin(),poses_->begin(),poses_->begin()+init);
-
-  for (size_t i=init,pi=heading_lookahead_; i<init+n-heading_lookahead_; ++i,++pi) {
-    new_poses[i].x = smoother_ * new_poses[i-1].x + (1-smoother_) * plan[pi].pose.position.x;
-    new_poses[i].y = smoother_ * new_poses[i-1].y + (1-smoother_) * plan[pi].pose.position.y;
-    new_poses[i].yaw = angles::normalize_angle(smoother_*new_poses[i-1].yaw + (1-smoother_) *tf::getYaw(plan[pi].pose.orientation));
-    new_poses[i].t = new_poses[i-1].t + timeIncrement_(new_poses[i],new_poses[i-1]);
-  }
-
-  size_t last = init+n-heading_lookahead_;
-  new_poses[last].x = plan.back().pose.position.x; 
-  new_poses[last].y = plan.back().pose.position.y; 
-  new_poses[last].yaw = tf::getYaw(plan.back().pose.orientation); 
-  new_poses[last].t = new_poses[last-1].t + timeIncrement_(new_poses[last],new_poses[last-1]);
-  
-  delete poses_;
-  poses_ = new std::vector<Pose2D>;
-  *poses_ = new_poses;
 }
 
 geometry_msgs::Pose TrajectoryPlanner::getGoal( void ) const
@@ -209,6 +165,68 @@ TrajectoryPlanner::Profile TrajectoryPlanner::getProfile( const ros::Time& t )
   out.vyaw = angles::normalize_angle((*poses_)[i+1].yaw-(*poses_)[i].yaw)/dt;
             
   return out;
+}
+
+void TrajectoryPlanner::initTrajectory_( const std::vector<geometry_msgs::PoseStamped>& plan )
+{
+  const size_t n = plan.size();
+
+  if ( n <= 1 )
+    return;
+
+  if ( not t0_ ) 
+    t0_ = new ros::Time(ros::Time::now());
+  
+  poses_->resize(n+1);
+  
+  for (size_t i=0; i<n; ++i) {
+    if ( i == 0 ) {
+      (*poses_)[i].x = plan[i].pose.position.x;
+      (*poses_)[i].y = plan[i].pose.position.y;
+      (*poses_)[i].yaw = tf::getYaw(plan[i].pose.orientation);
+    } else {
+      (*poses_)[i].x = smoother_ * (*poses_)[i-1].x + (1-smoother_) * plan[i].pose.position.x;
+      (*poses_)[i].y = smoother_ * (*poses_)[i-1].y + (1-smoother_) * plan[i].pose.position.y;
+      (*poses_)[i].yaw = angles::normalize_angle(smoother_* (*poses_)[i-1].yaw + (1-smoother_) *tf::getYaw(plan[i].pose.orientation));
+      (*poses_)[i].t = (*poses_)[i-1].t + timeIncrement_((*poses_)[i],(*poses_)[i-1]);
+    }
+  }
+
+  (*poses_)[n].x = plan[n-1].pose.position.x;
+  (*poses_)[n].y = plan[n-1].pose.position.y;
+  (*poses_)[n].yaw = tf::getYaw(plan[n-1].pose.orientation);
+  (*poses_)[n].t = (*poses_)[n-1].t + timeIncrement_((*poses_)[n],(*poses_)[n-1]);
+}
+
+void TrajectoryPlanner::updateTrajectory_( const std::vector<geometry_msgs::PoseStamped>& plan, size_t init )
+{
+  const size_t n = plan.size();
+
+  if ( n <= heading_lookahead_+1 )
+    return;
+  
+  if ( init >= poses_->size()-heading_lookahead_ )
+    return;
+
+  std::vector<Pose2D> new_poses(n-heading_lookahead_+1);
+  new_poses.insert(new_poses.begin(),poses_->begin(),poses_->begin()+init);
+
+  for (size_t i=init,pi=heading_lookahead_; i<init+n-heading_lookahead_; ++i,++pi) {
+    new_poses[i].x = smoother_ * new_poses[i-1].x + (1-smoother_) * plan[pi].pose.position.x;
+    new_poses[i].y = smoother_ * new_poses[i-1].y + (1-smoother_) * plan[pi].pose.position.y;
+    new_poses[i].yaw = angles::normalize_angle(smoother_*new_poses[i-1].yaw + (1-smoother_) *tf::getYaw(plan[pi].pose.orientation));
+    new_poses[i].t = new_poses[i-1].t + timeIncrement_(new_poses[i],new_poses[i-1]);
+  }
+
+  size_t last = init+n-heading_lookahead_;
+  new_poses[last].x = plan.back().pose.position.x; 
+  new_poses[last].y = plan.back().pose.position.y; 
+  new_poses[last].yaw = tf::getYaw(plan.back().pose.orientation); 
+  new_poses[last].t = new_poses[last-1].t + timeIncrement_(new_poses[last],new_poses[last-1]);
+  
+  delete poses_;
+  poses_ = new std::vector<Pose2D>;
+  *poses_ = new_poses;
 }
 
 size_t TrajectoryPlanner::matchIndex_( double t ) const

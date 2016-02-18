@@ -124,9 +124,8 @@ class TrajectoryPlanner
   
   void setVelocityBounds( double, double );
 
-  void makeTrajectory( const std::vector<geometry_msgs::PoseStamped>& );
-  void updateTrajectory( const std::vector<geometry_msgs::PoseStamped>&, size_t );
-
+  void makeTrajectory( const std::vector<geometry_msgs::PoseStamped>&, size_t );
+  
   geometry_msgs::Pose getGoal( void ) const;
   size_t getNodePose( ros::Time&, geometry_msgs::PoseStamped& ) const;  
   Profile getProfile( const ros::Time& );
@@ -161,6 +160,8 @@ class TrajectoryPlanner
   std::mutex guard_;
 
   size_t matchIndex_( double ) const;
+  void initTrajectory_( const std::vector<geometry_msgs::PoseStamped>& );
+  void updateTrajectory_( const std::vector<geometry_msgs::PoseStamped>&, size_t );
   
   inline double timeIncrement_( const Pose2D& p1, const Pose2D& p2 ) const
   {
