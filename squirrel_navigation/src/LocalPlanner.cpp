@@ -195,8 +195,9 @@ bool LocalPlanner::setPlan( const std::vector<geometry_msgs::PoseStamped>& plan 
 {
   if ( not goal_ )
     goal_ = new geometry_msgs::Pose;
-  *goal_ = plan.back().pose;
 
+  *goal_ = plan.back().pose;
+  
   return true;
 }
 
