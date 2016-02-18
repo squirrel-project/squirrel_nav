@@ -54,7 +54,7 @@ add_dependencies(pushing_planner_node
 )
 
 target_link_libraries(pushing_planner_node
-  opencv_nonfree ${LIBS_LINK} ${catkin_LIBRARIES}
+  ${LIBS_LINK} ${catkin_LIBRARIES}
 )
 
 #############
