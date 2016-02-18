@@ -1,6 +1,6 @@
 GlobalPlanner: {
   verbose: false,
-  heading_lookahead: 2.0,
+  heading_lookahead: 1.0,
   dijkstra/use_dijkstra: true,
   dijkstra/allow_unknown: false,
   dijkstra/default_tolerance: 0.0,

@@ -75,7 +75,7 @@ GlobalPlanner::GlobalPlanner( void ) :
     dijkstra_planner_(nullptr),
     lattice_planner_(nullptr),
     curr_planner_(DIJKSTRA),
-    heading_lookahead_(1.0)
+    heading_lookahead_(0.5)
 {
   ROS_INFO("squirrel_localizer::GlobalPlanner started.");
 }
@@ -293,7 +293,6 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
       dijkstra_planner_->makePlan(replan_start,goal,plan);
       
       double dx, dy, yaw;
-      plan[0].pose.orientation = tf::createQuaternionMsgFromYaw(tf::getYaw(robot_pose.getRotation()));
       for (size_t i=1; i<plan.size()-1; ++i) {
         dx = plan[i+1].pose.position.x-plan[i-1].pose.position.x;
         dy = plan[i+1].pose.position.y-plan[i-1].pose.position.y;
@@ -454,7 +453,7 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
     }
   }      
 
-  trajectory_->makeTrajectory(plan,index);
+  trajectory_->makeTrajectory(replan_start,plan,index);
   
   std::vector<TrajectoryPlanner::Pose2D>* poses = trajectory_->getPoses();
   publishTrajectory_(poses);

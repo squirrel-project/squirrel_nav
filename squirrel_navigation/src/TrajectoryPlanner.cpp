@@ -65,7 +65,8 @@ namespace squirrel_navigation {
 TrajectoryPlanner::TrajectoryPlanner( void ) :
     max_linear_vel_(1.0),
     max_angular_vel_(2*M_PI),
-    smoother_(0.75),
+    xy_smoother_(0.75),
+    yaw_smoother_(0.1),
     heading_lookahead_(5)
 {  
   ROS_INFO("squirrel_navigation::TrajectoryPlanner started");
@@ -101,9 +102,10 @@ void TrajectoryPlanner::setVelocityBounds( double linear_vel, double angular_vel
   max_angular_vel_ = angular_vel;
 }
 
-void TrajectoryPlanner::makeTrajectory( const std::vector<geometry_msgs::PoseStamped>& plan, size_t i )
+void TrajectoryPlanner::makeTrajectory( const geometry_msgs::PoseStamped& start , std::vector<geometry_msgs::PoseStamped>& plan, size_t i )
 {
   if ( i <= 0 ) {
+    plan[0].pose.orientation = start.pose.orientation; // ROS planner does not consider this
     initTrajectory_(plan);
   } else {
     updateTrajectory_(plan,i);
@@ -185,9 +187,11 @@ void TrajectoryPlanner::initTrajectory_( const std::vector<geometry_msgs::PoseSt
       (*poses_)[i].y = plan[i].pose.position.y;
       (*poses_)[i].yaw = tf::getYaw(plan[i].pose.orientation);
     } else {
-      (*poses_)[i].x = smoother_ * (*poses_)[i-1].x + (1-smoother_) * plan[i].pose.position.x;
-      (*poses_)[i].y = smoother_ * (*poses_)[i-1].y + (1-smoother_) * plan[i].pose.position.y;
-      (*poses_)[i].yaw = angles::normalize_angle(smoother_* (*poses_)[i-1].yaw + (1-smoother_) *tf::getYaw(plan[i].pose.orientation));
+      double da = angles::normalize_angle((*poses_)[i-1].yaw - tf::getYaw(plan[i].pose.orientation));
+      
+      (*poses_)[i].x = xy_smoother_ * (*poses_)[i-1].x + (1-xy_smoother_) * plan[i].pose.position.x;
+      (*poses_)[i].y = xy_smoother_ * (*poses_)[i-1].y + (1-xy_smoother_) * plan[i].pose.position.y;
+      (*poses_)[i].yaw = angles::normalize_angle(tf::getYaw(plan[i].pose.orientation) + yaw_smoother_ * da);
       (*poses_)[i].t = (*poses_)[i-1].t + timeIncrement_((*poses_)[i],(*poses_)[i-1]);
     }
   }
@@ -212,9 +216,11 @@ void TrajectoryPlanner::updateTrajectory_( const std::vector<geometry_msgs::Pose
   new_poses.insert(new_poses.begin(),poses_->begin(),poses_->begin()+init);
 
   for (size_t i=init,pi=heading_lookahead_; i<init+n-heading_lookahead_; ++i,++pi) {
-    new_poses[i].x = smoother_ * new_poses[i-1].x + (1-smoother_) * plan[pi].pose.position.x;
-    new_poses[i].y = smoother_ * new_poses[i-1].y + (1-smoother_) * plan[pi].pose.position.y;
-    new_poses[i].yaw = angles::normalize_angle(smoother_*new_poses[i-1].yaw + (1-smoother_) *tf::getYaw(plan[pi].pose.orientation));
+    double da = new_poses[i-1].yaw - tf::getYaw(plan[pi].pose.orientation);
+
+    new_poses[i].x = xy_smoother_ * new_poses[i-1].x + (1-xy_smoother_) * plan[pi].pose.position.x;
+    new_poses[i].y = xy_smoother_ * new_poses[i-1].y + (1-xy_smoother_) * plan[pi].pose.position.y;
+    new_poses[i].yaw = angles::normalize_angle(tf::getYaw(plan[pi].pose.orientation) + yaw_smoother_ * da);
     new_poses[i].t = new_poses[i-1].t + timeIncrement_(new_poses[i],new_poses[i-1]);
   }
 

@@ -124,7 +124,7 @@ class TrajectoryPlanner
   
   void setVelocityBounds( double, double );
 
-  void makeTrajectory( const std::vector<geometry_msgs::PoseStamped>&, size_t );
+  void makeTrajectory( const geometry_msgs::PoseStamped&, std::vector<geometry_msgs::PoseStamped>&, size_t );
   
   geometry_msgs::Pose getGoal( void ) const;
   size_t getNodePose( ros::Time&, geometry_msgs::PoseStamped& ) const;  
@@ -154,7 +154,7 @@ class TrajectoryPlanner
   static std::vector<Pose2D>* poses_;
 
   double max_linear_vel_, max_angular_vel_;
-  double smoother_;
+  double xy_smoother_, yaw_smoother_;
   int heading_lookahead_;
   
   std::mutex guard_;
