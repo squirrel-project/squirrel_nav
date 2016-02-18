@@ -69,6 +69,12 @@ TrajectoryPlanner::TrajectoryPlanner( void ) :
     yaw_smoother_(0.1),
     heading_lookahead_(5)
 {  
+  ros::NodeHandle pnh("~/trajectory_planner");
+
+  pnh.param<double>("xy_smoother", xy_smoother_, 0.75);
+  pnh.param<double>("yaw_smoother", yaw_smoother_, 0.1);
+  pnh.param<int>("heading_lookahead", heading_lookahead_, 5);
+  
   ROS_INFO("squirrel_navigation::TrajectoryPlanner started");
 }
 

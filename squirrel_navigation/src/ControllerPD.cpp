@@ -62,8 +62,7 @@
 
 namespace squirrel_navigation {
 
-ControllerPD::ControllerPD( void ) :
-    toll_(0.1)
+ControllerPD::ControllerPD( void )
 {
   // Empty
 }

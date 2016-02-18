@@ -111,12 +111,14 @@ void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, cost
   pnh.param<double>("yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
   
   if ( max_linear_vel_ <= 0 ) {
-    ROS_WARN_STREAM(name << ": max_rlinear_vel has been chosen to be non positive. Reverting to 0.5 (m/s)");
+    if ( verbose_ )
+      ROS_WARN_STREAM(name << ": max_rlinear_vel has been chosen to be non positive. Reverting to 0.5 (m/s)");
     max_linear_vel_ = 0.5;
   }
   
   if ( max_angular_vel_ <= 0 ) {
-    ROS_WARN_STREAM(name << ": max_rotation_vel has been chosen to be non positive. Reverting to 0.7 (rad/s)");
+    if ( verbose_ )
+      ROS_WARN_STREAM(name << ": max_rotation_vel has been chosen to be non positive. Reverting to 0.7 (rad/s)");
     max_angular_vel_ = 0.7;
   }
 
@@ -186,7 +188,8 @@ bool LocalPlanner::isGoalReached( void )
     goal_ = nullptr;
     trajectory_->deactivate();
 
-    ROS_INFO_STREAM(name_ << ": Goal reached.");
+    if ( verbose_ )
+      ROS_INFO_STREAM(name_ << ": Goal reached.");
 
     return true;
   } else {

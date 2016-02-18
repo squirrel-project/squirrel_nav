@@ -78,7 +78,6 @@ class ControllerPD
   
  private:
   Gain K_;
-  const double toll_;
 };
 
 }  // namespace squirrel_navigation
