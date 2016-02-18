@@ -185,6 +185,9 @@ bool LocalPlanner::isGoalReached( void )
     delete goal_;
     goal_ = nullptr;
     trajectory_->deactivate();
+
+    ROS_INFO_STREAM(name_ << ": Goal reached.");
+
     return true;
   } else {
     return false;

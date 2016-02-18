@@ -64,7 +64,9 @@ namespace squirrel_navigation {
 
 TrajectoryPlanner::TrajectoryPlanner( void ) :
     max_linear_vel_(1.0),
-    max_angular_vel_(2*M_PI)
+    max_angular_vel_(2*M_PI),
+    smoother_(0.75),
+    heading_lookahead_(5)
 {  
   ROS_INFO("squirrel_navigation::TrajectoryPlanner started");
 }
@@ -124,31 +126,41 @@ void TrajectoryPlanner::updateTrajectory( const std::vector<geometry_msgs::PoseS
 {
   const size_t n = plan.size();
 
-  if ( n < 1 )
+  if ( n <= heading_lookahead_+1 )
     return;
   
-  if ( init >= poses_->size()-1 )
+  if ( init >= poses_->size()-heading_lookahead_ )
     return;
   
-  std::vector<Pose2D> new_poses(n-2);
-  new_poses.insert(new_poses.begin(),poses_->begin(),poses_->begin()+init+1);
+  
+  std::vector<Pose2D> new_poses(n-heading_lookahead_+1);
+  new_poses.insert(new_poses.begin(),poses_->begin(),poses_->begin()+init);
 
-  double corr_dx = ((*poses_)[init].x - plan[0].pose.position.x);
-  double corr_dy = ((*poses_)[init].y - plan[0].pose.position.y);
-      
-  for (size_t i=init+1,pi=1; i<init+n-1; ++i,++pi) {    
-    double dx = plan[pi].pose.position.x - plan[pi-1].pose.position.x;
-    double dy = plan[pi].pose.position.y - plan[pi-1].pose.position.y;
-        
-    new_poses[i].x = new_poses[i-1].x + dx - std::pow(0.5,pi)*corr_dx;
-    new_poses[i].y = new_poses[i-1].y + dy - std::pow(0.5,pi)*corr_dy;
-    new_poses[i].yaw = tf::getYaw(plan[pi].pose.orientation);
-    new_poses[i].t = new_poses[i-1].t + timeIncrement_(new_poses[i],new_poses[i-1]);;
+  for (size_t i=init,pi=heading_lookahead_; i<init+n-heading_lookahead_; ++i,++pi) {
+    new_poses[i].x = smoother_ * new_poses[i-1].x + (1-smoother_) * plan[pi].pose.position.x;
+    new_poses[i].y = smoother_ * new_poses[i-1].y + (1-smoother_) * plan[pi].pose.position.y;
+    new_poses[i].yaw = angles::normalize_angle(smoother_*new_poses[i-1].yaw + (1-smoother_) *tf::getYaw(plan[pi].pose.orientation));
+    new_poses[i].t = new_poses[i-1].t + timeIncrement_(new_poses[i],new_poses[i-1]);
   }
 
+  size_t last = init+n-heading_lookahead_;
+  new_poses[last].x = plan.back().pose.position.x; 
+  new_poses[last].y = plan.back().pose.position.y; 
+  new_poses[last].yaw = tf::getYaw(plan.back().pose.orientation); 
+  new_poses[last].t = new_poses[last-1].t + timeIncrement_(new_poses[last],new_poses[last-1]);
+  
   delete poses_;
   poses_ = new std::vector<Pose2D>;
   *poses_ = new_poses;
+}
+
+geometry_msgs::Pose TrajectoryPlanner::getGoal( void ) const
+{
+  geometry_msgs::Pose goal;
+  goal.position.x = poses_->back().x;
+  goal.position.y = poses_->back().y;
+  goal.orientation = tf::createQuaternionMsgFromYaw(poses_->back().yaw);
+  return goal;
 }
 
 size_t TrajectoryPlanner::getNodePose( ros::Time& t, geometry_msgs::PoseStamped& p ) const

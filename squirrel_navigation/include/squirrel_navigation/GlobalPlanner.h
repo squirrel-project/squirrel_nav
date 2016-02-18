@@ -80,6 +80,7 @@
 
 #include <angles/angles.h>
 
+#include "squirrel_navigation/Common.h"
 #include "squirrel_navigation/LatticeSCQ.h"
 #include "squirrel_navigation/TrajectoryPlanner.h"
 
@@ -143,7 +144,6 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
   std::vector<geometry_msgs::Point> footprint_;
 
   // replanning 
-  geometry_msgs::PoseStamped goal_;
   std::vector<geometry_msgs::PoseStamped> plan_;
   double heading_lookahead_;
   
@@ -181,17 +181,10 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
     traj_xy_pub_.publish(gui_plan);
     traj_xyth_pub_.publish(gui_poses);
   };
-  
-  inline double linearDistance_( const geometry_msgs::Point& p1, const geometry_msgs::Point& p2 )
-  {
-    double dx=p1.x-p2.x, dy=p1.y-p2.y;
-    return std::sqrt(dx*dx+dy*dy);
-  };
 
-  inline double angularDistance_( const geometry_msgs::Quaternion& q1, const geometry_msgs::Quaternion& q2 )
+  inline bool newGoal_( const geometry_msgs::PoseStamped& goal ) const
   {
-    double da = tf::getYaw(q1)-tf::getYaw(q2);
-    return std::abs(angles::normalize_angle(da));
+    return specialEuclideanDistance(trajectory_->getGoal(),goal.pose)>TOLL;
   };
 };
 

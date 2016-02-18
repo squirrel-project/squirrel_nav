@@ -82,6 +82,8 @@
 #include <thread>
 #include <vector>
 
+#include <boost/math/special_functions/binomial.hpp>
+
 namespace squirrel_navigation {
 
 class TrajectoryPlanner
@@ -124,9 +126,9 @@ class TrajectoryPlanner
 
   void makeTrajectory( const std::vector<geometry_msgs::PoseStamped>& );
   void updateTrajectory( const std::vector<geometry_msgs::PoseStamped>&, size_t );
-  
-  size_t getNodePose( ros::Time&, geometry_msgs::PoseStamped& ) const;
-  
+
+  geometry_msgs::Pose getGoal( void ) const;
+  size_t getNodePose( ros::Time&, geometry_msgs::PoseStamped& ) const;  
   Profile getProfile( const ros::Time& );
 
   inline std::vector<Pose2D>* getPoses( void )
@@ -153,7 +155,9 @@ class TrajectoryPlanner
   static std::vector<Pose2D>* poses_;
 
   double max_linear_vel_, max_angular_vel_;
-
+  double smoother_;
+  int heading_lookahead_;
+  
   std::mutex guard_;
 
   size_t matchIndex_( double ) const;

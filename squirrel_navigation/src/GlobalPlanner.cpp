@@ -267,7 +267,13 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
   std::unique_lock<std::mutex> lock(guard_);
 
   ros::Time plan_time = ros::Time::now();    
-  
+
+
+  if ( trajectory_->isActive() and newGoal_(goal) ) {
+    trajectory_->deactivate();
+    ROS_INFO("GOT A NEW GOAL");
+  }
+    
   switch ( curr_planner_ ) {
     
     case DIJKSTRA: {
