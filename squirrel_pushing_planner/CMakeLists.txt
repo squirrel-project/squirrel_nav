@@ -12,7 +12,6 @@ set(squirrel_pushing_planner_DEPENDENCIES
   roscpp
   squirrel_rgbd_mapping_msgs
   tf
-  opencv3
 )
 
 
@@ -21,13 +20,20 @@ find_package(catkin REQUIRED
   ${squirrel_pushing_planner_DEPENDENCIES}
 )
 
-#find_package(OpenCV REQUIRED)
+#############################
+# OpenCV ####################
+#############################
+find_package(OpenCV)
+include_directories(${OpenCV_INCLUDE_DIRS})
+link_directories(${OpenCV_LIBRARY_DIRS})
 
 catkin_package(
  INCLUDE_DIRS include
  CATKIN_DEPENDS ${squirrel_pushing_planner_DEPENDENCIES}
-# DEPENS OpenCV
+ DEPENDS OpenCV
 )
+
+SET(LIBS_LINK ${OpenCV_LIBS})
 
 ###########
 ## Build ##
@@ -48,7 +54,7 @@ add_dependencies(pushing_planner_node
 )
 
 target_link_libraries(pushing_planner_node
-  ${catkin_LIBRARIES}
+  opencv_nonfree ${LIBS_LINK} ${catkin_LIBRARIES}
 )
 
 #############
