@@ -124,29 +124,15 @@ class TrajectoryPlanner
   
   void setVelocityBounds( double, double );
 
-  void makeTrajectory( const geometry_msgs::PoseStamped&, std::vector<geometry_msgs::PoseStamped>&, size_t );
+  bool makeTrajectory( const geometry_msgs::PoseStamped&, std::vector<geometry_msgs::PoseStamped>&, size_t );
   
   geometry_msgs::Pose getGoal( void ) const;
   size_t getNodePose( ros::Time&, geometry_msgs::PoseStamped& ) const;  
   Profile getProfile( const ros::Time& );
 
-  inline std::vector<Pose2D>* getPoses( void )
-  {
-    return poses_;
-  };
-  
-  inline bool isActive( void )
-  {
-    return ( t0_ != nullptr );
-  };
-
-  inline void deactivate( void )
-  {
-    if ( t0_ ) {
-      delete t0_;
-      t0_ = nullptr;
-    }
-  };
+  inline std::vector<Pose2D>* getPoses( void ) { return poses_; };
+  inline bool isActive( void ) { return ( t0_ != nullptr ); };
+  inline void deactivate( void ) { if ( t0_ ) { delete t0_; t0_ = nullptr; } };
 
  public:
   static TrajectoryPlanner* trajectory_ptr_;
@@ -155,13 +141,14 @@ class TrajectoryPlanner
 
   double max_linear_vel_, max_angular_vel_;
   double xy_smoother_, yaw_smoother_;
+  double time_scaler_;
   int heading_lookahead_;
   
   std::mutex guard_;
 
   size_t matchIndex_( double ) const;
-  void initTrajectory_( const std::vector<geometry_msgs::PoseStamped>& );
-  void updateTrajectory_( const std::vector<geometry_msgs::PoseStamped>&, size_t );
+  bool initTrajectory_( const std::vector<geometry_msgs::PoseStamped>& );
+  bool updateTrajectory_( const std::vector<geometry_msgs::PoseStamped>&, size_t );
   
   inline double timeIncrement_( const Pose2D& p1, const Pose2D& p2 ) const
   {
@@ -170,7 +157,7 @@ class TrajectoryPlanner
     dl = std::hypot(p1.x-p2.x,p1.y-p2.y);
     da = std::abs(angles::normalize_angle(p1.yaw-p2.yaw));
     
-    return 2.0*std::max(dl/max_linear_vel_,da/max_angular_vel_);
+    return (1+time_scaler_)*std::max(dl/max_linear_vel_,da/max_angular_vel_);
   };
 };
 

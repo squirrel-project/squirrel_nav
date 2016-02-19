@@ -199,11 +199,14 @@ bool LocalPlanner::isGoalReached( void )
 
 bool LocalPlanner::setPlan( const std::vector<geometry_msgs::PoseStamped>& plan )
 {
+  if ( plan.size() < 1 )
+    return false;
+
   if ( not goal_ )
     goal_ = new geometry_msgs::Pose;
 
   *goal_ = plan.back().pose;
-  
+
   return true;
 }
 

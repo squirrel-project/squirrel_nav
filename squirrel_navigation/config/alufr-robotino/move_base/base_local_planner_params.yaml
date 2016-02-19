@@ -1,5 +1,5 @@
 LocalPlanner: {
-  verbose: true,
+  verbose: false,
   max_linear_vel: 0.5,
   max_angular_vel: 0.7,
   xy_goal_tolerance: 0.10,

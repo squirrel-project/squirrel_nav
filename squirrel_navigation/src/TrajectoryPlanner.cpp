@@ -67,15 +67,22 @@ TrajectoryPlanner::TrajectoryPlanner( void ) :
     max_angular_vel_(2*M_PI),
     xy_smoother_(0.75),
     yaw_smoother_(0.1),
+    time_scaler_(0.75),
     heading_lookahead_(5)
 {  
+  ROS_INFO("squirrel_navigation::TrajectoryPlanner started");
+
   ros::NodeHandle pnh("~/trajectory_planner");
 
   pnh.param<double>("xy_smoother", xy_smoother_, 0.75);
   pnh.param<double>("yaw_smoother", yaw_smoother_, 0.1);
+  pnh.param<double>("time_scaler", time_scaler_, 0.75);
   pnh.param<int>("heading_lookahead", heading_lookahead_, 5);
-  
-  ROS_INFO("squirrel_navigation::TrajectoryPlanner started");
+
+  if ( time_scaler_ <= 0 ) {
+    ROS_WARN("TrajectoryPlanner: time_scaler should be positive. Revert to default parameter (0.75)");
+    time_scaler_ = 0.75;
+  }
 }
 
 TrajectoryPlanner* TrajectoryPlanner::getTrajectory( void )
@@ -108,13 +115,16 @@ void TrajectoryPlanner::setVelocityBounds( double linear_vel, double angular_vel
   max_angular_vel_ = angular_vel;
 }
 
-void TrajectoryPlanner::makeTrajectory( const geometry_msgs::PoseStamped& start , std::vector<geometry_msgs::PoseStamped>& plan, size_t i )
+bool TrajectoryPlanner::makeTrajectory( const geometry_msgs::PoseStamped& start , std::vector<geometry_msgs::PoseStamped>& plan, size_t i )
 {
+  if ( plan.size() <= 0 )
+    return false;
+  
   if ( i <= 0 ) {
     plan[0].pose.orientation = start.pose.orientation; // ROS planner does not consider this
-    initTrajectory_(plan);
+    return initTrajectory_(plan);
   } else {
-    updateTrajectory_(plan,i);
+    return updateTrajectory_(plan,i);
   }
 }
 
@@ -175,13 +185,13 @@ TrajectoryPlanner::Profile TrajectoryPlanner::getProfile( const ros::Time& t )
   return out;
 }
 
-void TrajectoryPlanner::initTrajectory_( const std::vector<geometry_msgs::PoseStamped>& plan )
+bool TrajectoryPlanner::initTrajectory_( const std::vector<geometry_msgs::PoseStamped>& plan )
 {
   const size_t n = plan.size();
 
-  if ( n <= 1 )
-    return;
-
+  if ( n < 1 )
+    return false;
+  
   if ( not t0_ ) 
     t0_ = new ros::Time(ros::Time::now());
   
@@ -206,17 +216,16 @@ void TrajectoryPlanner::initTrajectory_( const std::vector<geometry_msgs::PoseSt
   (*poses_)[n].y = plan[n-1].pose.position.y;
   (*poses_)[n].yaw = tf::getYaw(plan[n-1].pose.orientation);
   (*poses_)[n].t = (*poses_)[n-1].t + timeIncrement_((*poses_)[n],(*poses_)[n-1]);
+
+  return true;
 }
 
-void TrajectoryPlanner::updateTrajectory_( const std::vector<geometry_msgs::PoseStamped>& plan, size_t init )
+bool TrajectoryPlanner::updateTrajectory_( const std::vector<geometry_msgs::PoseStamped>& plan, size_t init )
 {
   const size_t n = plan.size();
 
-  if ( n <= heading_lookahead_+1 )
-    return;
-  
-  if ( init >= poses_->size()-heading_lookahead_ )
-    return;
+  if ( (n <= heading_lookahead_+1) or (init >= poses_->size()-heading_lookahead_) )
+    return true;
 
   std::vector<Pose2D> new_poses(n-heading_lookahead_+1);
   new_poses.insert(new_poses.begin(),poses_->begin(),poses_->begin()+init);
@@ -239,6 +248,8 @@ void TrajectoryPlanner::updateTrajectory_( const std::vector<geometry_msgs::Pose
   delete poses_;
   poses_ = new std::vector<Pose2D>;
   *poses_ = new_poses;
+
+  return true;
 }
 
 size_t TrajectoryPlanner::matchIndex_( double t ) const

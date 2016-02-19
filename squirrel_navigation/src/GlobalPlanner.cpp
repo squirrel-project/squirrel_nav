@@ -273,7 +273,7 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
   
   if ( trajectory_->isActive() and newGoal_(goal) )
     trajectory_->deactivate();
-
+  
   size_t index;
   geometry_msgs::PoseStamped replan_start;
   replan_start.header = start.header;  
@@ -291,21 +291,26 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
     case DIJKSTRA: {
 
       dijkstra_planner_->makePlan(replan_start,goal,plan);
-      
-      double dx, dy, yaw;
-      for (size_t i=1; i<plan.size()-1; ++i) {
-        dx = plan[i+1].pose.position.x-plan[i-1].pose.position.x;
-        dy = plan[i+1].pose.position.y-plan[i-1].pose.position.y;
-        yaw = std::atan2(dy,dx);
-        plan[i].pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
+
+      if ( not plan.empty() ) {
+        // Creating a pose profile (approx. tg with central difference)
+        double dx, dy, yaw;
+        for (size_t i=1; i<plan.size()-1; ++i) {
+          dx = plan[i+1].pose.position.x-plan[i-1].pose.position.x;
+          dy = plan[i+1].pose.position.y-plan[i-1].pose.position.y;
+          yaw = std::atan2(dy,dx);
+          plan[i].pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
+        }
+      } else {
+        ROS_WARN_STREAM(name_ << ": Could not find a collision free path.");        
       }
-              
+      
       break;        
     }
 
     case LATTICE: {
-      double theta_start = 2 * atan2(start.pose.orientation.z, start.pose.orientation.w);
-      double theta_goal = 2 * atan2(goal.pose.orientation.z, goal.pose.orientation.w);
+      double theta_start = 2 * std::atan2(start.pose.orientation.z, start.pose.orientation.w);
+      double theta_goal = 2 * std::atan2(goal.pose.orientation.z, goal.pose.orientation.w);
 
       try{
         int ret = env_->SetStart(start.pose.position.x - costmap_ros_->getCostmap()->getOriginX(), start.pose.position.y - costmap_ros_->getCostmap()->getOriginY(), theta_start);
@@ -453,12 +458,13 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
     }
   }      
 
-  trajectory_->makeTrajectory(replan_start,plan,index);
-  
-  std::vector<TrajectoryPlanner::Pose2D>* poses = trajectory_->getPoses();
-  publishTrajectory_(poses);
-  
-  return true;
+  if ( trajectory_->makeTrajectory(replan_start,plan,index) ) {
+    std::vector<TrajectoryPlanner::Pose2D>* poses = trajectory_->getPoses();
+    publishTrajectory_(poses);
+    return true;
+  } else {
+    return false;
+  }
 }
 
 unsigned char GlobalPlanner::costMapCostToSBPLCost_( unsigned char newcost )
