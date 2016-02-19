@@ -9,9 +9,9 @@
   <arg name="publish_pose" default="false"/>
   <arg name="publish_pose_stamped" default="false"/>
   <arg name="publish_nav_odom" default="true"/>
-  <arg name="max_iterations" default="10"/>
-  <arg name="alpha" default="0.2"/>
-  <arg name="beta" default="0.2"/>
+  <arg name="max_iterations" default="5"/>
+  <arg name="alpha" default="0.7"/>
+  <arg name="beta" default="0.5"/>
 
   <node name="laser_scan_matcher_node" pkg="laser_scan_matcher" type="laser_scan_matcher_node" output="screen" respawn="true">
     <param name="fixed_frame" value="$(arg fixed_frame)"/>

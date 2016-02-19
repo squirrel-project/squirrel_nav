@@ -71,6 +71,7 @@ geometry_msgs::Twist AlphaBetaFilter::operator()( const geometry_msgs::PoseStamp
   t_ = X.header.stamp;
   
   // Computing the twist
+  double curr_th = tf::getYaw()
   geometry_msgs::Twist twist;
   twist.linear.x = std::cos(-th)*v_.linear.x - std::sin(-th)*v_.linear.y;
   twist.linear.y = std::sin(-th)*v_.linear.x + std::cos(-th)*v_.linear.y;
