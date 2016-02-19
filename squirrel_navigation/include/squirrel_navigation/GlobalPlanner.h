@@ -69,6 +69,7 @@
 
 #include <geometry_msgs/Polygon.h>
 #include <geometry_msgs/PoseArray.h>
+#include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
 #include <squirrel_navigation_msgs/GlobalPlannerStats.h>
 #include <std_msgs/Bool.h>
@@ -79,15 +80,16 @@
 
 #include <angles/angles.h>
 
+#include "squirrel_navigation/Common.h"
 #include "squirrel_navigation/LatticeSCQ.h"
+#include "squirrel_navigation/TrajectoryPlanner.h"
 
 #include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <thread>
 #include <vector>
-
-#include <boost/thread.hpp>
 
 namespace squirrel_navigation {
 
@@ -99,9 +101,7 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
   virtual ~GlobalPlanner( void );
 
   virtual void initialize( std::string, costmap_2d::Costmap2DROS* );
-  virtual bool makePlan( const geometry_msgs::PoseStamped&,
-                         const geometry_msgs::PoseStamped&,
-                         std::vector<geometry_msgs::PoseStamped>& );
+  virtual bool makePlan( const geometry_msgs::PoseStamped&, const geometry_msgs::PoseStamped&, std::vector<geometry_msgs::PoseStamped>& );
   
  private:
   typedef enum {DIJKSTRA, LATTICE} planner_t;
@@ -114,7 +114,8 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
   planner_t curr_planner_;
   navfn::NavfnROS* dijkstra_planner_;
   SBPLPlanner* lattice_planner_;
-
+  TrajectoryPlanner* trajectory_;
+  
   EnvironmentNAVXYTHETALAT* env_;
   
   std::string lattice_planner_type_;
@@ -135,39 +136,56 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
 
   costmap_2d::Costmap2DROS* costmap_ros_; 
   
-  ros::Publisher plan_pub_, stats_pub_, pose_plan_pub_;
-  ros::Subscriber update_sub_;
+  ros::Publisher traj_xy_pub_, stats_pub_, traj_xyth_pub_;
+  ros::Subscriber update_sub_, odom_sub_;
+
+  nav_msgs::Odometry odom_;
   
   std::vector<geometry_msgs::Point> footprint_;
 
   // replanning 
-  double replanning_thresh_;
-  geometry_msgs::PoseStamped goal_;
   std::vector<geometry_msgs::PoseStamped> plan_;
-  double offset_;
-  int current_index_;
+  double heading_lookahead_;
   
   bool verbose_;
 
-  boost::mutex all_;
+  std::mutex guard_;
   
   unsigned char costMapCostToSBPLCost_( unsigned char );
   void publishStats_( int, int , const geometry_msgs::PoseStamped&, const geometry_msgs::PoseStamped& );
   void updatePlannerCallback_( const std_msgs::Bool::ConstPtr& );
-  bool newGoal_( const geometry_msgs::PoseStamped& );
-  bool conditionallyUpdatePlan_( std::vector<geometry_msgs::PoseStamped>&, nav_msgs::Path& );
-  
-  inline double linearDistance_( const geometry_msgs::Point& p1, const geometry_msgs::Point& p2 )
-  {
-    double dx=p1.x-p2.x, dy=p1.y-p2.y;
-    return std::sqrt(dx*dx+dy*dy);
-  }
+  void odometryCallback_( const nav_msgs::Odometry::ConstPtr& );
 
-  inline double angularDistance_( const geometry_msgs::Quaternion& q1, const geometry_msgs::Quaternion& q2 )
+  inline void publishTrajectory_( const std::vector<TrajectoryPlanner::Pose2D>* poses )
   {
-    double da = tf::getYaw(q1)-tf::getYaw(q2);
-    return std::abs(angles::normalize_angle(da));
-  }
+    ros::Time traj_stamp = ros::Time::now();
+
+    const size_t n = poses->size();
+    
+    nav_msgs::Path gui_plan;
+    gui_plan.header.frame_id = "/map";
+    gui_plan.header.stamp = traj_stamp;
+    
+    geometry_msgs::PoseArray gui_poses;
+    gui_poses.header.frame_id = "/map";
+    gui_poses.header.stamp = traj_stamp;
+    
+    gui_poses.poses.resize(n);
+    gui_plan.poses.resize(n);
+    for (size_t i=0; i<poses->size(); ++i) {
+      geometry_msgs::Pose pose = TrajectoryPlanner::Pose2D::toPoseMsg(poses->at(i));      
+      gui_poses.poses[i] = pose;
+      gui_plan.poses[i].pose = pose;
+    }
+    
+    traj_xy_pub_.publish(gui_plan);
+    traj_xyth_pub_.publish(gui_poses);
+  };
+
+  inline bool newGoal_( const geometry_msgs::PoseStamped& goal ) const
+  {
+    return specialEuclideanDistance(trajectory_->getGoal(),goal.pose)>TOLL;
+  };
 };
 
 }  // namespace squirrel_navigation

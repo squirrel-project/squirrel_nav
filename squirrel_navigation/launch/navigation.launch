@@ -5,6 +5,7 @@
   <arg name="autolocalization" default="false"/>
   <arg name="3d_mapping" default="true" />
   <arg name="use_scan_matcher_odom" default="false"/>
+  <arg name="use_last_pose" default="true"/>
   
   <!--- Run mapserver -->
   <include file="$(find squirrel_navigation)/launch/map_server.launch">
@@ -14,6 +15,7 @@
   <!-- Run Monte Carlo Localization (many parameters in squirrel_localizer.launch) -->
   <include file="$(find squirrel_localizer)/launch/squirrel_localizer.launch">
     <arg name="use_scan_matcher_odom" value="$(arg use_scan_matcher_odom)"/>
+    <arg name="use_last_pose" value="$(arg use_last_pose)"/>
   </include>
 
   <!-- Run pointcloud_filter_node: filter the PointCloud to speed up planning -->

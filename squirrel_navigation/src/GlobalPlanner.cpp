@@ -71,31 +71,31 @@ namespace squirrel_navigation {
 
 GlobalPlanner::GlobalPlanner( void ) :
     initialized_(false),
-    costmap_ros_(NULL),
-    dijkstra_planner_(NULL),
-    lattice_planner_(NULL),
+    costmap_ros_(nullptr),
+    dijkstra_planner_(nullptr),
+    lattice_planner_(nullptr),
     curr_planner_(DIJKSTRA),
-    offset_(0.0),
-    current_index_(0)
+    heading_lookahead_(0.5)
 {
   ROS_INFO("squirrel_localizer::GlobalPlanner started.");
 }
 
 GlobalPlanner::GlobalPlanner( std::string name, costmap_2d::Costmap2DROS* costmap_ros ) :
     initialized_(false),
-    costmap_ros_(NULL),
-    dijkstra_planner_(NULL),
-    lattice_planner_(NULL),
+    costmap_ros_(nullptr),
+    dijkstra_planner_(nullptr),
+    lattice_planner_(nullptr),
     curr_planner_(DIJKSTRA),
     name_(name),
-    offset_(0.0),
-    current_index_(0)
+    heading_lookahead_(1.0)
 {
   initialize(name, costmap_ros);
 }
 
 GlobalPlanner::~GlobalPlanner( void )
 {
+  TrajectoryPlanner::deleteTrajectory();
+  
   if ( dijkstra_planner_ )
     delete dijkstra_planner_;
   if ( lattice_planner_ )
@@ -111,10 +111,10 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
   if( not initialized_ ) {
     ros::NodeHandle pnh("~/"+name);
     pnh.param<bool>("verbose", verbose_, false);
-    pnh.param<double>("replanning_thresh", replanning_thresh_, 0.2);
-
-    if ( replanning_thresh_ < 0.0 )
-      ROS_WARN_STREAM(name << "paramter replanning_thrs is negative. Replanning anytime.");
+    pnh.param<double>("heading_lookahead", heading_lookahead_, 1.0);
+    
+    // Initializing the trajectory planner
+    trajectory_ = TrajectoryPlanner::getTrajectory();
     
     // Initializing the Dijkstra planner
     if ( not dijkstra_planner_ )
@@ -167,7 +167,7 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
 
     // check if the costmap has an inflation layer
     unsigned char cost_possibly_circumscribed_tresh = 0;
-    for(std::vector<boost::shared_ptr<costmap_2d::Layer> >::const_iterator layer = costmap_ros_->getLayeredCostmap()->getPlugins()->begin();
+    for (std::vector<boost::shared_ptr<costmap_2d::Layer> >::const_iterator layer = costmap_ros_->getLayeredCostmap()->getPlugins()->begin();
         layer != costmap_ros_->getLayeredCostmap()->getPlugins()->end();
         ++layer) {
       boost::shared_ptr<costmap_2d::InflationLayer> inflation_layer = boost::dynamic_pointer_cast<costmap_2d::InflationLayer>(*layer);
@@ -179,12 +179,12 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
       cost_possibly_circumscribed_tresh = inflation_layer->computeCost(cell_circumscribed_radius);
     }
 
-    if( not env_->SetEnvParameter("cost_inscribed_thresh",costMapCostToSBPLCost_(costmap_2d::INSCRIBED_INFLATED_OBSTACLE)) ) {
+    if ( not env_->SetEnvParameter("cost_inscribed_thresh",costMapCostToSBPLCost_(costmap_2d::INSCRIBED_INFLATED_OBSTACLE)) ) {
       ROS_ERROR_STREAM(name << ": Failed to set cost_inscribed_thresh parameter" );
       std::exit(EXIT_FAILURE);
     }
 
-    if( not env_->SetEnvParameter("cost_possibly_circumscribed_thresh", costMapCostToSBPLCost_(cost_possibly_circumscribed_tresh)) ){
+    if ( not env_->SetEnvParameter("cost_possibly_circumscribed_thresh", costMapCostToSBPLCost_(cost_possibly_circumscribed_tresh)) ){
       ROS_ERROR_STREAM( name << ": Failed to set cost_possibly_circumscribed_thresh parameter" );
       std::exit(EXIT_FAILURE);
     }
@@ -200,7 +200,7 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
     }
 
     bool ret;
-    try{
+    try {
       ret = env_->InitializeEnv(costmap_ros_->getCostmap()->getSizeInCellsX(), // width
                                 costmap_ros_->getCostmap()->getSizeInCellsY(), // height
                                 0, // mapdata
@@ -210,12 +210,12 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
                                 perimeterptsV, costmap_ros_->getCostmap()->getResolution(), nominalvel_mpersecs,
                                 timetoturn45degsinplace_secs, obst_cost_thresh,
                                 primitive_filename_.c_str());
-    } catch( SBPL_Exception* e ) {
+    } catch ( SBPL_Exception* e ) {
       ROS_ERROR_STREAM( name << ": [SBPL] " << e->what() << " Is the resolution of the map matching the resolution of the primitives?" );
       ret = false;
     }
     
-    if( not ret ) {
+    if ( not ret ) {
       ROS_ERROR_STREAM( name << ": [SBPL] initialization failed!");
       std::exit(EXIT_FAILURE);
     }
@@ -230,17 +230,18 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
     } else if ( "ADPlanner" == lattice_planner_type_ ) {
       ROS_INFO_STREAM( name << ": Planning with AD*" );
       lattice_planner_ = new ADPlanner(env_, forward_search_);
-    } else{
+    } else {
       ROS_ERROR_STREAM(name << ": ARAPlanner and ADPlanner are currently the only supported planners!" );
       std::exit(EXIT_FAILURE);
     }
 
     ROS_INFO_STREAM(name << ": Initialized successfully" );
-    plan_pub_ = pnh.advertise<nav_msgs::Path>("plan", 1);
-    stats_pub_ = pnh.advertise<squirrel_navigation_msgs::GlobalPlannerStats>("lattice_planner_stats", 1);
-
-    pose_plan_pub_ = pnh.advertise<geometry_msgs::PoseArray>("poses", 1);
     
+    stats_pub_ = pnh.advertise<squirrel_navigation_msgs::GlobalPlannerStats>("lattice_planner_stats", 1); 
+    traj_xy_pub_ = pnh.advertise<nav_msgs::Path>("plan", 1);
+    traj_xyth_pub_ = pnh.advertise<geometry_msgs::PoseArray>("poses", 1);
+
+    odom_sub_ = nh_.subscribe("/odom", 1, &GlobalPlanner::odometryCallback_, this);
     update_sub_ = nh_.subscribe("/plan_with_footprint", 1, &GlobalPlanner::updatePlannerCallback_, this);
     
     initialized_ = true;
@@ -263,18 +264,53 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
   
   plan.clear();
 
-  boost::unique_lock<boost::mutex> lock(all_);
-    
+  std::unique_lock<std::mutex> lock(guard_);
+
+  ros::Time plan_time = ros::Time::now();    
+
+  tf::Stamped<tf::Pose> robot_pose;
+  costmap_ros_->getRobotPose(robot_pose);
+  
+  if ( trajectory_->isActive() and newGoal_(goal) )
+    trajectory_->deactivate();
+  
+  size_t index;
+  geometry_msgs::PoseStamped replan_start;
+  replan_start.header = start.header;  
+  if ( not trajectory_->isActive() ) {
+    replan_start.pose.position = start.pose.position;
+    replan_start.pose.orientation = tf::createQuaternionMsgFromYaw(tf::getYaw(robot_pose.getRotation()));
+    index = 0;
+  } else {
+    ros::Time lookahead_time = plan_time + ros::Duration(heading_lookahead_);            
+    index = trajectory_->getNodePose(lookahead_time,replan_start);
+  }
+  
   switch ( curr_planner_ ) {
     
     case DIJKSTRA: {
-      dijkstra_planner_->makePlan(start, goal, plan);          
-      break;
-    }  
+
+      dijkstra_planner_->makePlan(replan_start,goal,plan);
+
+      if ( not plan.empty() ) {
+        // Creating a pose profile (approx. tg with central difference)
+        double dx, dy, yaw;
+        for (size_t i=1; i<plan.size()-1; ++i) {
+          dx = plan[i+1].pose.position.x-plan[i-1].pose.position.x;
+          dy = plan[i+1].pose.position.y-plan[i-1].pose.position.y;
+          yaw = std::atan2(dy,dx);
+          plan[i].pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
+        }
+      } else {
+        ROS_WARN_STREAM(name_ << ": Could not find a collision free path.");        
+      }
+      
+      break;        
+    }
 
     case LATTICE: {
-      double theta_start = 2 * atan2(start.pose.orientation.z, start.pose.orientation.w);
-      double theta_goal = 2 * atan2(goal.pose.orientation.z, goal.pose.orientation.w);
+      double theta_start = 2 * std::atan2(start.pose.orientation.z, start.pose.orientation.w);
+      double theta_goal = 2 * std::atan2(goal.pose.orientation.z, goal.pose.orientation.w);
 
       try{
         int ret = env_->SetStart(start.pose.position.x - costmap_ros_->getCostmap()->getOriginX(), start.pose.position.y - costmap_ros_->getCostmap()->getOriginY(), theta_start);
@@ -391,8 +427,6 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
       if ( verbose_ )
         ROS_INFO("Plan has %d points.\n", (int)sbpl_path.size());
   
-      ros::Time plan_time = ros::Time::now();
-      
       //create a message for the plan
       plan.resize(sbpl_path.size());
       
@@ -424,39 +458,13 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
     }
   }      
 
-  ros::Time plan_stamp = ros::Time::now();
-  
-  nav_msgs::Path gui_plan;
-  gui_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
-  gui_plan.header.stamp = plan_stamp;
-
-  geometry_msgs::PoseArray gui_poses;
-  gui_poses.header.frame_id = costmap_ros_->getGlobalFrameID();
-  gui_poses.header.stamp = plan_stamp;
-
-  double update;
-  if ( newGoal_(goal) ) {
-    plan_ = plan;
-    gui_plan.poses = plan;
-    offset_ = 0.0;
-    current_index_ = 0;
-    update = true;
+  if ( trajectory_->makeTrajectory(replan_start,plan,index) ) {
+    std::vector<TrajectoryPlanner::Pose2D>* poses = trajectory_->getPoses();
+    publishTrajectory_(poses);
+    return true;
   } else {
-    update = conditionallyUpdatePlan_(plan,gui_plan);
+    return false;
   }
-
-  if ( update ) {
-    plan_pub_.publish(gui_plan);
-  
-    if ( curr_planner_ == LATTICE ) {
-      gui_poses.poses.resize(plan_.size());
-      for (size_t i=0; i<plan_.size(); ++i)
-        gui_poses.poses[i] = plan_[i].pose;
-      pose_plan_pub_.publish(gui_poses);
-    }
-  }
-  
-  return update;
 }
 
 unsigned char GlobalPlanner::costMapCostToSBPLCost_( unsigned char newcost )
@@ -507,53 +515,9 @@ void GlobalPlanner::updatePlannerCallback_( const std_msgs::Bool::ConstPtr& foot
   }
 }
 
-bool GlobalPlanner::newGoal_( const geometry_msgs::PoseStamped& goal )
+void GlobalPlanner::odometryCallback_( const nav_msgs::Odometry::ConstPtr& odom )
 {
-  double lin_dist = linearDistance_(goal.pose.position,goal_.pose.position);
-  double ang_dist = angularDistance_(goal.pose.orientation,goal_.pose.orientation);
-  if ( (lin_dist > 0.05) or (ang_dist > 0.05) ) {
-    goal_ = goal;
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool GlobalPlanner::conditionallyUpdatePlan_( std::vector<geometry_msgs::PoseStamped>& new_plan,
-                                              nav_msgs::Path& gui_path_msg )
-{
-  if ( new_plan.size() == 0 ) {
-    plan_.clear();
-    offset_ = 0.0;
-    current_index_ = 0;
-    return true;
-  }
-
-  offset_ += linearDistance_(new_plan[0].pose.position,plan_[current_index_].pose.position);
-
-  double new_plan_length = 0.0, plan_length = -offset_;
-  for (size_t i=0; i<std::max(new_plan.size(),plan_.size())-1; ++i) {
-    if ( i<new_plan.size()-2 )
-      new_plan_length += linearDistance_(new_plan[i].pose.position,new_plan[i+1].pose.position);
-    if ( i<plan_.size()-2 ) {
-      plan_length += linearDistance_(plan_[i].pose.position,plan_[i+1].pose.position);
-      if ( plan_length <= 0 ) {
-        current_index_ = i;
-      }
-    }
-  }
-  
-  if ( std::abs(new_plan_length/plan_length - 1.0) > replanning_thresh_ ) {
-    plan_ = new_plan;
-    gui_path_msg.poses = new_plan;
-    offset_ = 0.0;
-    current_index_ = 0;
-    if ( verbose_ )
-      ROS_INFO_STREAM(name_ << ": Replanned a new path.");
-    return true;
-  } else {
-    return false;
-  }
+  odom_ = *odom;
 }
 
 }  // namespace squirrel_navigation

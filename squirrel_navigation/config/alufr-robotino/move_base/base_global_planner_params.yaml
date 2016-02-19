@@ -1,10 +1,11 @@
 GlobalPlanner: {
   verbose: false,
-  replanning_thresh: 0.0, # replan everytime
+  heading_lookahead: 0.75,
+  dijkstra/use_dijkstra: true,
   dijkstra/allow_unknown: false,
   dijkstra/default_tolerance: 0.0,
   dijkstra/old_navfn_behavior: false,
-  dijkstra/use_quadratice: true,
+  dijkstra/use_quadratic: true,
   dijkstra/use_grid_path: false,
   dijkstra/visualize_potential: false,
   lattice/planner_type: ARAPlanner,
