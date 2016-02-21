@@ -145,7 +145,7 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
 
   // replanning 
   std::vector<geometry_msgs::PoseStamped> plan_;
-  double heading_lookahead_;
+  double heading_lookahead_, lookahead_dijkstra_, lookahead_lattice_;
   
   bool verbose_;
 

@@ -75,7 +75,9 @@ GlobalPlanner::GlobalPlanner( void ) :
     dijkstra_planner_(nullptr),
     lattice_planner_(nullptr),
     curr_planner_(DIJKSTRA),
-    heading_lookahead_(0.5)
+    heading_lookahead_(0.5),
+    lookahead_dijkstra_(0.5),
+    lookahead_lattice_(0.5)
 {
   ROS_INFO("squirrel_localizer::GlobalPlanner started.");
 }
@@ -111,12 +113,13 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
   if( not initialized_ ) {
     ros::NodeHandle pnh("~/"+name);
     pnh.param<bool>("verbose", verbose_, false);
-    pnh.param<double>("heading_lookahead", heading_lookahead_, 1.0);
     
     // Initializing the trajectory planner
     trajectory_ = TrajectoryPlanner::getTrajectory();
     
     // Initializing the Dijkstra planner
+    ros::NodeHandle pnh_d("~/"+name+"/dijkstra");
+
     if ( not dijkstra_planner_ )
       dijkstra_planner_ = new navfn::NavfnROS(name+"/dijkstra",costmap_ros);
     
@@ -154,6 +157,15 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
 
     costmap_ros_ = costmap_ros;
 
+    if ( pnh.getParam("heading_lookahead", heading_lookahead_) ) {
+      lookahead_dijkstra_ = heading_lookahead_;
+      lookahead_lattice_ = heading_lookahead_;
+    } else {
+      pnh_d.param<double>("heading_lookahead",lookahead_dijkstra_, 1.0);
+      pnh_l.param<double>("heading_lookahead",lookahead_lattice_, 1.0);
+      heading_lookahead_ = lookahead_dijkstra_;
+    }
+    
     std::vector<geometry_msgs::Point> footprint = costmap_ros_->getRobotFootprint();
 
     if ( "XYThetaLattice" == environment_type_ ) {
@@ -309,11 +321,11 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
     }
 
     case LATTICE: {
-      double theta_start = 2 * std::atan2(start.pose.orientation.z, start.pose.orientation.w);
+      double theta_start = 2 * std::atan2(replan_start.pose.orientation.z, replan_start.pose.orientation.w);
       double theta_goal = 2 * std::atan2(goal.pose.orientation.z, goal.pose.orientation.w);
 
       try{
-        int ret = env_->SetStart(start.pose.position.x - costmap_ros_->getCostmap()->getOriginX(), start.pose.position.y - costmap_ros_->getCostmap()->getOriginY(), theta_start);
+        int ret = env_->SetStart(replan_start.pose.position.x - costmap_ros_->getCostmap()->getOriginX(), replan_start.pose.position.y - costmap_ros_->getCostmap()->getOriginY(), theta_start);
         if ( ret < 0 or lattice_planner_->set_start(ret) == 0 ) {
           ROS_ERROR_STREAM( name_ << ": Failed to set start state" );
           return false;
@@ -428,26 +440,22 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
         ROS_INFO("Plan has %d points.\n", (int)sbpl_path.size());
   
       //create a message for the plan
-      plan.resize(sbpl_path.size());
+      const size_t n = sbpl_path.size()+1;
+      plan.resize(n);
       
-      for(unsigned int i=0; i<sbpl_path.size(); i++){
+      for(unsigned int i=0; i<n-1; i++){
         geometry_msgs::PoseStamped pose;
         pose.header.stamp = plan_time;
-        pose.header.frame_id = costmap_ros_->getGlobalFrameID();
-        
+        pose.header.frame_id = costmap_ros_->getGlobalFrameID();  
         pose.pose.position.x = sbpl_path[i].x + costmap_ros_->getCostmap()->getOriginX();
         pose.pose.position.y = sbpl_path[i].y + costmap_ros_->getCostmap()->getOriginY();
-        pose.pose.position.z = start.pose.position.z;
-
-        tf::Quaternion temp;
-        temp.setRPY(0,0,sbpl_path[i].theta);
-        pose.pose.orientation.x = temp.getX();
-        pose.pose.orientation.y = temp.getY();
-        pose.pose.orientation.z = temp.getZ();
-        pose.pose.orientation.w = temp.getW();
-
+        pose.pose.position.z = 0.0;
+        pose.pose.orientation = tf::createQuaternionMsgFromYaw(sbpl_path[i].theta);
+        
         plan[i] = pose;
       }
+
+      plan[n-1] = goal;
       
       publishStats_(solution_cost, sbpl_path.size(), start, goal);
       break;
@@ -508,9 +516,11 @@ void GlobalPlanner::updatePlannerCallback_( const std_msgs::Bool::ConstPtr& foot
 {
   if ( footprint_on_msg->data == true ) {
     curr_planner_ = LATTICE;
+    heading_lookahead_ = lookahead_lattice_;
     ROS_INFO_STREAM(name_ << ": Planning with footprint using a lattice planner.");
   } else {
     curr_planner_ = DIJKSTRA;
+    heading_lookahead_ = lookahead_dijkstra_;
     ROS_INFO_STREAM(name_ << ": Planning using standard Dijkstra.");
   }
 }
