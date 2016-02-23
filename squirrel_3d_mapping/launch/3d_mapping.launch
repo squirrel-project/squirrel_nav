@@ -20,3 +20,4 @@
     <remap from="/cloud_in" to="/rgbdscan" />
   </node>
 </launch>
+

@@ -38,6 +38,7 @@
 // #include <moveit_msgs/CollisionObject.h>
 // #include <moveit_msgs/CollisionMap.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <std_msgs/Bool.h>
 #include <std_srvs/Empty.h>
 #include <dynamic_reconfigure/server.h>
 #include <squirrel_3d_mapping/OctomapServerConfig.h>
@@ -192,6 +193,7 @@ protected:
 
   static std_msgs::ColorRGBA heightMapColor(double h);
   ros::NodeHandle m_nh;
+  ros::Subscriber m_updateSub;
   ros::Publisher  m_markerPub, m_binaryMapPub, m_fullMapPub, m_pointCloudPub, m_collisionObjectPub, m_mapPub, m_cmapPub, m_fmapPub, m_fmarkerPub;
   message_filters::Subscriber<sensor_msgs::PointCloud2>* m_pointCloudSub;
   tf::MessageFilter<sensor_msgs::PointCloud2>* m_tfPointCloudSub;
@@ -259,6 +261,11 @@ protected:
   {
     return std::sqrt((p1.x()-p2.x())*(p1.x()-p2.x())+(p1.y()-p2.y())*(p1.y()-p2.y()));
   }
+
+  inline void updateCallback( const std_msgs::Bool::ConstPtr& update_msg )
+  {
+    m_updateOctree = update_msg->data;
+  }
   
   double m_maxRange;
   std::string m_worldFrameId; // the map frame
@@ -294,6 +301,8 @@ protected:
 
   bool m_compressMap;
 
+  bool m_updateOctree;
+  
   // downprojected 2D map:
   bool m_incrementalUpdate;
   nav_msgs::OccupancyGrid m_gridmap;
