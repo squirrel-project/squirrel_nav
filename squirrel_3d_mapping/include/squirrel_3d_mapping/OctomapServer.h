@@ -69,6 +69,7 @@
 
 #include "squirrel_3d_mapping/DynamicEDTOctomap.h"
 #include "squirrel_3d_mapping_msgs/CheckCollision.h"
+#include "squirrel_3d_mapping_msgs/OctomapUpdate.h"
 
 namespace squirrel_3d_mapping {
 
@@ -114,6 +115,7 @@ protected:
   }
 
   void reconfigureCallback(squirrel_3d_mapping::OctomapServerConfig& config, uint32_t level);
+  void publishOctomapUpdates(const ros::Time& rostime);
   void publishBinaryOctoMap(const ros::Time& rostime = ros::Time::now()) const;
   void publishFullOctoMap(const ros::Time& rostime = ros::Time::now()) const;
   void publishAll(const ros::Time& rostime = ros::Time::now());
@@ -194,7 +196,7 @@ protected:
   static std_msgs::ColorRGBA heightMapColor(double h);
   ros::NodeHandle m_nh;
   ros::Subscriber m_updateSub;
-  ros::Publisher  m_markerPub, m_binaryMapPub, m_fullMapPub, m_pointCloudPub, m_collisionObjectPub, m_mapPub, m_cmapPub, m_fmapPub, m_fmarkerPub;
+  ros::Publisher  m_markerPub, m_binaryMapPub, m_fullMapPub, m_pointCloudPub, m_collisionObjectPub, m_mapPub, m_cmapPub, m_fmapPub, m_fmarkerPub, m_octomapUpdatePub;
   message_filters::Subscriber<sensor_msgs::PointCloud2>* m_pointCloudSub;
   tf::MessageFilter<sensor_msgs::PointCloud2>* m_tfPointCloudSub;
   ros::ServiceServer m_octomapBinaryService, m_octomapFullService, m_clearBBXService, m_resetService;
@@ -302,6 +304,7 @@ protected:
   bool m_compressMap;
 
   bool m_updateOctree;
+  squirrel_3d_mapping_msgs::OctomapUpdate m_updateMsg;
   
   // downprojected 2D map:
   bool m_incrementalUpdate;

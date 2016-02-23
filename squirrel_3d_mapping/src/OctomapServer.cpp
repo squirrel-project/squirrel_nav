@@ -178,7 +178,8 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
   m_pointCloudPub = m_nh.advertise<sensor_msgs::PointCloud2>("octomap_point_cloud_centers", 1, m_latchedTopics);
   m_mapPub = m_nh.advertise<nav_msgs::OccupancyGrid>("projected_map", 5, m_latchedTopics);	
   m_fmarkerPub = m_nh.advertise<visualization_msgs::MarkerArray>("free_cells_vis_array", 1, m_latchedTopics);
-
+  m_octomapUpdatePub = m_nh.advertise<squirrel_3d_mapping_msgs::OctomapUpdate>("octomap_updates", 1, m_latchedTopics);
+  
   m_updateSub = private_nh.subscribe("update", 1, &OctomapServer::updateCallback, this);
   m_pointCloudSub = new message_filters::Subscriber<sensor_msgs::PointCloud2> (m_nh, "cloud_in", 5);
   m_tfPointCloudSub = new tf::MessageFilter<sensor_msgs::PointCloud2> (*m_pointCloudSub, m_tfListener, m_worldFrameId, 5);
@@ -189,6 +190,8 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
   m_clearBBXService = private_nh.advertiseService("clear_bbx", &OctomapServer::clearBBXSrv, this);
   m_resetService = private_nh.advertiseService("reset", &OctomapServer::resetSrv, this);
 
+  m_updateMsg.header.frame_id = m_worldFrameId;
+  
   if ( edt_dynamicEdt ) {   
     edt_collisionCheckService = m_nh.advertiseService("distance_transform/collisions/check", &OctomapServer::checkCollision, this);
   }
@@ -346,7 +349,7 @@ void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr
     pc_nonground.header = pc.header;
   }
 
-  if ( m_updateOctree ) {
+  if ( m_updateOctree ) {    
     insertScan(sensorToWorldTf.getOrigin(), pc_ground, pc_nonground);
     
     double total_elapsed = (ros::WallTime::now() - startTime).toSec();
@@ -364,8 +367,6 @@ void OctomapServer::insertScan(const tf::Point& sensorOriginTf, const PCLPointCl
   {
     ROS_ERROR_STREAM(ros::this_node::getName() << "Could not generate Key for origin " << sensorOrigin);
   }
-
-
 
   // instead of direct scan insertion, compute update to filter ground:
   KeySet free_cells, occupied_cells;
@@ -421,24 +422,41 @@ void OctomapServer::insertScan(const tf::Point& sensorOriginTf, const PCLPointCl
         } else{
           ROS_ERROR_STREAM(ros::this_node::getName() << ": Could not generate Key for endpoint " << new_end);
         }
-
-
       }
     }
   }
+
+  if (!m_updateMsg.keys.empty())
+    m_updateMsg.keys.clear();
+  if (!m_updateMsg.occupied.empty())
+    m_updateMsg.occupied.clear();
+    
+  const size_t n = occupied_cells.size()+free_cells.size();
+  m_updateMsg.keys.reserve(3*n);
+  m_updateMsg.occupied.resize(n);
 
   // mark free cells only if not seen occupied in this cloud
   for(KeySet::iterator it = free_cells.begin(), end=free_cells.end(); it!= end; ++it){
     if (occupied_cells.find(*it) == occupied_cells.end()){
       m_octree->updateNode(*it, false);
+
+      m_updateMsg.keys.push_back((*it)[0]);
+      m_updateMsg.keys.push_back((*it)[1]);
+      m_updateMsg.keys.push_back((*it)[2]);
+      m_updateMsg.occupied.push_back(false); 
     }
   }
 
   // now mark all occupied cells:
   for (KeySet::iterator it = occupied_cells.begin(), end=free_cells.end(); it!= end; it++) {
     m_octree->updateNode(*it, true);
-  }
 
+    m_updateMsg.keys.push_back((*it)[0]);
+    m_updateMsg.keys.push_back((*it)[1]);
+    m_updateMsg.keys.push_back((*it)[2]);
+    m_updateMsg.occupied.push_back(true); 
+  }
+  
   // update distance transform  
   // TODO: eval lazy+updateInner vs. proper insertion
   // non-lazy by default (updateInnerOccupancy() too slow for large maps)
@@ -472,8 +490,6 @@ void OctomapServer::insertScan(const tf::Point& sensorOriginTf, const PCLPointCl
 
 }
 
-
-
 void OctomapServer::publishAll(const ros::Time& rostime){
   ros::WallTime startTime = ros::WallTime::now();
   size_t octomapSize = m_octree->size();
@@ -488,6 +504,7 @@ void OctomapServer::publishAll(const ros::Time& rostime){
   bool publishPointCloud = (m_latchedTopics || m_pointCloudPub.getNumSubscribers() > 0);
   bool publishBinaryMap = (m_latchedTopics || m_binaryMapPub.getNumSubscribers() > 0);
   bool publishFullMap = (m_latchedTopics || m_fullMapPub.getNumSubscribers() > 0);
+  bool publishOctomapUpdate = (m_latchedTopics || m_octomapUpdatePub.getNumSubscribers() > 0);
   m_publish2DMap = (m_latchedTopics || m_mapPub.getNumSubscribers() > 0);
 
   // init markers for free space:
@@ -659,6 +676,9 @@ void OctomapServer::publishAll(const ros::Time& rostime){
     m_pointCloudPub.publish(cloud);
   }
 
+  if (publishOctomapUpdate)
+    publishOctomapUpdates(rostime);
+    
   if (publishBinaryMap)
     publishBinaryOctoMap(rostime);
 
@@ -762,6 +782,11 @@ bool OctomapServer::resetSrv(std_srvs::Empty::Request& req, std_srvs::Empty::Res
   m_fmarkerPub.publish(freeNodesVis);
 
   return true;
+}
+
+void OctomapServer::publishOctomapUpdates(const ros::Time& rostime) {
+  m_updateMsg.header.stamp = rostime;
+  m_octomapUpdatePub.publish(m_updateMsg);    
 }
 
 void OctomapServer::publishBinaryOctoMap(const ros::Time& rostime) const{
