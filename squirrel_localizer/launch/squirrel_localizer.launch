@@ -1,5 +1,6 @@
 <launch>   
   <arg name="use_scan_matcher_odom" default="false"/>
+  <arg name="use_last_pose" default="true"/>
 
   <include file="$(find laser_scan_matcher)/launch/scan_matcher_odometry.launch" 
            if="$(arg use_scan_matcher_odom)">
@@ -51,7 +52,7 @@
     <param name="sm_use_trimed_mean_as_reference_scan"  value="false"/>
     <param name="dMapTheshold" value="0.3"/>
     <param name="observationPointDensity" value="0.5"/>
-    <param name="use_last_pose" value="true"/>
+    <param name="use_last_pose" value="$(arg use_last_pose)"/>
     <param name="use_scan_to_map_matching" value="false"/>
     <param name="sm_filter_gain" value="0.825"/>
   </node>

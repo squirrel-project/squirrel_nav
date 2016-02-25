@@ -1,27 +1,32 @@
-// AutolocalizationNode.cpp --- 
+// ControllerPD.cpp --- 
 // 
-// Filename: AutolocalizationNode.cpp
-// Description: Localisation on startup
+// Filename: ControllerPD.cpp
+// Description: 
 // Author: Federico Boniardi
-// Maintainer: boniardi@cs.uni-freiburg.de
-// Created: Mon Nov 24 10:14:39 2014 (+0100)
-// Version: 0.1.0
-// Last-Updated: Wed Nov 26 16:08:18 2014 (+0100)
-//           By: Federico Boniardi
-//     Update #: 1
+// Maintainer: 
+// Created: Sat Feb  6 19:21:25 2016 (+0100)
+// Version: 
+// Last-Updated: 
+//           By: 
+//     Update #: 0
 // URL: 
 // Keywords: 
 // Compatibility: 
-//   ROS Hydro, ROS Indigo
+// 
 // 
 
 // Commentary: 
-//    Tested on: - ROS Hydro on Ubuntu 12.04
-//               - ROS Indigo on Ubuntu 14.04
+// 
+// 
 // 
 // 
 
-// Copyright (c) 2014, Federico Boniardi
+// Change Log:
+// 
+// 
+// 
+// 
+// Copyright (c) 2016, Federico Boniardi
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -34,7 +39,7 @@
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
 // 
-// * Neither the name of the {organization} nor the names of its
+// * Neither the name of the University of Freiburg nor the names of its
 //   contributors may be used to endorse or promote products derived from
 //   this software without specific prior written permission.
 // 
@@ -53,20 +58,36 @@
 
 // Code:
 
-#include "squirrel_navigation/Autolocalization.h"
+#include "squirrel_navigation/ControllerPD.h"
 
-using squirrel_navigation::Autolocalization;
+namespace squirrel_navigation {
 
-int main( int argc, char *argv[] )
+ControllerPD::ControllerPD( void )
 {
-  ros::init(argc, argv, "autolocalization");
-
-  Autolocalization al;
-  al.waitForStarting();
-  al.spin();
-
-  return 0;
+  // Empty
 }
 
+ControllerPD::~ControllerPD( void )
+{
+  // Empty
+}
+
+void ControllerPD::setGains( const ControllerPD::Gain& gains )
+{
+  K_.Pxy = gains.Pxy;
+  K_.Pyaw = gains.Pyaw;
+  K_.Dxy = gains.Dxy;
+  K_.Dyaw = gains.Dyaw;
+}
+
+void ControllerPD::computeCommands( const TrajectoryPlanner::Profile& ref, const TrajectoryPlanner::Profile& odom, double* u )
+{
+  u[0] = K_.Pxy * (ref.x - odom.x) + K_.Dxy * (ref.vx - odom.vx);
+  u[1] = K_.Pxy * (ref.y - odom.y) + K_.Dxy * (ref.vy - odom.vy);
+  u[2] = K_.Pyaw * angles::normalize_angle(ref.yaw - odom.yaw) + K_.Dyaw * (ref.vyaw - odom.vyaw);
+}
+   
+}  // namespace squirrel_navigation
+
 // 
-// AutolocalizationNode.cpp ends here
+// ControllerPD.cpp ends here

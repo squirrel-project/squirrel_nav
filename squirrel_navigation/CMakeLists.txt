@@ -3,6 +3,17 @@ project(squirrel_navigation)
 
 set(ROS_BUILD_TYPE Release)
 
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-std=c++11" COMPILER_SUPPORTS_CXX11)
+check_cxx_compiler_flag("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+if(COMPILER_SUPPORTS_CXX11)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+elseif(COMPILER_SUPPORTS_CXX0X)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+else()
+  message(STATUS "${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+endif()
+
 ## Package dependencies
 set(squirrel_navigation_DEPENDENCIES
   actionlib
@@ -88,6 +99,8 @@ add_library(squirrel_planners
   src/GlobalPlanner.cpp
   src/LatticeSCQ.cpp
   src/LocalPlanner.cpp
+  src/TrajectoryPlanner.cpp
+  src/ControllerPD.cpp
 )
 
 add_dependencies(squirrel_planners
@@ -130,15 +143,6 @@ target_link_libraries(pointcloud_filter_node
   ${catkin_LIBRARIES}
 )
 
-add_executable(autolocalization_node
-  src/Autolocalization.cpp
-  src/AutolocalizationNode.cpp
-)
-
-target_link_libraries(autolocalization_node
-  ${catkin_LIBRARIES}
-)
-
 add_executable(planner_update_handle_node
   src/PlannerUpdateHandle.cpp
   src/PlannerUpdateHandleNode.cpp
@@ -157,7 +161,6 @@ target_link_libraries(planner_update_handle_node
 #############
 
 install(TARGETS  
-  autolocalization_node
   planner_update_handle_node
   pointcloud_filter_node   
   squirrel_costmap_layers

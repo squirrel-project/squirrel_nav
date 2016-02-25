@@ -1,22 +1,32 @@
-// squirrel_navigation.h --- 
+// ControllerPD.h --- 
 // 
-// Filename: squirrel_navigation.h
-// Description: Expose the SIGINT callback
+// Filename: ControllerPD.h
+// Description: 
 // Author: Federico Boniardi
-// Maintainer: boniardi@cs.uni-freiburg.de
-// Created: Fri Dec  5 18:02:05 2014 (+0100)
-// Version: 0.1.0
-// Last-Updated: Fri Dec 5 18:10:38 2014 (+0100)
-//           By: Federico Boniardi
-//     Update #: 1
+// Maintainer: 
+// Created: Sat Feb  6 19:16:11 2016 (+0100)
+// Version: 
+// Last-Updated: 
+//           By: 
+//     Update #: 0
 // URL: 
 // Keywords: 
 // Compatibility: 
 // 
 // 
 
+// Commentary: 
 // 
-// Copyright (c) 2014, Federico Boniardi
+// 
+// 
+// 
+
+// Change Log:
+// 
+// 
+// 
+// 
+// Copyright (c) 2016, Federico Boniardi
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -48,62 +58,31 @@
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_COMMON_H_
-#define SQUIRREL_NAVIGATION_COMMON_H_
+#ifndef SQUIRREL_NAVIGATION_CONTROLLERPD_H_
+#define SQUIRREL_NAVIGATION_CONTROLLERPD_H_
 
-#include <csignal>
-
-#include <geometry_msgs/Point.h>
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/Quaternion.h>
-
-#include <tf/tf.h>
-
-#include <angles/angles.h>
-
-#include <algorithm>
-#include <cmath>
+#include "squirrel_navigation/TrajectoryPlanner.h"
 
 namespace squirrel_navigation {
 
-static sig_atomic_t _SIGINT_caught = 0;
-
-static const double PI = 3.14159265358979;
-
-static const double TRANSFORM_TIMEOUT = 0.5;
-
-static const int VOXEL_BITS = 16;
-
-static const double TOLL = 1e-3;
-
-static void interruptCallback( int sig )
+class ControllerPD
 {
-  _SIGINT_caught = 1;
+ public:
+  typedef struct { double Pxy, Pyaw, Dxy, Dyaw; } Gain;
+
+  ControllerPD( void );
+  virtual ~ControllerPD( void );
+  
+  void setGains( const Gain& );
+  void computeCommands( const TrajectoryPlanner::Profile&, const TrajectoryPlanner::Profile&, double* );
+  
+ private:
+  Gain K_;
 };
 
-inline double linearDistance( const geometry_msgs::Point& p1, const geometry_msgs::Point& p2 )
-{
-  return std::hypot(p1.x-p2.x,p1.y-p2.y);
-};
-
-inline double angularDistance( const geometry_msgs::Quaternion& q1, const geometry_msgs::Quaternion& q2 )
-{
-  double da = angles::normalize_angle(tf::getYaw(q1)-tf::getYaw(q2));
-  return std::abs(da);
-};
-
-// Just a l2 distance on SE(2)
-inline double specialEuclideanDistance( const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2)
-{
-  double da = angles::normalize_angle(tf::getYaw(p1.orientation)-tf::getYaw(p2.orientation));
-  double dx = p1.position.x - p2.position.x;
-  double dy = p1.position.y - p2.position.y;
-  return std::sqrt(da*da + dx*dx + dy*dy);
-};
-    
 }  // namespace squirrel_navigation
 
-#endif /* SQUIRREL_NAVIGATION_COMMON_H_ */
+#endif /* SQUIRREL_NAVIGATION_CONTROLLERPD_H_ */
 
 // 
-// squirrel_navigation.h ends here
+// ControllerPD.h ends here
