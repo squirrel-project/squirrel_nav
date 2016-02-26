@@ -84,6 +84,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 
 #include "squirrel_navigation/Common.h"
+#include "squirrel_navigation/CostmapUpdateHandle.h"
 #include "squirrel_navigation/DownprojectionMultilayerPluginConfig.h"
 #include "squirrel_navigation/FootprintLayer.h"
 #include "squirrel_navigation/JointHandle.h"

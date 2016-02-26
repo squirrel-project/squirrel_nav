@@ -73,10 +73,10 @@ class CostmapUpdateHandle
   CostmapUpdateHandle( void );
   
  public:
-  static CostampUpdateHandle* getHandle( void );
+  static CostmapUpdateHandle* getHandle( void );
   static void releaseHandle( void );
 
-  inline bool performUpdate( void ) const { return update_ };
+  inline bool performUpdate( void ) const { return update_; };
   
  private:
   static CostmapUpdateHandle* update_handle_;
