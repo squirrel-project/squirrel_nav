@@ -90,10 +90,11 @@
 #include <map>
 #include <set>
 
-#include "squirrel_navigation/FootprintLayer.h"
-#include "squirrel_navigation/DownprojectionLayerPluginConfig.h"
-#include "squirrel_navigation/JointHandle.h"
 #include "squirrel_navigation/Common.h"
+#include "squirrel_navigation/CostmapUpdateHandle.h"
+#include "squirrel_navigation/DownprojectionLayerPluginConfig.h"
+#include "squirrel_navigation/FootprintLayer.h"
+#include "squirrel_navigation/JointHandle.h"
 
 namespace squirrel_navigation {
 
@@ -143,6 +144,9 @@ class DownprojectionLayer : public costmap_2d::ObstacleLayer
   JointHandle kinect_tilt_h_, kinect_pan_h_;
   std::string kinect_observation_frame_;
   geometry_msgs::Point kinect_origin_;
+
+  // Costmap update handle
+  CostmapUpdateHandle* costmap_update_handle_;
   
   void reconfigureCallback_( DownprojectionLayerPluginConfig& , uint32_t );
   void clearNonLethal_( double, double, double, double, bool );

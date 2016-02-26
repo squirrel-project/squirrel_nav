@@ -85,15 +85,18 @@ DownprojectionMultilayer::DownprojectionMultilayer( void ) :
     obstacles_persistence_(60.0),
     dsrv_(NULL),
     kinect_tilt_h_("kinect_tilt_joint"),
-    kinect_pan_h_("kinect_pan_joint")    
+    kinect_pan_h_("kinect_pan_joint"),
+    costmap_(nullptr)
 {
-  costmap_ = NULL;
+  costmap_update_handle_ = CostmapUpdateHandle::getHandle();
 }
 
 DownprojectionMultilayer::~DownprojectionMultilayer( void )
 {
   if ( dsrv_ )
     delete dsrv_;
+
+  CostmapUpdateHandle::releaseHandle();
 }
 
 void DownprojectionMultilayer::onInitialize( void )
@@ -111,6 +114,12 @@ void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, dou
   if ( !enabled_ )
     return;
 
+  if ( !costmap_udpdate_handle_->performUpdate() ) {
+    if ( verbose_ )
+      ROS_INFO("%s/%s: Skipping costmap's update.", ros::this_node::getName().c_str(), name_.c_str());
+    return;
+  }
+  
   if ( kinect_tilt_h_.skipData() or  kinect_pan_h_.skipData() ) {
     if ( verbose_ )
       ROS_INFO("%s/%s: Skipping costmap's update. Kinect is moving.", ros::this_node::getName().c_str(), name_.c_str());

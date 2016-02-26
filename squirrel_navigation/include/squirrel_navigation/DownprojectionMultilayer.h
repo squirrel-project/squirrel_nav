@@ -158,6 +158,7 @@ public:
   std::vector<double> layers_levels_;
   std::map<unsigned int, bool> observed_;
 
+  CostmapUpdateHandle* costmap_update_handle_;
   JointHandle kinect_tilt_h_, kinect_pan_h_;
 
   void reconfigureCB( DownprojectionMultilayerPluginConfig&, uint32_t );
