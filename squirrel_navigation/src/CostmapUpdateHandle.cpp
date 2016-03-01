@@ -58,7 +58,7 @@
 
 // Code:
 
-#include "squirrel_navigation/CostmapUpdateHandle.cpp"
+#include "squirrel_navigation/CostmapUpdateHandle.h"
 
 namespace squirrel_navigation {
 
@@ -87,12 +87,12 @@ void CostmapUpdateHandle::releaseHandle( void )
 void CostmapUpdateHandle::init_( void )
 {
   ros::NodeHandle pnh("~");
-  sub_ = pnh.subscribe("/update_costmap", 1, &CostmapUpdate::updateCallback_, this);
+  sub_ = pnh.subscribe("/update_costmap", 1, &CostmapUpdateHandle::updateCallback_, this);
 }
 
 void CostmapUpdateHandle::updateCallback_( const std_msgs::Bool::ConstPtr& update_msg )
 {
-  update_ = update_msgs->data;
+  update_ = update_msg->data;
 }
 
 CostmapUpdateHandle* CostmapUpdateHandle::update_handle_ = nullptr;

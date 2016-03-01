@@ -114,6 +114,7 @@ target_link_libraries(squirrel_planners
 )
 
 add_library(squirrel_costmap_layers
+  src/CostmapUpdateHandle.cpp
   src/DownprojectionLayer.cpp
   src/DownprojectionMultilayer.cpp
   src/FootprintLayer.cpp
