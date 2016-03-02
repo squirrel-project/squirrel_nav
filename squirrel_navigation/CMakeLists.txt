@@ -100,7 +100,7 @@ add_library(squirrel_planners
   src/LatticeSCQ.cpp
   src/LocalPlanner.cpp
   src/TrajectoryPlanner.cpp
-  src/ControllerPD.cpp
+  src/ControllerPID.cpp
 )
 
 add_dependencies(squirrel_planners
