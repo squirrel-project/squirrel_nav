@@ -59,22 +59,29 @@
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_FOOTPRINT_LAYER_H_
-#define SQUIRREL_NAVIGATION_FOOTPRINT_LAYER_H_
+#ifndef SQUIRREL_NAVIGATION_FOOTPRINTLAYER_H_
+#define SQUIRREL_NAVIGATION_FOOTPRINTLAYER_H_
 
 #include <ros/ros.h>
 
 #include <costmap_2d/layer.h>
 #include <costmap_2d/layered_costmap.h>
 #include <costmap_2d/costmap_math.h>
+#include <costmap_2d/footprint.h>
 #include <costmap_2d/GenericPluginConfig.h>
 
 #include <dynamic_reconfigure/server.h>
 
-#include <nav_msgs/OccupancyGrid.h>
+#include <pluginlib/class_list_macros.h>
 
 #include <geometry_msgs/Polygon.h>
 #include <geometry_msgs/PolygonStamped.h>
+#include <nav_msgs/OccupancyGrid.h>
+
+#include <string>
+#include <sstream>
+
+#include "squirrel_navigation/Common.h"
 
 namespace squirrel_navigation {
 
@@ -86,18 +93,24 @@ public:
   virtual void updateBounds( double, double, double, double*, double*, double*, double* );
   virtual void updateCosts( costmap_2d::Costmap2D&, int, int, int, int );
 
+  inline bool insideFootprint( double px, double py )
+  {
+    return isInsideFootprint(footprint_,CGAL_Point2D(px,py),ckern_);
+  };
+  
 private:
+  Footprint footprint_;
+  CGAL_Kernel ckern_;
+  
   ros::Publisher footprint_pub_;
-  geometry_msgs::PolygonStamped footprint_; ///< Storage for polygon being published.
   dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>* dsrv_;
-
-  void publishFootprint( void );
-  void reconfigureCB( costmap_2d::GenericPluginConfig &config, uint32_t level );
+  
+  void reconfigureCallback( costmap_2d::GenericPluginConfig &config, uint32_t level );
 };
 
 }  // namespace squirrel_navigation
 
-#endif // SQUIRREL_NAVIGATION_FOOTPRINT_LAYER_H_
+#endif // SQUIRREL_NAVIGATION_FOOTPRINTLAYER_H_
 
 // 
 // FootprintLayer.h ends here

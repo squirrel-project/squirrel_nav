@@ -3,6 +3,8 @@ project(squirrel_navigation)
 
 set(ROS_BUILD_TYPE Release)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-std=c++11" COMPILER_SUPPORTS_CXX11)
 check_cxx_compiler_flag("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
@@ -14,7 +16,24 @@ else()
   message(STATUS "${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
-## Package dependencies
+find_package(PCL REQUIRED)
+find_package(PkgConfig REQUIRED)
+find_package(CGAL REQUIRED)
+
+pkg_check_modules(SBPL REQUIRED sbpl)
+
+find_library(SBPL_LIBRARY 
+  NAMES sbpl 
+  PATHS ${SBPL_LIBRARY_DIRS} 
+  NO_DEFAULT_PATH
+)
+
+set(SBPL_LIBRARIES ${SBPL_LIBRARY})
+
+############
+## catkin ##
+############
+
 set(squirrel_navigation_DEPENDENCIES
   actionlib
   base_local_planner
@@ -41,24 +60,6 @@ set(squirrel_navigation_DEPENDENCIES
   visualization_msgs
 )
 
-find_package(PCL REQUIRED QUIET)
-
-find_package(PkgConfig REQUIRED)
-
-pkg_check_modules(SBPL REQUIRED sbpl)
-
-find_library(SBPL_LIBRARY 
-  NAMES sbpl 
-  PATHS ${SBPL_LIBRARY_DIRS} 
-  NO_DEFAULT_PATH
-)
-
-set(SBPL_LIBRARIES ${SBPL_LIBRARY})
-
-############
-## catkin ##
-############
-
 find_package(catkin REQUIRED
   COMPONENTS
   ${squirrel_navigation_DEPENDENCIES}
@@ -81,6 +82,8 @@ catkin_package(
 ###########
 ## Build ##
 ###########
+
+include(${CGAL_USE_FILE})
 
 include_directories(
   include
@@ -117,6 +120,7 @@ add_library(squirrel_costmap_layers
   src/DownprojectionLayer.cpp
   src/DownprojectionMultilayer.cpp
   src/FootprintLayer.cpp
+  src/FootprintMultilayer.cpp
   src/InflatedLayer.cpp
   src/InflationLayer.cpp
   src/JointHandle.cpp

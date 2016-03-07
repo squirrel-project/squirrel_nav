@@ -57,12 +57,16 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Quaternion.h>
 
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Polygon_2_algorithms.h>
+
 #include <tf/tf.h>
 
 #include <angles/angles.h>
 
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
 namespace squirrel_navigation {
 
@@ -100,7 +104,32 @@ inline double specialEuclideanDistance( const geometry_msgs::Pose& p1, const geo
   double dy = p1.position.y - p2.position.y;
   return std::sqrt(da*da + dx*dx + dy*dy);
 };
-    
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel CGAL_Kernel;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel::Point_2 CGAL_Point2D;
+typedef std::vector<CGAL::Exact_predicates_inexact_constructions_kernel::Point_2> Footprint;
+
+inline std::vector<geometry_msgs::Point> toPointVector( const Footprint& pgn )
+{
+  const size_t n = pgn.size();
+  
+  std::vector<geometry_msgs::Point> out(n);
+  for (size_t i=0; i<n; ++i) {
+    geometry_msgs::Point new_pt;
+    new_pt.x = pgn[i].x();
+    new_pt.y = pgn[i].y();
+    out[i]=  new_pt;
+  }
+  
+  return out;
+}
+
+
+inline bool isInsideFootprint( const Footprint& footprint, const CGAL_Point2D& pt, const CGAL_Kernel& k )
+{
+  return (CGAL::bounded_side_2(&footprint.front(),&footprint.back(),pt,k) != CGAL::ON_UNBOUNDED_SIDE);
+};
+
 }  // namespace squirrel_navigation
 
 #endif /* SQUIRREL_NAVIGATION_COMMON_H_ */
