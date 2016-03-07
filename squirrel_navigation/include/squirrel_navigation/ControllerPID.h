@@ -1,10 +1,10 @@
-// ControllerPD.cpp --- 
+// ControllerPID.h --- 
 // 
-// Filename: ControllerPD.cpp
+// Filename: ControllerPID.h
 // Description: 
 // Author: Federico Boniardi
 // Maintainer: 
-// Created: Sat Feb  6 19:21:25 2016 (+0100)
+// Created: Sat Feb  6 19:16:11 2016 (+0100)
 // Version: 
 // Last-Updated: 
 //           By: 
@@ -58,36 +58,37 @@
 
 // Code:
 
-#include "squirrel_navigation/ControllerPD.h"
+#ifndef SQUIRREL_NAVIGATION_CONTROLLERPD_H_
+#define SQUIRREL_NAVIGATION_CONTROLLERPD_H_
+
+#include "squirrel_navigation/TrajectoryPlanner.h"
 
 namespace squirrel_navigation {
 
-ControllerPD::ControllerPD( void )
+class ControllerPID
 {
-  // Empty
-}
+ public:
+  typedef struct { double Pxy, Pyaw, Ixy, Iyaw, Dxy, Dyaw; } Gain;
 
-ControllerPD::~ControllerPD( void )
-{
-  // Empty
-}
+  ControllerPID( void );
+  virtual ~ControllerPID( void );
+  
+  void setGains( const Gain& );
+  void computeCommands( const TrajectoryPlanner::Profile&, const TrajectoryPlanner::Profile&, double t, double* );
+  
+  void activate( double );
+  void deactivate( void ); 
+  
+ private:
+  Gain K_;
 
-void ControllerPD::setGains( const ControllerPD::Gain& gains )
-{
-  K_.Pxy = gains.Pxy;
-  K_.Pyaw = gains.Pyaw;
-  K_.Dxy = gains.Dxy;
-  K_.Dyaw = gains.Dyaw;
-}
+  double* t0_;
+  double I_err_x_, I_err_y_, I_err_yaw_; 
+};
 
-void ControllerPD::computeCommands( const TrajectoryPlanner::Profile& ref, const TrajectoryPlanner::Profile& odom, double* u )
-{
-  u[0] = K_.Pxy * (ref.x - odom.x) + K_.Dxy * (ref.vx - odom.vx);
-  u[1] = K_.Pxy * (ref.y - odom.y) + K_.Dxy * (ref.vy - odom.vy);
-  u[2] = K_.Pyaw * angles::normalize_angle(ref.yaw - odom.yaw) + K_.Dyaw * (ref.vyaw - odom.vyaw);
-}
-   
 }  // namespace squirrel_navigation
 
+#endif /* SQUIRREL_NAVIGATION_CONTROLLERPD_H_ */
+
 // 
-// ControllerPD.cpp ends here
+// ControllerPID.h ends here

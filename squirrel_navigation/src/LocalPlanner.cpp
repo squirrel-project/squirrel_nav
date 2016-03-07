@@ -101,7 +101,7 @@ void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, cost
   trajectory_ = TrajectoryPlanner::getTrajectory();
 
   if ( not controller_ )
-    controller_ = new ControllerPD;
+    controller_ = new ControllerPID;
   
   ros::NodeHandle pnh("~/"+name);
   pnh.param<bool>("verbose", verbose_, false);  
@@ -127,6 +127,8 @@ void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, cost
   ros::NodeHandle pnh_c("~/"+name+"/controller_gains");
   pnh_c.param<double>("P_linear", gains_.Pxy, 1.0);
   pnh_c.param<double>("P_angular", gains_.Pyaw, 1.0);
+  pnh_c.param<double>("I_linear", gains_.Ixy, 1.0);
+  pnh_c.param<double>("I_angular", gains_.Iyaw, 1.0);
   pnh_c.param<double>("D_linear", gains_.Dxy, 0.1);
   pnh_c.param<double>("D_angular", gains_.Dyaw, 0.1);
 
@@ -143,6 +145,8 @@ bool LocalPlanner::computeVelocityCommands( geometry_msgs::Twist& cmd_vel )
   
   tf::Stamped<tf::Pose> tf_robot_pose;
   costmap_ros_->getRobotPose(tf_robot_pose);
+
+  double t = ros::Time::now().toSec();
   
   double odom_vx = odom_.twist.twist.linear.x,
       odom_vy = odom_.twist.twist.linear.y,
@@ -156,9 +160,9 @@ bool LocalPlanner::computeVelocityCommands( geometry_msgs::Twist& cmd_vel )
   robot_pose.vx = std::cos(robot_pose.yaw)*odom_vx - std::sin(robot_pose.yaw)*odom_vy;
   robot_pose.vy = std::sin(robot_pose.yaw)*odom_vx + std::cos(robot_pose.yaw)*odom_vy;
   robot_pose.vyaw = odom_vyaw;
-
+  
   ref_pose = trajectory_->getProfile(odom_.header.stamp);
-  controller_->computeCommands(ref_pose,robot_pose,cmd_);
+  controller_->computeCommands(ref_pose,robot_pose,t,cmd_);
   normalizeCommands_();
 
   cmd_vel.linear.x = std::cos(-robot_pose.yaw)*cmd_[0] - std::sin(-robot_pose.yaw)*cmd_[1];
@@ -187,7 +191,8 @@ bool LocalPlanner::isGoalReached( void )
     delete goal_;
     goal_ = nullptr;
     trajectory_->deactivate();
-
+    controller_->deactivate();
+    
     if ( verbose_ )
       ROS_INFO_STREAM(name_ << ": Goal reached.");
 
@@ -202,9 +207,11 @@ bool LocalPlanner::setPlan( const std::vector<geometry_msgs::PoseStamped>& plan 
   if ( plan.size() < 1 )
     return false;
 
-  if ( not goal_ )
+  if ( not goal_ ) {
     goal_ = new geometry_msgs::Pose;
-
+    controller_->activate(ros::Time::now().toSec());
+  }
+    
   *goal_ = plan.back().pose;
 
   return true;

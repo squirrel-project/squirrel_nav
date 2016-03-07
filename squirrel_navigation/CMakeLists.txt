@@ -103,7 +103,7 @@ add_library(squirrel_planners
   src/LatticeSCQ.cpp
   src/LocalPlanner.cpp
   src/TrajectoryPlanner.cpp
-  src/ControllerPD.cpp
+  src/ControllerPID.cpp
 )
 
 add_dependencies(squirrel_planners
@@ -117,6 +117,7 @@ target_link_libraries(squirrel_planners
 )
 
 add_library(squirrel_costmap_layers
+  src/CostmapUpdateHandle.cpp
   src/DownprojectionLayer.cpp
   src/DownprojectionMultilayer.cpp
   src/FootprintLayer.cpp

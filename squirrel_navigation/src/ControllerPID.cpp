@@ -1,10 +1,10 @@
-// ControllerPD.h --- 
+// ControllerPID.cpp --- 
 // 
-// Filename: ControllerPD.h
+// Filename: ControllerPID.cpp
 // Description: 
 // Author: Federico Boniardi
 // Maintainer: 
-// Created: Sat Feb  6 19:16:11 2016 (+0100)
+// Created: Sat Feb  6 19:21:25 2016 (+0100)
 // Version: 
 // Last-Updated: 
 //           By: 
@@ -58,31 +58,72 @@
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_CONTROLLERPD_H_
-#define SQUIRREL_NAVIGATION_CONTROLLERPD_H_
-
-#include "squirrel_navigation/TrajectoryPlanner.h"
+#include "squirrel_navigation/ControllerPID.h"
 
 namespace squirrel_navigation {
 
-class ControllerPD
+ControllerPID::ControllerPID( void ) :
+    t0_(nullptr),
+    I_err_x_(0.0),
+    I_err_y_(0.0),
+    I_err_yaw_(0.0)
 {
- public:
-  typedef struct { double Pxy, Pyaw, Dxy, Dyaw; } Gain;
+  // Empty
+}
 
-  ControllerPD( void );
-  virtual ~ControllerPD( void );
+ControllerPID::~ControllerPID( void )
+{
+  if ( t0_ )
+    delete t0_;
+}
+
+void ControllerPID::setGains( const ControllerPID::Gain& gains )
+{
+  K_.Pxy = gains.Pxy;
+  K_.Pyaw = gains.Pyaw;
+  K_.Ixy = gains.Ixy;
+  K_.Iyaw = gains.Iyaw;
+  K_.Dxy = gains.Dxy;
+  K_.Dyaw = gains.Dyaw;
+}
+
+void ControllerPID::computeCommands( const TrajectoryPlanner::Profile& ref, const TrajectoryPlanner::Profile& odom, double t, double* u )
+{
+  const double dt = t-*t0_;
   
-  void setGains( const Gain& );
-  void computeCommands( const TrajectoryPlanner::Profile&, const TrajectoryPlanner::Profile&, double* );
+  const double err_x = ref.x - odom.x;
+  const double err_y = ref.y - odom.y;
+  const double err_yaw = angles::normalize_angle(ref.yaw - odom.yaw);
+
+  I_err_x_ += err_x*dt;
+  I_err_y_ += err_y*dt;
+  I_err_yaw_ = angles::normalize_angle(I_err_yaw_ + err_yaw*dt);
   
- private:
-  Gain K_;
-};
+  u[0] = K_.Pxy * err_x + K_.Ixy * I_err_x_ + K_.Dxy * (ref.vx - odom.vx);
+  u[1] = K_.Pxy * err_y + K_.Ixy * I_err_y_ + K_.Dxy * (ref.vy - odom.vy);
+  u[2] = K_.Pyaw * err_yaw + K_.Iyaw * I_err_yaw_ + K_.Dyaw * (ref.vyaw - odom.vyaw);
+}
+
+void ControllerPID::activate( double t0 )
+{
+  if ( not t0_ )
+    t0_ = new double(t0);
+  I_err_x_ = 0.0;
+  I_err_y_ = 0.0;
+  I_err_yaw_ = 0.0;
+}
+
+void ControllerPID::deactivate( void )
+{
+  if ( t0_ )
+    delete t0_;
+  t0_ = nullptr;
+  I_err_x_ = 0.0;
+  I_err_y_ = 0.0;
+  I_err_yaw_ = 0.0;  
+}
 
 }  // namespace squirrel_navigation
 
-#endif /* SQUIRREL_NAVIGATION_CONTROLLERPD_H_ */
-
 // 
-// ControllerPD.h ends here
+// ControllerPID.cpp ends here

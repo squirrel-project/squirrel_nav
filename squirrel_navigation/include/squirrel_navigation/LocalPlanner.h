@@ -79,7 +79,7 @@
 #include <visualization_msgs/Marker.h>
 
 #include "squirrel_navigation/Common.h"
-#include "squirrel_navigation/ControllerPD.h"
+#include "squirrel_navigation/ControllerPID.h"
 #include "squirrel_navigation/TrajectoryPlanner.h"
 
 #include <string>
@@ -101,7 +101,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner
   bool setPlan( const std::vector<geometry_msgs::PoseStamped>& );
   
  private:
-  ControllerPD* controller_;
+  ControllerPID* controller_;
   TrajectoryPlanner* trajectory_;
   tf::TransformListener* tf_;
   costmap_2d::Costmap2DROS* costmap_ros_;
@@ -118,7 +118,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner
   geometry_msgs::Pose* goal_;
   
   // Parameters
-  ControllerPD::Gain gains_;
+  ControllerPID::Gain gains_;
   double max_linear_vel_, max_angular_vel_;
   double yaw_goal_tolerance_, xy_goal_tolerance_; 
   bool verbose_;
