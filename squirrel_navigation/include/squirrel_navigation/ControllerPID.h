@@ -58,8 +58,8 @@
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_CONTROLLERPD_H_
-#define SQUIRREL_NAVIGATION_CONTROLLERPD_H_
+#ifndef SQUIRREL_NAVIGATION_CONTROLLERPID_H_
+#define SQUIRREL_NAVIGATION_CONTROLLERPID_H_
 
 #include "squirrel_navigation/TrajectoryPlanner.h"
 
@@ -88,7 +88,7 @@ class ControllerPID
 
 }  // namespace squirrel_navigation
 
-#endif /* SQUIRREL_NAVIGATION_CONTROLLERPD_H_ */
+#endif /* SQUIRREL_NAVIGATION_CONTROLLERPID_H_ */
 
 // 
 // ControllerPID.h ends here

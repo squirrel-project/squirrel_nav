@@ -65,6 +65,7 @@ PLUGINLIB_DECLARE_CLASS(squirrel_navigation, LocalPlanner, squirrel_navigation::
 namespace squirrel_navigation {
 
 LocalPlanner::LocalPlanner( void ) :
+    dsrv_(nullptr),
     controller_(nullptr),
     tf_(nullptr),
     trajectory_(nullptr),
@@ -87,6 +88,9 @@ LocalPlanner::~LocalPlanner( void )
 
   if ( controller_ )
     delete controller_;
+
+  if ( dsrv_ )
+    delete dsrv_;
   
   odom_sub_.shutdown();
   traj_pub_.shutdown();
@@ -121,21 +125,25 @@ void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, cost
       ROS_WARN_STREAM(name << ": max_rotation_vel has been chosen to be non positive. Reverting to 0.7 (rad/s)");
     max_angular_vel_ = 0.7;
   }
-
+  
   trajectory_->setVelocityBounds(max_linear_vel_,max_angular_vel_);
   
   ros::NodeHandle pnh_c("~/"+name+"/controller_gains");
-  pnh_c.param<double>("P_linear", gains_.Pxy, 1.0);
-  pnh_c.param<double>("P_angular", gains_.Pyaw, 1.0);
-  pnh_c.param<double>("I_linear", gains_.Ixy, 1.0);
-  pnh_c.param<double>("I_angular", gains_.Iyaw, 1.0);
-  pnh_c.param<double>("D_linear", gains_.Dxy, 0.1);
-  pnh_c.param<double>("D_angular", gains_.Dyaw, 0.1);
+  if ( not dsrv_ )
+    dsrv_ = new dynamic_reconfigure::Server<ControllerPIDGainsConfig>(pnh_c);
+  dynamic_reconfigure::Server<ControllerPIDGainsConfig>::CallbackType cb = boost::bind(&LocalPlanner::reconfigureCallback,this,_1,_2);
+  dsrv_->setCallback(cb);
 
-  controller_->setGains(gains_);
+  // pnh_c.param<double>("P_linear", gains_.Pxy, 1.0);
+  // pnh_c.param<double>("P_angular", gains_.Pyaw, 1.0);
+  // pnh_c.param<double>("I_linear", gains_.Ixy, 1.0);
+  // pnh_c.param<double>("I_angular", gains_.Iyaw, 1.0);
+  // pnh_c.param<double>("D_linear", gains_.Dxy, 0.1);
+  // pnh_c.param<double>("D_angular", gains_.Dyaw, 0.1);
+  // controller_->setGains(gains_);
   
   ros::NodeHandle nh;
-  odom_sub_ = nh.subscribe<nav_msgs::Odometry>("odom", 1, &LocalPlanner::odometryCallback_, this);
+  odom_sub_ = nh.subscribe<nav_msgs::Odometry>("odom", 1, &LocalPlanner::odometryCallback, this);
   traj_pub_ = pnh.advertise<visualization_msgs::Marker>("marker", 10);
 }
 
@@ -163,13 +171,13 @@ bool LocalPlanner::computeVelocityCommands( geometry_msgs::Twist& cmd_vel )
   
   ref_pose = trajectory_->getProfile(odom_.header.stamp);
   controller_->computeCommands(ref_pose,robot_pose,t,cmd_);
-  normalizeCommands_();
+  normalizeCommands();
 
   cmd_vel.linear.x = std::cos(-robot_pose.yaw)*cmd_[0] - std::sin(-robot_pose.yaw)*cmd_[1];
   cmd_vel.linear.y = std::sin(-robot_pose.yaw)*cmd_[0] + std::cos(-robot_pose.yaw)*cmd_[1];
   cmd_vel.angular.z = cmd_[2];
   
-  publishTrajectoryPose_(ref_pose,odom_.header.stamp);  
+  publishTrajectoryPose(ref_pose,odom_.header.stamp);  
   
   return true;
 }
@@ -217,7 +225,23 @@ bool LocalPlanner::setPlan( const std::vector<geometry_msgs::PoseStamped>& plan 
   return true;
 }
 
-void LocalPlanner::odometryCallback_( const nav_msgs::Odometry::ConstPtr& odom )
+void LocalPlanner::reconfigureCallback( ControllerPIDGainsConfig& config, uint32_t level )
+{
+  ControllerPID::Gain K;
+  K.Pxy = config.P_linear;
+  K.Pyaw = config.P_angular;
+  K.Ixy = config.I_linear;
+  K.Iyaw = config.I_angular;
+  K.Dxy = config.D_linear;
+  K.Dyaw = config.D_angular;
+
+  if ( controller_ )
+    controller_->setGains(K);
+  else
+    ROS_ERROR_STREAM(name_ << ": Unable to reconfigure the controller parameters.");
+}
+
+void LocalPlanner::odometryCallback( const nav_msgs::Odometry::ConstPtr& odom )
 {
   odom_ = *odom;
 }

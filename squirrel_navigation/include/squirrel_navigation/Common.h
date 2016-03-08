@@ -122,8 +122,7 @@ inline std::vector<geometry_msgs::Point> toPointVector( const Footprint& pgn )
   }
   
   return out;
-}
-
+};
 
 inline bool isInsideFootprint( const Footprint& footprint, const CGAL_Point2D& pt, const CGAL_Kernel& k )
 {

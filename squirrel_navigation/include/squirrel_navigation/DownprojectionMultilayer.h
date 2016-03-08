@@ -86,9 +86,9 @@
 #include "squirrel_navigation/Common.h"
 #include "squirrel_navigation/CostmapUpdateHandle.h"
 #include "squirrel_navigation/DownprojectionMultilayerPluginConfig.h"
-#include "squirrel_navigation/FootprintMultilayer.h"
 #include "squirrel_navigation/JointHandle.h"
 #include "squirrel_navigation/MultiInflatedLayer.h"
+#include "squirrel_navigation/RobotMultiFootprint.h"
 
 #include <algorithm>
 #include <cmath>
@@ -111,9 +111,8 @@ public:
   virtual void matchSize( void );
   virtual void reset( void );
   
- protected:  
-  FootprintMultilayer footprint_multilayer_;
-  CGAL_Kernel ckernel_;
+ protected:
+  RobotMultiFootprint footprint_;
 
   virtual void setupDynamicReconfigure( ros::NodeHandle& );
   virtual void resetMaps( void );

@@ -96,12 +96,16 @@ DownprojectionLayer::~DownprojectionLayer( void )
 void DownprojectionLayer::onInitialize( void )
 {
   ObstacleLayer::onInitialize();
+  costmap_2d::calculateMinAndMaxDistances(getFootprint(),in_radius_,circ_radius_);
 }
 
 void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
                                         double* min_x, double* min_y, double* max_x, double* max_y )
 {
-  footprint_layer_.updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
+  footprint_.updateCurrentFootprint(robot_x, robot_y, robot_yaw, getFootprint());
+
+  const double sq_in_radius_ = in_radius_ * in_radius_;
+  const double sq_circ_radius_ = circ_radius_ * circ_radius_;
   
   if ( rolling_window_ )
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
@@ -150,23 +154,24 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
     if ( skip_kinect_data )
       continue;
 
-    double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
+    const double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;        
     for (unsigned int i = 0; i < cloud.points.size(); ++i) {      
       if ( cloud.points[i].z > robot_height_ or cloud.points[i].z > max_obstacle_height_ )
         continue;
       
-      double sq_dist_robot_xy = (cloud.points[i].x - robot_x) * (cloud.points[i].x - robot_x)
+      const double sq_dist_robot_xy = (cloud.points[i].x - robot_x) * (cloud.points[i].x - robot_x)
           + (cloud.points[i].y - robot_y) * (cloud.points[i].y - robot_y);
+      
       if ( sq_dist_robot_xy >= sq_obstacle_range )
         continue;
 
-      double filter_radius = robot_radius_+0.05;      
-      if ( sq_dist_robot_xy <=  filter_radius * filter_radius)
+      if ( sq_dist_robot_xy <= sq_in_radius_ ) {
         continue;
-
-      if ( footprint_layer_.insideFootprint(cloud.points[i].x,cloud.points[i].y) )
-        continue;
-      
+      } else if ( not sq_dist_robot_xy >= sq_circ_radius_ ) {
+        if ( footprint_.isInside(cloud.points[i].x,cloud.points[i].y) )
+          continue;
+      }
+              
       unsigned int mx, my, mz;
       if ( cloud.points[i].z < origin_z_ ) {
         if ( not worldToMap3D(cloud.points[i].x, cloud.points[i].y, origin_z_, mx, my, mz) ) {

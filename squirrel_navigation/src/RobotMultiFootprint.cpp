@@ -1,10 +1,10 @@
-// FootprintMultilayer.cpp --- 
+// RobotMultiFootprint.cpp --- 
 // 
-// Filename: FootprintMultilayer.cpp
+// Filename: RobotMultiFootprint.cpp
 // Description: 
 // Author: Federico Boniardi
 // Maintainer: 
-// Created: Mon Mar  7 13:10:28 2016 (+0100)
+// Created: Tue Mar  8 15:46:57 2016 (+0100)
 // Version: 
 // Last-Updated: 
 //           By: 
@@ -58,97 +58,81 @@
 
 // Code:
 
-#include "squirrel_navigation/FootprintMultilayer.h"
-
-PLUGINLIB_EXPORT_CLASS(squirrel_navigation::FootprintMultilayer, costmap_2d::Layer)
+#include "squirrel_navigation/RobotMultiFootprint.h"
 
 namespace squirrel_navigation {
 
-void FootprintMultilayer::onInitialize( void )
+RobotMultiFootprint::RobotMultiFootprint( void ) 
 {
-  ros::NodeHandle pnh("~/"+name_), nh;
-  current_ = false;
-
-  getFootprints(pnh);  
-  for (size_t i=0; i<footprints_.size(); ++i)
-    footprints_pubs_[i] = pnh.advertise<geometry_msgs::PolygonStamped>(footprints_ids_[i]+"_footprint",1);
-  
-  dsrv_ = new dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>(pnh);
-  dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>::CallbackType cb = boost::bind(&FootprintMultilayer::reconfigureCallback, this, _1, _2);
-  dsrv_->setCallback(cb);
-
-  current_ = true;
+  // Empty
 }
 
-FootprintMultilayer::~FootprintMultilayer( void )
+RobotMultiFootprint::~RobotMultiFootprint( void )
 {
-  if ( dsrv_ )
-    delete dsrv_;
+  std::for_each(footprints_pubs_.begin(),footprints_pubs_.end(),[](ros::Publisher& pub){pub.shutdown();});
 }
 
-void FootprintMultilayer::updateBounds( double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y, double* max_x, double* max_y )
+void RobotMultiFootprint::updateCurrentMultiFootprint( double robot_x, double robot_y, double robot_yaw )
 {
-  if ( not enabled_)
-    return;
-
   const size_t n = footprints_specs_.size();
   
   ros::Time now = ros::Time::now();
 
-  std::vector<geometry_msgs::PolygonStamped> footprints_msgs(n);  
+  geometry_msgs::PolygonStamped footprint_msg;  
   for (size_t i=0; i<n; ++i) {
-    footprints_msgs[i].header.frame_id = layered_costmap_->getGlobalFrameID();
-    footprints_msgs[i].header.stamp = now;
-    footprints_msgs[i].polygon.points.clear();
+    footprint_msg.header.frame_id = "/map";
+    footprint_msg.header.stamp = now;
+    footprint_msg.polygon.points.clear();
 
     const double cos_th = cos(robot_yaw);
     const double sin_th = sin(robot_yaw);
 
-    footprints_msgs[i].polygon.points.reserve(n);
+    footprints_[i].clear();
     footprints_[i].reserve(footprints_specs_[i].size());
 
     for (size_t j=0; j<footprints_specs_[i].size(); ++j)  {
       geometry_msgs::Point32 new_pt;
       new_pt.x = robot_x + (footprints_specs_[i][j].x * cos_th - footprints_specs_[i][j].y * sin_th);
       new_pt.y = robot_y + (footprints_specs_[i][j].x * sin_th + footprints_specs_[i][j].y * cos_th);
-      footprints_msgs[i].polygon.points.push_back(new_pt);
+      footprint_msg.polygon.points.push_back(new_pt);
       footprints_[i].emplace_back(new_pt.x,new_pt.y);
-
-      double px = new_pt.x, py = new_pt.y;
-      *min_x = std::min(px,*min_x);
-      *min_y = std::min(py,*min_y);
-      *max_x = std::max(px,*max_x);
-      *max_y = std::max(py,*max_y);
     }
 
-    footprints_pubs_[i].publish( footprints_msgs[i] );
+    footprints_pubs_[i].publish(footprint_msg);
   }
 }
 
-void FootprintMultilayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j )
+bool RobotMultiFootprint::isInside( double px, double py, unsigned int layer ) const
 {
-  return;
+  return isInsideFootprint(footprints_[layer], CGAL_Point2D(px,py), ckern_);
 }
 
-void FootprintMultilayer::getFootprints( const ros::NodeHandle& pnh )
+void RobotMultiFootprint::onInitialize( void )
 {
+  ros::NodeHandle pnh("~");
+
   XmlRpc::XmlRpcValue footprints_list, ids_list;
   pnh.getParam("footprints", footprints_list);
   pnh.getParam("footprints_id", ids_list);
-
+  
   ROS_ASSERT( footprints_list.getType() == XmlRpc::XmlRpcValue::TypeArray );
   ROS_ASSERT( ids_list.getType() == XmlRpc::XmlRpcValue::TypeArray );
   ROS_ASSERT( footprints_list.size() == ids_list.size() );
   
   const size_t n = footprints_list.size();
-
+  
   // Looping on layers
+  footprints_pubs_.resize(n);
   footprints_specs_.resize(n);
-  footprints_ids_.reserve(n);
+  in_radii_.resize(n);
+  circ_radii_.resize(n);
+  
   for (size_t i=0; i<n; ++i) {
     ROS_ASSERT( footprints_list[i].getType() == XmlRpc::XmlRpcValue::TypeArray );
     ROS_ASSERT( ids_list[i].getType == XmlRpcValue::TypeString );
-    footprints_ids_.emplace_back(ids_list[i]);
+
+    footprints_pubs_[i] = pnh.advertise<geometry_msgs::PolygonStamped>(std::string(ids_list[i])+"_footprint", 1);
+
     // Looping on polygon
     footprints_specs_[i].reserve(footprints_list[i].size());
     for (size_t j=0; j<footprints_list[i].size(); ++i) {
@@ -158,18 +142,14 @@ void FootprintMultilayer::getFootprints( const ros::NodeHandle& pnh )
       new_pt.y = footprints_list[i][j][1];
       footprints_specs_[i].push_back(new_pt);
     }
-  }
- 
-  footprints_pubs_.resize(n);
-  footprints_.resize(n);
-}
 
-void FootprintMultilayer::reconfigureCallback( costmap_2d::GenericPluginConfig &config, uint32_t level )
-{
-  enabled_ = config.enabled;
+    costmap_2d::calculateMinAndMaxDistances(footprints_specs_[i],in_radii_[i],circ_radii_[i]);
+  }
+  
+  footprints_.resize(n);
 }
 
 }  // namespace squirrel_navigation
 
 // 
-// FootprintMultilayer.cpp ends here
+// RobotMultiFootprint.cpp ends here

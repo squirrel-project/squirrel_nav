@@ -67,12 +67,6 @@
 // Code:
 
 #include "squirrel_navigation/DownprojectionMultilayer.h"
-#include "squirrel_navigation/Common.h"
-
-#include <pluginlib/class_list_macros.h>
-#include <pcl_conversions/pcl_conversions.h>
-
-#include <map>
 
 PLUGINLIB_EXPORT_CLASS(squirrel_navigation::DownprojectionMultilayer, costmap_2d::Layer)
 
@@ -102,13 +96,14 @@ DownprojectionMultilayer::~DownprojectionMultilayer( void )
 void DownprojectionMultilayer::onInitialize( void )
 {
   ObstacleLayer::onInitialize();
+  footprint_.onInitialize();
   matchInflatedSize();
 }
 
 void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
                                              double* min_x, double* min_y, double* max_x, double* max_y )
 {
-  footprint_multilayer_.updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
+  footprint_.updateCurrentMultiFootprint(robot_x, robot_y, robot_yaw);
   
   if ( rolling_window_ )
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
@@ -155,7 +150,7 @@ void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, dou
 
     const pcl::PointCloud<pcl::PointXYZ>& cloud = *(obs.cloud_);
     
-    double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
+    const double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
 
     for (unsigned int i = 0; i < cloud.points.size(); ++i) {
       if ( cloud.points[i].z > max_obstacle_height_ or cloud.points[i].z < -min_obstacle_height_ )
@@ -163,22 +158,25 @@ void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, dou
 
       unsigned int l = layer(cloud.points[i].z);
       
-      double sq_dist_orig = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x)
-          + (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y)
-          + (cloud.points[i].z - obs.origin_.z) * (cloud.points[i].z - obs.origin_.z);
-
+      const double sq_dist_orig = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x)
+          + (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y);
+      
       if ( sq_dist_orig >= sq_obstacle_range and cloud.points[i].z >= min_obstacle_height_ )
         continue;
 
-      double sq_dist_robot = (cloud.points[i].x - robot_x) * (cloud.points[i].x - robot_x)
+      const double sq_dist_robot = (cloud.points[i].x - robot_x) * (cloud.points[i].x - robot_x)
           + (cloud.points[i].y - robot_y) * (cloud.points[i].y - robot_y);
+      const double sq_in_radius = std::pow(footprint_.inscribedRadius(l),2);
+      const double sq_circ_radius = std::pow(footprint_.circumscribedRadius(l),2);
 
-      if ( sq_dist_robot <= std::pow(robot_link_radii_[l], 2) )
+      if ( sq_dist_robot <= sq_in_radius ) {
         continue;
-
-      if ( footprint_multilayer_.insideFootprint(l,cloud.points[i].x,cloud.points[i].y) )
-        continue;
-      
+      } else if ( sq_dist_robot <= sq_circ_radius ) {
+        if ( footprint_.isInside(cloud.points[i].x,cloud.points[i].y,l) ) {
+          continue;
+        }
+      }
+          
       unsigned int mx, my, mz;
       if ( cloud.points[i].z < origin_z_ ) {
         if ( !worldToMap3D(cloud.points[i].x, cloud.points[i].y, origin_z_, mx, my, mz) ) {
@@ -265,8 +263,6 @@ void DownprojectionMultilayer::updateCosts( costmap_2d::Costmap2D& master_grid, 
 {
   if ( !enabled_ )
     return;
-
-  footprint_multilayer_.updateCosts(*this, min_i, min_j, max_i, max_j);
 
   if( combination_method_ == 0 ) {
     updateWithOverwrite(master_grid, min_i, min_j, max_i, max_j);

@@ -20,14 +20,15 @@ find_library(SBPL_LIBRARY
 set(SBPL_LIBRARIES ${SBPL_LIBRARY})
 
 include(${CGAL_USE_FILE})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frounding-math")
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 if(COMPILER_SUPPORTS_CXX11)
-    set(CMAKE_CXX_FLAGS "-std=c++11")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 elseif(COMPILER_SUPPORTS_CXX0X)
-    set(CMAKE_CXX_FLAGS "-std=c++0x")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 else()
     message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
@@ -68,6 +69,7 @@ find_package(catkin REQUIRED
 )
 
 generate_dynamic_reconfigure_options(
+  cfg/ControllerPIDGains.cfg
   cfg/DownprojectionLayerPlugin.cfg
   cfg/DownprojectionMultilayerPlugin.cfg
   cfg/InflationLayerPlugin.cfg
@@ -108,6 +110,7 @@ add_library(squirrel_planners
 
 add_dependencies(squirrel_planners
   squirrel_navigation_msgs_generate_messages_cpp
+  ${PROJECT_NAME}_gencfg
 )
 
 target_link_libraries(squirrel_planners
@@ -120,13 +123,13 @@ add_library(squirrel_costmap_layers
   src/CostmapUpdateHandle.cpp
   src/DownprojectionLayer.cpp
   src/DownprojectionMultilayer.cpp
-  src/FootprintLayer.cpp
-  src/FootprintMultilayer.cpp
   src/InflatedLayer.cpp
   src/InflationLayer.cpp
   src/JointHandle.cpp
   src/MapLayer.cpp
   src/MultiInflatedLayer.cpp
+  src/RobotFootprint.cpp
+  src/RobotMultiFootprint.cpp
 )
 
 add_dependencies(squirrel_costmap_layers

@@ -73,6 +73,8 @@
 
 #include <pluginlib/class_list_macros.h>
 
+#include <dynamic_reconfigure/server.h>
+
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
@@ -80,6 +82,7 @@
 
 #include "squirrel_navigation/Common.h"
 #include "squirrel_navigation/ControllerPID.h"
+#include "squirrel_navigation/ControllerPIDGainsConfig.h"
 #include "squirrel_navigation/TrajectoryPlanner.h"
 
 #include <string>
@@ -108,7 +111,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner
   
   ros::Subscriber odom_sub_;
   ros::Publisher traj_pub_;
-
+  
   std::mutex guard_;
 
   double cmd_[3];
@@ -118,6 +121,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner
   geometry_msgs::Pose* goal_;
   
   // Parameters
+  dynamic_reconfigure::Server<ControllerPIDGainsConfig>* dsrv_;
   ControllerPID::Gain gains_;
   double max_linear_vel_, max_angular_vel_;
   double yaw_goal_tolerance_, xy_goal_tolerance_; 
@@ -125,9 +129,10 @@ class LocalPlanner : public nav_core::BaseLocalPlanner
 
   std::string name_;
 
-  void odometryCallback_( const nav_msgs::Odometry::ConstPtr& );
+  void reconfigureCallback( ControllerPIDGainsConfig&, uint32_t );
+  void odometryCallback( const nav_msgs::Odometry::ConstPtr& );
 
-  inline void normalizeCommands_( void )
+  inline void normalizeCommands( void )
   {
     double lin_norm = std::hypot(cmd_[0],cmd_[1]);
     double ang_norm = std::abs(cmd_[2]);
@@ -139,7 +144,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner
     cmd_[2] *= ang_rescaler;
   };
   
-  inline void publishTrajectoryPose_( const TrajectoryPlanner::Profile& p, const ros::Time& t )
+  inline void publishTrajectoryPose( const TrajectoryPlanner::Profile& p, const ros::Time& t )
   {
     visualization_msgs::Marker marker;
     marker.id = 0;

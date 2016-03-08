@@ -73,9 +73,10 @@
 
 #include <dynamic_reconfigure/server.h>
 
+#include <costmap_2d/footprint.h>
+#include <costmap_2d/obstacle_layer.h>
 #include <costmap_2d/observation_buffer.h>
 #include <costmap_2d/VoxelGrid.h>
-#include <costmap_2d/obstacle_layer.h>
 
 #include <dynamixel_msgs/JointState.h>
 #include <std_msgs/Float64.h>
@@ -93,8 +94,8 @@
 #include "squirrel_navigation/Common.h"
 #include "squirrel_navigation/CostmapUpdateHandle.h"
 #include "squirrel_navigation/DownprojectionLayerPluginConfig.h"
-#include "squirrel_navigation/FootprintLayer.h"
 #include "squirrel_navigation/JointHandle.h"
+#include "squirrel_navigation/RobotFootprint.h"
 
 namespace squirrel_navigation {
 
@@ -113,8 +114,8 @@ class DownprojectionLayer : public costmap_2d::ObstacleLayer
   inline bool isDiscretized( void ) { return true; };
   
  protected:
-  FootprintLayer footprint_layer_;
-  CGAL_Kernel ckernel_;
+  RobotFootprint footprint_;
+  double circ_radius_, in_radius_;
 
   virtual void setupDynamicReconfigure( ros::NodeHandle& );
   virtual void resetMaps( void );

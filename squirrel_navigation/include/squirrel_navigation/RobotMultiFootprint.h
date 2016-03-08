@@ -1,10 +1,10 @@
-// FootprintMultilayer.h --- 
+// RobotMultiFootprint.h --- 
 // 
-// Filename: FootprintMultilayer.h
+// Filename: RobotMultiFootprint.h
 // Description: 
 // Author: Federico Boniardi
 // Maintainer: 
-// Created: Mon Mar  7 12:42:57 2016 (+0100)
+// Created: Tue Mar  8 15:35:08 2016 (+0100)
 // Version: 
 // Last-Updated: 
 //           By: 
@@ -58,62 +58,48 @@
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_FOOTPRINTMULTILAYER_H_
-#define SQUIRREL_NAVIGATION_FOOTPRINTMULTILAYER_H_
+#ifndef SQUIRREL_NAVIGATION_ROBOTMULTIFOOTPRINT_H_
+#define SQUIRREL_NAVIGATION_ROBOTMULTIFOOTPRINT_H_
 
 #include <ros/ros.h>
 
-#include <costmap_2d/layer.h>
-#include <costmap_2d/layered_costmap.h>
-#include <costmap_2d/costmap_math.h>
 #include <costmap_2d/footprint.h>
-#include <costmap_2d/GenericPluginConfig.h>
 
-#include <dynamic_reconfigure/server.h>
-
-#include <pluginlib/class_list_macros.h>
-
-#include <geometry_msgs/Polygon.h>
-#include <geometry_msgs/PolygonStamped.h>
-#include <nav_msgs/OccupancyGrid.h>
-
-#include <string>
-#include <sstream>
+#include <geometry_msgs/Point.h>
 
 #include "squirrel_navigation/Common.h"
 
+#include <algorithm>
+#include <string>
+
 namespace squirrel_navigation {
 
-class FootprintMultilayer : public costmap_2d::Layer
+class RobotMultiFootprint
 {
  public:
-  virtual void onInitialize( void );
-  virtual ~FootprintMultilayer( void );
-  virtual void updateBounds( double, double, double, double*, double*, double*, double* );
-  virtual void updateCosts( costmap_2d::Costmap2D&, int, int, int, int );
+  RobotMultiFootprint( void );
+  virtual ~RobotMultiFootprint( void );
 
-  inline bool insideFootprint( size_t layer, double px, double py )
-  {
-    return isInsideFootprint(footprints_[layer],CGAL_Point2D(px,py),ckern_);
-  }
+  void onInitialize( void );
+  void updateCurrentMultiFootprint( double, double, double );
+  bool isInside( double, double, unsigned int ) const; 
+
+  inline double inscribedRadius( unsigned int l ) const { return in_radii_[l]; };
+  inline double circumscribedRadius( unsigned int l ) const { return circ_radii_[l]; };
   
  private:
-  std::vector<ros::Publisher> footprints_pubs_;
-  std::vector<std::string> footprints_ids_;
-  std::vector< std::vector<geometry_msgs::Point> > footprints_specs_;
-
   std::vector<Footprint> footprints_;
+
+  std::vector<ros::Publisher> footprints_pubs_;
+  std::vector< std::vector< geometry_msgs::Point> > footprints_specs_;
+  std::vector<double> in_radii_, circ_radii_;
+  
   CGAL_Kernel ckern_;
-  
-  dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>* dsrv_;
-  
-  void getFootprints( const ros::NodeHandle& );
-  void reconfigureCallback( costmap_2d::GenericPluginConfig &config, uint32_t level );
 };
 
 }  // namespace squirrel_navigation
 
-#endif /* SQUIRREL_NAVIGATION_FOOTPRINTMULTILAYER_H_ */
+#endif /* SQUIRREL_NAVIGATION_ROBOTMULTIFOOTPRINT_H_ */
 
 // 
-// FootprintMultilayer.h ends here
+// RobotMultiFootprint.h ends here

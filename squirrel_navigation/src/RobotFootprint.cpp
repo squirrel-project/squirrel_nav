@@ -1,11 +1,11 @@
-// FootprintLayer.h --- 
+// RobotFootprint.cpp --- 
 // 
-// Filename: FootprintLayer.h
+// Filename: RobotFootprint.cpp
 // Description: 
 // Author: Federico Boniardi
 // Maintainer: boniardi@informatik.uni-freiburg.de
 // Created: Fri Nov 20 13:57:41 2015 (+0100)
-// Version: 
+// Version: 0.1.0
 // Last-Updated: 
 //           By: 
 //     Update #: 0
@@ -55,62 +55,44 @@
 // *         David V. Lu!!
 // *********************************************************************/
 // 
-// 
+//
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_FOOTPRINTLAYER_H_
-#define SQUIRREL_NAVIGATION_FOOTPRINTLAYER_H_
-
-#include <ros/ros.h>
-
-#include <costmap_2d/layer.h>
-#include <costmap_2d/layered_costmap.h>
-#include <costmap_2d/costmap_math.h>
-#include <costmap_2d/footprint.h>
-#include <costmap_2d/GenericPluginConfig.h>
-
-#include <dynamic_reconfigure/server.h>
-
-#include <pluginlib/class_list_macros.h>
-
-#include <geometry_msgs/Polygon.h>
-#include <geometry_msgs/PolygonStamped.h>
-#include <nav_msgs/OccupancyGrid.h>
-
-#include <string>
-#include <sstream>
-
-#include "squirrel_navigation/Common.h"
+#include "squirrel_navigation/RobotFootprint.h"
 
 namespace squirrel_navigation {
 
-class FootprintLayer : public costmap_2d::Layer
+RobotFootprint::RobotFootprint( void )
 {
-public:
-  virtual void onInitialize( void );
-  virtual ~FootprintLayer( void );
-  virtual void updateBounds( double, double, double, double*, double*, double*, double* );
-  virtual void updateCosts( costmap_2d::Costmap2D&, int, int, int, int );
+  // Empty
+}
 
-  inline bool insideFootprint( double px, double py )
-  {
-    return isInsideFootprint(footprint_,CGAL_Point2D(px,py),ckern_);
-  };
-  
-private:
-  Footprint footprint_;
-  CGAL_Kernel ckern_;
-  
-  ros::Publisher footprint_pub_;
-  dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>* dsrv_;
-  
-  void reconfigureCallback( costmap_2d::GenericPluginConfig &config, uint32_t level );
-};
+RobotFootprint::~RobotFootprint( void )
+{
+  // Empty
+}
+
+void RobotFootprint::updateCurrentFootprint( double robot_x, double robot_y, double robot_yaw,  const std::vector<geometry_msgs::Point>& footprint_spec )
+{  
+  const double cos_th = std::cos(robot_yaw);
+  const double sin_th = std::sin(robot_yaw);
+
+  footprint_.clear();
+  footprint_.reserve(footprint_spec.size());
+  for (unsigned int i = 0; i < footprint_spec.size(); ++i)  {
+    const double px = robot_x + (footprint_spec[i].x * cos_th - footprint_spec[i].y * sin_th);
+    const double py = robot_y + (footprint_spec[i].x * sin_th + footprint_spec[i].y * cos_th);
+    footprint_.emplace_back(px,py);  
+  }
+}
+
+bool RobotFootprint::isInside( double px, double py ) const
+{
+  return isInsideFootprint(footprint_,CGAL_Point2D(px,py),ckern_);
+}
 
 }  // namespace squirrel_navigation
 
-#endif // SQUIRREL_NAVIGATION_FOOTPRINTLAYER_H_
-
 // 
-// FootprintLayer.h ends here
+// RobotFootprint.cpp ends here
