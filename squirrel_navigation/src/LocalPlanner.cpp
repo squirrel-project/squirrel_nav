@@ -133,14 +133,6 @@ void LocalPlanner::initialize( std::string name, tf::TransformListener* tf, cost
     dsrv_ = new dynamic_reconfigure::Server<ControllerPIDGainsConfig>(pnh_c);
   dynamic_reconfigure::Server<ControllerPIDGainsConfig>::CallbackType cb = boost::bind(&LocalPlanner::reconfigureCallback,this,_1,_2);
   dsrv_->setCallback(cb);
-
-  // pnh_c.param<double>("P_linear", gains_.Pxy, 1.0);
-  // pnh_c.param<double>("P_angular", gains_.Pyaw, 1.0);
-  // pnh_c.param<double>("I_linear", gains_.Ixy, 1.0);
-  // pnh_c.param<double>("I_angular", gains_.Iyaw, 1.0);
-  // pnh_c.param<double>("D_linear", gains_.Dxy, 0.1);
-  // pnh_c.param<double>("D_angular", gains_.Dyaw, 0.1);
-  // controller_->setGains(gains_);
   
   ros::NodeHandle nh;
   odom_sub_ = nh.subscribe<nav_msgs::Odometry>("odom", 1, &LocalPlanner::odometryCallback, this);
