@@ -66,6 +66,7 @@
 #include <costmap_2d/footprint.h>
 
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/PolygonStamped.h>
 
 #include "squirrel_navigation/Common.h"
 

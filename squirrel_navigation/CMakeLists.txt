@@ -80,7 +80,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES squirrel_costmap_layers squirrel_planners
   CATKIN_DEPENDS ${squirrel_navigation_DEPENDENCIES}
-  DEPENDS SBPL
+  DEPENDS SBPL PCL CGAL
 )
 
 ###########
