@@ -82,7 +82,7 @@ class ControllerPID
  private:
   Gain K_;
 
-  double* t0_;
+  double* t_;
   double I_err_x_, I_err_y_, I_err_yaw_; 
 };
 

@@ -66,6 +66,8 @@
 #include <ros/publisher.h>
 #include <ros/time.h>
 
+#include <dynamic_reconfigure/server.h>
+
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -76,13 +78,13 @@
 
 #include <angles/angles.h>
 
+#include "squirrel_navigation/TrajectoryPlannerConfig.h"
+
 #include <cassert>
 #include <cmath>
 #include <mutex>
 #include <thread>
 #include <vector>
-
-#include <boost/math/special_functions/binomial.hpp>
 
 namespace squirrel_navigation {
 
@@ -124,12 +126,13 @@ class TrajectoryPlanner
   
   void setVelocityBounds( double, double );
 
-  bool makeTrajectory( const geometry_msgs::PoseStamped&, std::vector<geometry_msgs::PoseStamped>&, size_t );
+  bool makeTrajectory( const geometry_msgs::PoseStamped&, std::vector<geometry_msgs::PoseStamped>&, size_t, bool );
   
   geometry_msgs::Pose getGoal( void ) const;
   size_t getNodePose( ros::Time&, geometry_msgs::PoseStamped& ) const;  
   Profile getProfile( const ros::Time& );
-
+  bool lostRobot( const Profile&, const Profile& );
+  
   inline std::vector<Pose2D>* getPoses( void ) { return poses_; };
   inline bool isActive( void ) { return ( t0_ != nullptr ); };
   inline void deactivate( void ) { if ( t0_ ) { delete t0_; t0_ = nullptr; } };
@@ -140,17 +143,22 @@ class TrajectoryPlanner
   static std::vector<Pose2D>* poses_;
 
   double max_linear_vel_, max_angular_vel_;
+
+  // Parameters
+  static dynamic_reconfigure::Server<TrajectoryPlannerConfig>* dsrv_;
   double xy_smoother_, yaw_smoother_;
   double time_scaler_;
   int heading_lookahead_;
   
   std::mutex guard_;
 
-  size_t matchIndex_( double ) const;
-  bool initTrajectory_( const std::vector<geometry_msgs::PoseStamped>& );
-  bool updateTrajectory_( const std::vector<geometry_msgs::PoseStamped>&, size_t );
+  bool initTrajectory( const std::vector<geometry_msgs::PoseStamped>&, bool );
+  bool updateTrajectory( const std::vector<geometry_msgs::PoseStamped>&, size_t, bool );
+
+  size_t matchIndex( double ) const;
+  void reconfigureCallback( TrajectoryPlannerConfig&, uint32_t );
   
-  inline double timeIncrement_( const Pose2D& p1, const Pose2D& p2 ) const
+  inline double timeIncrement( const Pose2D& p1, const Pose2D& p2 ) const
   {
     double dl,da;
 
@@ -158,6 +166,16 @@ class TrajectoryPlanner
     da = std::abs(angles::normalize_angle(p1.yaw-p2.yaw));
     
     return (1+time_scaler_)*std::max(dl/max_linear_vel_,da/max_angular_vel_);
+  };
+
+  inline double linearDistance( const Profile& p1, const Profile& p2 )
+  {
+    return std::hypot(p1.x-p2.x,p1.y-p2.y);
+  };
+
+  inline double angularDistance( const Profile& p1, const Profile& p2 )
+  {
+    return std::abs(angles::normalize_angle(p1.yaw-p2.yaw));
   };
 };
 

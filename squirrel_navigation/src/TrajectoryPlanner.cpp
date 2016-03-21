@@ -3,12 +3,12 @@
 // Filename: TrajectoryPlanner.cpp
 // Description: 
 // Author: Federico Boniardi
-// Maintainer: 
+// Maintainer: boniardi@informatik.uni-freiburg.de
 // Created: Sat Feb  6 16:25:41 2016 (+0100)
-// Version: 
-// Last-Updated: 
-//           By: 
-//     Update #: 0
+// Version: 0.0.1
+// Last-Updated: Mon Mar 21 15:14:21 2016 (+0100) 
+//           By: Federico Boniardi
+//     Update #: 1
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -73,11 +73,15 @@ TrajectoryPlanner::TrajectoryPlanner( void ) :
   ROS_INFO("squirrel_navigation::TrajectoryPlanner started");
 
   ros::NodeHandle pnh("~/trajectory_planner");
-
-  pnh.param<double>("xy_smoother", xy_smoother_, 0.75);
-  pnh.param<double>("yaw_smoother", yaw_smoother_, 0.1);
-  pnh.param<double>("time_scaler", time_scaler_, 0.75);
-  pnh.param<int>("heading_lookahead", heading_lookahead_, 5);
+  if ( not dsrv_ )
+    dsrv_ = new dynamic_reconfigure::Server<TrajectoryPlannerConfig>(pnh);
+  dynamic_reconfigure::Server<TrajectoryPlannerConfig>::CallbackType cb = boost::bind(&TrajectoryPlanner::reconfigureCallback,this,_1,_2);
+  dsrv_->setCallback(cb);
+  
+  // pnh.param<double>("xy_smoother", xy_smoother_, 0.75);
+  // pnh.param<double>("yaw_smoother", yaw_smoother_, 0.1);
+  // pnh.param<double>("time_scaler", time_scaler_, 0.75);
+  // pnh.param<int>("heading_lookahead", heading_lookahead_, 5);
 
   if ( time_scaler_ <= 0 ) {
     ROS_WARN("TrajectoryPlanner: time_scaler should be positive. Revert to default parameter (0.75)");
@@ -99,6 +103,9 @@ TrajectoryPlanner* TrajectoryPlanner::getTrajectory( void )
 
 void TrajectoryPlanner::deleteTrajectory( void )
 {
+  if ( dsrv_ )
+    delete dsrv_;
+  
   if ( t0_ )
     delete t0_;
   
@@ -115,16 +122,16 @@ void TrajectoryPlanner::setVelocityBounds( double linear_vel, double angular_vel
   max_angular_vel_ = angular_vel;
 }
 
-bool TrajectoryPlanner::makeTrajectory( const geometry_msgs::PoseStamped& start , std::vector<geometry_msgs::PoseStamped>& plan, size_t i )
+bool TrajectoryPlanner::makeTrajectory( const geometry_msgs::PoseStamped& start , std::vector<geometry_msgs::PoseStamped>& plan, size_t i, bool smooth )
 {
   if ( plan.size() <= 0 )
     return false;
   
   if ( i <= 0 ) {
     plan[0].pose.orientation = start.pose.orientation; // ROS planner does not consider this
-    return initTrajectory_(plan);
+    return initTrajectory(plan,smooth);
   } else {
-    return updateTrajectory_(plan,i);
+    return updateTrajectory(plan,i,smooth);
   }
 }
 
@@ -141,7 +148,7 @@ size_t TrajectoryPlanner::getNodePose( ros::Time& t, geometry_msgs::PoseStamped&
 {
   double tau = t.toSec()-t0_->toSec();
 
-  size_t i = matchIndex_(tau);
+  size_t i = matchIndex(tau);
   
   p.pose.position.x = (*poses_)[i].x;
   p.pose.position.y = (*poses_)[i].y;
@@ -170,7 +177,7 @@ TrajectoryPlanner::Profile TrajectoryPlanner::getProfile( const ros::Time& t )
     return out;
   }
 
-  size_t i = matchIndex_(tau)-1;
+  size_t i = matchIndex(tau)-1;
 
   double dt = (*poses_)[i+1].t-(*poses_)[i].t;
   double mu = (tau-(*poses_)[i].t)/dt;
@@ -185,7 +192,14 @@ TrajectoryPlanner::Profile TrajectoryPlanner::getProfile( const ros::Time& t )
   return out;
 }
 
-bool TrajectoryPlanner::initTrajectory_( const std::vector<geometry_msgs::PoseStamped>& plan )
+bool TrajectoryPlanner::lostRobot( const TrajectoryPlanner::Profile& ref, const TrajectoryPlanner::Profile& odom )
+{
+  const double dl = linearDistance(ref,odom);
+  const double da = angularDistance(ref,odom);
+  return (dl>0.3 or da>1.57);
+}
+
+bool TrajectoryPlanner::initTrajectory( const std::vector<geometry_msgs::PoseStamped>& plan, bool smooth )
 {
   const size_t n = plan.size();
 
@@ -196,6 +210,9 @@ bool TrajectoryPlanner::initTrajectory_( const std::vector<geometry_msgs::PoseSt
     t0_ = new ros::Time(ros::Time::now());
   
   poses_->resize(n+1);
+
+  const double xy_smoother = smooth ? xy_smoother_ : 0.0;
+  const double yaw_smoother = smooth ? yaw_smoother_ : 0.0;
   
   for (size_t i=0; i<n; ++i) {
     if ( i == 0 ) {
@@ -205,22 +222,22 @@ bool TrajectoryPlanner::initTrajectory_( const std::vector<geometry_msgs::PoseSt
     } else {
       double da = angles::normalize_angle((*poses_)[i-1].yaw - tf::getYaw(plan[i].pose.orientation));
       
-      (*poses_)[i].x = xy_smoother_ * (*poses_)[i-1].x + (1-xy_smoother_) * plan[i].pose.position.x;
-      (*poses_)[i].y = xy_smoother_ * (*poses_)[i-1].y + (1-xy_smoother_) * plan[i].pose.position.y;
-      (*poses_)[i].yaw = angles::normalize_angle(tf::getYaw(plan[i].pose.orientation) + yaw_smoother_ * da);
-      (*poses_)[i].t = (*poses_)[i-1].t + timeIncrement_((*poses_)[i],(*poses_)[i-1]);
+      (*poses_)[i].x = xy_smoother * (*poses_)[i-1].x + (1-xy_smoother) * plan[i].pose.position.x;
+      (*poses_)[i].y = xy_smoother * (*poses_)[i-1].y + (1-xy_smoother) * plan[i].pose.position.y;
+      (*poses_)[i].yaw = angles::normalize_angle(tf::getYaw(plan[i].pose.orientation) + yaw_smoother * da);
+      (*poses_)[i].t = (*poses_)[i-1].t + timeIncrement((*poses_)[i],(*poses_)[i-1]);
     }
   }
 
   (*poses_)[n].x = plan[n-1].pose.position.x;
   (*poses_)[n].y = plan[n-1].pose.position.y;
   (*poses_)[n].yaw = tf::getYaw(plan[n-1].pose.orientation);
-  (*poses_)[n].t = (*poses_)[n-1].t + timeIncrement_((*poses_)[n],(*poses_)[n-1]);
+  (*poses_)[n].t = (*poses_)[n-1].t + timeIncrement((*poses_)[n],(*poses_)[n-1]);
 
   return true;
 }
 
-bool TrajectoryPlanner::updateTrajectory_( const std::vector<geometry_msgs::PoseStamped>& plan, size_t init )
+bool TrajectoryPlanner::updateTrajectory( const std::vector<geometry_msgs::PoseStamped>& plan, size_t init, bool smooth )
 {
   const size_t n = plan.size();
 
@@ -230,20 +247,23 @@ bool TrajectoryPlanner::updateTrajectory_( const std::vector<geometry_msgs::Pose
   std::vector<Pose2D> new_poses(n-heading_lookahead_+1);
   new_poses.insert(new_poses.begin(),poses_->begin(),poses_->begin()+init);
 
+  const double xy_smoother = smooth ? xy_smoother_ : 0.0;
+  const double yaw_smoother = smooth ? yaw_smoother_ : 0.0;
+  
   for (size_t i=init,pi=heading_lookahead_; i<init+n-heading_lookahead_; ++i,++pi) {
     double da = new_poses[i-1].yaw - tf::getYaw(plan[pi].pose.orientation);
 
-    new_poses[i].x = xy_smoother_ * new_poses[i-1].x + (1-xy_smoother_) * plan[pi].pose.position.x;
-    new_poses[i].y = xy_smoother_ * new_poses[i-1].y + (1-xy_smoother_) * plan[pi].pose.position.y;
-    new_poses[i].yaw = angles::normalize_angle(tf::getYaw(plan[pi].pose.orientation) + yaw_smoother_ * da);
-    new_poses[i].t = new_poses[i-1].t + timeIncrement_(new_poses[i],new_poses[i-1]);
+    new_poses[i].x = xy_smoother_ * new_poses[i-1].x + (1-xy_smoother) * plan[pi].pose.position.x;
+    new_poses[i].y = xy_smoother_ * new_poses[i-1].y + (1-xy_smoother) * plan[pi].pose.position.y;
+    new_poses[i].yaw = angles::normalize_angle(tf::getYaw(plan[pi].pose.orientation) + yaw_smoother * da);
+    new_poses[i].t = new_poses[i-1].t + timeIncrement(new_poses[i],new_poses[i-1]);
   }
 
   size_t last = init+n-heading_lookahead_;
   new_poses[last].x = plan.back().pose.position.x; 
   new_poses[last].y = plan.back().pose.position.y; 
   new_poses[last].yaw = tf::getYaw(plan.back().pose.orientation); 
-  new_poses[last].t = new_poses[last-1].t + timeIncrement_(new_poses[last],new_poses[last-1]);
+  new_poses[last].t = new_poses[last-1].t + timeIncrement(new_poses[last],new_poses[last-1]);
   
   delete poses_;
   poses_ = new std::vector<Pose2D>;
@@ -252,7 +272,7 @@ bool TrajectoryPlanner::updateTrajectory_( const std::vector<geometry_msgs::Pose
   return true;
 }
 
-size_t TrajectoryPlanner::matchIndex_( double t ) const
+size_t TrajectoryPlanner::matchIndex( double t ) const
 {
   if ( t<=0.0 )
     return 0;
@@ -271,11 +291,21 @@ size_t TrajectoryPlanner::matchIndex_( double t ) const
   return i;
 };
 
+void TrajectoryPlanner::reconfigureCallback( TrajectoryPlannerConfig& config, uint32_t level )
+{
+  xy_smoother_ = config.xy_smoother;
+  yaw_smoother_ = config.yaw_smoother;
+  time_scaler_ = config.time_scaler;
+  heading_lookahead_ = config.heading_lookahead;
+}
+
 TrajectoryPlanner* TrajectoryPlanner::trajectory_ptr_ = nullptr;
 
 ros::Time* TrajectoryPlanner::t0_ = nullptr;
 
 std::vector<TrajectoryPlanner::Pose2D>* TrajectoryPlanner::poses_ = nullptr;
+
+dynamic_reconfigure::Server<TrajectoryPlannerConfig>* TrajectoryPlanner::dsrv_ = nullptr;
 
 }  // namespace squirrel_navigation
 

@@ -63,7 +63,7 @@
 namespace squirrel_navigation {
 
 ControllerPID::ControllerPID( void ) :
-    t0_(nullptr),
+    t_(nullptr),
     I_err_x_(0.0),
     I_err_y_(0.0),
     I_err_yaw_(0.0)
@@ -73,8 +73,8 @@ ControllerPID::ControllerPID( void ) :
 
 ControllerPID::~ControllerPID( void )
 {
-  if ( t0_ )
-    delete t0_;
+  if ( t_ )
+    delete t_;
 }
 
 void ControllerPID::setGains( const ControllerPID::Gain& gains )
@@ -89,7 +89,7 @@ void ControllerPID::setGains( const ControllerPID::Gain& gains )
 
 void ControllerPID::computeCommands( const TrajectoryPlanner::Profile& ref, const TrajectoryPlanner::Profile& odom, double t, double* u )
 {
-  const double dt = t-*t0_;
+  const double dt = t-*t_;
   
   const double err_x = ref.x - odom.x;
   const double err_y = ref.y - odom.y;
@@ -102,12 +102,17 @@ void ControllerPID::computeCommands( const TrajectoryPlanner::Profile& ref, cons
   u[0] = K_.Pxy * err_x + K_.Ixy * I_err_x_ + K_.Dxy * (ref.vx - odom.vx);
   u[1] = K_.Pxy * err_y + K_.Ixy * I_err_y_ + K_.Dxy * (ref.vy - odom.vy);
   u[2] = K_.Pyaw * err_yaw + K_.Iyaw * I_err_yaw_ + K_.Dyaw * (ref.vyaw - odom.vyaw);
+
+  *t_ = t;
 }
 
 void ControllerPID::activate( double t0 )
 {
-  if ( not t0_ )
-    t0_ = new double(t0);
+  if ( not t_ )
+    t_ = new double(t0);
+  else
+    *t_ = t0;
+  
   I_err_x_ = 0.0;
   I_err_y_ = 0.0;
   I_err_yaw_ = 0.0;
@@ -115,9 +120,9 @@ void ControllerPID::activate( double t0 )
 
 void ControllerPID::deactivate( void )
 {
-  if ( t0_ )
-    delete t0_;
-  t0_ = nullptr;
+  if ( t_ )
+    delete t_;
+  t_ = nullptr;
   I_err_x_ = 0.0;
   I_err_y_ = 0.0;
   I_err_yaw_ = 0.0;  

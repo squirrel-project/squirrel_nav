@@ -7,9 +7,9 @@
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Wed Nov 19 18:57:41 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Tue Jan 19 16:07:19 2016 (+0100)
+// Last-Updated: Mon Mar 21 14:29:49 2016 (+0100)
 //           By: Federico Boniardi
-//     Update #: 6
+//     Update #: 7
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -72,7 +72,7 @@ PLUGINLIB_EXPORT_CLASS(squirrel_navigation::DownprojectionLayer, costmap_2d::Lay
 namespace squirrel_navigation {
 
 DownprojectionLayer::DownprojectionLayer( void ) :
-    voxel_grid_(0, 0, 0),
+    voxel_grid_(0,0,0),
     robot_radius_(0.22),
     robot_height_(1.0),
     floor_threshold_(0.0),
@@ -80,11 +80,15 @@ DownprojectionLayer::DownprojectionLayer( void ) :
     kinect_tilt_h_("kinect_tilt_joint"),
     kinect_pan_h_("kinect_pan_joint"),
     verbose_(false),
+    footprint_active_(true),
     in_radius_(-1.0),
     circ_radius_(-1.0)
 {
   costmap_ = nullptr;
   costmap_update_handle_ = CostmapUpdateHandle::getHandle();
+
+  ros::NodeHandle nh;
+  toggle_footprint_sub_ = nh.subscribe("/plan_with_footprint", 1, &DownprojectionLayer::toggleFootprintCallback, this);
 }
 
 DownprojectionLayer::~DownprojectionLayer( void )
@@ -103,10 +107,12 @@ void DownprojectionLayer::onInitialize( void )
 void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
                                         double* min_x, double* min_y, double* max_x, double* max_y )
 {
+  const std::vector<geometry_msgs::Point>& footprint_spec = getFootprint();
+
   if ( in_radius_<0 and circ_radius_<0 )
       costmap_2d::calculateMinAndMaxDistances(getFootprint(),in_radius_,circ_radius_);
 
-  footprint_.updateCurrentFootprint(robot_x, robot_y, robot_yaw, getFootprint());
+  footprint_.updateCurrentFootprint(robot_x, robot_y, robot_yaw, footprint_spec);
 
   const double sq_in_radius_ = in_radius_ * in_radius_;
   const double sq_circ_radius_ = circ_radius_ * circ_radius_;
@@ -171,11 +177,11 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
 
       if ( sq_dist_robot_xy <= sq_in_radius_ ) {
         continue;
-      } else if ( not sq_dist_robot_xy >= sq_circ_radius_ ) {
+      } else if ( footprint_active_ and (not sq_dist_robot_xy >= sq_circ_radius_) ) {
         if ( footprint_.isInside(cloud.points[i].x,cloud.points[i].y) )
           continue;
       }
-              
+      
       unsigned int mx, my, mz;
       if ( cloud.points[i].z < origin_z_ ) {
         if ( not worldToMap3D(cloud.points[i].x, cloud.points[i].y, origin_z_, mx, my, mz) ) {
@@ -425,7 +431,6 @@ void DownprojectionLayer::raytraceFreespace( const costmap_2d::Observation& clea
     }
   }
 }
-
 
 }  // namespace squirrel_navigation
 

@@ -7,9 +7,9 @@
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Wed Nov 19 18:57:41 2014 (+0100)
 // Version: 0.1.0
-// Last-Updated: Tue Nov 24 14:35:57 2015 (+0100)
+// Last-Updated: Mon Mar 21 14:29:34 2016 (+0100)
 //           By: Federico Boniardi
-//     Update #: 4
+//     Update #: 5
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -127,6 +127,7 @@ class DownprojectionLayer : public costmap_2d::ObstacleLayer
   std::map<unsigned int, ros::Time> clearing_index_stamped_;
 
   ros::Publisher voxel_pub_, clearing_endpoints_pub_;
+  ros::Subscriber toggle_footprint_sub_;
   
   voxel_grid::VoxelGrid voxel_grid_;
   double z_resolution_, origin_z_;
@@ -146,6 +147,9 @@ class DownprojectionLayer : public costmap_2d::ObstacleLayer
 
   // Costmap update handle
   CostmapUpdateHandle* costmap_update_handle_;
+
+  // Footprint active
+  bool footprint_active_;
   
   void reconfigureCallback( DownprojectionLayerPluginConfig& , uint32_t );
   void clearNonLethal( double, double, double, double, bool );
@@ -194,6 +198,11 @@ class DownprojectionLayer : public costmap_2d::ObstacleLayer
   {
     const double dx = x1-x0, dy = y1-y0, dz = z1-z0;
     return std::sqrt(dx*dx + dy*dy + dz*dz);
+  };
+
+  inline void toggleFootprintCallback( const std_msgs::Bool::ConstPtr& footprint_on )
+  {
+    footprint_active_ = footprint_on->data;
   };
 };
 

@@ -69,12 +69,13 @@ find_package(catkin REQUIRED
 )
 
 generate_dynamic_reconfigure_options(
-  cfg/ControllerGSFFGains.cfg
   cfg/ControllerPIDGains.cfg
   cfg/DownprojectionLayerPlugin.cfg
   cfg/DownprojectionMultilayerPlugin.cfg
   cfg/InflationLayerPlugin.cfg
+  cfg/LocalPlannerPlugin.cfg
   cfg/MapLayerPlugin.cfg
+  cfg/TrajectoryPlanner.cfg
 )
 
 catkin_package(
