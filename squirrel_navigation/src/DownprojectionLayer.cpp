@@ -79,7 +79,9 @@ DownprojectionLayer::DownprojectionLayer( void ) :
     obstacles_persistence_(60.0),
     kinect_tilt_h_("kinect_tilt_joint"),
     kinect_pan_h_("kinect_pan_joint"),
-    verbose_(false)
+    verbose_(false),
+    in_radius_(-1.0),
+    circ_radius_(-1.0)
 {
   costmap_ = nullptr;
   costmap_update_handle_ = CostmapUpdateHandle::getHandle();
@@ -96,12 +98,14 @@ DownprojectionLayer::~DownprojectionLayer( void )
 void DownprojectionLayer::onInitialize( void )
 {
   ObstacleLayer::onInitialize();
-  costmap_2d::calculateMinAndMaxDistances(getFootprint(),in_radius_,circ_radius_);
 }
 
 void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
                                         double* min_x, double* min_y, double* max_x, double* max_y )
 {
+  if ( in_radius_<0 and circ_radius_<0 )
+      costmap_2d::calculateMinAndMaxDistances(getFootprint(),in_radius_,circ_radius_);
+
   footprint_.updateCurrentFootprint(robot_x, robot_y, robot_yaw, getFootprint());
 
   const double sq_in_radius_ = in_radius_ * in_radius_;

@@ -65,6 +65,7 @@
 #include <angles/angles.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <vector>
 
@@ -126,7 +127,13 @@ inline std::vector<geometry_msgs::Point> toPointVector( const Footprint& pgn )
 
 inline bool isInsideFootprint( const Footprint& footprint, const CGAL_Point2D& pt, const CGAL_Kernel& k )
 {
-  return (CGAL::bounded_side_2(&footprint.front(),&footprint.back(),pt,k) != CGAL::ON_UNBOUNDED_SIDE);
+  auto start = std::chrono::system_clock::now();
+  CGAL::Bounded_side where = CGAL::bounded_side_2(&footprint.front(),&footprint.back(),pt,k);  
+  auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - start);
+
+  std::cerr << elapsed.count() << std::endl;
+  
+  return (where != CGAL::ON_UNBOUNDED_SIDE);
 };
 
 }  // namespace squirrel_navigation

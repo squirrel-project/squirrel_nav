@@ -146,7 +146,7 @@ bool LocalPlanner::computeVelocityCommands( geometry_msgs::Twist& cmd_vel )
   tf::Stamped<tf::Pose> tf_robot_pose;
   costmap_ros_->getRobotPose(tf_robot_pose);
 
-  double t = ros::Time::now().toSec();
+  double t = odom_.header.stamp.toSec();
   
   double odom_vx = odom_.twist.twist.linear.x,
       odom_vy = odom_.twist.twist.linear.y,
@@ -226,7 +226,7 @@ void LocalPlanner::reconfigureCallback( ControllerPIDGainsConfig& config, uint32
   K.Iyaw = config.I_angular;
   K.Dxy = config.D_linear;
   K.Dyaw = config.D_angular;
-
+  
   if ( controller_ )
     controller_->setGains(K);
   else

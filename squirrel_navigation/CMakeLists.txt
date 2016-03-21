@@ -69,6 +69,7 @@ find_package(catkin REQUIRED
 )
 
 generate_dynamic_reconfigure_options(
+  cfg/ControllerGSFFGains.cfg
   cfg/ControllerPIDGains.cfg
   cfg/DownprojectionLayerPlugin.cfg
   cfg/DownprojectionMultilayerPlugin.cfg
@@ -101,11 +102,11 @@ link_directories(
 
 ## Compiling and linking the plugins
 add_library(squirrel_planners
+  src/ControllerPID.cpp
   src/GlobalPlanner.cpp
   src/LatticeSCQ.cpp
   src/LocalPlanner.cpp
   src/TrajectoryPlanner.cpp
-  src/ControllerPID.cpp
 )
 
 add_dependencies(squirrel_planners
