@@ -15,7 +15,6 @@ The package provides the following nodes and plugins for [move_base](http://wiki
 - `squirrel_navigation::DownprojectionMultilayer`: Mutlilayer for obstacles
 - `squirrel_navigation::MapLayer`: Layer for the map
 
-
 ### Point Cloud Downsampler
 
 #### Subscribed topics
@@ -39,13 +38,13 @@ The package provides the following nodes and plugins for [move_base](http://wiki
 #### Published Topics
 - `/plan_with_footprint` (*std_msgs/Bool*) plan using footprint.
 
-
 ### Global Planner
 
 Uses [navfn](http://wiki.ros.org/navfn) and
 [sbpl_lattice_planner](http://wiki.ros.org/sbpl).
 
 #### Subscribed topic
+- `/odom` (*nav_msgs/Odomerty*) Odometry.
 - `/plan_with_footprint` (*std_msgs/Bool*) toggle the lattice planner.
 
 #### Published topics
@@ -55,10 +54,9 @@ Uses [navfn](http://wiki.ros.org/navfn) and
   
 #### Parameters
 - `~/verbose`: verbosity.
-- `~/replanning_thresh`: replanning factor.
+- `~/heading_lookhahead`: Time lookahead for replanning along the path.
 - `~/dijkstra/<params>`: see paramters for [navfn](http://wiki.ros.org/navfn).
 - `~/lattice/<param>`: see parameters for [sbpl_lattice_planner](http://wiki.ros.org/sbpl_lattice_planner).
-
 
 ### Local Planner
 
@@ -68,19 +66,24 @@ Uses [base_local_planner](http://wiki.ros.org/base_local_planner).
 - `/plan_with_footprint` (*std_msgs/Bool*) toggle the dwa controller.
 
 #### Published topics
-- `~/cmd_vel` (*geometry_msgs/Twist*) the command
+- `~/cmd_vel` (*geometry_msgs/Twist*) the control command.
+- `~/ref_pose` (*visualization_msgs/Marker*) the tracked reference pose.
   
 #### Parameters
 - `~/verbose`: verbosity.
-- `~/trajectory_planner/<params>`: see paramters for [base_local_planner](http://wiki.ros.org/base_local_planner).
-- `~/trajectory_tracker/max_linear_vel`: maximum forward speed.
-- `~/trajectory_tracker/min_linear_vel`: minimum forward speed.
-- `~/trajectory_tracker/max_rotation_vel`: maximum rotational speed.
-- `~/trajectory_tracker/min_rotation_vel`: minimum rotational speed.
-- `~/trajectory_tracker/max_in_place_rotation_vel`: maximum rotational speed on the spot.
-- `~/trajectory_tracker/min_in_place_rotation_vel`: minimum rotational speed on the spot.
-- `~/trajectory_tracker/yaw_goal_tolerance`: angular tolerance to reach the goal.
-- `~/trajectory_tracker/xy_goal_tolerance`: linear tolerance to reach the goal.
--  `~/trajectory_tracker/heading_lookahead`: lookahead distance.
--  `~/trajectory_tracker/num_window_points`number of lookahaed points: .
--  `~/trajectory_tracker/holonomic_robot`: holonomic.
+- `~/odom_topic`: The odometry topic.
+- `~/xy_goal_tolerance`: Goal tolearance in 
+
+
+<!-- - `~/trajectory_planner/<params>`: see paramters for [base_local_planner](http://wiki.ros.org/base_local_planner). -->
+<!-- - `~/trajectory_tracker/max_linear_vel`: maximum forward speed. -->
+<!-- - `~/trajectory_tracker/min_linear_vel`: minimum forward speed. -->
+<!-- - `~/trajectory_tracker/max_rotation_vel`: maximum rotational speed. -->
+<!-- - `~/trajectory_tracker/min_rotation_vel`: minimum rotational speed. -->
+<!-- - `~/trajectory_tracker/max_in_place_rotation_vel`: maximum rotational speed on the spot. -->
+<!-- - `~/trajectory_tracker/min_in_place_rotation_vel`: minimum rotational speed on the spot. -->
+<!-- - `~/trajectory_tracker/yaw_goal_tolerance`: angular tolerance to reach the goal. -->
+<!-- - `~/trajectory_tracker/xy_goal_tolerance`: linear tolerance to reach the goal. -->
+<!-- -  `~/trajectory_tracker/heading_lookahead`: lookahead distance. -->
+<!-- -  `~/trajectory_tracker/num_window_points`number of lookahaed points: . -->
+<!-- -  `~/trajectory_tracker/holonomic_robot`: holonomic. -->
