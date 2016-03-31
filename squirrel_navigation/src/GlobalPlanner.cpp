@@ -191,17 +191,17 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
       cost_possibly_circumscribed_tresh = inflation_layer->computeCost(cell_circumscribed_radius);
     }
 
-    if ( not env_->SetEnvParameter("cost_inscribed_thresh",costMapCostToSBPLCost_(costmap_2d::INSCRIBED_INFLATED_OBSTACLE)) ) {
+    if ( not env_->SetEnvParameter("cost_inscribed_thresh",costMapCostToSBPLCost(costmap_2d::INSCRIBED_INFLATED_OBSTACLE)) ) {
       ROS_ERROR_STREAM(name << ": Failed to set cost_inscribed_thresh parameter" );
       std::exit(EXIT_FAILURE);
     }
 
-    if ( not env_->SetEnvParameter("cost_possibly_circumscribed_thresh", costMapCostToSBPLCost_(cost_possibly_circumscribed_tresh)) ){
+    if ( not env_->SetEnvParameter("cost_possibly_circumscribed_thresh", costMapCostToSBPLCost(cost_possibly_circumscribed_tresh)) ){
       ROS_ERROR_STREAM( name << ": Failed to set cost_possibly_circumscribed_thresh parameter" );
       std::exit(EXIT_FAILURE);
     }
     
-    int obst_cost_thresh = costMapCostToSBPLCost_(costmap_2d::LETHAL_OBSTACLE);
+    int obst_cost_thresh = costMapCostToSBPLCost(costmap_2d::LETHAL_OBSTACLE);
     std::vector<sbpl_2Dpt_t> perimeterptsV;
     perimeterptsV.reserve(footprint.size());
     for (size_t ii(0); ii < footprint.size(); ++ii) {
@@ -234,7 +234,7 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
     
     for (ssize_t ix(0); ix < costmap_ros_->getCostmap()->getSizeInCellsX(); ++ix)
       for (ssize_t iy(0); iy < costmap_ros_->getCostmap()->getSizeInCellsY(); ++iy)
-        env_->UpdateCost(ix, iy, costMapCostToSBPLCost_(costmap_ros_->getCostmap()->getCost(ix,iy)));
+        env_->UpdateCost(ix, iy, costMapCostToSBPLCost(costmap_ros_->getCostmap()->getCost(ix,iy)));
 
     if ( "ARAPlanner"  == lattice_planner_type_ ) {
       ROS_INFO_STREAM( name << ": Planning with ARA*" );
@@ -253,8 +253,8 @@ void GlobalPlanner::initialize( std::string name, costmap_2d::Costmap2DROS* cost
     traj_xy_pub_ = pnh.advertise<nav_msgs::Path>("plan", 1);
     traj_xyth_pub_ = pnh.advertise<geometry_msgs::PoseArray>("poses", 1);
 
-    odom_sub_ = nh_.subscribe("/odom", 1, &GlobalPlanner::odometryCallback_, this);
-    update_sub_ = nh_.subscribe("/plan_with_footprint", 1, &GlobalPlanner::updatePlannerCallback_, this);
+    odom_sub_ = nh_.subscribe("/odom", 1, &GlobalPlanner::odometryCallback, this);
+    update_sub_ = nh_.subscribe("/plan_with_footprint", 1, &GlobalPlanner::updatePlannerCallback, this);
     
     initialized_ = true;
   }
@@ -283,7 +283,7 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
   tf::Stamped<tf::Pose> robot_pose;
   costmap_ros_->getRobotPose(robot_pose);
   
-  if ( trajectory_->isActive() and newGoal_(goal) )
+  if ( trajectory_->isActive() and newGoal(goal) )
     trajectory_->deactivate();
   
   size_t index;
@@ -297,11 +297,15 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
     ros::Time lookahead_time = plan_time + ros::Duration(heading_lookahead_);            
     index = trajectory_->getNodePose(lookahead_time,replan_start);
   }
+
+  bool smooth;
   
   switch ( curr_planner_ ) {
     
     case DIJKSTRA: {
 
+      smooth = true;
+      
       dijkstra_planner_->makePlan(replan_start,goal,plan);
 
       if ( not plan.empty() ) {
@@ -321,6 +325,8 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
     }
 
     case LATTICE: {
+      smooth = false;
+      
       double theta_start = 2 * std::atan2(replan_start.pose.orientation.z, replan_start.pose.orientation.w);
       double theta_goal = 2 * std::atan2(goal.pose.orientation.z, goal.pose.orientation.w);
 
@@ -355,7 +361,7 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
         for (unsigned int iy = 0; iy < costmap_ros_->getCostmap()->getSizeInCellsY(); iy++) {
 
           unsigned char oldCost = env_->GetMapCost(ix,iy);
-          unsigned char newCost = costMapCostToSBPLCost_(costmap_ros_->getCostmap()->getCost(ix,iy));
+          unsigned char newCost = costMapCostToSBPLCost(costmap_ros_->getCostmap()->getCost(ix,iy));
 
           if ( oldCost == newCost )
             continue;
@@ -364,16 +370,16 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
 
           //first case - off cell goes on
 
-          if ( (oldCost != costMapCostToSBPLCost_(costmap_2d::LETHAL_OBSTACLE) and oldCost != costMapCostToSBPLCost_(costmap_2d::INSCRIBED_INFLATED_OBSTACLE)) and
-               (newCost == costMapCostToSBPLCost_(costmap_2d::LETHAL_OBSTACLE) or newCost == costMapCostToSBPLCost_(costmap_2d::INSCRIBED_INFLATED_OBSTACLE)) ) {
+          if ( (oldCost != costMapCostToSBPLCost(costmap_2d::LETHAL_OBSTACLE) and oldCost != costMapCostToSBPLCost(costmap_2d::INSCRIBED_INFLATED_OBSTACLE)) and
+               (newCost == costMapCostToSBPLCost(costmap_2d::LETHAL_OBSTACLE) or newCost == costMapCostToSBPLCost(costmap_2d::INSCRIBED_INFLATED_OBSTACLE)) ) {
             offOnCount++;
           }
 
-          if ( (oldCost == costMapCostToSBPLCost_(costmap_2d::LETHAL_OBSTACLE) or oldCost == costMapCostToSBPLCost_(costmap_2d::INSCRIBED_INFLATED_OBSTACLE)) and
-               (newCost != costMapCostToSBPLCost_(costmap_2d::LETHAL_OBSTACLE) and newCost != costMapCostToSBPLCost_(costmap_2d::INSCRIBED_INFLATED_OBSTACLE))) {
+          if ( (oldCost == costMapCostToSBPLCost(costmap_2d::LETHAL_OBSTACLE) or oldCost == costMapCostToSBPLCost(costmap_2d::INSCRIBED_INFLATED_OBSTACLE)) and
+               (newCost != costMapCostToSBPLCost(costmap_2d::LETHAL_OBSTACLE) and newCost != costMapCostToSBPLCost(costmap_2d::INSCRIBED_INFLATED_OBSTACLE))) {
             onOffCount++;
           }
-          env_->UpdateCost(ix, iy, costMapCostToSBPLCost_(costmap_ros_->getCostmap()->getCost(ix,iy)));
+          env_->UpdateCost(ix, iy, costMapCostToSBPLCost(costmap_ros_->getCostmap()->getCost(ix,iy)));
 
           nav2dcell_t nav2dcell;
           nav2dcell.x = ix;
@@ -416,7 +422,7 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
             ROS_INFO_STREAM( name_ << ": Solution is found" );
         } else {
           ROS_WARN_STREAM( name_ << ": Solution not found." );
-          publishStats_(solution_cost, 0, start, goal);
+          publishStats(solution_cost, 0, start, goal);
           return false;
         }
       } catch( SBPL_Exception* e ) {
@@ -457,7 +463,7 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
 
       plan[n-1] = goal;
       
-      publishStats_(solution_cost, sbpl_path.size(), start, goal);
+      publishStats(solution_cost, sbpl_path.size(), start, goal);
       break;
     }
       
@@ -466,16 +472,16 @@ bool GlobalPlanner::makePlan( const geometry_msgs::PoseStamped& start,
     }
   }      
 
-  if ( trajectory_->makeTrajectory(replan_start,plan,index) ) {
+  if ( trajectory_->makeTrajectory(replan_start,plan,index,smooth) ) {
     std::vector<TrajectoryPlanner::Pose2D>* poses = trajectory_->getPoses();
-    publishTrajectory_(poses);
+    publishTrajectory(poses);
     return true;
   } else {
     return false;
   }
 }
 
-unsigned char GlobalPlanner::costMapCostToSBPLCost_( unsigned char newcost )
+unsigned char GlobalPlanner::costMapCostToSBPLCost( unsigned char newcost )
 {
   if ( newcost == costmap_2d::LETHAL_OBSTACLE ) {
     return lethal_obstacle_;
@@ -488,9 +494,9 @@ unsigned char GlobalPlanner::costMapCostToSBPLCost_( unsigned char newcost )
   }
 }
 
-void GlobalPlanner::publishStats_( int solution_cost, int solution_size,
-                                 const geometry_msgs::PoseStamped& start,
-                                 const geometry_msgs::PoseStamped& goal )
+void GlobalPlanner::publishStats( int solution_cost, int solution_size,
+                                  const geometry_msgs::PoseStamped& start,
+                                  const geometry_msgs::PoseStamped& goal )
 {
   // Fill up statistics and publish
   squirrel_navigation_msgs::GlobalPlannerStats stats;
@@ -512,7 +518,7 @@ void GlobalPlanner::publishStats_( int solution_cost, int solution_size,
   stats_pub_.publish(stats);
 }
 
-void GlobalPlanner::updatePlannerCallback_( const std_msgs::Bool::ConstPtr& footprint_on_msg )
+void GlobalPlanner::updatePlannerCallback( const std_msgs::Bool::ConstPtr& footprint_on_msg )
 {
   if ( footprint_on_msg->data == true ) {
     curr_planner_ = LATTICE;
@@ -525,7 +531,7 @@ void GlobalPlanner::updatePlannerCallback_( const std_msgs::Bool::ConstPtr& foot
   }
 }
 
-void GlobalPlanner::odometryCallback_( const nav_msgs::Odometry::ConstPtr& odom )
+void GlobalPlanner::odometryCallback( const nav_msgs::Odometry::ConstPtr& odom )
 {
   odom_ = *odom;
 }

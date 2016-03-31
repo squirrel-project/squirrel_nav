@@ -73,13 +73,17 @@
 
 #include <pluginlib/class_list_macros.h>
 
+#include <dynamic_reconfigure/server.h>
+
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 #include <visualization_msgs/Marker.h>
 
 #include "squirrel_navigation/Common.h"
-#include "squirrel_navigation/ControllerPD.h"
+#include "squirrel_navigation/ControllerPID.h"
+#include "squirrel_navigation/ControllerPIDGainsConfig.h"
+#include "squirrel_navigation/LocalPlannerPluginConfig.h"
 #include "squirrel_navigation/TrajectoryPlanner.h"
 
 #include <string>
@@ -101,14 +105,14 @@ class LocalPlanner : public nav_core::BaseLocalPlanner
   bool setPlan( const std::vector<geometry_msgs::PoseStamped>& );
   
  private:
-  ControllerPD* controller_;
+  ControllerPID* controller_;
   TrajectoryPlanner* trajectory_;
   tf::TransformListener* tf_;
   costmap_2d::Costmap2DROS* costmap_ros_;
   
   ros::Subscriber odom_sub_;
   ros::Publisher traj_pub_;
-
+  
   std::mutex guard_;
 
   double cmd_[3];
@@ -118,28 +122,34 @@ class LocalPlanner : public nav_core::BaseLocalPlanner
   geometry_msgs::Pose* goal_;
   
   // Parameters
-  ControllerPD::Gain gains_;
+  dynamic_reconfigure::Server<LocalPlannerPluginConfig>* dsrv_lp_;
+  dynamic_reconfigure::Server<ControllerPIDGainsConfig>* dsrv_pid_;
+  ControllerPID::Gain gains_;
   double max_linear_vel_, max_angular_vel_;
-  double yaw_goal_tolerance_, xy_goal_tolerance_; 
+  double yaw_goal_tolerance_, xy_goal_tolerance_;
+  double delay_;
   bool verbose_;
+  std::string odom_topic_;
 
   std::string name_;
 
-  void odometryCallback_( const nav_msgs::Odometry::ConstPtr& );
+  void controllerReconfigureCallback( ControllerPIDGainsConfig&, uint32_t );
+  void plannerReconfigureCallback( LocalPlannerPluginConfig&, uint32_t );
+  void odometryCallback( const nav_msgs::Odometry::ConstPtr& );
 
-  inline void normalizeCommands_( void )
+  inline void normalizeCommands( void )
   {
-    double lin_norm = std::hypot(cmd_[0],cmd_[1]);
-    double ang_norm = std::abs(cmd_[2]);
-    double lin_rescaler = lin_norm > max_linear_vel_ ? max_linear_vel_/lin_norm : 1.0;
-    double ang_rescaler =  ang_norm > max_angular_vel_ ? max_angular_vel_/ang_norm : 1.0;
+    const double lin_norm = std::hypot(cmd_[0],cmd_[1]);
+    const double ang_norm = std::abs(cmd_[2]);
+    const double lin_rescaler = lin_norm > max_linear_vel_ ? max_linear_vel_/lin_norm : 1.0;
+    const double ang_rescaler =  ang_norm > max_angular_vel_ ? max_angular_vel_/ang_norm : 1.0;
     
     cmd_[0] *= lin_rescaler;
     cmd_[1] *= lin_rescaler;
     cmd_[2] *= ang_rescaler;
   };
   
-  inline void publishTrajectoryPose_( const TrajectoryPlanner::Profile& p, const ros::Time& t )
+  inline void publishTrajectoryPose( const TrajectoryPlanner::Profile& p, const ros::Time& t )
   {
     visualization_msgs::Marker marker;
     marker.id = 0;

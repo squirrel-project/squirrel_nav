@@ -3,13 +3,13 @@
     <class name="squirrel_navigation/GlobalPlanner" type="squirrel_navigation::GlobalPlanner" 
 	   base_class_type="nav_core::BaseGlobalPlanner">
       <description> 
-	Path planner using ARA* and AD* on motion primitive lattice. 
+	Path planner using Dijkstra or ARA* with motion primitive lattice. 
       </description>
     </class>
     <class name="squirrel_navigation/LocalPlanner" type="squirrel_navigation::LocalPlanner" 
 	   base_class_type="nav_core::BaseLocalPlanner">
       <description> 
-	Pure pursuit planner for trajectory tracking. 
+	PID controller along trajectory
       </description>
     </class>
   </library>

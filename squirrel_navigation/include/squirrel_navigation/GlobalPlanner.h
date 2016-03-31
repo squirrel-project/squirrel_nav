@@ -151,12 +151,12 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
 
   std::mutex guard_;
   
-  unsigned char costMapCostToSBPLCost_( unsigned char );
-  void publishStats_( int, int , const geometry_msgs::PoseStamped&, const geometry_msgs::PoseStamped& );
-  void updatePlannerCallback_( const std_msgs::Bool::ConstPtr& );
-  void odometryCallback_( const nav_msgs::Odometry::ConstPtr& );
+  unsigned char costMapCostToSBPLCost( unsigned char );
+  void publishStats( int, int , const geometry_msgs::PoseStamped&, const geometry_msgs::PoseStamped& );
+  void updatePlannerCallback( const std_msgs::Bool::ConstPtr& );
+  void odometryCallback( const nav_msgs::Odometry::ConstPtr& );
 
-  inline void publishTrajectory_( const std::vector<TrajectoryPlanner::Pose2D>* poses )
+  inline void publishTrajectory( const std::vector<TrajectoryPlanner::Pose2D>* poses )
   {
     ros::Time traj_stamp = ros::Time::now();
 
@@ -182,7 +182,7 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
     traj_xyth_pub_.publish(gui_poses);
   };
 
-  inline bool newGoal_( const geometry_msgs::PoseStamped& goal ) const
+  inline bool newGoal( const geometry_msgs::PoseStamped& goal ) const
   {
     return specialEuclideanDistance(trajectory_->getGoal(),goal.pose)>TOLL;
   };

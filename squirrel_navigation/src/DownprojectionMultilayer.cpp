@@ -67,12 +67,6 @@
 // Code:
 
 #include "squirrel_navigation/DownprojectionMultilayer.h"
-#include "squirrel_navigation/Common.h"
-
-#include <pluginlib/class_list_macros.h>
-#include <pcl_conversions/pcl_conversions.h>
-
-#include <map>
 
 PLUGINLIB_EXPORT_CLASS(squirrel_navigation::DownprojectionMultilayer, costmap_2d::Layer)
 
@@ -85,32 +79,44 @@ DownprojectionMultilayer::DownprojectionMultilayer( void ) :
     obstacles_persistence_(60.0),
     dsrv_(NULL),
     kinect_tilt_h_("kinect_tilt_joint"),
-    kinect_pan_h_("kinect_pan_joint")    
+    kinect_pan_h_("kinect_pan_joint")
 {
-  costmap_ = NULL;
+  costmap_ = nullptr;
+  costmap_update_handle_ = CostmapUpdateHandle::getHandle();
 }
 
 DownprojectionMultilayer::~DownprojectionMultilayer( void )
 {
   if ( dsrv_ )
     delete dsrv_;
+
+  CostmapUpdateHandle::releaseHandle();
 }
 
 void DownprojectionMultilayer::onInitialize( void )
 {
   ObstacleLayer::onInitialize();
+  footprint_.onInitialize();
   matchInflatedSize();
 }
 
 void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, double robot_yaw,
                                              double* min_x, double* min_y, double* max_x, double* max_y )
 {
+  footprint_.updateCurrentMultiFootprint(robot_x, robot_y, robot_yaw);
+  
   if ( rolling_window_ )
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
 
   if ( !enabled_ )
     return;
-
+  
+  if ( !costmap_update_handle_->performUpdate() ) {
+    if ( verbose_ )
+      ROS_INFO("%s/%s: Skipping costmap's update.", ros::this_node::getName().c_str(), name_.c_str());
+    return;
+  }
+  
   if ( kinect_tilt_h_.skipData() or  kinect_pan_h_.skipData() ) {
     if ( verbose_ )
       ROS_INFO("%s/%s: Skipping costmap's update. Kinect is moving.", ros::this_node::getName().c_str(), name_.c_str());
@@ -127,51 +133,50 @@ void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, dou
   current = current && getClearingObservations(clearing_observations);
   current_ = current;
 
-  for (unsigned int i = 0; i < clearing_observations.size(); ++i) {
+  for (unsigned int i = 0; i < clearing_observations.size(); ++i)
     raytraceFreespace(clearing_observations[i], min_x, min_y, max_x, max_y);
-  }
 
   ros::Time now = ros::Time::now();
   std::set<unsigned int> index_free_space;
   std::map<unsigned int, bool> free_space_lock;
   
-  if ( obstacles_persistence_ > 0 ) {
-    for (std::map<unsigned int, ros::Time>::iterator i=clearing_index_stamped_.begin(); i!=clearing_index_stamped_.end(); ++i) {
-      if ( i->second.toSec() < now.toSec()-obstacles_persistence_ ) {
+  if ( obstacles_persistence_ > 0 ) 
+    for (std::map<unsigned int, ros::Time>::iterator i=clearing_index_stamped_.begin(); i!=clearing_index_stamped_.end(); ++i)
+      if ( i->second.toSec() < now.toSec()-obstacles_persistence_ )
         costmap_[i->first] = costmap_2d::FREE_SPACE;
-      }
-    }
-  }
   
   for (std::vector<costmap_2d::Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it) {
     const costmap_2d::Observation& obs = *it;
 
     const pcl::PointCloud<pcl::PointXYZ>& cloud = *(obs.cloud_);
     
-    double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
+    const double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
 
     for (unsigned int i = 0; i < cloud.points.size(); ++i) {
-      if ( cloud.points[i].z > max_obstacle_height_ || cloud.points[i].z < -min_obstacle_height_ ) {
+      if ( cloud.points[i].z > max_obstacle_height_ or cloud.points[i].z < -min_obstacle_height_ )
         continue;
-      }
 
       unsigned int l = layer(cloud.points[i].z);
       
-      double sq_dist_orig = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x)
-          + (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y)
-          + (cloud.points[i].z - obs.origin_.z) * (cloud.points[i].z - obs.origin_.z);
-
-      if ( sq_dist_orig >= sq_obstacle_range && cloud.points[i].z >= min_obstacle_height_ ) {
-        continue;
-      }
-
-      double sq_dist_robot = (cloud.points[i].x - robot_x) * (cloud.points[i].x - robot_x)
-          + (cloud.points[i].y - robot_y) * (cloud.points[i].y - robot_y);
-
-      if ( sq_dist_robot <= std::pow(robot_link_radii_[l], 2) ) {
-        continue;
-      }
+      const double sq_dist_orig = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x)
+          + (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y);
       
+      if ( sq_dist_orig >= sq_obstacle_range and cloud.points[i].z >= min_obstacle_height_ )
+        continue;
+
+      const double sq_dist_robot = (cloud.points[i].x - robot_x) * (cloud.points[i].x - robot_x)
+          + (cloud.points[i].y - robot_y) * (cloud.points[i].y - robot_y);
+      const double sq_in_radius = std::pow(footprint_.inscribedRadius(l),2);
+      const double sq_circ_radius = std::pow(footprint_.circumscribedRadius(l),2);
+
+      if ( sq_dist_robot <= sq_in_radius ) {
+        continue;
+      } else if ( sq_dist_robot <= sq_circ_radius ) {
+        if ( footprint_.isInside(cloud.points[i].x,cloud.points[i].y,l) ) {
+          continue;
+        }
+      }
+          
       unsigned int mx, my, mz;
       if ( cloud.points[i].z < origin_z_ ) {
         if ( !worldToMap3D(cloud.points[i].x, cloud.points[i].y, origin_z_, mx, my, mz) ) {
@@ -202,12 +207,10 @@ void DownprojectionMultilayer::updateBounds( double robot_x, double robot_y, dou
       }
     }
   }
-  
-  for (std::set<unsigned int>::iterator f=index_free_space.begin(); f!=index_free_space.end(); ++f) {
-    costmap_[*f] = costmap_2d::FREE_SPACE; 
-  }
 
-  footprint_layer_.updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
+  for (std::set<unsigned int>::iterator f=index_free_space.begin(); f!=index_free_space.end(); ++f)
+    costmap_[*f] = costmap_2d::FREE_SPACE; 
+
   updateInflatedBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 }
 
@@ -258,11 +261,8 @@ void DownprojectionMultilayer::updateOrigin( double new_origin_x, double new_ori
 
 void DownprojectionMultilayer::updateCosts( costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j )
 {
-  if ( !enabled_ ) {
+  if ( !enabled_ )
     return;
-  }
-
-  footprint_layer_.updateCosts(*this, min_i, min_j, max_i, max_j);
 
   if( combination_method_ == 0 ) {
     updateWithOverwrite(master_grid, min_i, min_j, max_i, max_j);
@@ -459,7 +459,7 @@ void DownprojectionMultilayer::raytraceFreespace(const costmap_2d::Observation& 
     double wpy = clearing_observation.cloud_->points[i].y;
     double wpz = clearing_observation.cloud_->points[i].z;
 
-    double distance = dist(ox, oy, oz, wpx, wpy, wpz);
+    double distance = linearDistance(ox, oy, oz, wpx, wpy, wpz);
     double scaling_fact = 1.0;
     scaling_fact = std::max(std::min(scaling_fact, (distance - 2 * resolution_) / distance), 0.0);
     wpx = scaling_fact * (wpx - ox) + ox;

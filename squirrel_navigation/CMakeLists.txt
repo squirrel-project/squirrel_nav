@@ -3,18 +3,40 @@ project(squirrel_navigation)
 
 set(ROS_BUILD_TYPE Release)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+
+find_package(PCL REQUIRED)
+find_package(PkgConfig REQUIRED)
+find_package(CGAL REQUIRED)
+
+pkg_check_modules(SBPL REQUIRED sbpl)
+
+find_library(SBPL_LIBRARY 
+  NAMES sbpl 
+  PATHS ${SBPL_LIBRARY_DIRS} 
+  NO_DEFAULT_PATH
+)
+
+set(SBPL_LIBRARIES ${SBPL_LIBRARY})
+
+include(${CGAL_USE_FILE})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frounding-math")
+
 include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-std=c++11" COMPILER_SUPPORTS_CXX11)
-check_cxx_compiler_flag("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 if(COMPILER_SUPPORTS_CXX11)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 elseif(COMPILER_SUPPORTS_CXX0X)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 else()
-  message(STATUS "${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
-## Package dependencies
+############
+## catkin ##
+############
+
 set(squirrel_navigation_DEPENDENCIES
   actionlib
   base_local_planner
@@ -41,41 +63,26 @@ set(squirrel_navigation_DEPENDENCIES
   visualization_msgs
 )
 
-find_package(PCL REQUIRED QUIET)
-
-find_package(PkgConfig REQUIRED)
-
-pkg_check_modules(SBPL REQUIRED sbpl)
-
-find_library(SBPL_LIBRARY 
-  NAMES sbpl 
-  PATHS ${SBPL_LIBRARY_DIRS} 
-  NO_DEFAULT_PATH
-)
-
-set(SBPL_LIBRARIES ${SBPL_LIBRARY})
-
-############
-## catkin ##
-############
-
 find_package(catkin REQUIRED
   COMPONENTS
   ${squirrel_navigation_DEPENDENCIES}
 )
 
 generate_dynamic_reconfigure_options(
+  cfg/ControllerPIDGains.cfg
   cfg/DownprojectionLayerPlugin.cfg
   cfg/DownprojectionMultilayerPlugin.cfg
   cfg/InflationLayerPlugin.cfg
+  cfg/LocalPlannerPlugin.cfg
   cfg/MapLayerPlugin.cfg
+  cfg/TrajectoryPlanner.cfg
 )
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES squirrel_costmap_layers squirrel_planners
   CATKIN_DEPENDS ${squirrel_navigation_DEPENDENCIES}
-  DEPENDS SBPL
+  DEPENDS SBPL PCL CGAL
 )
 
 ###########
@@ -96,15 +103,16 @@ link_directories(
 
 ## Compiling and linking the plugins
 add_library(squirrel_planners
+  src/ControllerPID.cpp
   src/GlobalPlanner.cpp
   src/LatticeSCQ.cpp
   src/LocalPlanner.cpp
   src/TrajectoryPlanner.cpp
-  src/ControllerPD.cpp
 )
 
 add_dependencies(squirrel_planners
   squirrel_navigation_msgs_generate_messages_cpp
+  ${PROJECT_NAME}_gencfg
 )
 
 target_link_libraries(squirrel_planners
@@ -114,14 +122,16 @@ target_link_libraries(squirrel_planners
 )
 
 add_library(squirrel_costmap_layers
+  src/CostmapUpdateHandle.cpp
   src/DownprojectionLayer.cpp
   src/DownprojectionMultilayer.cpp
-  src/FootprintLayer.cpp
   src/InflatedLayer.cpp
   src/InflationLayer.cpp
   src/JointHandle.cpp
   src/MapLayer.cpp
   src/MultiInflatedLayer.cpp
+  src/RobotFootprint.cpp
+  src/RobotMultiFootprint.cpp
 )
 
 add_dependencies(squirrel_costmap_layers

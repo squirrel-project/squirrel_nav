@@ -1,10 +1,10 @@
-// ControllerPD.h --- 
+// CostmapUpdateHandle.cpp --- 
 // 
-// Filename: ControllerPD.h
+// Filename: CostmapUpdateHandle.cpp
 // Description: 
 // Author: Federico Boniardi
 // Maintainer: 
-// Created: Sat Feb  6 19:16:11 2016 (+0100)
+// Created: Fri Feb 26 18:19:08 2016 (+0100)
 // Version: 
 // Last-Updated: 
 //           By: 
@@ -58,31 +58,46 @@
 
 // Code:
 
-#ifndef SQUIRREL_NAVIGATION_CONTROLLERPD_H_
-#define SQUIRREL_NAVIGATION_CONTROLLERPD_H_
-
-#include "squirrel_navigation/TrajectoryPlanner.h"
+#include "squirrel_navigation/CostmapUpdateHandle.h"
 
 namespace squirrel_navigation {
 
-class ControllerPD
+CostmapUpdateHandle::CostmapUpdateHandle( void ) :
+    update_(true)
 {
- public:
-  typedef struct { double Pxy, Pyaw, Dxy, Dyaw; } Gain;
+  // Empty
+}
 
-  ControllerPD( void );
-  virtual ~ControllerPD( void );
-  
-  void setGains( const Gain& );
-  void computeCommands( const TrajectoryPlanner::Profile&, const TrajectoryPlanner::Profile&, double* );
-  
- private:
-  Gain K_;
-};
+CostmapUpdateHandle* CostmapUpdateHandle::getHandle( void )
+{
+  if ( not update_handle_ ) {
+    update_handle_ = new CostmapUpdateHandle;
+    update_handle_->init_();
+  }
+
+  return update_handle_;
+}
+
+void CostmapUpdateHandle::releaseHandle( void )
+{
+  if ( update_handle_ )
+    delete update_handle_;
+}
+
+void CostmapUpdateHandle::init_( void )
+{
+  ros::NodeHandle pnh("~");
+  sub_ = pnh.subscribe("/update_costmap", 1, &CostmapUpdateHandle::updateCallback_, this);
+}
+
+void CostmapUpdateHandle::updateCallback_( const std_msgs::Bool::ConstPtr& update_msg )
+{
+  update_ = update_msg->data;
+}
+
+CostmapUpdateHandle* CostmapUpdateHandle::update_handle_ = nullptr;
 
 }  // namespace squirrel_navigation
 
-#endif /* SQUIRREL_NAVIGATION_CONTROLLERPD_H_ */
-
 // 
-// ControllerPD.h ends here
+// CostmapUpdateHandle.cpp ends here

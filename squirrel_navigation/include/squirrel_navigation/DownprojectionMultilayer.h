@@ -84,10 +84,11 @@
 #include <pcl_conversions/pcl_conversions.h>
 
 #include "squirrel_navigation/Common.h"
+#include "squirrel_navigation/CostmapUpdateHandle.h"
 #include "squirrel_navigation/DownprojectionMultilayerPluginConfig.h"
-#include "squirrel_navigation/FootprintLayer.h"
 #include "squirrel_navigation/JointHandle.h"
 #include "squirrel_navigation/MultiInflatedLayer.h"
+#include "squirrel_navigation/RobotMultiFootprint.h"
 
 #include <algorithm>
 #include <cmath>
@@ -111,8 +112,8 @@ public:
   virtual void reset( void );
   
  protected:
-  FootprintLayer footprint_layer_;
-  
+  RobotMultiFootprint footprint_;
+
   virtual void setupDynamicReconfigure( ros::NodeHandle& );
   virtual void resetMaps( void );
 
@@ -132,7 +133,7 @@ public:
       }
 
       return output;
-    }
+    };
   };
   
  private:
@@ -158,6 +159,7 @@ public:
   std::vector<double> layers_levels_;
   std::map<unsigned int, bool> observed_;
 
+  CostmapUpdateHandle* costmap_update_handle_;
   JointHandle kinect_tilt_h_, kinect_pan_h_;
 
   void reconfigureCB( DownprojectionMultilayerPluginConfig&, uint32_t );
@@ -166,49 +168,46 @@ public:
     
   inline bool worldToMap3DFloat( double wx, double wy, double wz, double& mx, double& my, double& mz )
   {
-    if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_) {
+    if (wx < origin_x_ or wy < origin_y_ or wz < origin_z_)
       return false;
-    }
 
     mx = ((wx - origin_x_) / resolution_);
     my = ((wy - origin_y_) / resolution_);
     mz = ((wz - origin_z_) / z_resolution_);
 
-    if (mx < size_x_ && my < size_y_ && mz < size_z_) {
+    if (mx < size_x_ and my < size_y_ and mz < size_z_)
       return true;
-    }
     
     return false;
-  }
+  };
 
   inline bool worldToMap3D( double wx, double wy, double wz, unsigned int& mx, unsigned int& my, unsigned int& mz )
   {
-    if ( wx < origin_x_ || wy < origin_y_ || wz < origin_z_ ) {
+    if ( wx < origin_x_ or wy < origin_y_ or wz < origin_z_ )
       return false;
-    }
     
     mx = (int)((wx - origin_x_) / resolution_);
     my = (int)((wy - origin_y_) / resolution_);
     mz = (int)((wz - origin_z_) / z_resolution_);
 
-    if ( mx < size_x_ && my < size_y_ && mz < size_z_ ) {
+    if ( mx < size_x_ and my < size_y_ and mz < size_z_ )
       return true;
-    }
 
     return false;
-  }
+  };
 
   inline void mapToWorld3D( unsigned int mx, unsigned int my, unsigned int mz, double& wx, double& wy, double& wz )
   {
     wx = origin_x_ + (mx + 0.5) * resolution_;
     wy = origin_y_ + (my + 0.5) * resolution_;
     wz = origin_z_ + (mz + 0.5) * z_resolution_;
-  }
+  };
 
-  inline double dist( double x0, double y0, double z0, double x1, double y1, double z1 )
+  inline double linearDistance( double x0, double y0, double z0, double x1, double y1, double z1 )
   {
-    return std::sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0) + (z1-z0)*(z1-z0));
-  }
+    const double dx = x1-x0, dy = y1-y0, dz = z1-z0;
+    return std::sqrt(dx*dx + dy*dy + dz*dz);
+  };
 
   inline unsigned int layer( double z ) {
     if ( z < layers_levels_.front() ) {
@@ -222,7 +221,7 @@ public:
         }
       }
     }
-  }
+  };
 };
 
 }  // namespace squirrel_navigation
