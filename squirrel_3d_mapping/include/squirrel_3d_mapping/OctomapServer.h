@@ -288,8 +288,16 @@ protected:
   double m_thresMin;
   double m_thresMax;
 
+  double m_pointcloudMinX;
+  double m_pointcloudMaxX;
+  double m_pointcloudMinY;
+  double m_pointcloudMaxY;  
   double m_pointcloudMinZ;
   double m_pointcloudMaxZ;
+  double m_occupancyMinX;
+  double m_occupancyMaxX;
+  double m_occupancyMinY;
+  double m_occupancyMaxY;
   double m_occupancyMinZ;
   double m_occupancyMaxZ;
   double m_minSizeX;
