@@ -4,7 +4,7 @@ LocalPlanner: {
   max_angular_vel: 0.3,
   xy_goal_tolerance: 0.10,
   yaw_goal_tolerance: 0.10,
-  odom_topic: "/odom_encoder",
+  odom_topic: "/odom",
   controller/P_linear: 1.25,
   controller/P_angular: 1.05,
   controller/I_linear: 0.05,

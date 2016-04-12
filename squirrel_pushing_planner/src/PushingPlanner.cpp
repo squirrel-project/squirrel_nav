@@ -198,10 +198,13 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
     start_m.header.frame_id = "/map";
   } catch ( tf::TransformException& ex ) {
     ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
-    return true;
+    updateCostmap_(0.0);
+    return false;
   }
 
   double start_theta_m = tf::getYaw(start_m.pose.orientation);
+
+  ROS_INFO("start theta: %f", start_theta_m);
   
   // Transform polygon in map frame
   const size_t n = req.object.points.size();
@@ -287,7 +290,8 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
     plan.request.start.header.frame_id = "/map";
   } catch ( tf::TransformException& ex ) {
     ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
-    return true;
+    updateCostmap_(0.0);
+    return false;
   }
   
   // GetPlan goal
@@ -306,17 +310,17 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
     plan.request.goal.header.frame_id = "/map";
   } catch ( tf::TransformException& ex ) {
     ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
+    updateCostmap_(0.0);
     return false;
   }
   
   if ( ros::service::call("/move_base/make_plan", plan) ) {
     if ( plan.response.plan.poses.empty() ) {
       ROS_WARN("%s: got empty plan", node_name_.c_str());
-      return true;
+      	updateCostmap_(0.0);
+        return true;
     } else {
-      if( !plan_.poses.empty() ) {
-        plan_.poses.clear();
-      }
+      plan_.poses.clear();
       
       geometry_msgs::PoseStamped p;
       p.header.frame_id = "/map";
@@ -337,6 +341,8 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
       int smoother = 1;
 
       polarCoordinates_(plan.response.plan.poses[2], start_m, object_d, start_theta_m);
+
+      ROS_INFO("fist direction: %f", start_theta_m);
       
       for (double t=0.5*object_d; (t<object_d-toll && smoother<plan.response.plan.poses.size()); ++smoother, t+=object_d*std::pow(c,smoother)) {
         double dx_s = plan.response.plan.poses[2+smoother].pose.position.x - plan.response.plan.poses[2+smoother-1].pose.position.x;
@@ -346,9 +352,12 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
         p.pose.orientation = start_m.pose.orientation;
         plan_.poses.push_back(p);
       }
-      
-      plan_.poses.insert(plan_.poses.end(), plan.response.plan.poses.begin()+smoother+1, plan.response.plan.poses.end());
 
+      ROS_INFO("%d %ld", smoother, plan.response.plan.poses.size());
+
+      if ( smoother < plan.response.plan.poses.size() )
+        plan_.poses.insert(plan_.poses.end(), plan.response.plan.poses.begin()+smoother, plan.response.plan.poses.end());
+      
       if ( not obstacles_map_ ) {
         ROS_WARN("%s: Costmap is not ready yet. Unable to compute path's clearance.", ros::this_node::getName().c_str());
         res.clearance = -1.0;
@@ -393,7 +402,8 @@ bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reque
           res.plan.poses.push_back(p);
         } catch (tf::TransformException& ex) {
           ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
-          return false;
+          updateCostmap_(0.0);
+	  return false;
         }
       }
       

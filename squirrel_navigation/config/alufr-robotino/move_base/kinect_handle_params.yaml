@@ -1,7 +1,7 @@
 # joint handles
 kinect_tilt_joint: 
   use_navigation_angle: false  
-  navigation_angle: 0.6
+  navigation_angle: 0.75
   command_topic: /tilt_controller/command 
   state_topic: /tilt_controller/joint_state
 kinect_pan_joint: 
