@@ -127,7 +127,7 @@ class DownprojectionLayer : public costmap_2d::ObstacleLayer
   std::map<unsigned int, ros::Time> clearing_index_stamped_;
 
   ros::Publisher voxel_pub_, clearing_endpoints_pub_;
-  ros::Subscriber toggle_footprint_sub_;
+  ros::Subscriber toggle_footprint_sub_, pushing_action_sub_;
   
   voxel_grid::VoxelGrid voxel_grid_;
   double z_resolution_, origin_z_;
@@ -150,6 +150,7 @@ class DownprojectionLayer : public costmap_2d::ObstacleLayer
 
   // Footprint active
   bool footprint_active_;
+  bool pushing_action_;
   
   void reconfigureCallback( DownprojectionLayerPluginConfig& , uint32_t );
   void clearNonLethal( double, double, double, double, bool );
@@ -203,6 +204,11 @@ class DownprojectionLayer : public costmap_2d::ObstacleLayer
   inline void toggleFootprintCallback( const std_msgs::Bool::ConstPtr& footprint_on )
   {
     footprint_active_ = footprint_on->data;
+  };
+
+  inline void pushingActionCallback( const std_msgs::Bool::ConstPtr& pushing_action )
+  {
+    pushing_action_ = pushing_action->data;
   };
 };
 
