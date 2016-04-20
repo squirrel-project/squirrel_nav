@@ -316,15 +316,6 @@ void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr
   pcl_ros::transformAsMatrix(sensorToWorldTf, sensorToWorld);
 
 
-  // set up filter for height range, also removes NANs:
-  pcl::PassThrough<pcl::PointXYZ> pass;
-  pass.setFilterFieldName("x");
-  pass.setFilterLimits(m_pointcloudMinX, m_pointcloudMaxX);
-  pass.setFilterFieldName("y");
-  pass.setFilterLimits(m_pointcloudMinY, m_pointcloudMaxY);
-  pass.setFilterFieldName("z");
-  pass.setFilterLimits(m_pointcloudMinZ, m_pointcloudMaxZ);
-
   PCLPointCloud pc_ground; // segmented ground plane
   PCLPointCloud pc_nonground; // everything else
 
@@ -347,6 +338,21 @@ void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr
 
     // transform pointcloud from sensor frame to fixed robot frame
     pcl::transformPointCloud(pc, pc, sensorToBase);
+  
+    // set up filter for height range, also removes NANs:
+    pcl::PassThrough<pcl::PointXYZ> pass;
+    pass.setFilterFieldName("x");
+    pass.setFilterLimits(m_pointcloudMinX, m_pointcloudMaxX);
+    pass.setInputCloud(pc.makeShared());
+    pass.filter(pc);
+
+    pass.setFilterFieldName("y");
+    pass.setFilterLimits(m_pointcloudMinY, m_pointcloudMaxY);
+    pass.setInputCloud(pc.makeShared());
+    pass.filter(pc);
+ 
+    pass.setFilterFieldName("z");
+    pass.setFilterLimits(m_pointcloudMinZ, m_pointcloudMaxZ);
     pass.setInputCloud(pc.makeShared());
     pass.filter(pc);
 
