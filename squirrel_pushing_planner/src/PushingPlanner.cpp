@@ -251,6 +251,7 @@ bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Reques
       ros::Time now = ros::Time::now();
       tfl_.waitForTransform(start_goal_frame_id_, "/map", ros::Time::now(), ros::Duration(1.0));
       for (size_t i=0; i<res_plan.poses.size(); ++i) {
+        res_plan.poses[i].header.frame_id = "/map"; // just to be sure, move_base/getPlan returns in /map
         tfl_.transformPose(start_goal_frame_id_, res_plan.poses[i], res.plan.poses[i]);
         res.plan.poses[i].header.frame_id = start_goal_frame_id_;
         res.plan.poses[i].header.stamp = now;
