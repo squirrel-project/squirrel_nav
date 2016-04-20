@@ -81,6 +81,7 @@ DownprojectionLayer::DownprojectionLayer( void ) :
     kinect_pan_h_("kinect_pan_joint"),
     verbose_(false),
     footprint_active_(true),
+    pushing_action_(false),
     in_radius_(-1.0),
     circ_radius_(-1.0)
 {
@@ -89,6 +90,7 @@ DownprojectionLayer::DownprojectionLayer( void ) :
 
   ros::NodeHandle nh;
   toggle_footprint_sub_ = nh.subscribe("/plan_with_footprint", 1, &DownprojectionLayer::toggleFootprintCallback, this);
+  pushing_stuff_sub_ = nh.subscribe("/pushing_action", 1, &DownprojectionLayer::pushingActionCallback, this);
 }
 
 DownprojectionLayer::~DownprojectionLayer( void )
@@ -163,7 +165,7 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
 
     if ( skip_kinect_data )
       continue;
-
+    
     const double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;        
     for (unsigned int i = 0; i < cloud.points.size(); ++i) {      
       if ( cloud.points[i].z > robot_height_ or cloud.points[i].z > max_obstacle_height_ )
@@ -202,7 +204,12 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
       }
       
       if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {                
-        costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
+        if ( pushing_action_ and ((obs.origin_.z > 20.0 /*be sure comes from the kinect*/)
+                                  or (sq_dist_robot_xy < 0.36)) ) {
+          costmap_[index] = costmap_2d::FREE_SPACE;
+        } else {
+          costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
+        }
         touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
       }
     }
