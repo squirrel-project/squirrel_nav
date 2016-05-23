@@ -260,6 +260,7 @@ class SquirrelLocalizer {
 
   bool m_useRaycasting;
   bool m_initFromTruepose;
+  bool m_useLastPose;
   int m_numParticles;
   double m_sensorSampleDist;
 
@@ -276,6 +277,7 @@ class SquirrelLocalizer {
   Particles m_particles;
   int m_bestParticleIdx;
   tf::Pose m_odomPose;  // incrementally added odometry pose (=dead reckoning)
+  tf::Pose m_bestParticlePose;
   geometry_msgs::PoseArray
       m_poseArray;  // particles as PoseArray (preallocated)
   boost::circular_buffer<sensor_msgs::Imu> m_lastIMUMsgBuffer;

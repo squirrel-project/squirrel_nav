@@ -12,56 +12,65 @@ neff_factor: 1.0
 sensor_sampling_dist: 0.25
 update_min_trans: 0.1
 update_min_rot: 0.1
+base_frame_id: "/base_link"
+base_footprint_id: "/base_link"
 global_frame_id: "/map"
 odom_frame_id: "/odom"
-base_frame_id: "/base_link"
+target_frame_id: "/odom"
+constraint_motion_z: true
+num_sensor_beams: 100
+use_last_pose: true
 
 # endpoint model
-endpoint/sigma: 0.05
+endpoint/sigma: 0.075
 
 # motion model
-motion_sigma_z: 0.02
-motion_sigma_roll: 0.015 # 0.85 deg.
-motion_sigma_pitch: 0.015 # 0.85 deg.
+weight_factor_z: 0.0
+weigth_factor_roll: 0.0
+weight_factor_pitch: 0.0
+motion_sigma_z: 0.001
+motion_sigma_roll: 0.001 # 0.85 deg.
+motion_sigma_pitch: 0.001 # 0.85 deg.
+obs_squared_distance: true
 
 # noise of the motion model
-motion_noise/z: 0.05  
-motion_noise/roll: 0.1   
-motion_noise/pitch: 0.1  
-motion_noise/xx:    0.03
-motion_noise/xy:   0.05
-motion_noise/xt: 0.0003
-motion_noise/yx:    0.13
-motion_noise/yy:   0.09
-motion_noise/yt:  0.004
-motion_noise/tx:     1.58
-motion_noise/ty:     1.03
-motion_noise/tt:    0.11
+motion_noise/z: 0.0  
+motion_noise/roll: 0.0   
+motion_noise/pitch: 0.0  
+motion_noise/xx: 1.5
+motion_noise/xy: 0.5
+motion_noise/xt: 0.3
+motion_noise/yx: 0.3
+motion_noise/yy: 1.0
+motion_noise/yt: 0.5
+motion_noise/tx: 0.58
+motion_noise/ty: 0.3
+motion_noise/tt: 1.00
 
 # odometry calibration for 2D drift (x,y,theta)
 # this is the identy matrix - uses odometry uncalibrated
-motion_calib/xx:  0.01
+motion_calib/xx:  1.0
 motion_calib/xy:  0.0
 motion_calib/xt:  0.0
 motion_calib/yx:  0.0
-motion_calib/yy:  0.01
+motion_calib/yy:  1.0
 motion_calib/yt:  0.0
 motion_calib/tx:  0.0
 motion_calib/ty:  0.0
-motion_calib/tt:  0.01
+motion_calib/tt:  1.0
 
 # initial pose (when no truepose available):
 initial_pose/x: 0.0
 initial_pose/y: 0.0
-initial_pose/z: 0.1 
+initial_pose/z: 0.0
 initial_pose/roll: 0.0
 initial_pose/pitch: 0.0
 initial_pose/yaw: 0.0    
 
 # std dev for initial noise (truepose or manual init)
-initial_std/x: 0.5
-initial_std/y: 0.5
-initial_std/z: 0.05
+initial_std/x: 0.25
+initial_std/y: 0.25
+initial_std/z: 0.0
 initial_std/roll: 0.0
 initial_std/pitch: 0.0
 initial_std/yaw: 0.5    # ~13 deg

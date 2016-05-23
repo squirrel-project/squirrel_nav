@@ -18,8 +18,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <ros/package.h>
+
 #include <pcl/keypoints/uniform_sampling.h>
 #include <squirrel_localizer/SquirrelLocalizer.h>
+#include <fstream>
 #include <iostream>
 
 #include <pcl_ros/transforms.h>
@@ -42,10 +45,11 @@ SquirrelLocalizer::SquirrelLocalizer(unsigned randomSeed)
       m_odomFrameId("odom"),
       m_targetFrameId("odom"),
       m_baseFrameId("torso"),
-      m_baseFootprintId("base_footprint"),
+      m_baseFootprintId("base_link"),
       m_globalFrameId("map"),
       m_useRaycasting(true),
       m_initFromTruepose(false),
+      m_useLastPose(true),
       m_numParticles(500),
       m_sensorSampleDist(0.2),
       m_nEffFactor(1.0),
@@ -88,6 +92,7 @@ SquirrelLocalizer::SquirrelLocalizer(unsigned randomSeed)
   m_privateNh.param("global_frame_id", m_globalFrameId, m_globalFrameId);
   m_privateNh.param(
       "init_from_truepose", m_initFromTruepose, m_initFromTruepose);
+  m_privateNh.param("use_last_pose", m_useLastPose, m_useLastPose);
   m_privateNh.param("init_global", m_initGlobal, m_initGlobal);
   m_privateNh.param(
       "best_particle_as_mean", m_bestParticleAsMean, m_bestParticleAsMean);
@@ -111,7 +116,7 @@ SquirrelLocalizer::SquirrelLocalizer(unsigned randomSeed)
   m_privateNh.param("initial_std/roll", m_initNoiseStd(3), 0.04);   // 0.04
   m_privateNh.param("initial_std/pitch", m_initNoiseStd(4), 0.04);  // 0.04
   m_privateNh.param(
-      "initial_std_yaw", m_initNoiseStd(5), M_PI / 12);  // M_PI/12
+      "initial_std/yaw", m_initNoiseStd(5), M_PI / 12);  // M_PI/12
 
   if (m_privateNh.hasParam("num_sensor_beams"))
     ROS_WARN(
@@ -260,10 +265,33 @@ SquirrelLocalizer::SquirrelLocalizer(unsigned randomSeed)
     ROS_INFO("Using timer with a period of %4f s", m_timerPeriod);
   }
 
-  ROS_INFO("NaoLocalization initialized with %d particles.", m_numParticles);
+  ROS_INFO(
+      "SquirrelLocalization initialized with %d particles.", m_numParticles);
 }
 
 SquirrelLocalizer::~SquirrelLocalizer() {
+  std::string last_pose_filename = ros::package::getPath("squirrel_localizer") +
+                                   std::string("/config/last_pose.yaml");
+  std::ofstream f(last_pose_filename.c_str());
+
+  if (f.is_open()) {
+    tf::Vector3 position = m_bestParticlePose.getOrigin();
+    tf::Matrix3x3 rotation(m_bestParticlePose.getRotation());
+    double roll, pitch, yaw;
+    rotation.getRPY(roll, pitch, yaw);
+
+    f << "last_pose: " << std::endl
+      << "  x: " << position.getX() << std::endl
+      << "  y: " << position.getY() << std::endl
+      << "  z: " << position.getZ() << std::endl
+      << "  roll: " << roll << std::endl
+      << "  pitch: " << pitch << std::endl
+      << "  yaw: " << yaw;
+    f.close();
+  } else {
+    ROS_ERROR("Unable to dump last pose on last_pose.yaml");
+  }
+
   delete m_laserFilter;
   delete m_laserSub;
 
@@ -331,6 +359,31 @@ void SquirrelLocalizer::reset() {
             posePtr->pose.covariance.at(i * 6 + j) = 0.0;
         }
       }
+
+    } else if (m_useLastPose) {
+      double x, y, z, roll, pitch, yaw;
+
+      posePtr.reset(new geometry_msgs::PoseWithCovarianceStamped());
+      m_privateNh.param("last_pose/x", x, 0.0);
+      m_privateNh.param("last_pose/y", y, 0.0);
+      m_privateNh.param("last_pose/z", z, 0.0);
+      m_privateNh.param("last_pose/roll", roll, 0.0);
+      m_privateNh.param("last_pose/pitch", pitch, 0.0);
+      m_privateNh.param("last_pose/yaw", yaw, 0.0);
+
+      for (int i = 0; i < 6; ++i) {
+        posePtr->pose.covariance.at(i * 6 + i) =
+            m_initNoiseStd(i) * m_initNoiseStd(i);
+      }
+
+      initZRP(z, roll, pitch);
+
+      posePtr->pose.pose.position.x = x;
+      posePtr->pose.pose.position.y = y;
+      posePtr->pose.pose.position.z = z;
+      tf::Quaternion quat;
+      quat.setRPY(roll, pitch, yaw);
+      tf::quaternionTFToMsg(quat, posePtr->pose.pose.orientation);
 
     } else {
       posePtr.reset(new geometry_msgs::PoseWithCovarianceStamped());
@@ -1431,13 +1484,12 @@ void SquirrelLocalizer::publishPoseEstimate(
   p.header.stamp    = time;
   p.header.frame_id = m_globalFrameId;
 
-  tf::Pose bestParticlePose;
   if (m_bestParticleAsMean)
-    bestParticlePose = getMeanParticlePose();
+    m_bestParticlePose = getMeanParticlePose();
   else
-    bestParticlePose = getBestParticlePose();
+    m_bestParticlePose = getBestParticlePose();
 
-  tf::poseTFToMsg(bestParticlePose, p.pose.pose);
+  tf::poseTFToMsg(m_bestParticlePose, p.pose.pose);
   m_posePub.publish(p);
 
   if (publish_eval) {
@@ -1447,7 +1499,7 @@ void SquirrelLocalizer::publishPoseEstimate(
   geometry_msgs::PoseArray bestPose;
   bestPose.header = p.header;
   bestPose.poses.resize(1);
-  tf::poseTFToMsg(bestParticlePose, bestPose.poses[0]);
+  tf::poseTFToMsg(m_bestParticlePose, bestPose.poses[0]);
   m_bestPosePub.publish(bestPose);
 
   ////
@@ -1465,7 +1517,7 @@ void SquirrelLocalizer::publishPoseEstimate(
   tf::Stamped<tf::Pose> targetToMapTF;
   try {
     tf::Stamped<tf::Pose> baseToMapTF(
-        bestParticlePose.inverse(), time, m_baseFrameId);
+        m_bestParticlePose.inverse(), time, m_baseFrameId);
     m_tfListener.transformPose(
         m_targetFrameId, baseToMapTF,
         targetToMapTF);  // typically target == odom

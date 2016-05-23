@@ -1,4 +1,5 @@
 <launch>
+  <arg name="use_kinect" default="true" />
   <arg name="octomap_file" default="$(find squirrel_navigation)/octomaps/default-octomap.bt"/>
   <arg name="config_file" default="$(find squirrel_localizer)/config/robotino_localization.yaml"/>
 
@@ -7,7 +8,9 @@
   </include>
 
   <node pkg="squirrel_localizer" type="squirrel_localizer_node" name="squirrel_localizer_node" output="screen" respawn="true">
+    <rosparam file="$(find squirrel_localizer)/config/last_pose.yaml" command="load" />
     <rosparam file="$(arg config_file)" command="load" />
+    <remap from="/point_cloud" to="/kinect/data/points" if="$(arg use_kinect)"/>
   </node>
 
 </launch>
