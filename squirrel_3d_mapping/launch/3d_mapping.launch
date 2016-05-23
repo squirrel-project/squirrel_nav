@@ -1,5 +1,8 @@
 <launch>
-  <node pkg="squirrel_3d_mapping" type="octomap_server_node" name="squirrel_3d_mapping" output="screen">
+  <arg name="octomap_file" default=""/>
+
+  <node pkg="squirrel_3d_mapping" type="octomap_server_node" name="squirrel_3d_mapping" 
+	output="screen" args="$(arg octomap_file)">
     <param name="resolution" value="0.05" />
     <param name="frame_id" type="string" value="map" />
     <param name="max_sensor_range" value="4.0" />

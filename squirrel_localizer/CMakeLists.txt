@@ -1,130 +1,65 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(squirrel_localizer)
 
-set(ROS_BUILD_TYPE Release)
+find_package(catkin REQUIRED COMPONENTS roscpp pcl_conversions pcl_ros message_filters sensor_msgs cmake_modules)
+find_package(OpenMP)
+find_package(Boost REQUIRED COMPONENTS random)
+find_package(Eigen REQUIRED)
+find_package(octomap REQUIRED)
+include_directories(${OCTOMAP_INCLUDE_DIRS})
+link_libraries(${OCTOMAP_LIBRARIES})
 
-## Package dependencies
-set(squirrel_localizer_DEPENDENCIES 
-  geometry_msgs
-  laser_geometry
-  message_generation
-  message_runtime
-  nav_msgs
-  pcl_ros
-  robotino_msgs
-  rosbag
-  roscpp
-  roslib
-  rospy
-  sensor_msgs
-  squirrel_localizer_msgs
-  std_msgs
-  std_srvs
-  tf
-)
+# required for OpenMP
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}") 
 
-find_package(catkin REQUIRED 
-  COMPONENTS
-  ${squirrel_localizer_DEPENDENCIES}
-)
+set(LIBRARIES map_model motion_model observation_model raycasting_model)
 
-find_package(PCL REQUIRED QUIET)
-
-###################################
-## catkin specific configuration ##
-###################################
+find_package(dynamicEDT3D)
+if (${dynamicEDT3D_FOUND})                                                                       
+  include_directories(${DYNAMICEDT3D_INCLUDE_DIRS})                                                          
+  link_directories(${DYNAMICEDT3D_LIBRARY_DIRS})
+  LINK_LIBRARIES(${OCTOMAP_LIBRARIES} ${DYNAMICEDT3D_LIBRARIES})
+  list(APPEND LIBRARIES endpoint_model)
+else (${dynamicEDT3D_FOUND})
+  message(WARNING "dynamicEDT3D library (part of OctoMap >1.5) not found, skipping endpoint model")
+  add_definitions(-DSKIP_ENDPOINT_MODEL)
+endif (${dynamicEDT3D_FOUND})
 
 catkin_package(
- INCLUDE_DIRS include
- CATKIN_DEPENDS ${squirrel_localizer_DEPENDENCIES}
+  INCLUDE_DIRS include
+  LIBRARIES ${LIBRARIES} squirrel_localizer
+  CATKIN_DEPENDS tf
+  DEPENDS octomap OpenMP
 )
 
-###########
-## Build ##
-###########
-
-include_directories(
-  include
+include_directories(include
   ${catkin_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
 )
 
-link_directories(
-  ${PCL_LIBRARY_DIRS}
+if (${dynamicEDT3D_FOUND})
+  add_library(endpoint_model src/EndpointModel.cpp)
+endif (${dynamicEDT3D_FOUND})
+
+add_library(map_model src/MapModel.cpp)
+add_library(motion_model src/MotionModel.cpp)
+add_library(observation_model src/ObservationModel.cpp)
+
+add_library(raycasting_model src/RaycastingModel.cpp)
+target_link_libraries(raycasting_model observation_model)
+
+add_library(squirrel_localizer src/SquirrelLocalizer.cpp)
+target_link_libraries(squirrel_localizer ${LIBRARIES} ${catkin_LIBRARIES})
+
+add_executable(squirrel_localizer_node src/squirrel_localizer_node.cpp)
+target_link_libraries(squirrel_localizer_node squirrel_localizer ${catkin_LIBRARIES})
+
+# install
+install(TARGETS ${LIBRARIES} squirrel_localizer
+  DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+) 
+
+install(TARGETS squirrel_localizer_node
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-
-add_executable(squirrel_localizer_localization_node
-  src/BasicMotion.cpp
-  src/BasicSensor.cpp
-  src/CommandArgs.cpp
-  src/DistanceWeight.cpp
-  src/FilesysTools.cpp
-  src/FloatMap.cpp
-  src/Geometry.cpp
-  src/KLDSampling.cpp
-  src/LaserSensor2D.cpp
-  src/Localization.cpp
-  src/LocalizerApp.cpp
-  src/OSSpecific.cpp
-  src/PermutationSampler.cpp
-  src/RawLaser.cpp
-  src/RobotLaser.cpp
-  src/RuntimeError.cpp
-  src/ScanMatcher.cpp
-  src/SimpleMotionModel.cpp
-  src/Stat.cpp
-  src/StringTools.cpp
-  src/TimeUtil.cpp
-)
-
-target_link_libraries(squirrel_localizer_localization_node
-  ${catkin_LIBRARIES}  
-  ${PCL_LIBRARIES}
-)
-
-add_dependencies(squirrel_localizer_localization_node
-  squirrel_localizer_msgs_generate_messages_cpp
-  robotino_msgs_generate_messages_cpp
-)
-
-add_executable(squirrel_localizer_tf_pose_node
-  src/PosePublisher.cpp
-)
-
-target_link_libraries(squirrel_localizer_tf_pose_node
-  ${catkin_LIBRARIES}  
-)
-
-#############
-## Install ##
-############
-
-install(TARGETS
-  squirrel_localizer_localization_node
-  squirrel_localizer_tf_pose_node
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-install(DIRECTORY include/${Project_name}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.h"
-  PATTERN ".git" EXCLUDE
-)
-
-install(DIRECTORY launch/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-  PATTERN ".git" EXCLUDE
-)
-
-
-
-
-
-
-
-
-
-
-

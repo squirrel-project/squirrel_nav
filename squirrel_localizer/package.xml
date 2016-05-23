@@ -1,56 +1,54 @@
-<?xml version="1.0"?>
 <package>
   <name>squirrel_localizer</name>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <description>
-    Monte Carlo Localisation with KLD sampling 
-  </description>  
-
-  <author email="roewekae@cs.uni-freiburg.de">Joerg Roewekaemper</author>
-
-  <maintainer email="boniardi@cs.uni-freiburg.de">Federico Boniardi</maintainer>
+     <p>6D localization for humanoid robots based on depth data (laser, point clouds).
+     Two observation models are currently available based on OctoMap as 3D map:
+     Ray casting and an end point model (lookup in the distance map).</p>
+     <p>Details can be found in the publication <br/>
+     <em>"Humanoid Navigation with Dynamic Footstep Plans"</em>
+     by A. Hornung, K.M. Wurm, and M. Bennewitz; published in 
+     IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2010</p>
+  </description>
+  <maintainer email="boniardi@informatik.uni-freiburg.de">Federico Boniardi</maintainer>
+  <author>Armin Hornung</author>
+  <author>Stefan Osswald</author>
+  <author>Daniel Maier</author>
+  <license>GPL</license>
+  <url>http://ros.org/wiki/humanoid_localization</url>
   
-  <license>TBD</license>
-
-  <buildtool_depend>catkin</buildtool_depend>
-
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>laser_geometry</build_depend>
-  <build_depend>message_generation</build_depend>
-  <build_depend>message_runtime</build_depend>
-  <build_depend>nav_msgs</build_depend>
-  <build_depend>pcl_ros</build_depend>
-  <build_depend>robotino_msgs</build_depend>
-  <build_depend>rosbag</build_depend>
-  <build_depend>roslib</build_depend>
   <build_depend>roscpp</build_depend>
-  <build_depend>rospy</build_depend>
-  <build_depend>squirrel_localizer_msgs</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>message_filters</build_depend>
   <build_depend>sensor_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>nav_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>std_srvs</build_depend>
-  <build_depend>tf</build_depend>
+  <build_depend>octomap_msgs</build_depend>
+  <build_depend>octomap_ros</build_depend>
+  <build_depend>octomap</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <build_depend>pcl_conversions</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>cmake_modules</build_depend>
 
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>laser_geometry</run_depend>
-  <run_depend>message_generation</run_depend>
-  <run_depend>message_runtime</run_depend>
-  <run_depend>nav_msgs</run_depend>
-  <run_depend>pcl_ros</run_depend>
-  <run_depend>rosbag</run_depend>
-  <run_depend>robotino_msgs</run_depend>
-  <run_depend>roslib</run_depend>
   <run_depend>roscpp</run_depend>
-  <run_depend>rospy</run_depend>
-  <run_depend>scan_tools</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>message_filters</run_depend>
   <run_depend>sensor_msgs</run_depend>
-  <run_depend>squirrel_localizer_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>nav_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>std_srvs</run_depend>
-  <run_depend>tf</run_depend>
+  <run_depend>octomap_msgs</run_depend>
+  <run_depend>octomap_ros</run_depend>
+  <run_depend>octomap</run_depend>
+  <run_depend>visualization_msgs</run_depend>
+  <run_depend>pcl_ros</run_depend>
+  <run_depend>pcl_conversions</run_depend>
+  <run_depend>sensor_msgs</run_depend>
 
-  <export>
-  </export>
+  <buildtool_depend>catkin</buildtool_depend>
 </package>
-
-
