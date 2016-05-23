@@ -89,6 +89,7 @@ DownprojectionLayer::DownprojectionLayer( void ) :
 
   ros::NodeHandle nh;
   toggle_footprint_sub_ = nh.subscribe("/plan_with_footprint", 1, &DownprojectionLayer::toggleFootprintCallback, this);
+  pushing_action_sub_ = nh.subscribe("/pushing_action", 1, &DownprojectionLayer::pushingActionCallback, this);
 }
 
 DownprojectionLayer::~DownprojectionLayer( void )
@@ -201,8 +202,16 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
         index_free_space.erase(index);
       }
       
-      if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {                
-        costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
+      if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {
+        // DEPRECATED: need to find a proper way to do this ///////////////////
+        // Pushing planner should not influence the costmap... 
+        if ( pushing_action_ and ((obs.origin_.z > 20.0 /*be sure comes from the kinect*/)
+                                  or (sq_dist_robot_xy < 0.25)) ) {
+          costmap_[index] = costmap_2d::FREE_SPACE;
+        } else {
+          costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
+        }
+        //////////////////////////////////////////////////////////////////////
         touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
       }
     }

@@ -253,8 +253,8 @@ bool TrajectoryPlanner::updateTrajectory( const std::vector<geometry_msgs::PoseS
   for (size_t i=init,pi=heading_lookahead_; i<init+n-heading_lookahead_; ++i,++pi) {
     double da = new_poses[i-1].yaw - tf::getYaw(plan[pi].pose.orientation);
 
-    new_poses[i].x = xy_smoother_ * new_poses[i-1].x + (1-xy_smoother) * plan[pi].pose.position.x;
-    new_poses[i].y = xy_smoother_ * new_poses[i-1].y + (1-xy_smoother) * plan[pi].pose.position.y;
+    new_poses[i].x = xy_smoother * new_poses[i-1].x + (1-xy_smoother) * plan[pi].pose.position.x;
+    new_poses[i].y = xy_smoother * new_poses[i-1].y + (1-xy_smoother) * plan[pi].pose.position.y;
     new_poses[i].yaw = angles::normalize_angle(tf::getYaw(plan[pi].pose.orientation) + yaw_smoother * da);
     new_poses[i].t = new_poses[i-1].t + timeIncrement(new_poses[i],new_poses[i-1]);
   }

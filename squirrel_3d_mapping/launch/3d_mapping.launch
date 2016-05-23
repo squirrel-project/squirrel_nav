@@ -5,6 +5,10 @@
     <param name="max_sensor_range" value="4.0" />
     <param name="pointcloud_min_z" value="0.0" />
     <param name="pointcloud_max_z" value="0.76" />
+    <param name="pointcloud_min_y" value="-1.0" />
+    <param name="pointcloud_max_y" value="1.0" />
+    <param name="pointcloud_min_x" value="0.0" />
+    <param name="pointcloud_max_x" value="2.5" />
     <param name="filter_ground" value="false" />
     <param name="ground_filter/plane_distance" value="0.03" />
     <param name="base_frame_id" value="/base_link" /> 

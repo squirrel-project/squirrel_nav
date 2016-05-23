@@ -40,7 +40,7 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
       m_tfPointCloudSub(NULL),
       m_octree(NULL),
       m_maxRange(-1.0),
-      m_worldFrameId("/map"), m_baseFrameId("base_footprint"),
+      m_worldFrameId("/map"), m_baseFrameId("/base_link"),
       m_useHeightMap(true),
       m_colorFactor(0.8),
       m_latchedTopics(true),
@@ -50,8 +50,16 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
       m_maxTreeDepth(0),
       m_probHit(0.7), m_probMiss(0.4),
       m_thresMin(0.12), m_thresMax(0.97),
-      m_pointcloudMinZ(-std::numeric_limits<double>::max()),
+      m_pointcloudMinX(-std::numeric_limits<double>::max()),
+  m_pointcloudMaxX(std::numeric_limits<double>::max()),
+  m_pointcloudMinY(-std::numeric_limits<double>::max()),
+  m_pointcloudMaxY(std::numeric_limits<double>::max()),
+  m_pointcloudMinZ(-std::numeric_limits<double>::max()),
   m_pointcloudMaxZ(std::numeric_limits<double>::max()),
+  m_occupancyMinX(-std::numeric_limits<double>::max()),
+  m_occupancyMaxX(std::numeric_limits<double>::max()),
+  m_occupancyMinY(-std::numeric_limits<double>::max()),
+  m_occupancyMaxY(std::numeric_limits<double>::max()),
   m_occupancyMinZ(-std::numeric_limits<double>::max()),
   m_occupancyMaxZ(std::numeric_limits<double>::max()),
   m_minSizeX(0.0), m_minSizeY(0.0),
@@ -67,8 +75,16 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
   private_nh.param("height_map", m_useHeightMap, m_useHeightMap);
   private_nh.param("color_factor", m_colorFactor, m_colorFactor);
 
+  private_nh.param("pointcloud_min_x", m_pointcloudMinX,m_pointcloudMinX);
+  private_nh.param("pointcloud_max_x", m_pointcloudMaxX,m_pointcloudMaxX);
+  private_nh.param("pointcloud_min_y", m_pointcloudMinY,m_pointcloudMinY);
+  private_nh.param("pointcloud_max_y", m_pointcloudMaxY,m_pointcloudMaxY);
   private_nh.param("pointcloud_min_z", m_pointcloudMinZ,m_pointcloudMinZ);
   private_nh.param("pointcloud_max_z", m_pointcloudMaxZ,m_pointcloudMaxZ);
+  private_nh.param("occupancy_min_x", m_occupancyMinX,m_occupancyMinX);
+  private_nh.param("occupancy_max_x", m_occupancyMaxX,m_occupancyMaxX);
+  private_nh.param("occupancy_min_y", m_occupancyMinY,m_occupancyMinY);
+  private_nh.param("occupancy_max_y", m_occupancyMaxY,m_occupancyMaxY);
   private_nh.param("occupancy_min_z", m_occupancyMinZ,m_occupancyMinZ);
   private_nh.param("occupancy_max_z", m_occupancyMaxZ,m_occupancyMaxZ);
   private_nh.param("min_x_size", m_minSizeX,m_minSizeX);
@@ -300,15 +316,9 @@ void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr
   pcl_ros::transformAsMatrix(sensorToWorldTf, sensorToWorld);
 
 
-  // set up filter for height range, also removes NANs:
-  pcl::PassThrough<pcl::PointXYZ> pass;
-  pass.setFilterFieldName("z");
-  pass.setFilterLimits(m_pointcloudMinZ, m_pointcloudMaxZ);
-
   PCLPointCloud pc_ground; // segmented ground plane
   PCLPointCloud pc_nonground; // everything else
 
-  if (m_filterGroundPlane){
     tf::StampedTransform sensorToBaseTf, baseToWorldTf;
     try{
       m_tfListener.waitForTransform(m_baseFrameId, cloud->header.frame_id, cloud->header.stamp, ros::Duration(0.2));
@@ -328,26 +338,39 @@ void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr
 
     // transform pointcloud from sensor frame to fixed robot frame
     pcl::transformPointCloud(pc, pc, sensorToBase);
-    pass.setInputCloud(pc.makeShared());
-    pass.filter(pc);
-    filterGroundPlane(pc, pc_ground, pc_nonground);
+  
+    // set up filter for height range, also removes NANs:
+    pcl::PassThrough<pcl::PointXYZ> passX;
+    passX.setFilterFieldName("x");
+    passX.setFilterLimits(m_pointcloudMinX, m_pointcloudMaxX);
+    passX.setInputCloud(pc.makeShared());
+    passX.filter(pc);
 
+    pcl::PassThrough<pcl::PointXYZ> passY;
+    passY.setFilterFieldName("y");
+    passY.setFilterLimits(m_pointcloudMinY, m_pointcloudMaxY);
+    passY.setInputCloud(pc.makeShared());
+    passY.filter(pc);
+
+    pcl::PassThrough<pcl::PointXYZ> passZ;
+    passZ.setFilterFieldName("z");
+    passZ.setFilterLimits(m_pointcloudMinZ, m_pointcloudMaxZ);
+    passZ.setInputCloud(pc.makeShared());
+    passZ.filter(pc);
+
+    if (m_filterGroundPlane){    
+      filterGroundPlane(pc, pc_ground, pc_nonground);
+    } else {
+      pc_nonground = pc;
+    }
+    
     // transform clouds to world frame for insertion
     pcl::transformPointCloud(pc_ground, pc_ground, baseToWorld);
     pcl::transformPointCloud(pc_nonground, pc_nonground, baseToWorld);
-  } else {
-    // directly transform to map frame:
-    pcl::transformPointCloud(pc, pc, sensorToWorld);
 
-    // just filter height range:
-    pass.setInputCloud(pc.makeShared());
-    pass.filter(pc);
-
-    pc_nonground = pc;
     // pc_nonground is empty without ground segmentation
-    pc_ground.header = pc.header;
-    pc_nonground.header = pc.header;
-  }
+    // pc_ground.header = pc.header;
+    // pc_nonground.header = pc.header;
 
   if ( m_updateOctree ) {    
     insertScan(sensorToWorldTf.getOrigin(), pc_ground, pc_nonground);

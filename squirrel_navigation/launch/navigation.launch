@@ -6,6 +6,7 @@
   <arg name="3d_mapping" default="true" />
   <arg name="use_scan_matcher_odom" default="false"/>
   <arg name="use_last_pose" default="true"/>
+  <arg name="twist_mux" default="true"/>
   
   <!--- Run mapserver -->
   <include file="$(find squirrel_navigation)/launch/map_server.launch">
@@ -48,6 +49,8 @@
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/base_global_planner_params.yaml" command="load" />
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/move_base_params.yaml" command="load" />
     <param name="GlobalPlanner/lattice/primitive_filename" value="$(find squirrel_navigation)/config/alufr-robotino/move_base/motion-primitives/motion_primitives_50mm.mprim"/>
+    <!-- Command priority shifter -->
+    <remap from="/cmd_vel" to="/cmd_navigation" if="$(arg twist_mux)"/>
   </node>
   
   <!-- Run the octomap server and the 3d collision check -->
