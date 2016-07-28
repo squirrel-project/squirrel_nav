@@ -31,7 +31,6 @@ MapModel::MapModel(ros::NodeHandle* nh)
       m_motionRangeRoll(-1.0),
       m_motionRangePitch(-1.0),
       m_motionObstacleDist(0.2) {
-
   // motion model max ranges (particles have to stay within range)
   nh->param("motion_mean_z", m_motionMeanZ, m_motionMeanZ);
   nh->param("motion_range_z", m_motionRangeZ, m_motionRangeZ);
@@ -270,9 +269,9 @@ OccupancyMap::OccupancyMap(ros::NodeHandle* nh) : MapModel(nh) {
 
 // Groovy:
 #if ROS_VERSION_MINIMUM(1, 9, 0)
-  m_map.reset(octomap_msgs::binaryMsgToMap(resp.map));
+  m_map.reset(dynamic_cast<octomap::OcTree*>(octomap_msgs::binaryMsgToMap(resp.map)));
 #else  // Fuerte:
-  m_map.reset(octomap_msgs::binaryMsgDataToMap(resp.map.data));
+  m_map.reset(dynamic_cast<octomap::OcTree*>(octomap_msgs::binaryMsgDataToMap(resp.map.data)));
 #endif
 
   if (!m_map || m_map->size() <= 1) {
