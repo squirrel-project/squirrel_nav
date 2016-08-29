@@ -267,12 +267,7 @@ OccupancyMap::OccupancyMap(ros::NodeHandle* nh) : MapModel(nh) {
     usleep(1000000);
   }
 
-// Groovy:
-#if ROS_VERSION_MINIMUM(1, 9, 0)
   m_map.reset(dynamic_cast<octomap::OcTree*>(octomap_msgs::binaryMsgToMap(resp.map)));
-#else  // Fuerte:
-  m_map.reset(dynamic_cast<octomap::OcTree*>(octomap_msgs::binaryMsgDataToMap(resp.map.data)));
-#endif
 
   if (!m_map || m_map->size() <= 1) {
     ROS_ERROR("Occupancy map is erroneous, exiting...");
