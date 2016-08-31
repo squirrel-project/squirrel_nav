@@ -1,0 +1,12 @@
+DownSamplingRadius: 0.008
+FeatureClusterMaxLength: 0.1
+FeatureClusterMaxPoints: 200
+NormalRadius: 0.05
+FeatureRadius : 0.2
+SamplingRadius : 0.02
+FeatureScoreThreshold : 0.40
+FilterRadius : 0.2
+FilterVariance : 0.01
+KeyPointRadius : 0.05
+MaxMotion : 0.2
+OutputFolder : "/home/dewan/code/squirrel_ros/src/dynamic_filter/results/test_12_08_6_11/"

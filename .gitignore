@@ -81,3 +81,4 @@ squirrel_pushing_planner/src/pushing_planner_test.cpp
 squirrel_pushing_planner/scripts
 squirrel_navigator
 squirrel_navigation/config/robot1/rviz/debug_mcl.rviz
+squirrel_navigation/maps/mocap_3d_deployment.*

@@ -1,0 +1,4 @@
+<launch>
+ <rosparam command="load" file="$(find dynamic_filter)/params/parameters.yaml" />
+ <node name="dynamic_filter" type="dynamic_filter_node" pkg="dynamic_filter"/>
+</launch>
