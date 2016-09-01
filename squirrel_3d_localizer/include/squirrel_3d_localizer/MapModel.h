@@ -21,8 +21,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SQUIRREL_LOCALIZER_MAPMODEL_H_
-#define SQUIRREL_LOCALIZER_MAPMODEL_H_
+#ifndef SQUIRREL_3D_LOCALIZER_MAPMODEL_H_
+#define SQUIRREL_3D_LOCALIZER_MAPMODEL_H_
 
 #include <octomap_msgs/GetOctomap.h>
 #include <octomap_msgs/conversions.h>
@@ -30,9 +30,9 @@
 #include <omp.h>
 #include <ros/ros.h>
 
-#include <squirrel_localizer/SquirrelLocalizerDefs.h>
+#include <squirrel_3d_localizer/SquirrelLocalizerDefs.h>
 
-namespace squirrel_localizer {
+namespace squirrel_3d_localizer {
 
 class MapModel {
  public:

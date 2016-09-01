@@ -22,10 +22,10 @@
  */
 
 #include <ros/ros.h>
-#include <squirrel_localizer/SquirrelLocalizer.h>
+#include <squirrel_3d_localizer/SquirrelLocalizer.h>
 
 int main(int argc, char** argv){
-  ros::init(argc, argv, "squirrel_localizer");
+  ros::init(argc, argv, "squirrel_3d_localizer");
 
   ros::NodeHandle private_nh("~");
   unsigned seed;
@@ -36,7 +36,7 @@ int main(int argc, char** argv){
   else
     seed = static_cast<unsigned int>(iseed);
 
-  squirrel_localizer::SquirrelLocalizer localization(seed);
+  squirrel_3d_localizer::SquirrelLocalizer localization(seed);
 
   ros::spin();
 

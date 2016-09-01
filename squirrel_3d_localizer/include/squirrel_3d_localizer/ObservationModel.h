@@ -21,8 +21,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SQUIRREL_LOCALIZER_OBSERVATIONMODEL_H_
-#define SQUIRREL_LOCALIZER_OBSERVATIONMODEL_H_
+#ifndef SQUIRREL_3D_LOCALIZER_OBSERVATIONMODEL_H_
+#define SQUIRREL_3D_LOCALIZER_OBSERVATIONMODEL_H_
 
 #include <cmath>
 #include <limits>
@@ -34,12 +34,12 @@
 #include <tf/transform_datatypes.h>
 
 #include <octomap/octomap.h>
-#include <squirrel_localizer/MapModel.h>
-#include <squirrel_localizer/SquirrelLocalizerDefs.h>
+#include <squirrel_3d_localizer/MapModel.h>
+#include <squirrel_3d_localizer/SquirrelLocalizerDefs.h>
 
 #include <sensor_msgs/PointCloud2.h>
 
-namespace squirrel_localizer {
+namespace squirrel_3d_localizer {
 
 /// sqrt(2*pi)
 const static double SQRT_2_PI = 2.506628274;
@@ -108,4 +108,4 @@ class ObservationModel {
 };
 }
 
-#endif /* SQUIRREL_LOCALIZER_OBSERVATIONMODEL_H_ */
+#endif /* SQUIRREL_3D_LOCALIZER_OBSERVATIONMODEL_H_ */

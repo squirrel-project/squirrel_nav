@@ -1,21 +1,16 @@
 <package>
-  <name>squirrel_localizer</name>
+  <name>squirrel_3d_localizer</name>
   <version>1.0.1</version>
   <description>
-     <p>6D localization for humanoid robots based on depth data (laser, point clouds).
-     Two observation models are currently available based on OctoMap as 3D map:
-     Ray casting and an end point model (lookup in the distance map).</p>
-     <p>Details can be found in the publication <br/>
-     <em>"Humanoid Navigation with Dynamic Footstep Plans"</em>
-     by A. Hornung, K.M. Wurm, and M. Bennewitz; published in 
-     IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2010</p>
+    Monte Carlo Localization using an Octomap. Build on top of humanoid_localization
+    (http://ros.org/wiki/humanoid_localization) by A. Hornung, S. Maier, S. Osswald,
+    M. Bennewitz.
   </description>
   <maintainer email="boniardi@informatik.uni-freiburg.de">Federico Boniardi</maintainer>
   <author>Armin Hornung</author>
   <author>Stefan Osswald</author>
   <author>Daniel Maier</author>
   <license>GPL</license>
-  <url>http://ros.org/wiki/humanoid_localization</url>
   
   <build_depend>roscpp</build_depend>
   <build_depend>tf</build_depend>

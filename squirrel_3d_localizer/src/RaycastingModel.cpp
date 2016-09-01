@@ -18,14 +18,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <squirrel_localizer/RaycastingModel.h>
+#include <squirrel_3d_localizer/RaycastingModel.h>
 
 #include <octomap_ros/conversions.h>
 #include <pcl/point_types.h>
 #include <pcl/conversions.h>
 #include <pcl_ros/transforms.h>
 
-namespace squirrel_localizer {
+namespace squirrel_3d_localizer {
 
 RaycastingModel::RaycastingModel(
     ros::NodeHandle* nh, boost::shared_ptr<MapModel> mapModel,
@@ -115,7 +115,6 @@ void RaycastingModel::integrateMeasurement(
           if (*ranges_it <= raycastRange)
             p += m_zShort * m_lambdaShort * exp(-m_lambdaShort * (*ranges_it)) /
                  (1 - exp(-m_lambdaShort * raycastRange));
-
           // random measurement:
           p += m_zRand / max_range;
         } else {  // racasting did not hit, but measurement is no maxrange =>

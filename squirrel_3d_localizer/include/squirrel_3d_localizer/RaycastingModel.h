@@ -21,8 +21,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SQUIRREL_LOCALIZER_ENDPOINTMODEL_H_
-#define SQUIRREL_LOCALIZER_ENDPOINTMODEL_H_
+#ifndef SQUIRREL_3D_LOCALIZER_RAYCASTINGMODEL_H_
+#define SQUIRREL_3D_LOCALIZER_RAYCASTINGMODEL_H_
 
 #include <cmath>
 #include <limits>
@@ -32,35 +32,43 @@
 #include <ros/ros.h>
 #include <tf/transform_datatypes.h>
 
-#include <dynamicEDT3D/dynamicEDTOctomap.h>
+#include <squirrel_3d_localizer/ObservationModel.h>
+
 #include <octomap/octomap.h>
-#include <squirrel_localizer/ObservationModel.h>
-#include <visualization_msgs/Marker.h>
 
-namespace squirrel_localizer {
+namespace squirrel_3d_localizer {
 
-class EndpointModel : public ObservationModel {
+class RaycastingModel : public ObservationModel {
  public:
-  EndpointModel(
+  RaycastingModel(
       ros::NodeHandle* nh, boost::shared_ptr<MapModel> mapModel,
       EngineT* rngEngine);
-  virtual ~EndpointModel();
+  virtual ~RaycastingModel();
   virtual void integrateMeasurement(
       Particles& particles, const PointCloud& pc,
       const std::vector<float>& ranges, float max_range,
       const tf::Transform& baseToSensor);
 
-  virtual void setMap(boost::shared_ptr<octomap::OcTree> map);
-
  protected:
   bool getHeightError(
       const Particle& p, const tf::StampedTransform& footprintToBase,
       double& heightError) const;
-  void initDistanceMap();
-  double m_sigma;
-  double m_maxObstacleDistance;
-  boost::shared_ptr<DynamicEDTOctomap> m_distanceMap;
+  // laser parameters:
+  double m_zHit;
+  double m_zRand;
+  double m_zShort;
+  double m_zMax;
+  double m_sigmaHit;
+  double m_lambdaShort;
+
+  bool m_filterPointCloudGround;
+  double m_groundFilterDistance;
+  double m_groundFilterAngle;
+  double m_groundFilterPlaneDistance;
+  int m_numFloorPoints;
+  int m_numNonFloorPoints;
 };
+
 }
 
 #endif

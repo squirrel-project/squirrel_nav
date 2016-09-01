@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(squirrel_localizer)
+project(squirrel_3d_localizer)
 
 find_package(catkin REQUIRED COMPONENTS roscpp pcl_conversions pcl_ros message_filters sensor_msgs cmake_modules)
 find_package(OpenMP)
@@ -29,7 +29,7 @@ endif (${dynamicEDT3D_FOUND})
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES ${LIBRARIES} squirrel_localizer
+  LIBRARIES ${LIBRARIES} squirrel_3d_localizer
   CATKIN_DEPENDS tf
   DEPENDS octomap OpenMP
 )
@@ -49,17 +49,17 @@ add_library(observation_model src/ObservationModel.cpp)
 add_library(raycasting_model src/RaycastingModel.cpp)
 target_link_libraries(raycasting_model observation_model)
 
-add_library(squirrel_localizer src/SquirrelLocalizer.cpp)
-target_link_libraries(squirrel_localizer ${LIBRARIES} ${catkin_LIBRARIES})
+add_library(squirrel_3d_localizer src/SquirrelLocalizer.cpp)
+target_link_libraries(squirrel_3d_localizer ${LIBRARIES} ${catkin_LIBRARIES})
 
-add_executable(squirrel_localizer_node src/squirrel_localizer_node.cpp)
-target_link_libraries(squirrel_localizer_node squirrel_localizer ${catkin_LIBRARIES})
+add_executable(squirrel_3d_localizer_node src/squirrel_3d_localizer_node.cpp)
+target_link_libraries(squirrel_3d_localizer_node squirrel_3d_localizer ${catkin_LIBRARIES})
 
 # install
-install(TARGETS ${LIBRARIES} squirrel_localizer
+install(TARGETS ${LIBRARIES} squirrel_3d_localizer
   DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 ) 
 
-install(TARGETS squirrel_localizer_node
+install(TARGETS squirrel_3d_localizer_node
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

@@ -21,8 +21,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SQUIRREL_LOCALIZER_SQUIRRELLOCALIZERDEFS_H_
-#define SQUIRREL_LOCALIZER_SQUIRRELLOCALIZERDEFS_H_
+#ifndef SQUIRREL_3D_LOCALIZER_SQUIRRELLOCALIZERDEFS_H_
+#define SQUIRREL_3D_LOCALIZER_SQUIRRELLOCALIZERDEFS_H_
 
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/normal_distribution.hpp>
@@ -37,7 +37,7 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 
-namespace squirrel_localizer {
+namespace squirrel_3d_localizer {
 
 /// Particle consists of a pose and a weight
 struct Particle {

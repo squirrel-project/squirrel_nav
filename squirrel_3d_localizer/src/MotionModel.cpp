@@ -21,9 +21,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <squirrel_localizer/MotionModel.h>
+#include <squirrel_3d_localizer/MotionModel.h>
 
-namespace squirrel_localizer {
+namespace squirrel_3d_localizer {
 
 MotionModel::MotionModel(
     ros::NodeHandle* nh, EngineT* rngEngine, tf::TransformListener* tf,

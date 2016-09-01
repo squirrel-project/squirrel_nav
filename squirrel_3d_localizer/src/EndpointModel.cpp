@@ -21,9 +21,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <squirrel_localizer/EndpointModel.h>
+#include <squirrel_3d_localizer/EndpointModel.h>
 
-namespace squirrel_localizer {
+namespace squirrel_3d_localizer {
 
 EndpointModel::EndpointModel(
     ros::NodeHandle* nh, boost::shared_ptr<MapModel> mapModel,

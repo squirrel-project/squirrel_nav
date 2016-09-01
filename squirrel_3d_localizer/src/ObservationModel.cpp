@@ -21,9 +21,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <squirrel_localizer/ObservationModel.h>
+#include <squirrel_3d_localizer/ObservationModel.h>
 
-namespace squirrel_localizer {
+namespace squirrel_3d_localizer {
 
 ObservationModel::ObservationModel(
     ros::NodeHandle* nh, boost::shared_ptr<MapModel> mapModel,

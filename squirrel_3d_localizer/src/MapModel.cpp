@@ -21,9 +21,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <squirrel_localizer/MapModel.h>
+#include <squirrel_3d_localizer/MapModel.h>
 
-namespace squirrel_localizer {
+namespace squirrel_3d_localizer {
 
 MapModel::MapModel(ros::NodeHandle* nh)
     : m_motionMeanZ(0.0),

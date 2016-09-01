@@ -21,7 +21,7 @@
 #include <ros/package.h>
 
 #include <pcl/keypoints/uniform_sampling.h>
-#include <squirrel_localizer/SquirrelLocalizer.h>
+#include <squirrel_3d_localizer/SquirrelLocalizer.h>
 #include <fstream>
 #include <iostream>
 
@@ -34,7 +34,7 @@
 // simple timing benchmark output
 #define _BENCH_TIME 0
 
-namespace squirrel_localizer {
+namespace squirrel_3d_localizer {
 
 SquirrelLocalizer::SquirrelLocalizer(unsigned randomSeed)
     : m_rngEngine(randomSeed),
@@ -270,7 +270,7 @@ SquirrelLocalizer::SquirrelLocalizer(unsigned randomSeed)
 }
 
 SquirrelLocalizer::~SquirrelLocalizer() {
-  std::string last_pose_filename = ros::package::getPath("squirrel_localizer") +
+  std::string last_pose_filename = ros::package::getPath("squirrel_3d_localizer") +
                                    std::string("/config/last_pose.yaml");
   std::ofstream f(last_pose_filename.c_str());
 

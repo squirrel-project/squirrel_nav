@@ -21,8 +21,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SQUIRREL_LOCALIZER_SQUIRRELLOCALIZER_H_
-#define SQUIRREL_LOCALIZER_SQUIRRELLOCALIZER_H_
+#ifndef SQUIRREL_3D_LOCALIZER_SQUIRRELLOCALIZER_H_
+#define SQUIRREL_3D_LOCALIZER_SQUIRRELLOCALIZER_H_
 
 #include <boost/shared_ptr.hpp>
 #include <ctime>
@@ -53,19 +53,19 @@
 #include <geometry_msgs/PoseWithCovariance.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
-#include <squirrel_localizer/MotionModel.h>
-#include <squirrel_localizer/ObservationModel.h>
-#include <squirrel_localizer/RaycastingModel.h>
-#include <squirrel_localizer/SquirrelLocalizerDefs.h>
+#include <squirrel_3d_localizer/MotionModel.h>
+#include <squirrel_3d_localizer/ObservationModel.h>
+#include <squirrel_3d_localizer/RaycastingModel.h>
+#include <squirrel_3d_localizer/SquirrelLocalizerDefs.h>
 #ifndef SKIP_ENDPOINT_MODEL
-#include <squirrel_localizer/EndpointModel.h>
+#include <squirrel_3d_localizer/EndpointModel.h>
 #endif
 
 #include <octomap/octomap.h>
 #include <sensor_msgs/Imu.h>
 #include <boost/circular_buffer.hpp>
 
-namespace squirrel_localizer {
+namespace squirrel_3d_localizer {
 
 static inline void getRP(
     const geometry_msgs::Quaternion& msg_q, double& roll, double& pitch) {
