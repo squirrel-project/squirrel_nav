@@ -82,3 +82,7 @@ squirrel_pushing_planner/scripts
 squirrel_navigator
 squirrel_navigation/config/robot1/rviz/debug_mcl.rviz
 squirrel_navigation/maps/mocap_3d_deployment.*
+squirrel_navigation/octomaps/squirrel_hall078.bt
+squirrel_navigation/maps/squirrel_hall078.*
+squirrel_navigation/maps/default-map.yaml
+squirrel_navigation/octomaps/default-octomap.yaml

@@ -1,18 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
 <launch>
+  <arg name="run_pcl_filtering" default="false" />
+
+  <node pkg="squirrel_navigation" type="pointcloud_filter_node" name="pointcloud_filter" 
+	output="screen" respawn="true" if="$(arg run_pcl_filtering)">
+    <param name="pointcloud_in" value="/kinect/depth/points" />
+    <param name="pointcloud_out" value="/rgbdscan" />
+    <param name="pointcloud_size" value="6500" />
+  </node>
+
   <node pkg="squirrel_3d_mapping" type="octomap_server_node" name="squirrel_3d_mapping" output="screen">
-    <param name="resolution" value="0.05" />
-    <param name="frame_id" type="string" value="map" />
+    <param name="resolution" value="0.025"/>
+    <param name="frame_id" type="string" value="map"/>
     <param name="max_sensor_range" value="4.0" />
-    <param name="pointcloud_min_z" value="0.0" />
+    <param name="pointcloud_min_z" value="0.07" />
     <param name="pointcloud_max_z" value="0.76" />
-    <param name="pointcloud_min_y" value="-1.0" />
-    <param name="pointcloud_max_y" value="1.0" />
+    <param name="pointcloud_min_y" value="-0.5" />
+    <param name="pointcloud_max_y" value="0.5" />
     <param name="pointcloud_min_x" value="0.0" />
     <param name="pointcloud_max_x" value="2.5" />
     <param name="filter_ground" value="false" />
     <param name="ground_filter/plane_distance" value="0.03" />
     <param name="base_frame_id" value="/base_link" /> 
-    <param name="distance_transform/enabled" value="true" />
+    <param name="distance_transform/enabled" value="false" />
     <param name="distance_transform/max_dist" value="1.0" />
     <param name="distance_transform/unknown_as_occupied" value="false" />
     <param name="distance_transform/min_x" value="-5.0" />
@@ -21,7 +31,7 @@
     <param name="distance_transform/max_y" value="5.0" />
     <param name="distance_transform/min_z" value="0.0" />
     <param name="distance_transform/max_z" value="0.9" />
-    <remap from="/cloud_in" to="/rgbdscan" />
+    <remap from="/cloud_in" to="/kinect/depth/points" />
   </node>
 </launch>
 
