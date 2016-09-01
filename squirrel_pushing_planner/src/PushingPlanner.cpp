@@ -83,9 +83,9 @@ PushingPlanner::PushingPlanner( void )  :
   
   pushing_plan_pub_ = pnh.advertise<nav_msgs::Path>("pushingPlan", 1000);
 
-  get_pushing_plan_srv_ = nh_.advertiseService("getPushingPlan", &PushingPlanner::getPlan_, this); 
-  costmap_sub_ = nh_.subscribe("/move_base/global_costmap/costmap", 1, &PushingPlanner::costmapCallback_, this);
-  costmap_updates_sub_ = nh_.subscribe("/move_base/global_costmap/costmap_updates", 1, &PushingPlanner::costmapUpdatesCallback_, this);
+  get_pushing_plan_srv_ = nh_.advertiseService("getPushingPlan", &PushingPlanner::getPlan, this); 
+  costmap_sub_ = nh_.subscribe("/move_base/global_costmap/costmap", 1, &PushingPlanner::costmapCallback, this);
+  costmap_updates_sub_ = nh_.subscribe("/move_base/global_costmap/costmap_updates", 1, &PushingPlanner::costmapUpdatesCallback, this);
 
   nh_.param<double>("/move_base/global_costmap/inflation_layer/inflation_radius", inflation_radius_, 0.6);
   nh_.param<double>("/move_base/global_costmap/robot_radius", robot_radius_, 0.16);
@@ -125,7 +125,7 @@ void PushingPlanner::waitForPlannerService( void )
 //   }
 }
 
-void PushingPlanner::updateCostmap_( double offset ) const
+void PushingPlanner::updateCostmap( double offset ) const
 {
   bool inscribed_radius_updated, inflation_radius_updated;
   
@@ -166,250 +166,116 @@ void PushingPlanner::updateCostmap_( double offset ) const
     ROS_WARN_STREAM( node_name_ << ": Unable to update parameters /move_base/global_costmap/inflation_layer/inflation_radius.");
 }
 
-bool PushingPlanner::getPlan_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req,
-                               squirrel_rgbd_mapping_msgs::GetPushingPlan::Response& res )
+bool PushingPlanner::getPlan( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req,
+                              squirrel_rgbd_mapping_msgs::GetPushingPlan::Response& res )
 {
-  if ( !isNumericValid_(req) ) {
+  if ( !isNumericValid(req) ) {
     std::string node_name = ros::this_node::getName();
     ROS_ERROR("%s: got an invalid request. Cannot create a planner for pushing", node_name.c_str() );
     return false;
   }
 
-  double object_radius = getObjectRadius_(req.object);
-  updateCostmap_(object_radius);
-  updateCostmap_(object_radius);
-
-  // ros::Duration(3.0).sleep(); /* wait costmap to be updated (bad but no other way)*/ 
-  
-  nav_msgs::GetPlan plan;
-
-  // Transform starting position in map frame
-  geometry_msgs::Quaternion q_start = tf::createQuaternionMsgFromYaw(req.start.theta);
-
+  // Get start
   geometry_msgs::PoseStamped start, start_m;
   start.header.frame_id = start_goal_frame_id_;
-  start.pose.orientation = q_start;
+  start.pose.orientation = tf::createQuaternionMsgFromYaw(req.start.theta);
   start.pose.position.x = req.start.x;
   start.pose.position.y = req.start.y;
-
+  
   try {
     tfl_.waitForTransform(start_goal_frame_id_, "/map", ros::Time::now(), ros::Duration(1.0));
     tfl_.transformPose("/map", start, start_m);
     start_m.header.frame_id = "/map";
   } catch ( tf::TransformException& ex ) {
     ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
-    return true;
+    updateCostmap(0.0);
+    return false;
   }
 
   double start_theta_m = tf::getYaw(start_m.pose.orientation);
   
-  // Transform polygon in map frame
-  const size_t n = req.object.points.size();
-  
-  geometry_msgs::Polygon object_m;
-  for (unsigned int i=0; i<n; ++i) {
-    geometry_msgs::PoseStamped vertex, vertex_stamped_m;
-    vertex.header.frame_id = object_frame_id_;
-    vertex.pose.position.x = req.object.points[i].x;
-    vertex.pose.position.y = req.object.points[i].y;
-    vertex.pose.orientation.w = 1.0;
-
-    try {
-      tfl_.waitForTransform(object_frame_id_, "/map", ros::Time::now(), ros::Duration(1.0));
-      tfl_.transformPose("/map", vertex, vertex_stamped_m);
-      vertex_stamped_m.header.frame_id = "/map";
-    } catch ( tf::TransformException& ex ) {
-      ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
-      return true;
-    }
-
-    geometry_msgs::Point32 vertex_m;
-    vertex_m.x = vertex_stamped_m.pose.position.x;
-    vertex_m.y = vertex_stamped_m.pose.position.y;
-    
-    object_m.points.push_back(vertex_m);
-  }
-
-  // Getting info from polygon
-  double object_d = -std::numeric_limits<double>::max();
-  double object_min_x = std::numeric_limits<double>::max(),
-      object_max_x = -std::numeric_limits<double>::max(),
-      object_min_y = std::numeric_limits<double>::max(),
-      object_max_y = -std::numeric_limits<double>::max();
-
-  for (unsigned int i=0; i<n; ++i) {
-    // Computing the farthest distance from the starting point
-    geometry_msgs::Point32 p,q;
-    p.x = object_m.points[i].x - start_m.pose.position.x;
-    p.y = object_m.points[i].y - start_m.pose.position.y;
-    q.x = std::cos(start_theta_m);
-    q.y = std::sin(start_theta_m);
-    
-    double d = dot_(p,q);
-    if ( d > object_d )
-      object_d = d;
-
-    // Computing the patch on the object to remove obstacles
-    if ( object_m.points[i].x < object_min_x ) 
-      object_min_x = object_m.points[i].x;
-    if ( object_m.points[i].x > object_max_x ) 
-      object_max_x = object_m.points[i].x;
-    if ( object_m.points[i].y < object_min_y ) 
-      object_min_y = object_m.points[i].y;
-    if ( object_m.points[i].y > object_max_y ) 
-      object_max_y = object_m.points[i].y;
-  }
-
-  unsigned int patch_i_start = object_min_x/costmap_info_.resolution;
-  unsigned int patch_i_end = object_max_x/costmap_info_.resolution;
-  unsigned int patch_j_start = object_min_y/costmap_info_.resolution;
-  unsigned int patch_j_end = object_max_y/costmap_info_.resolution;
-    
-  if ( (req.object.points[0].x != req.object.points[n-1].x) or
-       (req.object.points[0].y != req.object.points[n-1].y)  )
-    req.object.points.push_back(req.object.points[0]);
-
-    // GetPlan tolerance
-  plan.request.tolerance = tolerance_;
-
-  // GetPlan start
-  object_d += 0.2*object_d+robot_radius_+object_radius;
-  
-  geometry_msgs::PoseStamped start_real;
-  start_real.header.frame_id = start_goal_frame_id_;
-  start_real.pose.orientation = q_start;
-  start_real.pose.position.x = start_m.pose.position.x + object_d*std::cos(req.start.theta);
-  start_real.pose.position.y = start_m.pose.position.y + object_d*std::sin(req.start.theta);
-
-  try {
-    tfl_.waitForTransform(start_goal_frame_id_, "/map", ros::Time::now(), ros::Duration(1.0));
-    tfl_.transformPose("/map", start_real, plan.request.start);
-    plan.request.start.header.frame_id = "/map";
-  } catch ( tf::TransformException& ex ) {
-    ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
-    return true;
-  }
-  
   // GetPlan goal
-  geometry_msgs::Quaternion q_goal = tf::createQuaternionMsgFromYaw(req.goal.theta);
-
-  geometry_msgs::PoseStamped goal;
-
+  geometry_msgs::PoseStamped goal, goal_m;
   goal.header.frame_id = start_goal_frame_id_;
-  goal.pose.orientation = q_goal;
+  goal.pose.orientation = tf::createQuaternionMsgFromYaw(req.goal.theta);
   goal.pose.position.x = req.goal.x;
-  goal.pose.position.y = req.goal.y;  
-
+  goal.pose.position.y = req.goal.y;
+  
   try {
     tfl_.waitForTransform(start_goal_frame_id_, "/map", ros::Time::now(), ros::Duration(1.0));
-    tfl_.transformPose("/map", goal, plan.request.goal);
-    plan.request.goal.header.frame_id = "/map";
+    tfl_.transformPose("/map", goal, goal_m);
   } catch ( tf::TransformException& ex ) {
     ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
+    updateCostmap(0.0);
     return false;
   }
+
+  double object_radius = getObjectRadius(req.object);
+  updateCostmap(object_radius);
+  updateCostmap(object_radius);
+
+  // Create call to move_base service
+  nav_msgs::GetPlan plan;
+  plan.request.tolerance = tolerance_;
+  plan.request.start = start_m;
+  plan.request.goal = goal_m;
   
   if ( ros::service::call("/move_base/make_plan", plan) ) {
-    if ( plan.response.plan.poses.empty() ) {
-      ROS_WARN("%s: got empty plan", node_name_.c_str());
-      return true;
+    nav_msgs::Path res_plan = plan.response.plan;
+    res.plan.poses.resize(res_plan.poses.size());
+
+    // computing the clearance
+    if ( not obstacles_map_ ) {
+      ROS_WARN("%s: Costmap is not ready yet. Unable to compute path's clearance.", ros::this_node::getName().c_str());
+      res.clearance = -1.0;
     } else {
-      if( !plan_.poses.empty() ) {
-        plan_.poses.clear();
+      boost::unique_lock<boost::mutex> lock(obstacles_mtx_);
+      
+      cv::Mat dist_map;
+      double min, max;
+      
+      cv::distanceTransform(*obstacles_map_, dist_map, CV_DIST_L2, 3);
+      cv::minMaxLoc(dist_map, &min, &max);
+      cv::normalize(dist_map, dist_map, 0.0, max*costmap_info_.resolution, cv::NORM_MINMAX);
+
+      res.clearance = std::numeric_limits<float>::max();
+      for (size_t k=0; k<res_plan.poses.size(); ++k) {
+        unsigned int i = res_plan.poses[k].pose.position.x/costmap_info_.resolution;
+        unsigned int j = res_plan.poses[k].pose.position.y/costmap_info_.resolution;
+        
+        res.clearance = std::min(dist_map.at<float>(costmap_info_.height/2-j-1,costmap_info_.height/2+i),(float)res.clearance); 
       }
-      
-      geometry_msgs::PoseStamped p;
-      p.header.frame_id = "/map";
-
-      // Add the starting point
-      p.pose.position.x = start_m.pose.position.x;
-      p.pose.position.y = start_m.pose.position.y;
-      p.pose.orientation = start_m.pose.orientation;
-      plan_.poses.push_back(p);
-
-      // Adjust move base approximation
-      plan.response.plan.poses[0].pose.position.x = plan.request.start.pose.position.x;
-      plan.response.plan.poses[0].pose.position.y = plan.request.start.pose.position.y;
-
-      // smooth connection to the path
-      double c = 0.5;
-      double toll = 1e-4;
-      int smoother = 1;
-
-      polarCoordinates_(plan.response.plan.poses[2], start_m, object_d, start_theta_m);
-      
-      for (double t=0.5*object_d; (t<object_d-toll && smoother<plan.response.plan.poses.size()); ++smoother, t+=object_d*std::pow(c,smoother)) {
-        double dx_s = plan.response.plan.poses[2+smoother].pose.position.x - plan.response.plan.poses[2+smoother-1].pose.position.x;
-        double dy_s = plan.response.plan.poses[2+smoother].pose.position.y - plan.response.plan.poses[2+smoother-1].pose.position.y;
-        p.pose.position.x = plan_.poses[smoother-1].pose.position.x + object_d * std::pow(c,smoother) * std::cos(start_theta_m) + dx_s;
-        p.pose.position.y = plan_.poses[smoother-1].pose.position.y + object_d * std::pow(c,smoother) * std::sin(start_theta_m) + dy_s;
-        p.pose.orientation = start_m.pose.orientation;
-        plan_.poses.push_back(p);
-      }
-      
-      plan_.poses.insert(plan_.poses.end(), plan.response.plan.poses.begin()+smoother+1, plan.response.plan.poses.end());
-
-      if ( not obstacles_map_ ) {
-        ROS_WARN("%s: Costmap is not ready yet. Unable to compute path's clearance.", ros::this_node::getName().c_str());
-        res.clearance = -1.0;
-      } else {
-        boost::unique_lock<boost::mutex> lock(obstacles_mtx_);
-        
-        for (unsigned int i=patch_i_start; i<patch_i_end; ++i) {
-          for (unsigned int j=patch_j_start; j<patch_j_end; ++j) {
-            geometry_msgs::Point p;
-            p.x = i*costmap_info_.resolution;
-            p.y = j*costmap_info_.resolution;
-            if ( inFootprint_(object_m,p) ) {
-              obstacles_map_->at<uchar>(costmap_info_.height/2-j-1,costmap_info_.height/2+i) = 255;
-            }
-          }
-        }
-        
-        cv::Mat dist_map;
-        double min, max;
-        
-        cv::distanceTransform(*obstacles_map_, dist_map, CV_DIST_L2, 3);
-        cv::minMaxLoc(dist_map, &min, &max);
-        cv::normalize(dist_map, dist_map, 0.0, max*costmap_info_.resolution, cv::NORM_MINMAX);
-        
-        res.clearance = std::numeric_limits<float>::max();
-        for (size_t k=0; k<plan_.poses.size(); ++k) {
-          unsigned int i = plan_.poses[k].pose.position.x/costmap_info_.resolution;
-          unsigned int j = plan_.poses[k].pose.position.y/costmap_info_.resolution;
-
-          res.clearance = std::min(dist_map.at<float>(costmap_info_.height/2-j-1,costmap_info_.height/2+i),(float)res.clearance); 
-        }
-      }      
-      
-      // Create response in plan_frame_id_
-      res.plan.header.frame_id = plan_frame_id_;
-      for (unsigned int i=0; i<plan_.poses.size()-3; ++i) { 
-        try {
-          geometry_msgs::PoseStamped p;
-          tfl_.waitForTransform("/map", plan_frame_id_, ros::Time::now(), ros::Duration(0.5));
-          tfl_.transformPose(plan_frame_id_, plan_.poses[i], p);
-          p.header.frame_id = plan_frame_id_;
-          res.plan.poses.push_back(p);
-        } catch (tf::TransformException& ex) {
-          ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
-          return false;
-        }
-      }
-      
-      pushing_plan_pub_.publish(res.plan);
-
-      updateCostmap_(0.0);
-
-      return true;
     }
+
+    try {
+      ros::Time now = ros::Time::now();
+      tfl_.waitForTransform(start_goal_frame_id_, "/map", ros::Time::now(), ros::Duration(1.0));
+      for (size_t i=0; i<res_plan.poses.size(); ++i) {
+        res_plan.poses[i].header.frame_id = "/map"; // just to be sure, move_base/getPlan returns in /map
+        tfl_.transformPose(start_goal_frame_id_, res_plan.poses[i], res.plan.poses[i]);
+        res.plan.poses[i].header.frame_id = start_goal_frame_id_;
+        res.plan.poses[i].header.stamp = now;
+      }
+
+      res.plan.header.frame_id = start_goal_frame_id_;
+      res.plan.header.stamp = now;
+      
+    } catch ( tf::TransformException& ex ) {
+      ROS_ERROR("%s: %s", ros::this_node::getName().c_str(), ex.what());
+      updateCostmap(0.0);
+      return false;
+    }
+
+    updateCostmap(0.0);
+    
+    return true;
   } else {
-    ROS_ERROR("%s: call to service [/move_base/make_plan] failed.", node_name_.c_str());
+    ROS_WARN("%s: Cannot compute a valid plan.", ros::this_node::getName().c_str());
     return false;
   }
 }
 
-void PushingPlanner::costmapCallback_( const nav_msgs::OccupancyGrid::ConstPtr& costmap_msg )
+void PushingPlanner::costmapCallback( const nav_msgs::OccupancyGrid::ConstPtr& costmap_msg )
 {
   if ( not obstacles_map_ ) {
     costmap_info_.map_load_time = costmap_msg->info.map_load_time;
@@ -441,7 +307,7 @@ void PushingPlanner::costmapCallback_( const nav_msgs::OccupancyGrid::ConstPtr& 
   ROS_INFO("%s: Got obstacles map.", ros::this_node::getName().c_str());
 }
 
-void PushingPlanner::costmapUpdatesCallback_( const map_msgs::OccupancyGridUpdate::ConstPtr& updates_msg )
+void PushingPlanner::costmapUpdatesCallback( const map_msgs::OccupancyGridUpdate::ConstPtr& updates_msg )
 {
   if ( (not obstacles_map_) or (not obstacles_map_ready_) )
     return;
@@ -463,7 +329,7 @@ void PushingPlanner::costmapUpdatesCallback_( const map_msgs::OccupancyGridUpdat
   return;
 }
     
-bool PushingPlanner::isNumericValid_( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req ) const
+bool PushingPlanner::isNumericValid( squirrel_rgbd_mapping_msgs::GetPushingPlan::Request& req ) const
 {
   bool is_valid_start = !std::isnan(req.start.x) and !std::isinf(req.start.x)
       and !std::isnan(req.start.y) and !std::isinf(req.start.y)
@@ -476,7 +342,7 @@ bool PushingPlanner::isNumericValid_( squirrel_rgbd_mapping_msgs::GetPushingPlan
   return (is_valid_start and is_valid_goal);
 }
 
-bool PushingPlanner::inFootprint_( const geometry_msgs::Polygon& polygon, const geometry_msgs::Point& p ) const
+bool PushingPlanner::inFootprint( const geometry_msgs::Polygon& polygon, const geometry_msgs::Point& p ) const
 {
   const unsigned int n = polygon.points.size()-1;
 
@@ -494,7 +360,7 @@ bool PushingPlanner::inFootprint_( const geometry_msgs::Polygon& polygon, const 
   return !(cn%2);
 }
 
-double PushingPlanner::getObjectRadius_( const geometry_msgs::Polygon& poly ) const
+double PushingPlanner::getObjectRadius( const geometry_msgs::Polygon& poly ) const
 {
   const size_t nvertices = poly.points.size();
 
@@ -507,7 +373,7 @@ double PushingPlanner::getObjectRadius_( const geometry_msgs::Polygon& poly ) co
 
   double radius = -std::numeric_limits<double>::max();
   for (size_t i=0; i<nvertices; ++i) {
-    double dist = linearDistance_(mean,poly.points[i]);
+    double dist = linearDistance(mean,poly.points[i]);
     radius = dist > radius ? dist : radius;
   }
 

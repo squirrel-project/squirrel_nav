@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <launch>
+<<<<<<< HEAD
   <arg name="run_pcl_filtering" default="false" />
 
   <node pkg="squirrel_navigation" type="pointcloud_filter_node" name="pointcloud_filter" 
@@ -9,7 +10,8 @@
     <param name="pointcloud_size" value="6500" />
   </node>
 
-  <node pkg="squirrel_3d_mapping" type="octomap_server_node" name="squirrel_3d_mapping" output="screen">
+  <node pkg="squirrel_3d_mapping" type="octomap_server_node" name="squirrel_3d_mapping" 
+	output="screen" args="$(arg octomap_file)">
     <param name="resolution" value="0.025"/>
     <param name="frame_id" type="string" value="map"/>
     <param name="max_sensor_range" value="4.0" />
