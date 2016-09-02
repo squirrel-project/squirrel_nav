@@ -99,6 +99,6 @@ class OccupancyMap : public MapModel {
   virtual double getFloorHeight(const tf::Transform& pose) const;
 };
 
-}
+}  // namespace squirrel_3d_localizer
 
-#endif
+#endif /* SQUIRREL_3D_LOCALIZER_MAPMODEL_H_ */

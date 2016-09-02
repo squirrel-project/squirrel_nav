@@ -106,6 +106,7 @@ class ObservationModel {
 
   bool m_use_squared_error;
 };
-}
+
+}  // namespace squirrel_3d_localizer
 
 #endif /* SQUIRREL_3D_LOCALIZER_OBSERVATIONMODEL_H_ */

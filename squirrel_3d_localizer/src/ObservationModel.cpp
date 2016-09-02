@@ -85,4 +85,4 @@ void ObservationModel::setMap(boost::shared_ptr<octomap::OcTree> map) {
   m_map = map;
 }
 
-}
+}  // namespace squirrel_3d_localizer

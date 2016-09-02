@@ -1,28 +1,40 @@
 #
-# 6D localization configuration for the Nao humanoid with laser head
+# 2D localization configuration
 #
 
- # raycasting (slow) or endpoint model (approx)
-use_raycasting: false
-
 num_particles: 1000
-init_global: false
-init_from_truepose: false
 neff_factor: 1.0 
-sensor_sampling_dist: 0.25
-update_min_trans: 0.1
+update_min_trans: 0.25
 update_min_rot: 0.1
+best_particle_as_mean: true
+
+# frames
 base_frame_id: "/base_link"
 base_footprint_id: "/base_link"
 global_frame_id: "/map"
 odom_frame_id: "/odom"
 target_frame_id: "/odom"
-constraint_motion_z: true
-num_sensor_beams: 100
+
+# pose initialization
+init_from_truepose: false
+init_global: false
 use_last_pose: true
+
+# 2d navigation
+constrain_motion_z: true
+constrain_motion_rp: true
+
+# use both depth camera and 2d laser rangefinder
+use_depth_camera: true
+use_laser_scanner: true
+
+# use endpoint model with sensor downsampling
+use_raycasting: false
+sensor_sampling_dist: 0.25
 
 # endpoint model
 endpoint/sigma: 0.075
+endpoint/max_obstacle_distance: 0.25
 
 # motion model
 weight_factor_z: 0.0
@@ -31,46 +43,36 @@ weight_factor_pitch: 0.0
 motion_sigma_z: 0.001
 motion_sigma_roll: 0.001 # 0.85 deg.
 motion_sigma_pitch: 0.001 # 0.85 deg.
-obs_squared_distance: true
 
 # noise of the motion model
-motion_noise/z: 0.0  
-motion_noise/roll: 0.0   
-motion_noise/pitch: 0.0  
-motion_noise/xx: 1.5
-motion_noise/xy: 0.5
-motion_noise/xt: 0.3
-motion_noise/yx: 0.3
-motion_noise/yy: 1.0
-motion_noise/yt: 0.5
-motion_noise/tx: 0.58
-motion_noise/ty: 0.3
-motion_noise/tt: 1.00
-
-# odometry calibration for 2D drift (x,y,theta)
-# this is the identy matrix - uses odometry uncalibrated
-motion_calib/xx:  1.0
-motion_calib/xy:  0.0
-motion_calib/xt:  0.0
-motion_calib/yx:  0.0
-motion_calib/yy:  1.0
-motion_calib/yt:  0.0
-motion_calib/tx:  0.0
-motion_calib/ty:  0.0
-motion_calib/tt:  1.0
+motion_noise:
+  z: 0.0  
+  roll: 0.0   
+  pitch: 0.0  
+  xx: 0.1
+  xy: 0.0
+  xt: 0.0
+  yx: 0.0
+  yy: 0.2
+  yt: 0.0
+  tx: 0.0
+  ty: 0.0
+  tt: 0.3
 
 # initial pose (when no truepose available):
-initial_pose/x: 0.0
-initial_pose/y: 0.0
-initial_pose/z: 0.0
-initial_pose/roll: 0.0
-initial_pose/pitch: 0.0
-initial_pose/yaw: 0.0    
+initial_pose:
+  x: 0.0
+  y: 0.0
+  z: 0.0
+  roll: 0.0
+  pitch: 0.0
+  yaw: 0.0    
 
 # std dev for initial noise (truepose or manual init)
-initial_std/x: 0.25
-initial_std/y: 0.25
-initial_std/z: 0.0
-initial_std/roll: 0.0
-initial_std/pitch: 0.0
-initial_std/yaw: 0.5    # ~13 deg
+initial_std_dev:
+  x: 0.25
+  y: 0.25
+  z: 0.0
+  roll: 0.0
+  pitch: 0.0
+  yaw: 0.5    # ~13 deg

@@ -69,6 +69,6 @@ typedef Eigen::Matrix<float, 6, 1> Vector6f;
 typedef Eigen::Matrix<double, 6, 6> Matrix6d;
 typedef Eigen::Matrix<double, 6, 1> Vector6d;
 
-}
+}  // namespace squirrel_3d_localizer
 
-#endif
+#endif /* SQUIRREL_3D_LOCALIZER_SQUIRRELLOCALIZERDEFS_H_ */

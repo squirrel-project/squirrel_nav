@@ -276,4 +276,4 @@ bool MotionModel::getLastOdomPose(tf::Stamped<tf::Pose>& lastOdomPose) const {
   }
 }
 
-}
+}  // namespace squirrel_3d_localizer

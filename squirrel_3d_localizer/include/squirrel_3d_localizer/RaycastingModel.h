@@ -69,6 +69,6 @@ class RaycastingModel : public ObservationModel {
   int m_numNonFloorPoints;
 };
 
-}
+}  // namespace squirrel_3d_localizer
 
-#endif
+#endif /* SQUIRREL_3D_LOCALIZER_RAYCASTINGMODEL_H_ */

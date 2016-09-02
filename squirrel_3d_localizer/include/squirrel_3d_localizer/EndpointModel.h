@@ -61,6 +61,7 @@ class EndpointModel : public ObservationModel {
   double m_maxObstacleDistance;
   boost::shared_ptr<DynamicEDTOctomap> m_distanceMap;
 };
-}
 
-#endif
+}  // namespace squirrel_3d_localizer
+
+#endif /* SQUIRREL_3D_LOCALIZER_ENDPOINTMODEL_H_ */

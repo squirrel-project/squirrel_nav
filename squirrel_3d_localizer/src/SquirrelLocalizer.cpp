@@ -40,6 +40,7 @@ SquirrelLocalizer::SquirrelLocalizer(unsigned randomSeed)
     : m_rngEngine(randomSeed),
       m_rngNormal(m_rngEngine, NormalDistributionT(0.0, 1.0)),
       m_rngUniform(m_rngEngine, UniformDistributionT(0.0, 1.0)),
+      m_nodeName(ros::this_node::getName()),
       m_nh(),
       m_privateNh("~"),
       m_odomFrameId("odom"),
@@ -110,18 +111,22 @@ SquirrelLocalizer::SquirrelLocalizer(unsigned randomSeed)
   m_privateNh.param("initial_pose/yaw", m_initPose(5), 0.0);
   m_privateNh.param("initial_pose_real_zrp", m_initPoseRealZRP, false);
 
-  m_privateNh.param("initial_std/x", m_initNoiseStd(0), 0.1);       // 0.1
-  m_privateNh.param("initial_std/y", m_initNoiseStd(1), 0.1);       // 0.1
-  m_privateNh.param("initial_std/z", m_initNoiseStd(2), 0.02);      // 0.02
-  m_privateNh.param("initial_std/roll", m_initNoiseStd(3), 0.04);   // 0.04
-  m_privateNh.param("initial_std/pitch", m_initNoiseStd(4), 0.04);  // 0.04
+  m_privateNh.param("initial_std_dev/x", m_initNoiseStd(0), 0.1);       // 0.1
+  m_privateNh.param("initial_std_dev/y", m_initNoiseStd(1), 0.1);       // 0.1
+  m_privateNh.param("initial_std_dev/z", m_initNoiseStd(2), 0.02);      // 0.02
+  m_privateNh.param("initial_std_dev/roll", m_initNoiseStd(3), 0.04);   // 0.04
+  m_privateNh.param("initial_std_dev/pitch", m_initNoiseStd(4), 0.04);  // 0.04
   m_privateNh.param(
-      "initial_std/yaw", m_initNoiseStd(5), M_PI / 12);  // M_PI/12
+      "initial_std_dev/yaw", m_initNoiseStd(5), M_PI / 12);  // M_PI/12
 
   if (m_privateNh.hasParam("num_sensor_beams"))
     ROS_WARN(
         "Parameter \"num_sensor_beams\" is no longer used, use "
         "\"sensor_sampling_dist\" instead");
+
+  // set sensor used
+  m_privateNh.param("use_depth_camera", m_useDepthCamera, true);
+  m_privateNh.param("use_laser_scanner", m_useLaserScanner, true);
 
   // laser observation model parameters:
   m_privateNh.param(
@@ -182,15 +187,10 @@ SquirrelLocalizer::SquirrelLocalizer(unsigned randomSeed)
     m_observationModel = boost::shared_ptr<ObservationModel>(
         new RaycastingModel(&m_privateNh, m_mapModel, &m_rngEngine));
   } else {
-#ifndef SKIP_ENDPOINT_MODEL
     // m_mapModel = boost::shared_ptr<MapModel>(new DistanceMap(&m_privateNh));
     m_mapModel = boost::shared_ptr<MapModel>(new OccupancyMap(&m_privateNh));
     m_observationModel = boost::shared_ptr<ObservationModel>(
         new EndpointModel(&m_privateNh, m_mapModel, &m_rngEngine));
-#else
-    ROS_FATAL("EndpointModel not compiled due to missing dynamicEDT3D");
-    exit(-1);
-#endif
   }
 
   m_particles.resize(m_numParticles);
@@ -221,6 +221,10 @@ SquirrelLocalizer::SquirrelLocalizer(unsigned randomSeed)
       "global_localization", &SquirrelLocalizer::globalLocalizationCallback,
       this);
 
+  ////// Subscription to laser and asus
+  m_toggleSensorsSrv = m_privateNh.advertiseService(
+      "toggle_sensors", &SquirrelLocalizer::toggleSensorsSrvCallback, this);
+
   // subscription on laser, tf message filter
   m_laserSub = new message_filters::Subscriber<sensor_msgs::LaserScan>(
       m_nh, "scan", 100);
@@ -236,6 +240,12 @@ SquirrelLocalizer::SquirrelLocalizer(unsigned randomSeed)
       *m_pointCloudSub, m_tfListener, m_odomFrameId, 100);
   m_pointCloudFilter->registerCallback(
       boost::bind(&SquirrelLocalizer::pointCloudCallback, this, _1));
+
+  // synchronization and subscription to both messages
+  synchronizer_ = new message_filters::Synchronizer<ApprxTimePolicy>(
+      ApprxTimePolicy(10), *m_laserSub, *m_pointCloudSub);
+  synchronizer_->registerCallback(
+      boost::bind(&SquirrelLocalizer::synchronizedCallback, this, _1, _2));
 
   // subscription on init pose, tf message filter
   m_initPoseSub =
@@ -262,17 +272,21 @@ SquirrelLocalizer::SquirrelLocalizer(unsigned randomSeed)
   if (m_useTimer) {
     m_timer = m_nh.createTimer(
         ros::Duration(m_timerPeriod), &SquirrelLocalizer::timerCallback, this);
-    ROS_INFO("Using timer with a period of %4f s", m_timerPeriod);
+    ROS_INFO_STREAM(
+        m_nodeName << ": Using timer with a period of " << m_timerPeriod
+                   << "s");
   }
 
-  ROS_INFO(
-      "SquirrelLocalization initialized with %d particles.", m_numParticles);
+  ROS_INFO_STREAM(
+      m_nodeName << ": SquirrelLocalization initialized with " << m_numParticles
+                 << " particles.");
 }
 
 SquirrelLocalizer::~SquirrelLocalizer() {
-  std::string last_pose_filename = ros::package::getPath("squirrel_3d_localizer") +
-                                   std::string("/config/last_pose.yaml");
-  std::ofstream f(last_pose_filename.c_str());
+  std::string lastPoseFilename =
+      ros::package::getPath("squirrel_3d_localizer") +
+      std::string("/config/last_pose.yaml");
+  std::ofstream f(lastPoseFilename.c_str());
 
   if (f.is_open()) {
     tf::Vector3 position = m_bestParticlePose.getOrigin();
@@ -289,7 +303,8 @@ SquirrelLocalizer::~SquirrelLocalizer() {
       << "  yaw: " << yaw;
     f.close();
   } else {
-    ROS_ERROR("Unable to dump last pose on last_pose.yaml");
+    ROS_ERROR_STREAM(
+        m_nodeName << ": Unable to dump last pose on last_pose.yaml");
   }
 
   delete m_laserFilter;
@@ -336,10 +351,12 @@ void SquirrelLocalizer::reset() {
              !m_tfListener.waitForTransform(
                  m_globalFrameId, ident.frame_id_, lookupTime,
                  ros::Duration(1.0))) {
-        ROS_WARN(
-            "Waiting for transform %s --> %s for ground truth initialization "
-            "failed, trying again...",
-            m_globalFrameId.c_str(), ident.frame_id_.c_str());
+        ROS_WARN_STREAM(
+            m_nodeName << ": Waiting for transform " << m_globalFrameId
+                       << " --> " << ident.frame_id_
+                       << " for ground truth "
+                          "initialization "
+                          "failed, trying again...");
         lookupTime = ros::Time::now();
       }
       ident.stamp_ = lookupTime;
@@ -409,8 +426,9 @@ void SquirrelLocalizer::reset() {
 #if defined(_BENCH_TIME)
   double dt = (ros::WallTime::now() - startTime).toSec();
   ROS_INFO_STREAM(
-      "Initialization of " << m_numParticles << " particles took " << dt
-                           << "s (=" << dt / m_numParticles << "s/particle)");
+      m_nodeName << ": Initialization of " << m_numParticles
+                 << " particles took " << dt << "s (=" << dt / m_numParticles
+                 << "s/particle)");
 #endif
 }
 
@@ -423,9 +441,10 @@ void SquirrelLocalizer::initZRP(double& z, double& roll, double& pitch) {
         lookupPoseHeight(lastOdomPose.stamp_, poseHeight)) {
       z = poseHeight;
     } else {
-      ROS_WARN(
-          "Could not determine current pose height, falling back to "
-          "init_pose_z");
+      ROS_WARN_STREAM(
+          m_nodeName
+          << ": Could not determine current pose height, falling back to "
+             "init_pose_z");
       z = m_initPose(2);
     }
 
@@ -433,9 +452,10 @@ void SquirrelLocalizer::initZRP(double& z, double& roll, double& pitch) {
     if (!m_lastIMUMsgBuffer.empty()) {
       getRP(m_lastIMUMsgBuffer.back().orientation, roll, pitch);
     } else {
-      ROS_WARN(
-          "Could not determine current roll and pitch, falling back to "
-          "init_pose_{roll,pitch}");
+      ROS_WARN_STREAM(
+          m_nodeName
+          << ": Could not determine current roll and pitch, falling back to "
+             "init_pose_{roll,pitch}");
       roll  = m_initPose(3);
       pitch = m_initPose(4);
     }
@@ -446,20 +466,31 @@ void SquirrelLocalizer::initZRP(double& z, double& roll, double& pitch) {
     pitch = m_initPose(4);
   }
 }
+
 void SquirrelLocalizer::laserCallback(
-    const sensor_msgs::LaserScanConstPtr& msg) {
+    const sensor_msgs::LaserScan::ConstPtr& msg) {
   ROS_DEBUG("Laser received (time: %f)", msg->header.stamp.toSec());
 
+  // for both sensors we use synchronizedCallback
+  if (!m_useLaserScanner || m_useDepthCamera)
+    return;
+
+  ROS_INFO_STREAM_ONCE(
+      m_nodeName << ": Subscribing to sensor_msgs::LaserScan data.");
+
   if (!m_initialized) {
-    ROS_WARN("Localization not initialized yet, skipping laser callback.");
+    ROS_WARN_STREAM(
+        m_nodeName
+        << ": Localization not initialized yet, skipping laser callback.");
     return;
   }
 
   double timediff = (msg->header.stamp - m_lastLaserTime).toSec();
   if (m_receivedSensorData && timediff < 0) {
-    ROS_WARN(
-        "Ignoring received laser data that is %f s older than previous data!",
-        timediff);
+    ROS_WARN_STREAM(
+        m_nodeName << ": Ignoring received laser data that is " << timediff
+                   << " s older than "
+                      "previous data!");
     return;
   }
 
@@ -589,17 +620,19 @@ bool SquirrelLocalizer::localizeWithMeasurement(
     if (imuMsgOk) {
       if (!m_motionModel->lookupLocalTransform(
               m_baseFootprintId, t, footprintToTorso)) {
-        ROS_WARN(
-            "Could not obtain pose height in localization, skipping Pose "
-            "integration");
+        ROS_WARN_STREAM(
+            m_nodeName
+            << ": Could not obtain pose height in localization, skipping Pose "
+               "integration");
       } else {
         m_observationModel->integratePoseMeasurement(
             m_particles, angleX, angleY, footprintToTorso);
       }
     } else {
-      ROS_WARN(
-          "Could not obtain roll and pitch measurement, skipping Pose "
-          "integration");
+      ROS_WARN_STREAM(
+          m_nodeName
+          << ": Could not obtain roll and pitch measurement, skipping Pose "
+             "integration");
     }
   }
 
@@ -622,28 +655,28 @@ bool SquirrelLocalizer::localizeWithMeasurement(
 
   if (nEffParticles <=
       m_nEffFactor * m_particles.size()) {  // selective resampling
-    ROS_INFO(
-        "Resampling, nEff=%f, numParticles=%zd", nEffParticles,
-        m_particles.size());
+    ROS_INFO_STREAM(
+        m_nodeName << ": Resampling, nEff=" << nEffParticles
+                   << " numParticles=" << m_particles.size());
     resample();
   } else {
-    ROS_INFO(
-        "Skipped resampling, nEff=%f, numParticles=%zd", nEffParticles,
-        m_particles.size());
+    ROS_INFO_STREAM(
+        m_nodeName << ": Skipped resampling, nEff=" << nEffParticles
+                   << " , numParticles=" << m_particles.size());
   }
 
   m_receivedSensorData = true;
 
   double dt = (ros::WallTime::now() - startTime).toSec();
   ROS_INFO_STREAM(
-      "Observations for " << m_numParticles << " particles took " << dt
-                          << "s (=" << dt / m_numParticles << "s/particle)");
+      m_nodeName << "Observations for " << m_numParticles << " particles took "
+                 << dt << "s (=" << dt / m_numParticles << "s/particle)");
 
   return true;
 }
 
 void SquirrelLocalizer::prepareLaserPointCloud(
-    const sensor_msgs::LaserScanConstPtr& laser, PointCloud& pc,
+    const sensor_msgs::LaserScan::ConstPtr& laser, PointCloud& pc,
     std::vector<float>& ranges) const {
   unsigned numBeams = laser->ranges.size();
   // skip every n-th scan:
@@ -704,9 +737,10 @@ void SquirrelLocalizer::prepareLaserPointCloud(
     rangesSparse[i] = ranges[sampledIndices.points[i]];
   }
   ranges = rangesSparse;
-  ROS_INFO(
-      "Laser PointCloud subsampled: %zu from %zu (%u out of valid range)",
-      pc.size(), cloudPtr->size(), numBeamsSkipped);
+  ROS_INFO_STREAM(
+      m_nodeName << "Laser PointCloud subsampled: " << pc.size() << " from "
+                 << cloudPtr->size() << "(" << numBeamsSkipped
+                 << " out of valid range)");
 }
 
 int SquirrelLocalizer::filterUniform(
@@ -734,9 +768,10 @@ void SquirrelLocalizer::filterGroundPlane(
   nonground.header = pc.header;
 
   if (pc.size() < 50) {
-    ROS_WARN(
-        "Pointcloud in SquirrelLocalizer::filterGroundPlane too small, "
-        "skipping ground plane extraction");
+    ROS_WARN_STREAM(
+        ros::this_node::getName()
+        << ": Pointcloud in SquirrelLocalizer::filterGroundPlane too small, "
+        << "skipping ground plane extraction");
     nonground = pc;
   } else {
     // plane detection for ground plane removal:
@@ -764,7 +799,9 @@ void SquirrelLocalizer::filterGroundPlane(
       seg.setInputCloud(cloud_filtered.makeShared());
       seg.segment(*inliers, *coefficients);
       if (inliers->indices.size() == 0) {
-        ROS_INFO("PCL segmentation did not find any plane.");
+        ROS_INFO_STREAM(
+            ros::this_node::getName()
+            << ": PCL segmentation did not find any plane.");
 
         break;
       }
@@ -822,7 +859,8 @@ void SquirrelLocalizer::filterGroundPlane(
     }
     // TODO: also do this if overall starting pointcloud too small?
     if (!groundPlaneFound) {  // no plane found or remaining points too small
-      ROS_WARN("No ground plane found in scan");
+      ROS_WARN_STREAM(
+          ros::this_node::getName() << ": No ground plane found in scan");
 
       // do a rough fitlering on height to prevent spurious obstacles
       pcl::PassThrough<pcl::PointXYZ> second_pass;
@@ -863,8 +901,8 @@ void SquirrelLocalizer::prepareGeneralPointCloud(
 
   } catch (tf::TransformException& ex) {
     ROS_ERROR_STREAM(
-        "Transform error for pointCloudCallback: " << ex.what()
-                                                   << ", quitting callback.\n");
+        m_nodeName << ": Transform error for pointCloudCallback: " << ex.what()
+                   << ", quitting callback.");
     return;
   }
 
@@ -928,10 +966,11 @@ void SquirrelLocalizer::prepareGeneralPointCloud(
 
     // TODO improve sampling?
 
-    ROS_INFO(
-        "PointCloudGroundFiltering done. Added %d non-ground points and %d "
-        "ground points (from %zu). Cloud size is %zu",
-        numNonFloorPoints, numFloorPoints, ground.size(), pc.size());
+    ROS_INFO_STREAM(
+        m_nodeName << "PointCloudGroundFiltering done. Added "
+                   << numNonFloorPoints << " non-ground points and "
+                   << numFloorPoints << "ground points (from " << ground.size()
+                   << "). Cloud size is " << pc.size());
     // create sparse ranges..
     ranges.resize(pc.size());
     for (unsigned int i = 0; i < pc.size(); ++i) {
@@ -940,7 +979,7 @@ void SquirrelLocalizer::prepareGeneralPointCloud(
     }
 
   } else {
-    ROS_INFO("Starting uniform sampling");
+    ROS_INFO_STREAM(m_nodeName << ": Starting uniform sampling");
     // ROS_ERROR("No ground filtering is not implemented yet!");
     // uniform sampling:
     pcl::PointCloud<int> sampledIndices;
@@ -955,7 +994,7 @@ void SquirrelLocalizer::prepareGeneralPointCloud(
       // rangesSparse[i] = ranges[sampledIndices.points[i]];
       // ranges[i] = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
     }
-    ROS_INFO("Done.");
+    ROS_INFO_STREAM(m_nodeName << ": Done.");
   }
   return;
 }
@@ -976,17 +1015,24 @@ void SquirrelLocalizer::pointCloudCallback(
     const sensor_msgs::PointCloud2::ConstPtr& msg) {
   ROS_DEBUG("PointCloud received (time: %f)", msg->header.stamp.toSec());
 
+  if (!m_useDepthCamera || m_useLaserScanner)
+    return;
+
+  ROS_INFO_STREAM_ONCE(
+      m_nodeName << ": Subscribing to sensor_msgs::PointCloud2 data.");
+
   if (!m_initialized) {
-    ROS_WARN("Loclization not initialized yet, skipping PointCloud callback.");
+    ROS_WARN_STREAM(
+        m_nodeName
+        << ": Localization not initialized yet, skipping PointCloud callback.");
     return;
   }
 
   double timediff = (msg->header.stamp - m_lastPointCloudTime).toSec();
-  if (m_receivedSensorData && timediff < 0) {
-    ROS_WARN(
-        "Ignoring received PointCloud data that is %f s older than previous "
-        "data!",
-        timediff);
+  if (m_receivedSensorData) {
+    ROS_WARN_STREAM(
+        m_nodeName << ": Ignoring received PointCloud data that is " << timediff
+                   << " s older than previous data!");
     return;
   }
 
@@ -1061,10 +1107,181 @@ void SquirrelLocalizer::pointCloudCallback(
   ROS_DEBUG("PointCloud callback complete.");
 }
 
+void SquirrelLocalizer::synchronizedCallback(
+    const sensor_msgs::LaserScan::ConstPtr& scanMsg,
+    const sensor_msgs::PointCloud2::ConstPtr& cloudMsg) {
+  /// use mean of time stamps
+  double stamp_sec =
+      0.5 * (scanMsg->header.stamp.toSec() + cloudMsg->header.stamp.toSec());
+  ros::Time stamp = ros::Time(stamp_sec);
+  ROS_DEBUG("Data received (time: %f)", stamp_sec);
+
+  if (!m_useLaserScanner || !m_useDepthCamera)
+    return;
+
+  ROS_INFO_STREAM_ONCE(
+      m_nodeName << ": Subscribing to sensor_msgs::LaserScan "
+                    "and sensor_msgs::PointCloud2 data.");
+
+  if (!m_initialized) {
+    ROS_WARN_STREAM(
+        m_nodeName
+        << ": Localization not initialized yet, skipping PointCloud callback.");
+    return;
+  }
+
+  if (m_receivedSensorData) {
+    double cloudTimeDiff =
+        (cloudMsg->header.stamp - m_lastPointCloudTime).toSec();
+    if (cloudTimeDiff < 0) {
+      ROS_WARN_STREAM(
+          m_nodeName << ": Ignoring received PointCloud data that is "
+                     << cloudTimeDiff << " s older than previous data!");
+      return;
+    }
+
+    double scanTimeDiff = (cloudMsg->header.stamp - m_lastLaserTime).toSec();
+    if (scanTimeDiff < 0) {
+      ROS_WARN_STREAM(
+          m_nodeName << ": Ignoring received laser data that is "
+                     << scanTimeDiff << " s older than previous data!");
+      return;
+    }
+  }
+
+  /// absolute, current odom pose
+  tf::Stamped<tf::Pose> odomPose;
+  // check if odometry available, skip scan if not.
+  if (!m_motionModel->lookupOdomPose(stamp, odomPose))
+    return;
+
+  bool sensor_integrated = false;
+
+  // TODO #1: Make this nicer: head rotations for integration check
+  // TODO #2: Initialization of m_headYawRotationLastScan, etc needs to be set
+  // correctly
+  bool isAboveHeadMotionThreshold = false;
+  double headYaw, headPitch, headRoll;
+  tf::StampedTransform torsoToSensor;
+  if (!m_motionModel->lookupLocalTransform(
+          cloudMsg->header.frame_id, stamp, torsoToSensor))
+    return;  // TODO: should we apply applyOdomTransformTemporal, before
+             // returning
+
+  // TODO #3: Invert transform?: tf::Transform
+  // torsoToSensor(localSensorFrame.inverse());
+
+  torsoToSensor.getBasis().getRPY(headRoll, headPitch, headYaw);
+  double headYawRotationSinceScan =
+      std::abs(headYaw - m_headYawRotationLastScan);
+  double headPitchRotationSinceScan =
+      std::abs(headPitch - m_headPitchRotationLastScan);
+
+  if (headYawRotationSinceScan >= m_observationThresholdHeadYawRot ||
+      headPitchRotationSinceScan >= m_observationThresholdHeadPitchRot)
+    isAboveHeadMotionThreshold = true;
+  // end #1
+
+  if (!m_paused && (!m_receivedSensorData || isAboveHeadMotionThreshold ||
+                    isAboveMotionThreshold(odomPose))) {
+    laser_geometry::LaserProjection laserProjector;
+    sensor_msgs::PointCloud2 scanPointCloud;
+    laserProjector.transformLaserScanToPointCloud(
+        cloudMsg->header.frame_id, *scanMsg, scanPointCloud, m_tfListener);
+    sensor_msgs::PointCloud2::ConstPtr scanPointCloudMsg(&scanPointCloud);
+
+    // convert laser to point cloud first: (we use the sparse poincloud of the
+    // pointcloud data as storage for the full sensors' readings
+    PointCloud pc_filteredScan, pc_filteredFull;
+    std::vector<float> rangesSparseScan, rangesSparseFull;
+    prepareGeneralPointCloud(
+        scanPointCloudMsg, pc_filteredScan, rangesSparseScan);
+    prepareGeneralPointCloud(cloudMsg, pc_filteredFull, rangesSparseFull);
+    pc_filteredFull.insert(
+        pc_filteredFull.begin(), pc_filteredScan.begin(),
+        pc_filteredScan.end());
+    rangesSparseFull.insert(
+        rangesSparseFull.begin(), rangesSparseScan.begin(),
+        rangesSparseScan.end());
+
+    double maxRange = scanMsg->range_max > 10. ? scanMsg->range_max : 10.;
+
+    ROS_DEBUG(
+        "Updating Pose Estimate from a PointCloud with %zu points and %zu "
+        "ranges",
+        pc_filteredFull.size(), rangesSparseFull.size());
+    sensor_integrated =
+        localizeWithMeasurement(pc_filteredFull, rangesSparseFull, maxRange);
+  }
+
+  if (!sensor_integrated) {  // no observation necessary: propagate particles
+                             // forward by full interval
+    // relative odom transform to last odomPose
+    tf::Transform odomTransform = m_motionModel->computeOdomTransform(odomPose);
+    m_motionModel->applyOdomTransform(m_particles, odomTransform);
+    constrainMotion(odomPose);
+  } else {
+    m_lastLocalizedPose = odomPose;
+    // TODO #1
+    m_headYawRotationLastScan   = headYaw;
+    m_headPitchRotationLastScan = headPitch;
+  }
+
+  m_motionModel->storeOdomPose(odomPose);
+  publishPoseEstimate(stamp, sensor_integrated);
+  m_lastPointCloudTime = cloudMsg->header.stamp;
+  m_lastLaserTime      = scanMsg->header.stamp;
+  ROS_DEBUG("LaserScan + PointCloud callback complete.");
+}
+
 void SquirrelLocalizer::imuCallback(const sensor_msgs::ImuConstPtr& msg) {
   m_lastIMUMsgBuffer.push_back(*msg);
 }
 
+bool SquirrelLocalizer::toggleSensorsSrvCallback(
+    squirrel_3d_localizer_msgs::ToggleSensors::Request& req,
+    squirrel_3d_localizer_msgs::ToggleSensors::Response& res) {
+  m_useLaserScanner = req.use_laser_scanner.data;
+  m_useDepthCamera  = req.use_depth_camera.data;
+  if (!m_useLaserScanner && !m_useDepthCamera)
+    ROS_WARN_STREAM(
+        m_nodeName
+        << ": Both laser scanner and depth camera have been disable.");
+  return true;
+}
+
+bool SquirrelLocalizer::resetMapSrvCallback(
+    squirrel_3d_localizer_msgs::SetMap::Request& req,
+    squirrel_3d_localizer_msgs::SetMap::Response& res) {
+  // resetting map.
+     m_motionModel = boost::shared_ptr<MotionModel>(new MotionModel(
+         &m_privateNh, &m_rngEngine, &m_tfListener, m_odomFrameId, m_baseFrameId));
+  if (m_useRaycasting) {
+    m_mapModel.reset(new OccupancyMap(&m_privateNh));
+    m_observationModel.reset(
+        new RaycastingModel(&m_privateNh, m_mapModel, &m_rngEngine));
+  } else {
+    m_mapModel.reset(new OccupancyMap(&m_privateNh));
+    m_observationModel.reset(
+        new EndpointModel(&m_privateNh, m_mapModel, &m_rngEngine));
+  }
+  // adapting the particles to the new map.
+  tf::Transform tf_newMap2oldMap;
+  tf::poseMsgToTF(req.relative_pose, tf_newMap2oldMap);
+  m_poseArray.header.frame_id = m_globalFrameId;
+  m_poseArray.header.stamp = ros::Time::now();
+  if (m_poseArray.poses.size() != m_particles.size())
+    m_poseArray.poses.reserve(m_particles.size());
+#pragma omp parallel for
+  for (size_t i = 0; i < m_particles.size(); ++i) {
+    m_particles[i].pose *= tf_newMap2oldMap;
+    tf::poseTFToMsg(m_particles[i].pose, m_poseArray.poses[i]);
+  }
+  m_poseArrayPub.publish(m_poseArray);
+
+  return true;
+}
+    
 bool SquirrelLocalizer::getImuMsg(
     const ros::Time& stamp, ros::Time& imuStamp, double& angleX,
     double& angleY) const {
@@ -1117,15 +1334,14 @@ bool SquirrelLocalizer::getImuMsg(
     return true;
   } else {
     if (closestOlderStamp < closestNewerStamp)
-      ROS_WARN(
-          "Closest IMU message is %.2f seconds too old, skipping pose "
-          "integration",
-          closestOlderStamp);
+      ROS_WARN_STREAM(
+          m_nodeName << ": Closest IMU message is " << closestOlderStamp
+                     << " seconds too old, skipping pose integration");
     else
-      ROS_WARN(
-          "Closest IMU message is %.2f seconds too new, skipping pose "
-          "integration",
-          closestNewerStamp);
+      ROS_WARN_STREAM(
+          m_nodeName << ": Closest IMU message is " << closestNewerStamp
+                     << " seconds too new, skipping pose "
+                        "integration");
     return false;
   }
 }
@@ -1136,10 +1352,10 @@ void SquirrelLocalizer::initPoseCallback(
   tf::poseMsgToTF(msg->pose.pose, pose);
 
   if (msg->header.frame_id != m_globalFrameId) {
-    ROS_WARN(
-        "Frame ID of \"initialpose\" (%s) is different from the global frame "
-        "%s",
-        msg->header.frame_id.c_str(), m_globalFrameId.c_str());
+    ROS_WARN_STREAM(
+        m_nodeName << ": Frame ID of \"initialpose\" (" << msg->header.frame_id
+                   << ") is different from the global frame "
+                   << m_globalFrameId.c_str());
   }
 
   std::vector<double> heights;
@@ -1148,7 +1364,9 @@ void SquirrelLocalizer::initPoseCallback(
     m_mapModel->getHeightlist(
         pose.getOrigin().getX(), pose.getOrigin().getY(), 0.6, heights);
     if (heights.size() == 0) {
-      ROS_WARN("No ground level to stand on found at map position, assuming 0");
+      ROS_WARN_STREAM(
+          m_nodeName << ": No ground level to stand on found at "
+                        "map position, assuming 0");
       heights.push_back(0.0);
     }
 
@@ -1164,13 +1382,14 @@ void SquirrelLocalizer::initPoseCallback(
       }
       poseHeightOk = lookupPoseHeight(stamp, poseHeight);
       if (!poseHeightOk) {
-        ROS_WARN(
-            "Could not determine current pose height, falling back to "
-            "init_pose_z");
+        ROS_WARN_STREAM(
+            m_nodeName
+            << ": Could not determine current pose height, falling back to "
+               "init_pose_z");
       }
     }
     if (!poseHeightOk) {
-      ROS_INFO("Use pose height from init_pose_z");
+      ROS_INFO_STREAM(m_nodeName << ": Use pose height from init_pose_z");
       poseHeight = m_initPose(2);
     }
   }
@@ -1181,8 +1400,9 @@ void SquirrelLocalizer::initPoseCallback(
       (std::abs(
            msg->pose.covariance.at(6 * 3 + 3) - M_PI / 12.0 * M_PI / 12.0) <
        0.1)) {
-    ROS_INFO(
-        "Covariance originates from RViz, using default parameters instead");
+    ROS_INFO_STREAM(
+        m_nodeName << ": Covariance originates from RViz, using "
+                      "default parameters instead");
     initCov            = Matrix6d::Zero();
     initCov.diagonal() = m_initNoiseStd.cwiseProduct(m_initNoiseStd);
 
@@ -1193,9 +1413,10 @@ void SquirrelLocalizer::initPoseCallback(
       bool useOdometry = true;
       if (m_useIMU) {
         if (m_lastIMUMsgBuffer.empty()) {
-          ROS_WARN(
-              "Could not determine current roll and pitch because IMU message "
-              "buffer is empty.");
+          ROS_WARN_STREAM(
+              m_nodeName << ": Could not determine current roll and pitch "
+                            "because IMU message "
+                            "buffer is empty.");
         } else {
           double roll, pitch;
           if (msg->header.stamp.isZero()) {
@@ -1208,16 +1429,18 @@ void SquirrelLocalizer::initPoseCallback(
             ok = getImuMsg(msg->header.stamp, imuStamp, roll, pitch);
           }
           if (ok) {
-            ROS_INFO(
-                "roll and pitch not set in initPoseCallback, use IMU values "
-                "(roll = %f, pitch = %f) instead",
-                roll, pitch);
+            ROS_INFO_STREAM(
+                m_nodeName << ": roll and pitch not set in initPoseCallback, "
+                              "use IMU values "
+                              "(roll="
+                           << yaw << ", pitch=" << pitch << ") instead");
             pose.setRotation(tf::createQuaternionFromRPY(roll, pitch, yaw));
             useOdometry = false;
           } else {
-            ROS_WARN(
-                "Could not determine current roll and pitch from IMU, falling "
-                "back to odometry roll and pitch");
+            ROS_WARN_STREAM(
+                m_nodeName << ": Could not determine current roll "
+                              "and pitch from IMU, falling back to "
+                              "odometry roll and pitch");
             useOdometry = true;
           }
         }
@@ -1230,22 +1453,25 @@ void SquirrelLocalizer::initPoseCallback(
         if (ok) {
           lastOdomPose.getBasis().getRPY(roll, pitch, dropyaw);
           pose.setRotation(tf::createQuaternionFromRPY(roll, pitch, yaw));
-          ROS_INFO(
-              "roll and pitch not set in initPoseCallback, use odometry values "
-              "(roll = %f, pitch = %f) instead",
-              roll, pitch);
+          ROS_INFO_STREAM(
+              m_nodeName << ": roll and pitch not set in initPoseCallback, use "
+                            "odometry values "
+                            "(roll="
+                         << roll << ", pitch = " << pitch << ") instead");
         } else {
-          ROS_WARN(
-              "Could not determine current roll and pitch from odometry, "
-              "falling back to init_pose_{roll,pitch} parameters");
+          ROS_WARN_STREAM(
+              m_nodeName
+              << ": Could not determine current roll and pitch from "
+                 "odometry, "
+                 "falling back to init_pose_{roll,pitch} parameters");
         }
       }
     }
 
     if (!ok) {
-      ROS_INFO(
-          "roll and pitch not set in initPoseCallback, use "
-          "init_pose_{roll,pitch} parameters instead");
+      ROS_INFO_STREAM(
+          m_nodeName << ": roll and pitch not set in initPoseCallback, use "
+                        "init_pose_{roll,pitch} parameters instead");
       pose.setRotation(
           tf::createQuaternionFromRPY(m_initPose(3), m_initPose(4), yaw));
     }
@@ -1296,9 +1522,10 @@ void SquirrelLocalizer::initPoseCallback(
     idx++;
   }
 
-  ROS_INFO(
-      "Pose reset around mean (%f %f %f)", pose.getOrigin().getX(),
-      pose.getOrigin().getY(), pose.getOrigin().getZ());
+  ROS_INFO_STREAM(
+      m_nodeName << ": Pose reset around mean (" << pose.getOrigin().getX()
+                 << ", " << pose.getOrigin().getY() << ", "
+                 << pose.getOrigin().getZ() << ")");
 
   // reset internal state:
   m_motionModel->reset();
@@ -1344,9 +1571,9 @@ void SquirrelLocalizer::normalizeWeights() {
   }
   if (wmin > wmax) {
     ROS_ERROR_STREAM(
-        "Error in weights: min=" << wmin << ", max=" << wmax
-                                 << ", 1st particle weight="
-                                 << m_particles[1].weight << std::endl);
+        m_nodeName << ": Error in weights: min=" << wmin << ", max=" << wmax
+                   << ", 1st particle weight=" << m_particles[1].weight
+                   << std::endl);
   }
 
   double min_normalized_value;
@@ -1362,7 +1589,9 @@ void SquirrelLocalizer::normalizeWeights() {
     dw         = 1;
   double scale = dn / dw;
   if (scale < 0.0) {
-    ROS_WARN("normalizeWeights: scale is %f < 0, dw=%f, dn=%f", scale, dw, dn);
+    ROS_WARN_STREAM(
+        m_nodeName << ": normalizeWeights: scale is " << scale
+                   << " < 0, dw=" << dw << ", dn=" << dn);
   }
   double offset      = -wmax * scale;
   double weights_sum = 0.0;
@@ -1442,7 +1671,7 @@ void SquirrelLocalizer::resample(unsigned numParticles) {
 }
 
 void SquirrelLocalizer::initGlobal() {
-  ROS_INFO("Initializing with uniform distribution");
+  ROS_INFO_STREAM(m_nodeName << ": Initializing with uniform distribution");
 
   double roll, pitch, z;
   initZRP(z, roll, pitch);
@@ -1450,7 +1679,7 @@ void SquirrelLocalizer::initGlobal() {
   m_mapModel->initGlobal(
       m_particles, z, roll, pitch, m_initNoiseStd, m_rngUniform, m_rngNormal);
 
-  ROS_INFO("Global localization done");
+  ROS_INFO_STREAM(m_nodeName << ": Global localization done");
   m_motionModel->reset();
   m_receivedSensorData = false;
   m_initialized        = true;
@@ -1522,12 +1751,17 @@ void SquirrelLocalizer::publishPoseEstimate(
         m_targetFrameId, baseToMapTF,
         targetToMapTF);  // typically target == odom
   } catch (const tf::TransformException& e) {
-    ROS_WARN(
-        "Failed to subtract base to %s transform, will not publish pose "
-        "estimate: %s",
-        m_targetFrameId.c_str(), e.what());
+    ROS_WARN_STREAM(
+        "Failed to subtract base to " << m_targetFrameId
+                                      << " transform, will not publish pose "
+                                         "estimate: "
+                                      << e.what());
     return;
   }
+
+  if (!m_useLaserScanner && !m_useDepthCamera)
+    ROS_WARN_STREAM(
+        m_nodeName << ": Sensor data are disabled, using pure dead reckoning.");
 
   tf::Transform latestTF(
       tf::Quaternion(targetToMapTF.getRotation()),
@@ -1551,8 +1785,8 @@ void SquirrelLocalizer::publishPoseEstimate(
 unsigned SquirrelLocalizer::getBestParticleIdx() const {
   if (m_bestParticleIdx < 0 || m_bestParticleIdx >= m_numParticles) {
     ROS_WARN(
-        "Index (%d) of best particle not valid, using 0 instead",
-        m_bestParticleIdx);
+        "%s: Index (%d) of best particle not valid, using 0 instead",
+        m_nodeName.c_str(), m_bestParticleIdx);
     return 0;
   }
 
@@ -1625,18 +1859,22 @@ void SquirrelLocalizer::pauseLocalizationCallback(
   if (msg->data) {
     if (!m_paused) {
       m_paused = true;
-      ROS_INFO("Localization paused");
+      ROS_INFO_STREAM(m_nodeName << ": Localization paused");
     } else {
-      ROS_WARN("Received a msg to pause localizatzion, but is already paused.");
+      ROS_WARN_STREAM(
+          m_nodeName << ": Received a msg to pause "
+                        "localizatzion, but is already paused.");
     }
   } else {
     if (m_paused) {
       m_paused = false;
-      ROS_INFO("Localization resumed");
+      ROS_INFO_STREAM(m_nodeName << ": Localization resumed");
       // force laser integration:
       m_receivedSensorData = false;
     } else {
-      ROS_WARN("Received a msg to resume localization, is not paused.");
+      ROS_WARN_STREAM(
+          m_nodeName
+          << ": Received a msg to resume localization, is not paused.");
     }
   }
 }
@@ -1645,10 +1883,11 @@ bool SquirrelLocalizer::pauseLocalizationSrvCallback(
     std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
   if (!m_paused) {
     m_paused = true;
-    ROS_INFO("Localization paused");
+    ROS_INFO_STREAM(m_nodeName << ": Localization paused");
   } else {
-    ROS_WARN(
-        "Received a request to pause localizatzion, but is already paused.");
+    ROS_WARN_STREAM(
+        m_nodeName << ": Received a request to pause "
+                      "localizatzion, but is already paused.");
   }
 
   return true;
@@ -1658,11 +1897,13 @@ bool SquirrelLocalizer::resumeLocalizationSrvCallback(
     std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
   if (m_paused) {
     m_paused = false;
-    ROS_INFO("Localization resumed");
+    ROS_INFO_STREAM(m_nodeName << ": Localization resumed");
     // force next laser integration:
     m_receivedSensorData = false;
   } else {
-    ROS_WARN("Received a request to resume localization, but is not paused.");
+    ROS_WARN_STREAM(
+        m_nodeName
+        << ": Received a request to resume localization, but is not paused.");
   }
 
   return true;
@@ -1677,4 +1918,5 @@ bool SquirrelLocalizer::lookupPoseHeight(
   } else
     return false;
 }
-}
+
+}  // namespace squirrel_3d_localizer

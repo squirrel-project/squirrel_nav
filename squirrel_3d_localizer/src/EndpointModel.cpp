@@ -121,4 +121,5 @@ void EndpointModel::initDistanceMap() {
   m_distanceMap->update();
   ROS_INFO("Distance map for endpoint model completed");
 }
-}
+
+} 

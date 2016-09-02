@@ -124,6 +124,6 @@ class MotionModel {
   tf::Stamped<tf::Pose> m_lastOdomPose;
 };
 
-}
+}  // namespace squirrel_3d_localizer
 
-#endif
+#endif /* SQUIRREL_3D_LOCALIZER_MOTIONMODEL_H_ */

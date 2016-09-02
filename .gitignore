@@ -86,3 +86,4 @@ squirrel_navigation/octomaps/squirrel_hall078.bt
 squirrel_navigation/maps/squirrel_hall078.*
 squirrel_navigation/maps/default-map.yaml
 squirrel_navigation/octomaps/default-octomap.yaml
+*.bk/*

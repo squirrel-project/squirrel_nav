@@ -302,4 +302,4 @@ double OccupancyMap::getFloorHeight(const tf::Transform& pose) const {
   }
 }
 
-}
+}  // namespace squirrel_3d_localizer

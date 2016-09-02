@@ -156,4 +156,4 @@ bool RaycastingModel::getHeightError(
   return true;
 }
 
-}
+}  // namespace squirrel_3d_localizer

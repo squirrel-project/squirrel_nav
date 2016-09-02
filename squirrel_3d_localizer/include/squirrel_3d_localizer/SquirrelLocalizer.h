@@ -24,16 +24,26 @@
 #ifndef SQUIRREL_3D_LOCALIZER_SQUIRRELLOCALIZER_H_
 #define SQUIRREL_3D_LOCALIZER_SQUIRRELLOCALIZER_H_
 
-#include <boost/shared_ptr.hpp>
-#include <ctime>
-
-#include <message_filters/subscriber.h>
 #include <ros/ros.h>
+
+#include <laser_geometry/laser_geometry.h>
+
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseArray.h>
+#include <geometry_msgs/PoseWithCovariance.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <message_filters/synchronizer.h>
+#include <sensor_msgs/Imu.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <squirrel_3d_localizer_msgs/SetMap.h>
+#include <squirrel_3d_localizer_msgs/ToggleSensors.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Float32.h>
 #include <std_srvs/Empty.h>
+
 #include <tf/message_filter.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_datatypes.h>
@@ -48,22 +58,18 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl_ros/point_cloud.h>
 
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/PoseArray.h>
-#include <geometry_msgs/PoseWithCovariance.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
-
 #include <squirrel_3d_localizer/MotionModel.h>
 #include <squirrel_3d_localizer/ObservationModel.h>
 #include <squirrel_3d_localizer/RaycastingModel.h>
 #include <squirrel_3d_localizer/SquirrelLocalizerDefs.h>
-#ifndef SKIP_ENDPOINT_MODEL
 #include <squirrel_3d_localizer/EndpointModel.h>
-#endif
 
 #include <octomap/octomap.h>
-#include <sensor_msgs/Imu.h>
+
 #include <boost/circular_buffer.hpp>
+#include <boost/shared_ptr.hpp>
+
+#include <ctime>
 
 namespace squirrel_3d_localizer {
 
@@ -75,7 +81,9 @@ static inline void getRP(
   tf::Matrix3x3(bt_q).getRPY(roll, pitch, useless_yaw);
 
   if (std::abs(useless_yaw) > 0.00001)
-    ROS_WARN("Non-zero yaw in IMU quaterion is ignored");
+    ROS_WARN_STREAM(
+        ros::this_node::getName()
+        << ": Non-zero yaw in IMU quaterion is ignored");
 }
 
 class SquirrelLocalizer {
@@ -86,13 +94,22 @@ class SquirrelLocalizer {
  public:
   SquirrelLocalizer(unsigned randomSeed);
   virtual ~SquirrelLocalizer();
-  virtual void laserCallback(const sensor_msgs::LaserScanConstPtr& msg);
-  virtual void pointCloudCallback(
-      const sensor_msgs::PointCloud2::ConstPtr& msg);
+
+  /// callback for laser scanner data
+  void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg);
+  /// callback for depth camera data
+  void pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg);
+  /// callback for synchronized laser scanner and depth camera data
+  void synchronizedCallback(
+      const sensor_msgs::LaserScan::ConstPtr& scanMsg,
+      const sensor_msgs::PointCloud2::ConstPtr& cloudMsg);
+  /// reinitialization from pose
   void initPoseCallback(
       const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
+  /// global reinitialization
   bool globalLocalizationCallback(
       std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+  /// pause localization by message
   void pauseLocalizationCallback(const std_msgs::BoolConstPtr& msg);
   /// pause localization by service call
   bool pauseLocalizationSrvCallback(
@@ -101,7 +118,15 @@ class SquirrelLocalizer {
   bool resumeLocalizationSrvCallback(
       std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
   void imuCallback(const sensor_msgs::ImuConstPtr& msg);
-
+  /// toggle sensors on/off by service call
+  bool toggleSensorsSrvCallback(
+      squirrel_3d_localizer_msgs::ToggleSensors::Request& req,
+      squirrel_3d_localizer_msgs::ToggleSensors::Response& res);
+  /// reset map via service call
+  bool resetMapSrvCallback(
+      squirrel_3d_localizer_msgs::SetMap::Request& req,
+      squirrel_3d_localizer_msgs::SetMap::Response& res);
+  
   /**
    * Importance sampling from m_particles according to weights,
    * resets weight to 1/numParticles. Uses low variance sampling
@@ -122,7 +147,7 @@ class SquirrelLocalizer {
   /// function call for global initialization (called by
   /// globalLocalizationCallback)
   void initGlobal();
-  
+
   // needed for pointcloud callback (from OctomapServer)
   static void filterGroundPlane(
       const PointCloud& pc, PointCloud& ground, PointCloud& nonground,
@@ -233,6 +258,7 @@ class SquirrelLocalizer {
   boost::shared_ptr<ObservationModel> m_observationModel;
   boost::shared_ptr<MapModel> m_mapModel;
 
+  std::string m_nodeName;
   ros::NodeHandle m_nh, m_privateNh;
   ros::Subscriber m_pauseIntegrationSub;
 
@@ -244,10 +270,17 @@ class SquirrelLocalizer {
       m_initPoseSub;
   tf::MessageFilter<geometry_msgs::PoseWithCovarianceStamped>* m_initPoseFilter;
 
+  // synchronization of messages
+  typedef message_filters::sync_policies::ApproximateTime<
+      sensor_msgs::LaserScan, sensor_msgs::PointCloud2>
+      ApprxTimePolicy;
+  message_filters::Synchronizer<ApprxTimePolicy>* synchronizer_;
+
   ros::Publisher m_posePub, m_poseEvalPub, m_poseOdomPub, m_poseTruePub,
       m_poseArrayPub, m_bestPosePub, m_nEffPub, m_filteredPointCloudPub;
   ros::Subscriber m_imuSub;
-  ros::ServiceServer m_globalLocSrv, m_pauseLocSrv, m_resumeLocSrv;
+  ros::ServiceServer m_globalLocSrv, m_pauseLocSrv, m_resumeLocSrv,
+      m_toggleSensorsSrv;
   tf::TransformListener m_tfListener;
   tf::TransformBroadcaster m_tfBroadcaster;
   ros::Timer m_timer;
@@ -257,6 +290,8 @@ class SquirrelLocalizer {
   std::string m_baseFrameId;
   std::string m_baseFootprintId;
   std::string m_globalFrameId;
+
+  bool m_useDepthCamera, m_useLaserScanner;
 
   bool m_useRaycasting;
   bool m_initFromTruepose;
@@ -268,8 +303,7 @@ class SquirrelLocalizer {
   double m_minParticleWeight;
   Vector6d m_initPose;      // fixed init. pose (from params)
   Vector6d m_initNoiseStd;  // Std.dev for init. pose
-  bool
-      m_initPoseRealZRP;  // override z, roll, pitch with real values from robot
+  bool m_initPoseRealZRP;  // override z, roll, pitch with real values from robot
 
   double m_filterMaxRange;
   double m_filterMinRange;
@@ -317,7 +351,7 @@ class SquirrelLocalizer {
   double m_headPitchRotationLastScan;
 
   bool m_useIMU;  ///< True = use IMU for initialization and observation models,
-                  ///false = use orientation from odometry
+                  /// false = use orientation from odometry
   bool m_constrainMotionZ;   /// < True = do not estimate height, directly use
                              /// odometry pose
   bool m_constrainMotionRP;  /// < True = do not estimate roll and pitch,
@@ -328,6 +362,6 @@ class SquirrelLocalizer {
   double m_timerPeriod;
 };
 
-}
+}  // namespace squirrel_3d_localizer
 
-#endif
+#endif /* SQUIRREL_3D_LOCALIZER_SQUIRRELLOCALIZER_H_ */
