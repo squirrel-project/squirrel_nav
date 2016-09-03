@@ -1,0 +1,77 @@
+#
+# 2D localization configuration
+#
+
+verbose: false
+
+num_particles: 500
+neff_factor: 1.0 
+update_min_trans: 0.25
+update_min_rot: 0.1
+best_particle_as_mean: true
+use_map_bounds: false
+
+# frames
+base_frame_id: "/base_link"
+base_footprint_id: "/base_link"
+global_frame_id: "/map"
+odom_frame_id: "/odom"
+target_frame_id: "/odom"
+
+# pose initialization
+init_from_truepose: false
+init_global: false
+use_last_pose: true
+
+# 2d navigation
+constrain_motion_z: true
+constrain_motion_rp: true
+weight_factor_z: 0.0
+weight_factor_roll: 0.0
+weight_factor_pitch: 0.0
+
+# use both depth camera and 2d laser rangefinder
+use_depth_camera: true
+use_laser_scanner: true
+
+# use endpoint model with sensor downsampling
+use_raycasting: false
+sensor_sampling_dist: 0.25
+
+# endpoint model
+endpoint:
+  sigma: 1.0
+  max_obstacle_distance: 0.25
+
+# noise of the motion model
+motion_noise:
+  z: 0.0  
+  roll: 0.0   
+  pitch: 0.0  
+  xx: 0.1
+  xy: 0.0
+  xt: 0.0
+  yx: 0.0
+  yy: 0.2
+  yt: 0.0
+  tx: 0.0
+  ty: 0.0
+  tt: 0.3
+
+# initial pose (when no truepose available):
+initial_pose:
+  x: 0.0
+  y: 0.0
+  z: 0.0
+  roll: 0.0
+  pitch: 0.0
+  yaw: 0.0    
+
+# std dev for initial noise (truepose or manual init)
+initial_std_dev:
+  x: 0.25
+  y: 0.25
+  z: 0.0
+  roll: 0.0
+  pitch: 0.0
+  yaw: 0.5    # ~13 deg
