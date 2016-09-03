@@ -33,9 +33,7 @@ MotionModel::MotionModel(
       m_rngUniform(*rngEngine, UniformDistributionT(0.0, 1.0)),
       m_odomFrameId(odomFrameId),
       m_baseFrameId(baseFrameId),
-      m_firstOdometryReceived(false)
-
-{
+      m_firstOdometryReceived(false) {
 
   // motion model noise parameters:
   m_odomNoise2D = Eigen::Matrix3d::Zero();
@@ -59,19 +57,22 @@ MotionModel::MotionModel(
 
   // old parameters, warn that renamed:
   if (nh->hasParam("motion_noise/x"))
-    ROS_WARN_STREAM(ros::this_node::getName() <<
-        ": Parameter motion_noise/x is no longer used, use variances "
-        "motion_noise/[xx|xy|xt] instead");
+    ROS_WARN_STREAM(
+        ros::this_node::getName()
+        << ": Parameter motion_noise/x is no longer used, use variances "
+           "motion_noise/[xx|xy|xt] instead");
 
   if (nh->hasParam("motion_noise/y"))
-    ROS_WARN_STREAM(ros::this_node::getName() <<
-        ": Parameter motion_noise/y is no longer used, use variances "
-        "motion_noise/[yx|yy|yt] instead");
+    ROS_WARN_STREAM(
+        ros::this_node::getName()
+        << ": Parameter motion_noise/y is no longer used, use variances "
+           "motion_noise/[yx|yy|yt] instead");
 
   if (nh->hasParam("motion_noise/yaw"))
-    ROS_WARN_STREAM(ros::this_node::getName() <<
-        ": Parameter motion_noise/yaw is no longer used, use variances "
-        "motion_noise/[tx|ty|tt] instead");
+    ROS_WARN_STREAM(
+        ros::this_node::getName()
+        << ": Parameter motion_noise/yaw is no longer used, use variances "
+           "motion_noise/[tx|ty|tt] instead");
 
   // odometry calibration (systematic drift correction)
   m_odomCalibration2D = Eigen::Matrix3d::Identity();
@@ -205,8 +206,10 @@ bool MotionModel::lookupOdomTransform(
   tf::Stamped<tf::Pose> odomPose;
 
   if (t <= m_lastOdomPose.stamp_) {
-    ROS_WARN("%s: "
-             "Looking up OdomTransform that is %f ms older than the last odomPose!", ros::this_node::getName().c_str(),
+    ROS_WARN(
+        "%s: "
+        "Looking up OdomTransform that is %f ms older than the last odomPose!",
+        ros::this_node::getName().c_str(),
         (m_lastOdomPose.stamp_ - t).toSec() / 1000.0);
   }
 
@@ -229,9 +232,11 @@ tf::Transform MotionModel::computeOdomTransform(
 void MotionModel::storeOdomPose(const tf::Stamped<tf::Pose>& odomPose) {
   m_firstOdometryReceived = true;
   if (odomPose.stamp_ <= m_lastOdomPose.stamp_) {
-    ROS_WARN_STREAM(ros::this_node::getName() << ": "
-        "Trying to store an OdomPose that is older or equal than the current "
-        "in the MotionModel, ignoring!");
+    ROS_WARN_STREAM(
+        ros::this_node::getName() << ": "
+                                     "Trying to store an OdomPose that is "
+                                     "older or equal than the current "
+                                     "in the MotionModel, ignoring!");
   } else {
     m_lastOdomPose = odomPose;
   }
@@ -246,7 +251,9 @@ bool MotionModel::lookupOdomPose(
   try {
     m_tfListener->transformPose(m_odomFrameId, ident, odomPose);
   } catch (tf::TransformException& e) {
-    ROS_WARN("%s: Failed to compute odom pose, skipping scan (%s)", ros::this_node::getName().c_str(), e.what());
+    ROS_WARN(
+        "%s: Failed to compute odom pose, skipping scan (%s)",
+        ros::this_node::getName().c_str(), e.what());
     return false;
   }
 

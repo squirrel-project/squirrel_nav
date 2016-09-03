@@ -196,6 +196,16 @@ private:
 
 };
 
+namespace internal {
+
+inline std::string sanitizeFrameID(const std::string& frame_id) {
+  if (frame_id.empty() || frame_id[0] == '/')
+    return frame_id;
+  return std::string("/") + frame_id; 
+}
+
+}  // namespace internal
+
 #endif  /* SQUIRREL_LOCALIZER_LOCALIZERAPP_H_ */
 
 //

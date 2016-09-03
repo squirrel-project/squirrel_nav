@@ -1,6 +1,3 @@
-// SVN $HeadURL$
-// SVN $Id$
-
 /*
  * 6D localization for humanoid robots
  *
@@ -24,14 +21,14 @@
 #include <ros/ros.h>
 #include <squirrel_3d_localizer/SquirrelLocalizer.h>
 
-int main(int argc, char** argv){
+int main(int argc, char** argv) {
   ros::init(argc, argv, "squirrel_3d_localizer");
 
   ros::NodeHandle private_nh("~");
   unsigned seed;
   int iseed;
   private_nh.param("seed", iseed, -1);
-  if(iseed == -1)
+  if (iseed == -1)
     seed = static_cast<unsigned int>(std::time(0));
   else
     seed = static_cast<unsigned int>(iseed);

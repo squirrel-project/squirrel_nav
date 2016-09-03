@@ -1,6 +1,3 @@
-// SVN $HeadURL$
-// SVN $Id$
-
 /*
  * 6D localization for humanoid robots
  *

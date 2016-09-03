@@ -91,7 +91,7 @@ SquirrelLocalizer::SquirrelLocalizer(unsigned randomSeed)
   m_privateNh.param("use_raycasting", m_useRaycasting, m_useRaycasting);
 
   m_privateNh.param("verbose", m_verbose, false);
-  
+
   m_privateNh.param("odom_frame_id", m_odomFrameId, m_odomFrameId);
   m_privateNh.param("target_frame_id", m_targetFrameId, m_targetFrameId);
   m_privateNh.param("base_frame_id", m_baseFrameId, m_baseFrameId);
@@ -481,10 +481,11 @@ void SquirrelLocalizer::laserCallback(
   if (!m_useLaserScanner || m_useDepthCamera)
     return;
 
-  ROS_INFO_STREAM_COND(m_printLaserSubscription,
+  ROS_INFO_STREAM_COND(
+      m_printLaserSubscription,
       m_nodeName << ": Subscribing to sensor_msgs::LaserScan data.");
   m_printLaserSubscription = false;
-  
+
   if (!m_initialized) {
     ROS_WARN_STREAM(
         m_nodeName
@@ -506,7 +507,7 @@ void SquirrelLocalizer::laserCallback(
   // check if odometry available, skip scan if not.
   if (!m_motionModel->lookupOdomPose(msg->header.stamp, odomPose))
     return;
-  
+
   bool sensor_integrated = false;
   if (!m_paused &&
       (!m_receivedSensorData || isAboveMotionThreshold(odomPose))) {
@@ -747,27 +748,29 @@ void SquirrelLocalizer::prepareLaserPointCloud(
   if (m_verbose)
     ROS_INFO_STREAM(
         m_nodeName << ": Laser PointCloud subsampled: " << pc.size() << " from "
-        << cloudPtr->size() << "(" << numBeamsSkipped
-        << " out of valid range)");
+                   << cloudPtr->size() << "(" << numBeamsSkipped
+                   << " out of valid range)");
 }
 
 void SquirrelLocalizer::prepareLaserPointCloud(
-    const sensor_msgs::LaserScan::ConstPtr& laser, const std::string& targetFrame,
-    PointCloud& pc, std::vector<float>& ranges) {
+    const sensor_msgs::LaserScan::ConstPtr& laser,
+    const std::string& targetFrame, PointCloud& pc,
+    std::vector<float>& ranges) {
   const size_t numBeams = laser->ranges.size(), step = 1;
   size_t numBeamsSkipped = 0;
-  double laserMin = std::max(double(laser->range_min), m_filterMinRange);
+  double laserMin        = std::max(double(laser->range_min), m_filterMinRange);
   ranges.reserve(50);
   pc.points.reserve(50);
   // projecting the laser scan in the target frame using sensor_msgs::PointCloud
   laser_geometry::LaserProjection beams_projector_;
   sensor_msgs::PointCloud pc_scan;
-  beams_projector_.transformLaserScanToPointCloud(targetFrame, *laser, pc_scan, m_tfListener);
-  // convert to pcl::PointCloud
+  beams_projector_.transformLaserScanToPointCloud(
+      targetFrame, *laser, pc_scan, m_tfListener);
+// convert to pcl::PointCloud
 #if PCL_VERSION_COMPARE(>=, 1, 7, 0)
-  pcl_conversions::toPCL(pc_scan.header, pc.header);  
+  pcl_conversions::toPCL(pc_scan.header, pc.header);
 #else
-  pc.header = pc_scan.header;
+  pc.header   = pc_scan.header;
 #endif
   for (size_t i = 0; i < numBeams; ++i) {
     const float range = laser->ranges[i];
@@ -779,8 +782,8 @@ void SquirrelLocalizer::prepareLaserPointCloud(
       numBeamsSkipped++;
     }
   }
-  pc.height = 1;
-  pc.width = pc.points.size();
+  pc.height   = 1;
+  pc.width    = pc.points.size();
   pc.is_dense = true;
 
   // uniform sampling:
@@ -802,8 +805,8 @@ void SquirrelLocalizer::prepareLaserPointCloud(
   if (m_verbose)
     ROS_INFO_STREAM(
         m_nodeName << ": Laser PointCloud subsampled: " << pc.size() << " from "
-        << cloudPtr->size() << "(" << numBeamsSkipped
-        << " out of valid range)");
+                   << cloudPtr->size() << "(" << numBeamsSkipped
+                   << " out of valid range)");
 }
 
 int SquirrelLocalizer::filterUniform(
@@ -1031,9 +1034,9 @@ void SquirrelLocalizer::prepareGeneralPointCloud(
     if (m_verbose)
       ROS_INFO_STREAM(
           m_nodeName << "PointCloudGroundFiltering done. Added "
-          << numNonFloorPoints << " non-ground points and "
-          << numFloorPoints << "ground points (from " << ground.size()
-          << "). Cloud size is " << pc.size());
+                     << numNonFloorPoints << " non-ground points and "
+                     << numFloorPoints << "ground points (from "
+                     << ground.size() << "). Cloud size is " << pc.size());
     // create sparse ranges..
     ranges.resize(pc.size());
     for (unsigned int i = 0; i < pc.size(); ++i) {
@@ -1081,10 +1084,11 @@ void SquirrelLocalizer::pointCloudCallback(
   if (!m_useDepthCamera || m_useLaserScanner)
     return;
 
-  ROS_INFO_STREAM_COND(m_printPointCloudSubscription, 
+  ROS_INFO_STREAM_COND(
+      m_printPointCloudSubscription,
       m_nodeName << ": Subscribing to sensor_msgs::PointCloud2 data.");
   m_printPointCloudSubscription = false;
-  
+
   if (!m_initialized) {
     ROS_WARN_STREAM(
         m_nodeName
@@ -1183,11 +1187,12 @@ void SquirrelLocalizer::synchronizedCallback(
   if (!m_useLaserScanner || !m_useDepthCamera)
     return;
 
-  ROS_INFO_STREAM_COND(m_printSynchronizedSubscription,
+  ROS_INFO_STREAM_COND(
+      m_printSynchronizedSubscription,
       m_nodeName << ": Subscribing to sensor_msgs::LaserScan "
                     "and sensor_msgs::PointCloud2 data.");
   m_printSynchronizedSubscription = false;
-  
+
   if (!m_initialized) {
     ROS_WARN_STREAM(
         m_nodeName
@@ -1301,19 +1306,20 @@ bool SquirrelLocalizer::toggleSensorsSrvCallback(
     squirrel_3d_localizer_msgs::ToggleSensors::Request& req,
     squirrel_3d_localizer_msgs::ToggleSensors::Response& res) {
   const bool useLaserScanner = req.use_laser_scanner.data;
-  const bool useDepthCamera = req.use_depth_camera.data;
+  const bool useDepthCamera  = req.use_depth_camera.data;
 
   if (useLaserScanner && !m_useLaserScanner && !useDepthCamera)
     m_printLaserSubscription = true;
   if (useDepthCamera && !m_useDepthCamera && !useLaserScanner)
     m_printPointCloudSubscription = true;
-  if (useLaserScanner && useDepthCamera && (!m_useLaserScanner && !m_useDepthCamera))
+  if (useLaserScanner && useDepthCamera &&
+      (!m_useLaserScanner && !m_useDepthCamera))
     m_printSynchronizedSubscription = true;
   if (!useLaserScanner && !useDepthCamera)
-    ROS_WARN_STREAM(
-        m_nodeName
-        << ": Subscription to both laser scanner and depth camera have been disable. Localizing with dead reckoning.");
-  
+    ROS_WARN_STREAM(m_nodeName << ": Subscription to both laser scanner and "
+                                  "depth camera have been disable. Localizing "
+                                  "with dead reckoning.");
+
   m_useLaserScanner = useLaserScanner;
   m_useDepthCamera  = useDepthCamera;
 
@@ -1324,8 +1330,8 @@ bool SquirrelLocalizer::resetMapSrvCallback(
     squirrel_3d_localizer_msgs::SetMap::Request& req,
     squirrel_3d_localizer_msgs::SetMap::Response& res) {
   // resetting map.
-     m_motionModel = boost::shared_ptr<MotionModel>(new MotionModel(
-         &m_privateNh, &m_rngEngine, &m_tfListener, m_odomFrameId, m_baseFrameId));
+  m_motionModel = boost::shared_ptr<MotionModel>(new MotionModel(
+      &m_privateNh, &m_rngEngine, &m_tfListener, m_odomFrameId, m_baseFrameId));
   if (m_useRaycasting) {
     m_mapModel.reset(new OccupancyMap(&m_privateNh));
     m_observationModel.reset(
@@ -1337,9 +1343,9 @@ bool SquirrelLocalizer::resetMapSrvCallback(
   }
   // adapting the particles to the new map.
   tf::Transform tf_newMap2oldMap;
-  tf::poseMsgToTF(req.relative_pose, tf_newMap2oldMap);
+  tf::poseMsgToTF(req.tf_oldMap2newMap, tf_newMap2oldMap);
   m_poseArray.header.frame_id = m_globalFrameId;
-  m_poseArray.header.stamp = ros::Time::now();
+  m_poseArray.header.stamp    = ros::Time::now();
   if (m_poseArray.poses.size() != m_particles.size())
     m_poseArray.poses.reserve(m_particles.size());
 #pragma omp parallel for
@@ -1351,7 +1357,7 @@ bool SquirrelLocalizer::resetMapSrvCallback(
 
   return true;
 }
-    
+
 bool SquirrelLocalizer::getImuMsg(
     const ros::Time& stamp, ros::Time& imuStamp, double& angleX,
     double& angleY) const {

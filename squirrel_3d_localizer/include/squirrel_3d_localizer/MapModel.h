@@ -1,6 +1,3 @@
-// SVN $HeadURL$
-// SVN $Id$
-
 /*
  * 6D localization for humanoid robots
  *
@@ -75,7 +72,7 @@ class MapModel {
   boost::shared_ptr<octomap::OcTree> m_map;
 
   bool m_useMapBounds;
-  
+
   double m_motionMeanZ;
   double m_motionRangeZ;
   double m_motionRangeRoll;

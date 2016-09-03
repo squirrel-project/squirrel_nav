@@ -62,10 +62,17 @@ Ais_localizer_node::Ais_localizer_node() :
   private_nh_.param("front_laser_frame_ID", front_laser_frame_ID_, (std::string) "/laserFront_frame");
   private_nh_.param("rear_laser_frame_ID", back_laser_frame_ID_, (std::string) "/laserRear_frame");
   private_nh_.param("base_link_frame_ID", base_link_frame_ID_, (std::string) "/base_link");
-  private_nh_.param("base_link_encoders_frame_ID", base_link_encoders_frame_ID_, (std::string) "/base_link_encoders");
+  private_nh_.param("base_link_encoders_frame_ID", base_link_encoders_frame_ID_, (std::string) "/base_link");
   private_nh_.param("odom_frame_ID", odom_frame_ID_, (std::string) "/odom");
   private_nh_.param("map_frame_ID", map_frame_ID_, (std::string) "/map");
 
+  front_laser_frame_ID_ = internal::sanitizeFrameID(front_laser_frame_ID_);
+  back_laser_frame_ID_ = internal::sanitizeFrameID(back_laser_frame_ID_);
+  base_link_frame_ID_ = internal::sanitizeFrameID(base_link_frame_ID_);
+  base_link_encoders_frame_ID_ = internal::sanitizeFrameID(base_link_encoders_frame_ID_);
+  odom_frame_ID_ = internal::sanitizeFrameID(odom_frame_ID_);
+  map_frame_ID_ = internal::sanitizeFrameID(map_frame_ID_);
+  
   private_nh_.param("use_laser_odom", use_laser_odom_, bool(false));
   
   //---------------------------------------------------------------------------
@@ -262,6 +269,13 @@ bool Ais_localizer_node::updateParameterCallback( std_srvs::Empty::Request& req,
   private_nh_.param("odom_frame_ID", odom_frame_ID_, (std::string) "/odom");
   private_nh_.param("map_frame_ID", map_frame_ID_, (std::string) "/map");
 
+  front_laser_frame_ID_ = internal::sanitizeFrameID(front_laser_frame_ID_);
+  back_laser_frame_ID_ = internal::sanitizeFrameID(back_laser_frame_ID_);
+  base_link_frame_ID_ = internal::sanitizeFrameID(base_link_frame_ID_);
+  base_link_encoders_frame_ID_ = internal::sanitizeFrameID(base_link_encoders_frame_ID_);
+  odom_frame_ID_ = internal::sanitizeFrameID(odom_frame_ID_);
+  map_frame_ID_ = internal::sanitizeFrameID(map_frame_ID_);
+  
   return true;
 }
 
@@ -527,17 +541,19 @@ void Ais_localizer_node::scanCallback( const sensor_msgs::LaserScan::ConstPtr& s
     return;
   }
 
-  if ( use_second_laser_ && scan->header.frame_id == back_laser_frame_ID_ ) {
+  const std::string msg_frame_ID = internal::sanitizeFrameID(scan->header.frame_id);
+  
+  if ( use_second_laser_ && msg_frame_ID == back_laser_frame_ID_ ) {
     scan_back_ = *scan;
     scan_back_new_ = true;
   }
 	
-  if ( use_second_laser_ && scan->header.frame_id == front_laser_frame_ID_ ) {
+  if ( use_second_laser_ && msg_frame_ID == front_laser_frame_ID_ ) {
     scan_front_ = *scan;
     scan_front_new_ = true;
   }
 	
-  if ( !use_second_laser_ && scan->header.frame_id == front_laser_frame_ID_ ) {
+  if ( !use_second_laser_ && msg_frame_ID == front_laser_frame_ID_ ) {
     scan_front_ = *scan;
     scan_front_new_ = true;
   }
