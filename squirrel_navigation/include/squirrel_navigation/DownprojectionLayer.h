@@ -144,13 +144,14 @@ class DownprojectionLayer : public costmap_2d::ObstacleLayer
   JointHandle kinect_tilt_h_, kinect_pan_h_;
   std::string kinect_observation_frame_;
   geometry_msgs::Point kinect_origin_;
-
+  
   // Costmap update handle
   CostmapUpdateHandle* costmap_update_handle_;
 
   // Footprint active
   bool footprint_active_;
   bool pushing_action_;
+  double laser_height_;
   
   void reconfigureCallback( DownprojectionLayerPluginConfig& , uint32_t );
   void clearNonLethal( double, double, double, double, bool );
