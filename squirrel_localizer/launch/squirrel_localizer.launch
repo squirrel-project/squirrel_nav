@@ -1,6 +1,13 @@
 <launch>   
   <arg name="use_last_pose" default="true"/>
-	
+  <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml"/>
+  <arg name="load_map" default="false"/>
+
+  <!--- Run mapserver -->
+  <include file="$(find squirrel_navigation)/launch/map_server.launch" if="$(arg load_map)">
+    <arg name="map_file" value="$(arg map_file)" />
+  </include>
+
   <!-- Pose Transformer -->
   <node name="scan_odom_tf_pub" pkg="squirrel_localizer" type="squirrel_localizer_tf_pose_node" output="screen">
     <param name="pose_topic" value="squirrel_localizer_odom_pose"/>
