@@ -74,6 +74,8 @@ class MapModel {
  protected:
   boost::shared_ptr<octomap::OcTree> m_map;
 
+  bool m_useMapBounds;
+  
   double m_motionMeanZ;
   double m_motionRangeZ;
   double m_motionRangeRoll;

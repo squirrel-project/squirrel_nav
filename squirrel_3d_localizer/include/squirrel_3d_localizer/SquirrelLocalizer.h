@@ -26,8 +26,6 @@
 
 #include <ros/ros.h>
 
-#include <laser_geometry/laser_geometry.h>
-
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseWithCovariance.h>
@@ -37,12 +35,15 @@
 #include <message_filters/synchronizer.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/LaserScan.h>
+#include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <squirrel_3d_localizer_msgs/SetMap.h>
 #include <squirrel_3d_localizer_msgs/ToggleSensors.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Float32.h>
 #include <std_srvs/Empty.h>
+
+#include <laser_geometry/laser_geometry.h>
 
 #include <tf/message_filter.h>
 #include <tf/transform_broadcaster.h>
@@ -209,9 +210,13 @@ class SquirrelLocalizer {
    *
    */
   void prepareLaserPointCloud(
-      const sensor_msgs::LaserScanConstPtr& laser, PointCloud& pc,
+      const sensor_msgs::LaserScan::ConstPtr& laser, PointCloud& pc,
       std::vector<float>& ranges) const;
 
+  void prepareLaserPointCloud(
+      const sensor_msgs::LaserScan::ConstPtr& laser, const std::string& targetFrame,
+      PointCloud& pc, std::vector<float>& ranges); 
+  
   /**
    * Prepares a PointCloud msg to be integrated into the observations model.
    * Filters
@@ -222,6 +227,7 @@ class SquirrelLocalizer {
   void prepareGeneralPointCloud(
       const sensor_msgs::PointCloud2::ConstPtr& msg, PointCloud& pc,
       std::vector<float>& ranges) const;
+  
   int filterUniform(
       const PointCloud& cloud_in, PointCloud& cloud_out, int numSamples) const;
 
@@ -285,6 +291,11 @@ class SquirrelLocalizer {
   tf::TransformBroadcaster m_tfBroadcaster;
   ros::Timer m_timer;
 
+  bool m_verbose;
+  bool m_printPointCloudSubscription;
+  bool m_printLaserSubscription;
+  bool m_printSynchronizedSubscription;
+  
   std::string m_odomFrameId;
   std::string m_targetFrameId;
   std::string m_baseFrameId;
@@ -312,8 +323,7 @@ class SquirrelLocalizer {
   int m_bestParticleIdx;
   tf::Pose m_odomPose;  // incrementally added odometry pose (=dead reckoning)
   tf::Pose m_bestParticlePose;
-  geometry_msgs::PoseArray
-      m_poseArray;  // particles as PoseArray (preallocated)
+  geometry_msgs::PoseArray m_poseArray;  // particles as PoseArray
   boost::circular_buffer<sensor_msgs::Imu> m_lastIMUMsgBuffer;
 
   bool m_bestParticleAsMean;

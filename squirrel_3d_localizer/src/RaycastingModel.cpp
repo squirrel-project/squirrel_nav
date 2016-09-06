@@ -64,7 +64,7 @@ void RaycastingModel::integrateMeasurement(
   assert(pc.size() == ranges.size());
 
   if (!m_map) {
-    ROS_ERROR("Map file is not set in raycasting");
+    ROS_ERROR(ros::this_node::getName() << ": Map file is not set in raycasting");
     return;
   }
 // iterate over samples, multi-threaded:
@@ -104,7 +104,7 @@ void RaycastingModel::integrateMeasurement(
           float raycastRange = (originP - end).norm();
           float z            = raycastRange - *ranges_it;
           float sigma_scaled = m_sigmaHit;
-          if (m_use_squared_error)
+          if (m_useSquaredError)
             sigma_scaled = (*ranges_it) * (*ranges_it) * (m_sigmaHit);
 
           // obstacle hit:

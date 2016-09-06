@@ -59,18 +59,18 @@ MotionModel::MotionModel(
 
   // old parameters, warn that renamed:
   if (nh->hasParam("motion_noise/x"))
-    ROS_WARN(
-        "Parameter motion_noise/x is no longer used, use variances "
+    ROS_WARN_STREAM(ros::this_node::getName() <<
+        ": Parameter motion_noise/x is no longer used, use variances "
         "motion_noise/[xx|xy|xt] instead");
 
   if (nh->hasParam("motion_noise/y"))
-    ROS_WARN(
-        "Parameter motion_noise/y is no longer used, use variances "
+    ROS_WARN_STREAM(ros::this_node::getName() <<
+        ": Parameter motion_noise/y is no longer used, use variances "
         "motion_noise/[yx|yy|yt] instead");
 
   if (nh->hasParam("motion_noise/yaw"))
-    ROS_WARN(
-        "Parameter motion_noise/yaw is no longer used, use variances "
+    ROS_WARN_STREAM(ros::this_node::getName() <<
+        ": Parameter motion_noise/yaw is no longer used, use variances "
         "motion_noise/[tx|ty|tt] instead");
 
   // odometry calibration (systematic drift correction)
@@ -205,8 +205,8 @@ bool MotionModel::lookupOdomTransform(
   tf::Stamped<tf::Pose> odomPose;
 
   if (t <= m_lastOdomPose.stamp_) {
-    ROS_WARN(
-        "Looking up OdomTransform that is %f ms older than the last odomPose!",
+    ROS_WARN("%s: "
+             "Looking up OdomTransform that is %f ms older than the last odomPose!", ros::this_node::getName().c_str(),
         (m_lastOdomPose.stamp_ - t).toSec() / 1000.0);
   }
 
@@ -229,7 +229,7 @@ tf::Transform MotionModel::computeOdomTransform(
 void MotionModel::storeOdomPose(const tf::Stamped<tf::Pose>& odomPose) {
   m_firstOdometryReceived = true;
   if (odomPose.stamp_ <= m_lastOdomPose.stamp_) {
-    ROS_WARN(
+    ROS_WARN_STREAM(ros::this_node::getName() << ": "
         "Trying to store an OdomPose that is older or equal than the current "
         "in the MotionModel, ignoring!");
   } else {
@@ -246,7 +246,7 @@ bool MotionModel::lookupOdomPose(
   try {
     m_tfListener->transformPose(m_odomFrameId, ident, odomPose);
   } catch (tf::TransformException& e) {
-    ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
+    ROS_WARN("%s: Failed to compute odom pose, skipping scan (%s)", ros::this_node::getName().c_str(), e.what());
     return false;
   }
 

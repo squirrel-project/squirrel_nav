@@ -69,7 +69,7 @@ void EndpointModel::integrateMeasurement(
       octomap::point3d endPoint(it->x, it->y, it->z);
       float dist         = m_distanceMap->getDistance(endPoint);
       float sigma_scaled = m_sigma;
-      if (m_use_squared_error)
+      if (m_useSquaredError)
         sigma_scaled = (*ranges_it) * (*ranges_it) * (m_sigma);
       if (dist > 0.0) {  // endpoint is inside map:
         particles[i].weight += logLikelihood(dist, sigma_scaled);
@@ -119,7 +119,7 @@ void EndpointModel::initDistanceMap() {
   m_distanceMap = boost::shared_ptr<DynamicEDTOctomap>(new DynamicEDTOctomap(
       float(m_maxObstacleDistance), &(*m_map), min, max, false));
   m_distanceMap->update();
-  ROS_INFO("Distance map for endpoint model completed");
+  ROS_INFO_STREAM(ros::this_node::getName() << ": Distance map for endpoint model completed");
 }
 
 } 

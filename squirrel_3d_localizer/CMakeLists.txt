@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(squirrel_3d_localizer)
 
+set(ROS_BUILD_TYPE Release)
+
 set(squirrel_3d_localizer_CATKIN_DEPENDENCIES 
   cmake_modules
   geometry_msgs

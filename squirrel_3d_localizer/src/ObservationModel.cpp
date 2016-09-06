@@ -25,43 +25,37 @@
 
 namespace squirrel_3d_localizer {
 
-ObservationModel::ObservationModel(
-    ros::NodeHandle* nh, boost::shared_ptr<MapModel> mapModel,
-    EngineT* rngEngine)
+ObservationModel::ObservationModel(ros::NodeHandle *nh,
+                                   boost::shared_ptr<MapModel> mapModel,
+                                   EngineT *rngEngine)
     : m_mapModel(mapModel),
       m_rngNormal(*rngEngine, NormalDistributionT(0.0, 1.0)),
-      m_rngUniform(*rngEngine, UniformDistributionT(0.0, 1.0)),
-      m_weightRoll(1.0),
-      m_weightPitch(1.0),
-      m_weightZ(1.0),
-      m_sigmaZ(0.02),
-      m_sigmaRoll(0.05),
-      m_sigmaPitch(0.05),
-      m_use_squared_error(false) {
+      m_rngUniform(*rngEngine, UniformDistributionT(0.0, 1.0)) {
 
   m_map = m_mapModel->getMap();
-
-  nh->param("weight_factor_roll", m_weightRoll, m_weightRoll);
-  nh->param("weight_factor_pitch", m_weightPitch, m_weightPitch);
-  nh->param("weight_factor_z", m_weightZ, m_weightZ);
-  nh->param("motion_sigma_z", m_sigmaZ, m_sigmaZ);
-  nh->param("motion_sigma_roll", m_sigmaRoll, m_sigmaRoll);
-  nh->param("motion_sigma_pitch", m_sigmaPitch, m_sigmaPitch);
-  nh->param("obs_squared_distance", m_use_squared_error, m_use_squared_error);
-
+  
+  nh->param("weight_factor_roll", m_weightRoll, 1.0);
+  nh->param("weight_factor_pitch", m_weightPitch, 1.0);
+  nh->param("weight_factor_z", m_weightZ, 1.0);
+  nh->param("motion_sigma_z", m_sigmaZ, 0.02);
+  nh->param("motion_sigma_roll", m_sigmaRoll, 0.05);
+  nh->param("motion_sigma_pitch", m_sigmaPitch, 0.05);
+  nh->param("use_squared_error", m_useSquaredError, false);
+  
   if (m_sigmaZ <= 0.0 || m_sigmaRoll <= 0.0 || m_sigmaPitch <= 0.0) {
-    ROS_ERROR("Sigma (std.dev) needs to be > 0 in ObservationModel");
+    ROS_ERROR("%s: Sigma (std.dev) needs to be > 0 in ObservationModel",
+              ros::this_node::getName().c_str());
   }
 }
 
 ObservationModel::~ObservationModel() {}
 
 void ObservationModel::integratePoseMeasurement(
-    Particles& particles, double poseRoll, double posePitch,
-    const tf::StampedTransform& footprintToTorso) {
+    Particles &particles, double poseRoll, double posePitch,
+    const tf::StampedTransform &footprintToBase) {
   // TODO: move to HumanoidLocalization, skip individual parts if z/rp
   // constrained
-  double poseHeight = footprintToTorso.getOrigin().getZ();
+  double poseHeight = footprintToBase.getOrigin().getZ();
   ROS_DEBUG("Pose measurement z=%f R=%f P=%f", poseHeight, poseRoll, posePitch);
 // TODO cluster xy of particles => speedup
 #pragma omp parallel for
@@ -76,7 +70,7 @@ void ObservationModel::integratePoseMeasurement(
 
     // integrate height measurement (z)
     double heightError;
-    if (getHeightError(particles[i], footprintToTorso, heightError))
+    if (getHeightError(particles[i], footprintToBase, heightError))
       particles[i].weight += m_weightZ * logLikelihood(heightError, m_sigmaZ);
   }
 }
@@ -85,4 +79,4 @@ void ObservationModel::setMap(boost::shared_ptr<octomap::OcTree> map) {
   m_map = map;
 }
 
-}  // namespace squirrel_3d_localizer
+} // namespace squirrel_3d_localizer

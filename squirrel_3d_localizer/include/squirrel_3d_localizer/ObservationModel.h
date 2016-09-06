@@ -104,7 +104,7 @@ class ObservationModel {
   double m_sigmaRoll;
   double m_sigmaPitch;
 
-  bool m_use_squared_error;
+  bool m_useSquaredError;
 };
 
 }  // namespace squirrel_3d_localizer

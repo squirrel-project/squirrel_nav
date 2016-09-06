@@ -2,11 +2,14 @@
 # 2D localization configuration
 #
 
-num_particles: 1000
+verbose: false
+
+num_particles: 500
 neff_factor: 1.0 
 update_min_trans: 0.25
 update_min_rot: 0.1
 best_particle_as_mean: true
+use_map_bounds: false
 
 # frames
 base_frame_id: "/base_link"
@@ -23,6 +26,9 @@ use_last_pose: true
 # 2d navigation
 constrain_motion_z: true
 constrain_motion_rp: true
+weight_factor_z: 0.0
+weight_factor_roll: 0.0
+weight_factor_pitch: 0.0
 
 # use both depth camera and 2d laser rangefinder
 use_depth_camera: true
@@ -33,16 +39,9 @@ use_raycasting: false
 sensor_sampling_dist: 0.25
 
 # endpoint model
-endpoint/sigma: 0.075
-endpoint/max_obstacle_distance: 0.25
-
-# motion model
-weight_factor_z: 0.0
-weigth_factor_roll: 0.0
-weight_factor_pitch: 0.0
-motion_sigma_z: 0.001
-motion_sigma_roll: 0.001 # 0.85 deg.
-motion_sigma_pitch: 0.001 # 0.85 deg.
+endpoint:
+  sigma: 1.0
+  max_obstacle_distance: 0.25
 
 # noise of the motion model
 motion_noise:

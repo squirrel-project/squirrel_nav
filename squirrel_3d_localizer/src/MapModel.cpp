@@ -1,6 +1,3 @@
-// SVN $HeadURL$
-// SVN $Id$
-
 /*
  * 6D localization for humanoid robots
  *
@@ -23,10 +20,13 @@
 
 #include <squirrel_3d_localizer/MapModel.h>
 
+#include <limits>
+
 namespace squirrel_3d_localizer {
 
 MapModel::MapModel(ros::NodeHandle* nh)
-    : m_motionMeanZ(0.0),
+    : m_useMapBounds(false),
+      m_motionMeanZ(0.0),
       m_motionRangeZ(-1.0),
       m_motionRangeRoll(-1.0),
       m_motionRangePitch(-1.0),
@@ -36,6 +36,7 @@ MapModel::MapModel(ros::NodeHandle* nh)
   nh->param("motion_range_z", m_motionRangeZ, m_motionRangeZ);
   nh->param("motion_range_roll", m_motionRangeRoll, m_motionRangeRoll);
   nh->param("motion_range_pitch", m_motionRangePitch, m_motionRangePitch);
+  nh->param("use_map_bounds", m_useMapBounds, m_useMapBounds);
   // this is not correctly used at the moment:
   // nh->param("motion_occupied_radius", m_motionObstacleDist,
   // m_motionObstacleDist);
@@ -50,6 +51,11 @@ void MapModel::verifyPoses(Particles& particles) {
   m_map->getMetricMin(minX, minY, minZ);
   m_map->getMetricMax(maxX, maxY, maxZ);
 
+  if (!m_useMapBounds) {
+    minX = minY = minZ = -std::numeric_limits<double>::infinity();
+    maxX = maxY = maxZ = std::numeric_limits<double>::infinity();
+  }
+  
   // find min. particle weight:
   double minWeight = std::numeric_limits<double>::max();
   for (Particles::iterator it = particles.begin(); it != particles.end();
@@ -224,15 +230,15 @@ DistanceMap::DistanceMap(ros::NodeHandle* nh) : MapModel(nh) {
 
   if (!m_map || m_map->size() <= 1) {
     ROS_ERROR(
-        "Distance map file loaded from \"%s\" is erroneous, exiting...",
-        mapFileName.c_str());
-    exit(-1);
+        "%s: Distance map file loaded from \"%s\" is erroneous, exiting...",
+        ros::this_node::getName().c_str(), mapFileName.c_str());
+    std::exit(-1);
   }
   double x, y, z;
   m_map->getMetricSize(x, y, z);
   ROS_INFO(
-      "Distance map initialized with %zd nodes (%.2f x %.2f x %.2f m)",
-      m_map->size(), x, y, z);
+      "%s: Distance map initialized with %zd nodes (%.2f x %.2f x %.2f m)",
+      ros::this_node::getName().c_str(), m_map->size(), x, y, z);
 }
 
 DistanceMap::~DistanceMap() {}
@@ -262,7 +268,7 @@ OccupancyMap::OccupancyMap(ros::NodeHandle* nh) : MapModel(nh) {
   octomap_msgs::GetOctomap::Response resp;
   while (nh->ok() && !ros::service::call(servname, req, resp)) {
     ROS_WARN(
-        "Request to %s failed; trying again...",
+        "%s: Request to %s failed; trying again...", ros::this_node::getName().c_str(),
         nh->resolveName(servname).c_str());
     usleep(1000000);
   }
@@ -276,8 +282,8 @@ OccupancyMap::OccupancyMap(ros::NodeHandle* nh) : MapModel(nh) {
   double x, y, z;
   m_map->getMetricSize(x, y, z);
   ROS_INFO(
-      "Occupancy map initialized with %zd nodes (%.2f x %.2f x %.2f m), %f m "
-      "res.",
+      "%s: Occupancy map initialized with %zd nodes (%.2f x %.2f x %.2f m), %f m "
+      "res.", ros::this_node::getName().c_str(),
       m_map->size(), x, y, z, m_map->getResolution());
 
   m_map->writeBinary("/tmp/octomap_loc");
@@ -297,7 +303,7 @@ double OccupancyMap::getFloorHeight(const tf::Transform& pose) const {
     // add resolution/2 so height is above voxel boundary:
     return end.z() + m_map->getResolution() / 2.0;
   } else {
-    ROS_WARN("getFloorHeight raycast did not succeed, using 0.0");
+    ROS_WARN_ONCE("%s :getFloorHeight raycast did not succeed, using 0.0", ros::this_node::getName().c_str());
     return 0.0;
   }
 }
