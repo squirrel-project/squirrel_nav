@@ -340,21 +340,23 @@ void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr
     pcl::transformPointCloud(pc, pc, sensorToBase);
   
     // set up filter for height range, also removes NANs:
-    pcl::PassThrough<pcl::PointXYZ> pass;
-    pass.setFilterFieldName("x");
-    pass.setFilterLimits(m_pointcloudMinX, m_pointcloudMaxX);
-    pass.setInputCloud(pc.makeShared());
-    pass.filter(pc);
+    pcl::PassThrough<pcl::PointXYZ> passX;
+    passX.setFilterFieldName("x");
+    passX.setFilterLimits(m_pointcloudMinX, m_pointcloudMaxX);
+    passX.setInputCloud(pc.makeShared());
+    passX.filter(pc);
 
-    pass.setFilterFieldName("y");
-    pass.setFilterLimits(m_pointcloudMinY, m_pointcloudMaxY);
-    pass.setInputCloud(pc.makeShared());
-    pass.filter(pc);
- 
-    pass.setFilterFieldName("z");
-    pass.setFilterLimits(m_pointcloudMinZ, m_pointcloudMaxZ);
-    pass.setInputCloud(pc.makeShared());
-    pass.filter(pc);
+    pcl::PassThrough<pcl::PointXYZ> passY;
+    passY.setFilterFieldName("y");
+    passY.setFilterLimits(m_pointcloudMinY, m_pointcloudMaxY);
+    passY.setInputCloud(pc.makeShared());
+    passY.filter(pc);
+
+    pcl::PassThrough<pcl::PointXYZ> passZ;
+    passZ.setFilterFieldName("z");
+    passZ.setFilterLimits(m_pointcloudMinZ, m_pointcloudMaxZ);
+    passZ.setInputCloud(pc.makeShared());
+    passZ.filter(pc);
 
     if (m_filterGroundPlane){    
       filterGroundPlane(pc, pc_ground, pc_nonground);

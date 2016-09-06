@@ -1,0 +1,19 @@
+<launch>
+  <arg name="octomap_file" default="$(find squirrel_navigation)/octomaps/default-octomap.bt"/>
+  <arg name="config_file" default="$(find squirrel_3d_localizer)/config/robotino_localization.yaml"/>
+  <arg name="point_cloud_topic" default="/kinect/depth/points"/>
+  <arg name="laser_scan_topic" default="/scan"/>
+
+  <include file="$(find squirrel_3d_mapping)/launch/octomap_server.launch">
+    <arg name="octomap_file" value="$(arg octomap_file)"/>
+  </include>
+
+  <node pkg="squirrel_3d_localizer" type="squirrel_3d_localizer_node" name="squirrel_3d_localizer_node" 
+	output="screen" respawn="true">
+    <rosparam file="$(find squirrel_3d_localizer)/config/last_pose.yaml" command="load" />
+    <rosparam file="$(arg config_file)" command="load" />
+    <remap from="/point_cloud" to="$(arg point_cloud_topic)"/>
+    <remap from="/scan" to="$(arg laser_scan_topic)"/>
+  </node>
+
+</launch>

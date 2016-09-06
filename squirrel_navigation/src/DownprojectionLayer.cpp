@@ -89,6 +89,7 @@ DownprojectionLayer::DownprojectionLayer( void ) :
 
   ros::NodeHandle nh;
   toggle_footprint_sub_ = nh.subscribe("/plan_with_footprint", 1, &DownprojectionLayer::toggleFootprintCallback, this);
+  pushing_action_sub_ = nh.subscribe("/pushing_action", 1, &DownprojectionLayer::pushingActionCallback, this);
 }
 
 DownprojectionLayer::~DownprojectionLayer( void )
@@ -201,8 +202,13 @@ void DownprojectionLayer::updateBounds( double robot_x, double robot_y, double r
         index_free_space.erase(index);
       }
       
-      if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {                
-        costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
+      if ( voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_) ) {
+        if ( pushing_action_ and ((obs.origin_.z > laser_height_)
+                                  or (sq_dist_robot_xy < std::pow(2 * robot_radius_, 2)))) {
+          costmap_[index] = costmap_2d::FREE_SPACE;
+        } else {
+          costmap_[index] = costmap_2d::LETHAL_OBSTACLE;
+        }
         touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
       }
     }
@@ -303,6 +309,8 @@ void DownprojectionLayer::reconfigureCallback( DownprojectionLayerPluginConfig& 
   unknown_threshold_ = config.unknown_threshold + (VOXEL_BITS - size_z_);
   mark_threshold_ = config.mark_threshold;
   combination_method_ = config.combination_method;
+
+  laser_height_ = config.laser_height;
   
   robot_radius_ = config.robot_radius;
   floor_threshold_ = config.floor_threshold;

@@ -1,11 +1,15 @@
-LocalPlanner:
-  max_linear_vel: 0.2
-  min_linear_vel: 0.0
-  max_rotation_vel: 0.3
-  max_in_place_rotation_vel: 0.5
-  min_rotation_vel: 0.0
-  yaw_goal_tolerance: 0.05
-  xy_goal_tolerance: 0.05
-  heading_lookahead: 0.3
-  num_window_points: 10
-  holonomic_robot: true
+LocalPlanner: {
+  verbose: false,
+  max_linear_vel: 0.3,
+  max_angular_vel: 0.3,
+  xy_goal_tolerance: 0.10,
+  yaw_goal_tolerance: 0.10,
+  odom_topic: "/odom",
+  controller/P_linear: 1.25,
+  controller/P_angular: 1.05,
+  controller/I_linear: 0.05,
+  controller/I_angular: 0.05,
+  controller/D_linear: 0.1,
+  controller/D_angular: 0.1,
+  controller/delay: 0.0,
+}

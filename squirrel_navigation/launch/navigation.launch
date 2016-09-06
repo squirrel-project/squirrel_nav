@@ -49,7 +49,6 @@
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/base_global_planner_params.yaml" command="load" />
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/move_base_params.yaml" command="load" />
     <param name="GlobalPlanner/lattice/primitive_filename" value="$(find squirrel_navigation)/config/alufr-robotino/move_base/motion-primitives/motion_primitives_50mm.mprim"/>
-    <!-- Command priority shifter -->
     <remap from="/cmd_vel" to="/cmd_navigation" if="$(arg twist_mux)"/>
   </node>
   
@@ -63,7 +62,7 @@
     <arg name="plan_frame_id" value="/map" />
     <arg name="object_frame_id" value="/map"/>
     <arg name="costmap_topic" value="/move_base/global_costmap/costmap"/>
-    <arg name="costmap_updates_topic" value="/move_base/global_costmap/costmap"/> 
+    <arg name="costmap_updates_topic" value="/move_base/global_costmap/costmap"/>
   </include>
 
   <!-- Run rviz -->
