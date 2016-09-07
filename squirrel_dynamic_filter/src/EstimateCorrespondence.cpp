@@ -8,6 +8,8 @@ using namespace std;
 //distance
 void DynamicFilter::filter_correspondences(const float neighbour_radius,const float covariance_value,const float score_threshold)
 {
+
+ fprintf(stderr,"inside filter\n");
  c_vec_actual.clear();
  std::vector< std::pair<int,float> >neighbour_info;
  std::vector <int> query_vec; 
@@ -292,13 +294,13 @@ void DynamicFilter::EstimateCorrespondencePoint(const float radius,const float s
  if(!frame_1.cloud_input->points.empty() && !frame_2.cloud_input->points.empty()) 
  {
 
- frame_1.ground->width = frame_1.ground->points.size();
- frame_1.ground->height = 1;
+// frame_1.ground->width = frame_1.ground->points.size();
+// frame_1.ground->height = 1;
 
 
- ss.str("");
- ss << output_folder << "ground_a_" << frame_1.frame_id << ".pcd";
- writer.write(ss.str(),*frame_1.ground,true);
+// ss.str("");
+ //ss << output_folder << "ground_a_" << frame_1.frame_id << ".pcd";
+// writer.write(ss.str(),*frame_1.ground,true);
  
  for(auto &c:c_vec_actual)
   {
@@ -381,7 +383,124 @@ void DynamicFilter::EstimateCorrespondencePoint(const float radius,const float s
 
 
 
+void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,std::vector<int>&index_query, std::vector<int> &index_match,std::vector<int> &indices_dynamic)
+{
 
+ pcl::Correspondences corr;
+ pcl::registration::CorrespondenceEstimation <Point,Point> est; 
+ est.setInputSource (frame_1.raw_input);
+ est.setInputTarget (frame_1.cloud_transformed);
+ est.determineCorrespondences (corr);
+ const double max_distance = 0.001 * 0.001;
+ std::vector <int> indices_corr;
+ PointCloud::Ptr cloud_trans(new PointCloud);
+ for(auto &corr_point:corr)
+ {
+  if(corr_point.distance < (max_distance))//actual correspondence
+  {
+   if(frame_1.prior_dynamic[corr_point.index_match] < 0.05)//static Point
+   {
+    Vector4f point = frame_1.raw_input->points[corr_point.index_query].getVector4fMap();
+    point[3] = 1;
+    Vector4d point_trans = frame_1.motion_init[corr_point.index_match] * point.cast<double>();
+    Point pointPCL;
+    pointPCL.x = point_trans[0];
+    pointPCL.y = point_trans[1];
+    pointPCL.z = point_trans[2];
+    indices_corr.push_back(corr_point.index_query);
+    cloud_trans->points.push_back(pointPCL);
+   }
+//  else
+//   indices_dynamic.push_back(corr_point.index_query); 
+  }
+//  else
+//   indices_dynamic.push_back(corr_point.index_query); 
+ 
+ }
+ 
+ 
+ fprintf(stderr,"inside function %d,%d\n",frame_1.cloud_transformed->points.size(),cloud_trans->points.size());
+ pcl::PointCloud <int> sampled_indices;
+ pcl::UniformSampling <pcl::PointXYZ> uniform_sampling;
+ uniform_sampling.setInputCloud (cloud_trans);
+ uniform_sampling.setRadiusSearch (sampling_radius);//0.4 in general
+ uniform_sampling.compute (sampled_indices);
+
+ PointCloud::Ptr cloud_trans_sampled(new PointCloud);
+
+ pcl::copyPointCloud(*cloud_trans,sampled_indices.points, *cloud_trans_sampled); 
+ 
+ pcl::Correspondences corr_final;
+ est.setInputSource (cloud_trans_sampled);
+ est.setInputTarget (frame_2.raw_input);
+ est.determineCorrespondences (corr_final);
+ fprintf(stderr,"check size %d,%d\n",corr_final.size(),frame_2.raw_input->points.size());
+/*
+ frame_1.raw_input->width = frame_1.raw_input->points.size();
+ frame_1.raw_input->height = 1;
+ frame_2.raw_input->width = frame_2.raw_input->points.size();
+ frame_2.raw_input->height = 1;
+
+
+ pcl::PCDWriter writer;
+ ss.str("");
+ ss << output_folder << "a_" << frame_1.frame_id << ".pcd";
+ writer.write(ss.str(),*frame_1.raw_input,true);
+ 
+
+ ss.str("");
+ ss << output_folder << "a_" << frame_2.frame_id << ".pcd";
+ writer.write(ss.str(),*frame_2.raw_input,true);
+
+ 
+
+ ss.str("");
+ ss << output_folder << "query_a_" << frame_1.frame_id << ".csv";
+
+ ofstream myfile_query(ss.str().c_str());
+
+ ss.str("");
+ ss << output_folder << "match_a_" << frame_1.frame_id << ".csv";
+ ofstream myfile_match(ss.str().c_str());
+*/
+ pcl::search::KdTree <pcl::PointXYZ> kdtree;
+ kdtree.setInputCloud(frame_2.raw_input);
+ 
+//////Find the neighbours for all the point and store them 
+ std::vector <bool>is_dynamic(frame_2.raw_input->points.size(),true);
+ for(auto &c:corr_final)
+ {
+  
+  index_query.push_back(indices_corr[sampled_indices.points[c.index_query]]);
+  index_match.push_back(c.index_match);
+  std::vector <int> pointIdxRadiusSearch;
+  std::vector <float> pointRadiusSquaredDistance;
+  if (kdtree.radiusSearch(frame_2.raw_input->points[c.index_match],0.05,pointIdxRadiusSearch,pointRadiusSquaredDistance) > 0)
+  {
+   for(auto &index:pointIdxRadiusSearch)
+   is_dynamic[index] = false;
+  }
+
+
+  //myfile_query << indices_corr[sampled_indices.points[c.index_query]] << endl;
+  //myfile_match << c.index_match << endl;
+
+
+
+ }
+
+ std::vector<int>frame_2_dynamic;
+
+ for(size_t i = 0; i < is_dynamic.size(); ++i)
+ {
+  if(is_dynamic[i]) 
+   indices_dynamic.push_back(i);
+
+ }
+
+ fprintf(stderr,"index qyery %d\n", index_query.size());
+
+}
 
 
 
@@ -462,28 +581,28 @@ void DynamicFilter::EstimateCorrespondence(const float sampling_radius,const flo
   frame_2.raw_input->width = frame_2.raw_input->points.size();
   frame_2.raw_input->height = 1;
 
-  frame_1.ground->width = frame_1.ground->points.size();
-  frame_1.ground->height = 1;
+ // frame_1.ground->width = frame_1.ground->points.size();
+ // frame_1.ground->height = 1;
 
-  frame_2.ground->width = frame_2.ground->points.size();
-  frame_2.ground->height = 1;
+//  frame_2.ground->width = frame_2.ground->points.size();
+//  frame_2.ground->height = 1;
 
 
   ss.str("");
   ss << output_folder << "a_" << frame_1.frame_id << ".pcd";
   writer.write(ss.str(),*frame_1.raw_input,true);
   
-  ss.str("");
-  ss << output_folder << "ground_a_" << frame_1.frame_id << ".pcd";
-  writer.write(ss.str(),*frame_1.ground,true);
+//  ss.str("");
+//  ss << output_folder << "ground_a_" << frame_1.frame_id << ".pcd";
+//  writer.write(ss.str(),*frame_1.ground,true);
   
   ss.str("");
   ss << output_folder << "a_" << frame_2.frame_id << ".pcd";
   writer.write(ss.str(),*frame_2.raw_input,true);
 
-  ss.str("");
-  ss << output_folder << "ground_a_" << frame_2.frame_id << ".pcd";
-  writer.write(ss.str(),*frame_2.ground,true);
+//  ss.str("");
+//  ss << output_folder << "ground_a_" << frame_2.frame_id << ".pcd";
+//  writer.write(ss.str(),*frame_2.ground,true);
   
 
   ss.str("");

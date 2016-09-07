@@ -15,6 +15,10 @@
 #include <pcl/registration/correspondence_estimation.h>
 #include <pcl/registration/impl/correspondence_estimation.hpp>
 #include "squirrel_dynamic_filter_msgs/CloudMsg.h"
+#include "squirrel_dynamic_filter_msgs/DynamicFilterSrv.h"
+#include <mlpack/core.hpp>
+#include <mlpack/core/dists/gaussian_distribution.hpp>
+
 using namespace Eigen;
 
 typedef Matrix<uint8_t, Dynamic, Dynamic> MatrixXint;
@@ -24,6 +28,7 @@ private:
  message_filters::Subscriber<sensor_msgs::PointCloud2> cloud_sub_;
  ros::Subscriber cloud_sub_1;
  ros::Publisher pub_tracked_gt;
+ ros::Publisher pub;
  tf::TransformListener tf_;
  tf::MessageFilter <sensor_msgs::PointCloud2> * tf_filter_;
  ros::NodeHandle n_;
@@ -39,8 +44,17 @@ private:
  pcl::VoxelGrid<Point> sor;
  std::stringstream ss;
  std::vector< std::vector<int> > neighbours;
+ ros::ServiceServer dynamic_filter_service;
+ const float p_s_d = 0.05;
+ const float p_s_s = 0.95;
+ const float p_d_s = 0.05;
+ const float p_d_d = 0.95;
+
+
+
  void preprocessing(Frame &frame);
  void EstimateFeature(Frame &frame);
+ void EstimateFeature(Frame &frame,const std::vector<int>&dynamic_indices);
  void EstimateCorrespondence(const float sampling_radius,const float max_motion, std::vector<int>&index_query, std::vector<int> &index_match);
  void EstimateMotion(const std::vector <int> &index_query,const std::vector <int> &index_match);
  void EstimateMotion2(const std::vector <int> &index_query,const std::vector <int> &index_match);
@@ -49,7 +63,13 @@ private:
  void optimize_keypoint(const PointCloud::Ptr& kp,const std::vector<int>&index_match,const std::vector<int>&index_query,std::vector<Isometry3D> &motion_kp);
 
  void sample(const Frame frame,const float radius, const float threshold,std::vector<int> &sampled_finite);
- Eigen::Matrix4f trans;
+ void sample_dynamic(const PointCloud::Ptr dynamic,const float radius, const float threshold,std::vector<int> &sampled_finite);
+ void DynamicScore(const PointCloud::Ptr &cloud,const bool is_first,const PointCloud::Ptr &score);
+
+void EstimateCorrespondenceEuclidean(const float sampling_radius,std::vector<int>&index_query, std::vector<int> &index_match,std::vector<int> &indices_dynamic);
+bool DynamicFilterSrvCallback(squirrel_dynamic_filter_msgs::DynamicFilterSrv::Request &req,squirrel_dynamic_filter_msgs::DynamicFilterSrv::Response &res);
+
+Eigen::Matrix4f trans;
 
  float down_sampling_radius;
  float feature_cluster_max_length;
@@ -80,7 +100,7 @@ private:
 public:
  DynamicFilter();
  string output_folder;
- void cloudMsgCallback(const squirrel_dynamic_filter_msgs::CloudMsg& sensor_msg);
+ //void cloudMsgCallback(const squirrel_dynamic_filter_msgs::CloudMsg& sensor_msg);
 
  ofstream myfile_odom;
 

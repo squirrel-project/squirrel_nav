@@ -31,6 +31,7 @@ struct Frame
  std::vector < std::vector<int> > neighbours;
  std::vector <int> finite_points;
  std::vector <int> sampled_points;
+ std::vector <float> prior_dynamic;
  void clear()
  {  
   raw_input->points.clear();

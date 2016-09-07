@@ -407,6 +407,7 @@ void DynamicFilter::EstimateMotion(const std::vector <int> &index_query,const st
 //previoulsy estimated motion
 
 ///If first frame
+/*
   if(frame_1.motion_init.empty())
 			{
     for(size_t k = 0; k < cloud_cluster->points.size() ; ++k)
@@ -455,6 +456,24 @@ void DynamicFilter::EstimateMotion(const std::vector <int> &index_query,const st
     optimizer.addVertex(vertex_test);
    }	
   }
+*/
+ 
+  for(size_t k = 0; k < cloud_cluster->points.size() ; ++k)
+  {
+   Vector3D position_input;
+   Vector3f pos = cloud_cluster->points[k].getVector3fMap();
+   position_input[0]=pos[0];
+   position_input[1]=pos[1];
+   position_input[2]=pos[2];
+   VertexSE3_Vector3D* vertex_test= new VertexSE3_Vector3D;
+   vertex_test->setId(k);
+
+   vertex_test->setEstimate(odometry_diff);
+   //vertex_test->setToOriginImpl();
+   vertex_test->setPosition(position_input);
+   optimizer.addVertex(vertex_test);
+  }
+
   ///Initializing unary edges connecting correspondences
 
   for(size_t k = 0;  k < index_match_filter.size(); ++k)
@@ -474,6 +493,7 @@ void DynamicFilter::EstimateMotion(const std::vector <int> &index_query,const st
    }
 		MatrixXint edge_matrix = MatrixXint::Zero(cloud_cluster->points.size(),cloud_cluster->points.size());
   pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
+/*
   kdtree.setInputCloud (kp);
   for(size_t k = 0 ; k < kp->points.size() ; ++k)
   {
@@ -510,6 +530,7 @@ void DynamicFilter::EstimateMotion(const std::vector <int> &index_query,const st
     }
    }
   }
+*/
 // Connecting neighboring points for binaey edges
    for ( size_t k = 0; k < cluster.size() ; ++k)
    {
@@ -557,7 +578,7 @@ void DynamicFilter::EstimateMotion(const std::vector <int> &index_query,const st
    terminateAction->setGainThreshold(0.08);
    terminateAction->setMaxIterations(5);
    optimizer.addPostIterationAction(terminateAction);
-   optimizer.optimize(10);
+   optimizer.optimize(5);
 ////Second round of optimzation
    g2o::HyperGraph::VertexIDMap ver = optimizer.vertices();
    g2o::HyperGraph::EdgeSet edge_set = optimizer.edges();
@@ -597,9 +618,13 @@ void DynamicFilter::EstimateMotion(const std::vector <int> &index_query,const st
 
 
  }
+ 
+
+ PointCloud::Ptr score(new PointCloud);
+ score->points = frame_1.cloud_transformed->points;
  frame_1.cloud_transformed->points.clear();
  frame_1.motion_init.clear();
- PointCloud cloud_save;
+ PointCloud::Ptr cloud_save(new PointCloud);
  ss.str("");
  ss << output_folder << "motion_a" << "_" << frame_1.frame_id << ".csv";
  ofstream write_trans(ss.str().c_str());
@@ -629,7 +654,7 @@ void DynamicFilter::EstimateMotion(const std::vector <int> &index_query,const st
 
    Eigen::Vector3d trans_z(motion_diff(0,3),motion_diff(1,3),motion_diff(2,3));
 
-   write_intensity_z << trans_z.lpNorm<2>() << endl;
+//   write_intensity_z << trans_z.lpNorm<2>() << endl;
 
 
    Vector7d motion = g2o::internal::toVectorQT(motion_init_current[counter] ); 	
@@ -644,30 +669,46 @@ void DynamicFilter::EstimateMotion(const std::vector <int> &index_query,const st
    point_cloud.x = point[0];
    point_cloud.y = point[1];
    point_cloud.z = point[2];
-   cloud_save.points.push_back(point_cloud);
+   cloud_save->points.push_back(point_cloud);
  
    write_trans << motion(0) << "," << motion(1) << "," <<motion(2) << "," << motion(3) << "," << motion(4) << "," << motion(5) << "," << motion[6] << endl;
   }
  counter +=1;
  }
- cout << "size compare:" << frame_1.raw_input->points.size() << "," << cloud_save.points.size() << endl;
+ if(cloud_save->points.size() > 0 && score->points.size() >0 )
+ {
+  bool check = false;
+  if(frame_1.prior_dynamic.empty())
+   check = true;
+  DynamicScore(cloud_save,check,score); 
+  for(auto &score:frame_1.prior_dynamic)
+   write_intensity_z << score << endl;
+ }
+ else
+ {
+  fprintf(stderr,"%d,%d\n",cloud_save->points.size(),score->points.size());
+  frame_1.prior_dynamic.clear();
+//  frame_1.cloud_transformed->points.clear();
+
+ }
+ cout << "size compare:" << frame_1.raw_input->points.size() << "," << cloud_save->points.size() << endl;
 
  write_trans.close();
  pcl::PCDWriter writer;
  frame_1.cloud_transformed->width = frame_1.cloud_transformed->points.size();
  frame_1.cloud_transformed->height = 1;
- cloud_save.width = cloud_save.points.size();
- cloud_save.height = 1;
+ cloud_save->width = cloud_save->points.size();
+ cloud_save->height = 1;
  //if(!cloud_save.points.empty() && !frame_1.cloud_transformed->points.empty())
- if(!cloud_save.points.empty())
+ if(!cloud_save->points.empty())
  {
-//  ss.str("");
- // ss << output_folder << "/cloud_trans_robust_a_" << frame_1.frame_id << ".pcd";
+ // ss.str("");
+//  ss << output_folder << "/cloud_trans_robust_a_" << frame_1.frame_id << ".pcd";
  // writer.write(ss.str(),*frame_1.cloud_transformed,true); 
 
   ss.str("");
   ss << output_folder << "/cloud_save_robust_a_" << frame_1.frame_id << ".pcd";
-  writer.write(ss.str(),cloud_save,true); 
+  writer.write(ss.str(),*cloud_save,true); 
  }
  
  measure_time end_time = SystemClock::now();

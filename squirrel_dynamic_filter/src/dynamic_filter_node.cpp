@@ -4,7 +4,7 @@ using namespace std;
 DynamicFilter::DynamicFilter():cloud_input(new PointCloud),cloud_input_objects(new PointCloud),tf_()
 {
 
- cloud_sub_1 = n_.subscribe("/squirrel/cloud_msg", 5000, &DynamicFilter::cloudMsgCallback, this);
+ //cloud_sub_1 = n_.subscribe("/squirrel/cloud_msg", 5000, &DynamicFilter::cloudMsgCallback, this);
   Vector7d sensor_to_base_link;
 ////transformation between sensor and base_link, required to remove the flat
 //ground" 
@@ -16,14 +16,25 @@ DynamicFilter::DynamicFilter():cloud_input(new PointCloud),cloud_input_objects(n
  sensor_to_base_link(4) = -0.642;
  sensor_to_base_link(5) = 0.235;
  sensor_to_base_link(6) = -0.250;
-#else
- sensor_to_base_link(0) = 0.056;
+ 
+sensor_to_base_link(0) = 0.056;
  sensor_to_base_link(1) = 0.023;
  sensor_to_base_link(2) = 0.240;
  sensor_to_base_link(3) = 0.618;
  sensor_to_base_link(4) = -0.581;
  sensor_to_base_link(5) = 0.362;
  sensor_to_base_link(6) = -0.386;
+
+#else
+ sensor_to_base_link(0) = 0.0;
+ sensor_to_base_link(1) = 0.023;
+ sensor_to_base_link(2) = 0.219;
+ sensor_to_base_link(3) = 0.579;
+ sensor_to_base_link(4) = -0.514;
+ sensor_to_base_link(5) = 0.429;
+ sensor_to_base_link(6) = -0.465;
+
+
 #endif
 
  Isometry3D sensor_to_base_link_trans = g2o::internal::fromVectorQT(sensor_to_base_link);
@@ -45,8 +56,17 @@ DynamicFilter::DynamicFilter():cloud_input(new PointCloud),cloud_input_objects(n
  trans(3,3) = sensor_to_base_link_trans(3,3);
  pub_tracked_gt = n_.advertise<sensor_msgs::PointCloud2>("/cloud/busstop_gt",1000);
 
- is_first_frame = false;
+ is_first_frame = true;
  frame_counter = 0;
+/*
+ p_s_d = 0.05;
+ p_s_s = 0.95;
+ p_d_s = 0.05;
+ p_d_d = 0.95;
+*/
+
+
+
  n_.getParam("/DownSamplingRadius",down_sampling_radius);
  n_.getParam("/FeatureClusterMaxLength",feature_cluster_max_length);
  n_.getParam("/FeatureClusterMaxPoints",feature_cluster_max_points);
@@ -75,14 +95,176 @@ DynamicFilter::DynamicFilter():cloud_input(new PointCloud),cloud_input_objects(n
  ss.str("");
  ss << output_folder << "time.csv";
  time_write.open(ss.str().c_str());
-
-
-
-
+ 
+ dynamic_filter_service = n_.advertiseService("dynamic_filter",&DynamicFilter::DynamicFilterSrvCallback,this);
 
 
 
 }
+
+
+bool DynamicFilter::DynamicFilterSrvCallback(squirrel_dynamic_filter_msgs::DynamicFilterSrv::Request &req,squirrel_dynamic_filter_msgs::DynamicFilterSrv::Response &res)
+{
+ if(!is_first_frame)
+ {
+
+  if(req.frame_id != frame_1.frame_id + 1)
+   is_first_frame = true;
+
+ }
+ if(is_first_frame)
+ {
+  frame_1.clear();
+  pcl::fromROSMsg(req.cloud,*frame_1.raw_input);
+  Vector7d odometry;
+  odometry[0] = req.odometry[0];
+  odometry[1] = req.odometry[1];
+  odometry[2] = req.odometry[2];
+  odometry[3] = req.odometry[3];
+  odometry[4] = req.odometry[4];
+  odometry[5] = req.odometry[5];
+  odometry[6] = req.odometry[6];
+  frame_1.odometry = g2o::internal::fromVectorQT(odometry); 	
+  frame_1.frame_id = req.frame_id;
+  EstimateFeature(frame_1);
+  is_first_frame = false;
+ 
+  fprintf(stderr,"first frame %d,%d\n",frame_1.raw_input->points.size(),frame_1.frame_id);
+ }
+ else
+ {
+
+  frame_2.clear();
+  pcl::fromROSMsg(req.cloud,*frame_2.raw_input);
+  Vector7d odometry;
+  odometry[0] = req.odometry[0];
+  odometry[1] = req.odometry[1];
+  odometry[2] = req.odometry[2];
+  odometry[3] = req.odometry[3];
+  odometry[4] = req.odometry[4];
+  odometry[5] = req.odometry[5];
+  odometry[6] = req.odometry[6];
+  frame_2.odometry = g2o::internal::fromVectorQT(odometry); 	
+  frame_2.frame_id = req.frame_id;
+  
+  odometry_diff = frame_2.odometry.inverse() * frame_1.odometry; 
+  fprintf(stderr,"second_frame frame %d,%d\n",frame_2.raw_input->points.size(),frame_2.frame_id);
+  std::vector <int> index_query;
+  std::vector <int> index_match;
+  std::vector <int> indices_dynamic;
+//   fprintf(stderr,"inside frame 2 %d,%d,%d\n",frame_1.raw_input->points.size(),frame_2.raw_input->points.size(),frame_counter);
+    ///prior_dynamic tells no static info available and the usual shit
+    //if both are non-empty then sme things are detected by static and some are
+    //detected for dynamic  1 1
+    //if index_query is non-empty and other is empty do nothing.1 0
+    //if index_query is empty and other is not then do everything 0 1
+    //if both are empty do everything. Both will only be empty if prior_dynamic
+    //is empty  
+  start = SystemClock::now(); 
+  if(!frame_1.prior_dynamic.empty())
+   EstimateCorrespondenceEuclidean(0.02,index_query,index_match,indices_dynamic);
+  end = SystemClock::now();
+  time_diff = end - start;
+  correspondence_time = time_diff.count();
+  start = SystemClock::now(); 
+
+  ss.str("");
+  ss << output_folder << "query_a_" << frame_1.frame_id << ".csv";
+
+  ofstream myfile_query(ss.str().c_str());
+
+  ss.str("");
+  ss << output_folder << "match_a_" << frame_1.frame_id << ".csv";
+  ofstream myfile_match(ss.str().c_str());
+  
+  for(size_t i = 0; i < index_query.size(); ++i)
+  {
+   myfile_query << index_query[i] << endl;
+   myfile_match << index_match[i] << endl;
+  }
+
+ 
+  
+  if(frame_1.prior_dynamic.empty() || !indices_dynamic.empty())
+   {
+    if(frame_1.prior_dynamic.empty()|| index_query.empty())
+    {
+      //   frame_2.frame_id = frame_counter;
+     EstimateFeature(frame_2);////Estimate features
+  
+     EstimateCorrespondencePoint(max_motion,sampling_radius,2,index_query,index_match);///Estimate correspondences
+  
+//     fprintf(stderr,"inside frame_2 feature%d,%d,%d,%d,%d\n",frame_1.raw_input->points.size(),frame_2.raw_input->points.size(),frame_1.cloud_input->points.size(),frame_2.cloud_input->points.size(),index_query.size());
+
+  //   getchar();
+
+    }
+    else if(!index_query.empty() && !indices_dynamic.empty())
+    {
+     EstimateFeature(frame_2,indices_dynamic);
+
+    if(frame_1.cloud_input->points.size() > 50 && frame_2.cloud_input->points.size() > 50)
+     EstimateCorrespondencePoint(max_motion,sampling_radius,2,index_query,index_match);///Estimate correspondences
+    }
+   }
+  frame_1.raw_input->width = frame_1.raw_input->points.size();
+  frame_1.raw_input->height = 1;
+  frame_2.raw_input->width = frame_2.raw_input->points.size();
+  frame_2.raw_input->height = 1;
+
+
+  pcl::PCDWriter writer;
+  ss.str("");
+  ss << output_folder << "a_" << frame_1.frame_id << ".pcd";
+  writer.write(ss.str(),*frame_1.raw_input,true);
+  
+
+  ss.str("");
+  ss << output_folder << "a_" << frame_2.frame_id << ".pcd";
+  writer.write(ss.str(),*frame_2.raw_input,true);
+
+  
+
+
+  end = SystemClock::now();
+  time_diff = end - start;
+  feature_time = time_diff.count();
+  start = SystemClock::now(); 
+  if(!index_query.empty())
+   EstimateMotion(index_query,index_match);///Estimate the motion
+  end = SystemClock::now();
+  time_diff = end - start;
+  motion_time = time_diff.count();
+  frame_2.copy(frame_1);
+ }
+ 
+return true;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 
 
 
@@ -90,10 +272,13 @@ DynamicFilter::DynamicFilter():cloud_input(new PointCloud),cloud_input_objects(n
 void DynamicFilter::cloudMsgCallback(const squirrel_dynamic_filter_msgs::CloudMsg& sensor_msg) 
 {
 
+ pcl::PCDWriter writer;
  sensor_msgs::PointCloud2 cloud_input_object_msg;
 /////If its first frame do nothing just fill up the data
- if(!is_first_frame)
+ if(is_first_frame)
  {
+  frame_1.clear();
+  start_total = SystemClock::now();
   pcl::fromROSMsg(sensor_msg.cloud_msg,*frame_1.raw_input);
   Vector7d odometry;
   odometry[0] = sensor_msg.odometry[0];
@@ -110,8 +295,28 @@ odometry[3] << "," << odometry[4] << "," << odometry[5] << "," << odometry[6] <<
   frame_1.odometry = g2o::internal::fromVectorQT(odometry); 	
   frame_1.frame_id = frame_counter;
   preprocessing(frame_1);///remove ground
-  EstimateFeature(frame_1);
-  is_first_frame = true;
+  if(frame_1.raw_input->points.size() > 50)
+  {
+   EstimateFeature(frame_1);
+   is_first_frame = false;
+  }
+   frame_1.ground->width = frame_1.ground->points.size();
+   frame_1.ground->height = 1;
+   ss.str("");
+   ss << output_folder << "ground_a_" << frame_1.frame_id << ".pcd";
+   writer.write(ss.str(),*frame_1.ground,true);
+
+
+   end_total = SystemClock::now();
+   time_diff = end_total - start_total;
+   total_time = time_diff.count();
+
+
+   time_write << feature_time << "," << correspondence_time << "," << motion_time << "," << total_time << "," << frame_counter << endl;
+
+
+ 
+ 
  }
  else/////Second frame fill up the data amd start running the stuff
  { 
@@ -135,20 +340,102 @@ odometry[3] << "," << odometry[4] << "," << odometry[5] << "," << odometry[6] <<
   frame_2.frame_id = frame_counter;
   if(frame_2.raw_input->points.size() > 50)
   {
-   start = SystemClock::now(); 
-   EstimateFeature(frame_2);////Estimate features
-   end = SystemClock::now();
-   time_diff = end - start;
-   feature_time = time_diff.count();
-
-
+  
    std::vector <int> index_query;
    std::vector <int> index_match;
-   start = SystemClock::now(); 
-   EstimateCorrespondencePoint(max_motion,sampling_radius,5,index_query,index_match);///Estimate correspondences
-   end = SystemClock::now();
-   time_diff = end - start;
-   correspondence_time = time_diff.count();
+   std::vector <int> indices_dynamic;
+//   fprintf(stderr,"inside frame 2 %d,%d,%d\n",frame_1.raw_input->points.size(),frame_2.raw_input->points.size(),frame_counter);
+    ///prior_dynamic tells no static info available and the usual shit
+    //if both are non-empty then sme things are detected by static and some are
+    //detected for dynamic  1 1
+    //if index_query is non-empty and other is empty do nothing.1 0
+    //if index_query is empty and other is not then do everything 0 1
+    //if both are empty do everything. Both will only be empty if prior_dynamic
+    //is empty  
+
+ 
+     start = SystemClock::now(); 
+   if(!frame_1.prior_dynamic.empty())
+    EstimateCorrespondenceEuclidean(0.02,index_query,index_match,indices_dynamic);
+     end = SystemClock::now();
+
+     time_diff = end - start;
+     correspondence_time = time_diff.count();
+   
+     start = SystemClock::now(); 
+if(frame_1.prior_dynamic.empty() || !indices_dynamic.empty())
+   {
+    if(frame_1.prior_dynamic.empty()|| index_query.empty())
+    {
+     frame_2.frame_id = frame_counter;
+     EstimateFeature(frame_2);////Estimate features
+
+   //  fprintf(stderr,"inside frame 2 check 1 %d,%d,%d\n",frame_1.raw_input->points.size(),frame_2.raw_input->points.size(),frame_counter);
+
+     EstimateCorrespondencePoint(max_motion,sampling_radius,2,index_query,index_match);///Estimate correspondences
+    }
+    else if(!index_query.empty() && !indices_dynamic.empty())
+    {
+
+     EstimateFeature(frame_2,indices_dynamic);
+
+   //  fprintf(stderr,"corr before %d,%d,%d,%d\n", index_query.size(),frame_2.cloud_input->points.size(),indices_dynamic.size(),frame_1.cloud_input->points.size());
+    if(frame_1.cloud_input->points.size() > 50 && frame_2.cloud_input->points.size() > 50)
+     EstimateCorrespondencePoint(max_motion,sampling_radius,2,index_query,index_match);///Estimate correspondences
+
+
+    // fprintf(stderr,"corr before %d\n", index_query.size());
+
+
+
+    }
+    
+   }
+
+     end = SystemClock::now();
+     time_diff = end - start;
+     feature_time = time_diff.count();
+   frame_1.raw_input->width = frame_1.raw_input->points.size();
+   frame_1.raw_input->height = 1;
+   frame_2.raw_input->width = frame_2.raw_input->points.size();
+   frame_2.raw_input->height = 1;
+
+
+   pcl::PCDWriter writer;
+   ss.str("");
+   ss << output_folder << "a_" << frame_1.frame_id << ".pcd";
+   writer.write(ss.str(),*frame_1.raw_input,true);
+   
+
+   ss.str("");
+   ss << output_folder << "a_" << frame_2.frame_id << ".pcd";
+   writer.write(ss.str(),*frame_2.raw_input,true);
+
+   
+
+   ss.str("");
+   ss << output_folder << "query_a_" << frame_1.frame_id << ".csv";
+
+   ofstream myfile_query(ss.str().c_str());
+
+   ss.str("");
+   ss << output_folder << "match_a_" << frame_1.frame_id << ".csv";
+   ofstream myfile_match(ss.str().c_str());
+
+   for(size_t i = 0; i < index_query.size(); ++i)
+    {
+
+     myfile_query << index_query[i] << endl;
+     myfile_match << index_match[i] << endl;
+
+  
+    }
+
+
+
+//	  fprintf(stderr,"inside frame 2 check 3 %d,%d,%d\n",frame_1.raw_input->points.size(),frame_2.raw_input->points.size(),frame_counter);
+
+  // correspondence_time = time_diff.count();
    start = SystemClock::now(); 
    if(!index_query.empty())
     EstimateMotion(index_query,index_match);///Estimate the motion
@@ -156,13 +443,31 @@ odometry[3] << "," << odometry[4] << "," << odometry[5] << "," << odometry[6] <<
    time_diff = end - start;
    motion_time = time_diff.count();
   }
+  else
+   is_first_frame = true;
 
-   frame_2.copy(frame_1);
-   end_total = SystemClock::now();
-   time_diff = end_total - start_total;
-   total_time = time_diff.count();
 
-   time_write << feature_time << "," << correspondence_time << "," << motion_time << "," << total_time << endl;
+
+
+//   frame_1.transformed_points.clear();
+
+
+  frame_2.ground->width = frame_2.ground->points.size();
+  frame_2.ground->height = 1;
+  ss.str("");
+  ss << output_folder << "ground_a_" << frame_2.frame_id << ".pcd";
+  writer.write(ss.str(),*frame_2.ground,true);
+  
+  
+  
+  
+ 	//fprintf(stderr,"inside frame 2 check 4 %d,%d,%d\n",frame_1.raw_input->points.size(),frame_2.raw_input->points.size(),frame_counter);
+  frame_2.copy(frame_1);
+  end_total = SystemClock::now();
+  time_diff = end_total - start_total;
+  total_time = time_diff.count();
+
+   time_write << feature_time << "," << correspondence_time << "," << motion_time << "," << total_time << "," << frame_counter << endl;
 
 
   //cloud_input_object_msg.header.frame_id = "/base_link";
@@ -176,7 +481,7 @@ odometry[3] << "," << odometry[4] << "," << odometry[5] << "," << odometry[6] <<
 
 
 }
-
+*/
 void DynamicFilter::preprocessing(Frame &frame)
 {
 
@@ -197,7 +502,7 @@ void DynamicFilter::preprocessing(Frame &frame)
 #pragma omp parallel for
  for(size_t i = 0; i < cloud_trans.points.size();++i)
  {
-  if(cloud_trans.points[i].z< 0.02)
+  if(cloud_trans.points[i].z< 0.02 || cloud_trans.points[i].x > 1.5)
    is_ground[i] = true;
  }
  int count = 0;
@@ -213,13 +518,23 @@ void DynamicFilter::preprocessing(Frame &frame)
 
  PointCloud::Ptr cloud_ground(new PointCloud);
  pcl::copyPointCloud(cloud_trans,indices,*cloud_ground);
- pcl::copyPointCloud(cloud_trans,indices_ground,*frame.ground);
  frame.raw_input->points.clear();
  sor.setInputCloud (cloud_ground);
  sor.setLeafSize (down_sampling_radius,down_sampling_radius,down_sampling_radius);
  sor.filter (*frame.raw_input);
  frame.raw_input->width = frame.raw_input->points.size();
  frame.raw_input->height = 1;
+
+
+ PointCloud::Ptr ground_full(new PointCloud);
+
+ pcl::copyPointCloud(cloud_trans,indices_ground,*ground_full);
+
+ sor.setInputCloud (ground_full);
+ sor.setLeafSize (down_sampling_radius,down_sampling_radius,down_sampling_radius);
+ sor.filter (*frame.ground);
+
+
 }
 
 int main(int argc,char **argv)

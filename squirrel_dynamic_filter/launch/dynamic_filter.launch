@@ -1,7 +1,7 @@
 <launch>
- <rosparam command="load" file="$(find squirrel_dynamic_filter)/params/parameters.yaml" />
- <!--node name="dynamic_filter" type="dynamic_filter_node"
- pkg="dynamic_filter"/-->
+ <rosparam command= "load" file="$(find squirrel_dynamic_filter)/params/parameters.yaml" />
+ <node name="dynamic_filter" type="dynamic_filter_node" pkg="squirrel_dynamic_filter"/>
+ <node name="preprocessing" type="preprocessing"  pkg="squirrel_dynamic_filter"/>
  <node name="sensor_to_base_link" type="sensor_to_base_link" pkg="squirrel_dynamic_filter"/>
  <node name="l_frequency" type="l_frequency" pkg="squirrel_dynamic_filter"/>
 </launch>
