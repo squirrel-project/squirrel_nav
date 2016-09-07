@@ -87,7 +87,7 @@ class tfPointCloud
    
    pcl::copyPointCloud(*cloud_processed,static_indices,*static_cloud);
 
-   fprintf(stderr,"%d,%d,%d\n",static_cloud->points.size(),cloud_processed->points.size(),dynamic_indices.size());
+  // fprintf(stderr,"%d,%d,%d\n",static_cloud->points.size(),cloud_processed->points.size(),dynamic_indices.size());
    static_cloud->width = static_cloud->points.size();
    static_cloud->height = 1;
 
@@ -97,7 +97,7 @@ class tfPointCloud
    pcl::toROSMsg(*static_cloud,filtered_msg);
    //pcl::toROSMsg(*cloud_processed,filtered_msg);
 
-   filtered_msg.header.frame_id = "/kinect_rgb_optical_frame";
+   filtered_msg.header.frame_id = "/base_link";
    pub.publish(filtered_msg);
 /*
    tf::Vector3 pos = transform.getOrigin();

@@ -12,4 +12,4 @@ FilterVariance : 0.01
 KeyPointRadius : 0.05
 MaxMotion : 0.2
 OutputFolder : "/home/dewan/code/squirrel_ros/src/dynamic_filter/results/test_12_08_6_11/"
-InputFolder : "/home/dewan/squirrel/catkin_ws/src/squirrel_nav/squirrel_dynamic_filter/"
+InputFolder : "/home/alufr/catkin_ws/src/squirrel_nav/squirrel_dynamic_filter/"
