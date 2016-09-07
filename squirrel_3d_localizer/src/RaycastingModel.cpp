@@ -21,8 +21,8 @@
 #include <squirrel_3d_localizer/RaycastingModel.h>
 
 #include <octomap_ros/conversions.h>
-#include <pcl/point_types.h>
 #include <pcl/conversions.h>
+#include <pcl/point_types.h>
 #include <pcl_ros/transforms.h>
 
 namespace squirrel_3d_localizer {
@@ -40,17 +40,21 @@ RaycastingModel::RaycastingModel(
   nh->param("raycasting/lambda_short", m_lambdaShort, 0.1);
 
   if (m_zMax <= 0.0) {
-    ROS_ERROR("raycasting/z_max needs to be > 0.0");
+    ROS_ERROR_STREAM(
+        ros::this_node::getName() << ": raycasting/z_max needs to be > 0.0");
   }
 
   if (m_zRand <= 0.0) {
-    ROS_ERROR("raycasting/z_rand needs to be > 0.0");
+    ROS_ERROR_STREAM(
+        ros::this_node::getName() << ": raycasting/z_rand needs to be > 0.0");
   }
 #pragma omp parallel
 #pragma omp critical
   {
     if (omp_get_thread_num() == 0) {
-      ROS_INFO("Using %d threads in RaycastingModel", omp_get_num_threads());
+      ROS_INFO(
+          "%s: Using %d threads in RaycastingModel",
+          ros::this_node::getName().c_str(), omp_get_num_threads());
     }
   }
 }
@@ -64,7 +68,8 @@ void RaycastingModel::integrateMeasurement(
   assert(pc.size() == ranges.size());
 
   if (!m_map) {
-    ROS_ERROR(ros::this_node::getName() << ": Map file is not set in raycasting");
+    ROS_ERROR_STREAM(
+        ros::this_node::getName() << ": Map file is not set in raycasting");
     return;
   }
 // iterate over samples, multi-threaded:

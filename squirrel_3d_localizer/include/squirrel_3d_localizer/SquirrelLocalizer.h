@@ -1,6 +1,3 @@
-// SVN $HeadURL$
-// SVN $Id$
-
 /*
  * 6D localization for humanoid robots
  *
@@ -59,11 +56,11 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl_ros/point_cloud.h>
 
+#include <squirrel_3d_localizer/EndpointModel.h>
 #include <squirrel_3d_localizer/MotionModel.h>
 #include <squirrel_3d_localizer/ObservationModel.h>
 #include <squirrel_3d_localizer/RaycastingModel.h>
 #include <squirrel_3d_localizer/SquirrelLocalizerDefs.h>
-#include <squirrel_3d_localizer/EndpointModel.h>
 
 #include <octomap/octomap.h>
 
@@ -127,7 +124,7 @@ class SquirrelLocalizer {
   bool resetMapSrvCallback(
       squirrel_3d_localizer_msgs::SetMap::Request& req,
       squirrel_3d_localizer_msgs::SetMap::Response& res);
-  
+
   /**
    * Importance sampling from m_particles according to weights,
    * resets weight to 1/numParticles. Uses low variance sampling
@@ -214,9 +211,10 @@ class SquirrelLocalizer {
       std::vector<float>& ranges) const;
 
   void prepareLaserPointCloud(
-      const sensor_msgs::LaserScan::ConstPtr& laser, const std::string& targetFrame,
-      PointCloud& pc, std::vector<float>& ranges); 
-  
+      const sensor_msgs::LaserScan::ConstPtr& laser,
+      const std::string& targetFrame, PointCloud& pc,
+      std::vector<float>& ranges);
+
   /**
    * Prepares a PointCloud msg to be integrated into the observations model.
    * Filters
@@ -227,7 +225,7 @@ class SquirrelLocalizer {
   void prepareGeneralPointCloud(
       const sensor_msgs::PointCloud2::ConstPtr& msg, PointCloud& pc,
       std::vector<float>& ranges) const;
-  
+
   int filterUniform(
       const PointCloud& cloud_in, PointCloud& cloud_out, int numSamples) const;
 
@@ -295,7 +293,7 @@ class SquirrelLocalizer {
   bool m_printPointCloudSubscription;
   bool m_printLaserSubscription;
   bool m_printSynchronizedSubscription;
-  
+
   std::string m_odomFrameId;
   std::string m_targetFrameId;
   std::string m_baseFrameId;
@@ -314,7 +312,8 @@ class SquirrelLocalizer {
   double m_minParticleWeight;
   Vector6d m_initPose;      // fixed init. pose (from params)
   Vector6d m_initNoiseStd;  // Std.dev for init. pose
-  bool m_initPoseRealZRP;  // override z, roll, pitch with real values from robot
+  bool
+      m_initPoseRealZRP;  // override z, roll, pitch with real values from robot
 
   double m_filterMaxRange;
   double m_filterMinRange;

@@ -55,7 +55,7 @@ void MapModel::verifyPoses(Particles& particles) {
     minX = minY = minZ = -std::numeric_limits<double>::infinity();
     maxX = maxY = maxZ = std::numeric_limits<double>::infinity();
   }
-  
+
   // find min. particle weight:
   double minWeight = std::numeric_limits<double>::max();
   for (Particles::iterator it = particles.begin(); it != particles.end();
@@ -159,7 +159,7 @@ void MapModel::initGlobal(
       // distance map: used distance from obstacles:
       // std::abs(node->getLogOdds()) < 0.1){
       //			if (!isOccupied(octomap::point3d(x, y,
-      //z[zIdx]))){
+      // z[zIdx]))){
 
       it->pose.getOrigin().setX(x);
       it->pose.getOrigin().setY(y);
@@ -268,12 +268,13 @@ OccupancyMap::OccupancyMap(ros::NodeHandle* nh) : MapModel(nh) {
   octomap_msgs::GetOctomap::Response resp;
   while (nh->ok() && !ros::service::call(servname, req, resp)) {
     ROS_WARN(
-        "%s: Request to %s failed; trying again...", ros::this_node::getName().c_str(),
-        nh->resolveName(servname).c_str());
+        "%s: Request to %s failed; trying again...",
+        ros::this_node::getName().c_str(), nh->resolveName(servname).c_str());
     usleep(1000000);
   }
 
-  m_map.reset(dynamic_cast<octomap::OcTree*>(octomap_msgs::binaryMsgToMap(resp.map)));
+  m_map.reset(
+      dynamic_cast<octomap::OcTree*>(octomap_msgs::binaryMsgToMap(resp.map)));
 
   if (!m_map || m_map->size() <= 1) {
     ROS_ERROR("Occupancy map is erroneous, exiting...");
@@ -282,9 +283,11 @@ OccupancyMap::OccupancyMap(ros::NodeHandle* nh) : MapModel(nh) {
   double x, y, z;
   m_map->getMetricSize(x, y, z);
   ROS_INFO(
-      "%s: Occupancy map initialized with %zd nodes (%.2f x %.2f x %.2f m), %f m "
-      "res.", ros::this_node::getName().c_str(),
-      m_map->size(), x, y, z, m_map->getResolution());
+      "%s: Occupancy map initialized with %zd nodes (%.2f x %.2f x %.2f m), %f "
+      "m "
+      "res.",
+      ros::this_node::getName().c_str(), m_map->size(), x, y, z,
+      m_map->getResolution());
 
   m_map->writeBinary("/tmp/octomap_loc");
 }
@@ -303,7 +306,9 @@ double OccupancyMap::getFloorHeight(const tf::Transform& pose) const {
     // add resolution/2 so height is above voxel boundary:
     return end.z() + m_map->getResolution() / 2.0;
   } else {
-    ROS_WARN_ONCE("%s :getFloorHeight raycast did not succeed, using 0.0", ros::this_node::getName().c_str());
+    ROS_WARN_ONCE(
+        "%s :getFloorHeight raycast did not succeed, using 0.0",
+        ros::this_node::getName().c_str());
     return 0.0;
   }
 }

@@ -119,7 +119,8 @@ void EndpointModel::initDistanceMap() {
   m_distanceMap = boost::shared_ptr<DynamicEDTOctomap>(new DynamicEDTOctomap(
       float(m_maxObstacleDistance), &(*m_map), min, max, false));
   m_distanceMap->update();
-  ROS_INFO_STREAM(ros::this_node::getName() << ": Distance map for endpoint model completed");
+  ROS_INFO_STREAM(
+      ros::this_node::getName()
+      << ": Distance map for endpoint model completed");
 }
-
-} 
+}

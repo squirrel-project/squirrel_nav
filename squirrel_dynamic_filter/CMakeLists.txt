@@ -15,6 +15,7 @@ set(squirrel_dynamic_filter_DEPENDENCIES
   rospy
   sensor_msgs
   std_msgs
+  squirrel_dynamic_filter_msgs
   tf
 )
 
@@ -174,7 +175,7 @@ add_dependencies(dynamic_filter_node squirrel_dynamic_filter_msgs_message_genera
 #target_link_libraries(publish_cloud ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
 add_executable(l_frequency src/l_frequency.cpp)
-target_link_libraries(l_frequency ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+target_link_libraries(l_frequency ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY})
 add_dependencies(l_frequency squirrel_dynamic_filter_msgs_generate_messages_cpp)
 #add_executable(test_odometry src/test_odometry)
 #target_link_libraries(test_odometry ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} vertex_se3_vector3D ${G2O_CORE_LIBRARY} ${G2O_TYPES_SLAM3D} ${PCL_LIBRARIES} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION})
@@ -186,6 +187,9 @@ add_dependencies(l_frequency squirrel_dynamic_filter_msgs_generate_messages_cpp)
 
 add_executable(temporal_inference src/TemporalInference.cpp)
 target_link_libraries(temporal_inference ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} "/usr/local/lib/libmlpack.so" "/usr/lib/libarmadillo.so" vertex_se3_vector3D ${G2O_CORE_LIBRARY} ${G2O_TYPES_SLAM3D} ${PCL_LIBRARIES} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION})
+
+add_executable(sensor_to_base_link src/sensor_to_base_link.cpp)
+target_link_libraries(sensor_to_base_link ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
 
 ## Declare a C++ library
