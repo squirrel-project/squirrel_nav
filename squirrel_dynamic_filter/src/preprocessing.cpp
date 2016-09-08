@@ -47,7 +47,6 @@ class tfPointCloud
   squirrel_dynamic_filter_msgs::DynamicFilterSrv dynamic_srv;
   std::stringstream ss;
   float down_sampling_radius;
-  pcl::VoxelGrid<Point> sor;
   PointCloud previous_cloud;
  public:
 		tfPointCloud():counter(0)
@@ -58,10 +57,10 @@ class tfPointCloud
    n_.getParam("InputFolder",input_folder); 
    n_.getParam("OutputFolder",output_folder); 
    n_.getParam("DownSamplingRadius",down_sampling_radius); 
-   pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/slow",1000);
+   pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/slow",10);
   // pub2 = n_.advertise<squirrel_dynamic_filter_msgs::CloudMsg>("/squirrel/cloud_msg",1000);
    
-   cloud_sub = n_.subscribe("/squirrel/cloud_msg", 5000, &tfPointCloud::msgCallback, this);
+   cloud_sub = n_.subscribe("/squirrel/cloud_msg", 2000, &tfPointCloud::msgCallback, this);
    dynamic_srv.request.odometry.resize(7);
   }
   
@@ -88,8 +87,10 @@ class tfPointCloud
    static_cloud->width = static_cloud->points.size();
    static_cloud->height = 1;
 
+  pcl::VoxelGrid<Point> sor;
    dynamic_cloud->width = dynamic_cloud->points.size();
    dynamic_cloud->height = 1;
+  
    sor.setInputCloud (dynamic_cloud);
    sor.setLeafSize (down_sampling_radius,down_sampling_radius,down_sampling_radius);
    PointCloud dynamic_cloud_sampled;
@@ -108,7 +109,7 @@ class tfPointCloud
    {
     if(client.call(dynamic_srv))
     {
-     fprintf(stderr,"score %d,%d,%d\n",dynamic_cloud_sampled.points.size(),dynamic_srv.response.cloud_static.width,counter);
+     fprintf(stderr,"score %d,%d,%d,%d\n",dynamic_cloud_sampled.points.size(),dynamic_srv.response.cloud_static.width,counter,dynamic_srv.response.cloud_static.width);
 
      PointCloud cloud_dynamic;
      pcl::fromROSMsg(dynamic_srv.response.cloud_static,cloud_dynamic);
@@ -125,8 +126,8 @@ class tfPointCloud
    }
 
   ss.str("");
-  ss << output_folder << "ground_a_" << counter << ".pcd";
-  writer.write(ss.str(),*static_cloud,true);
+//  ss << output_folder << "ground_a_" << counter << ".pcd";
+//  writer.write(ss.str(),*static_cloud,true);
   counter+=1;
 
   previous_cloud.width = previous_cloud.points.size();
