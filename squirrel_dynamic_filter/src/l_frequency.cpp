@@ -38,7 +38,7 @@ class tfPointCloud
 			tf_filter_ = new tf::MessageFilter<sensor_msgs::PointCloud2> (cloud_sub_, tf_, "base_link", 1);
 //		tf_filter_ = new tf::MessageFilter<sensor_msgs::PointCloud2> (cloud_sub_, tf_, "kinect_rgb_optical_frame", 1000);
 		tf_filter_->registerCallback(boost::bind(&tfPointCloud::msgCallback, this, _1) );
-  pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/slow",1000);
+  //pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/slow",1000);
   pub2 = n_.advertise<squirrel_dynamic_filter_msgs::CloudMsg>("/squirrel/cloud_msg",1000);
   cloud_msg.odometry.resize(7);
 

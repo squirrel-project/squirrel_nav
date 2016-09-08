@@ -109,9 +109,10 @@ class tfPointCloud
 
     }
    }
-  ss.str("");
-  ss << output_folder << "ground_a_" << counter << ".pcd";
-  writer.write(ss.str(),*static_cloud,true);
+
+//  ss.str("");
+//  ss << output_folder << "ground_a_" << counter << ".pcd";
+//  writer.write(ss.str(),*static_cloud,true);
   counter+=1;
   pcl::toROSMsg(*static_cloud,filtered_msg);
   filtered_msg.header.frame_id = "/base_link";
