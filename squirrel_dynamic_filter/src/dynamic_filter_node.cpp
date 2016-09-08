@@ -134,6 +134,7 @@ bool DynamicFilter::DynamicFilterSrvCallback(squirrel_dynamic_filter_msgs::Dynam
  else
  {
 
+  start_total = SystemClock::now(); 
   frame_2.clear();
   pcl::fromROSMsg(req.cloud,*frame_2.raw_input);
   Vector7d odometry;
@@ -168,22 +169,7 @@ bool DynamicFilter::DynamicFilterSrvCallback(squirrel_dynamic_filter_msgs::Dynam
   correspondence_time = time_diff.count();
   start = SystemClock::now(); 
 
-  ss.str("");
-  ss << output_folder << "query_a_" << frame_1.frame_id << ".csv";
-
-  ofstream myfile_query(ss.str().c_str());
-
-  ss.str("");
-  ss << output_folder << "match_a_" << frame_1.frame_id << ".csv";
-  ofstream myfile_match(ss.str().c_str());
   
-  for(size_t i = 0; i < index_query.size(); ++i)
-  {
-   myfile_query << index_query[i] << endl;
-   myfile_match << index_match[i] << endl;
-  }
-
- 
   
   if(frame_1.prior_dynamic.empty() || !indices_dynamic.empty())
    {
@@ -223,7 +209,22 @@ bool DynamicFilter::DynamicFilterSrvCallback(squirrel_dynamic_filter_msgs::Dynam
   ss << output_folder << "a_" << frame_2.frame_id << ".pcd";
   writer.write(ss.str(),*frame_2.raw_input,true);
 
+   ss.str("");
+  ss << output_folder << "query_a_" << frame_1.frame_id << ".csv";
+
+  ofstream myfile_query(ss.str().c_str());
+
+  ss.str("");
+  ss << output_folder << "match_a_" << frame_1.frame_id << ".csv";
+  ofstream myfile_match(ss.str().c_str());
   
+  for(size_t i = 0; i < index_query.size(); ++i)
+  {
+   myfile_query << index_query[i] << endl;
+   myfile_match << index_match[i] << endl;
+  }
+
+
 
 
   end = SystemClock::now();
@@ -236,6 +237,17 @@ bool DynamicFilter::DynamicFilterSrvCallback(squirrel_dynamic_filter_msgs::Dynam
   time_diff = end - start;
   motion_time = time_diff.count();
   frame_2.copy(frame_1);
+  end_total = SystemClock::now(); 
+
+  time_diff = end_total - start_total;
+  total_time = time_diff.count();
+
+   time_write << feature_time << "," << correspondence_time << "," << motion_time << "," << total_time << "," << frame_1.frame_id << endl;
+
+
+
+
+
  }
  
 return true;

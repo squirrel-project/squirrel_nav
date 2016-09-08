@@ -57,7 +57,7 @@ class tfPointCloud
    n_.getParam("InputFolder",input_folder); 
    n_.getParam("OutputFolder",output_folder); 
    n_.getParam("DownSamplingRadius",down_sampling_radius); 
-   pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/slow",1000);
+//   pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/slow",1000);
   // pub2 = n_.advertise<squirrel_dynamic_filter_msgs::CloudMsg>("/squirrel/cloud_msg",1000);
    
    cloud_sub = n_.subscribe("/squirrel/cloud_msg", 5000, &tfPointCloud::msgCallback, this);

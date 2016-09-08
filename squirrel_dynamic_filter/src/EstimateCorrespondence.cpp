@@ -398,7 +398,7 @@ void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,
  {
   if(corr_point.distance < (max_distance))//actual correspondence
   {
-   if(frame_1.prior_dynamic[corr_point.index_match] < 0.05)//static Point
+   if(frame_1.prior_dynamic[corr_point.index_match] < 0.15)//static Point
    {
     Vector4f point = frame_1.raw_input->points[corr_point.index_query].getVector4fMap();
     point[3] = 1;
@@ -498,7 +498,7 @@ void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,
 
  }
 
- fprintf(stderr,"index qyery %d\n", index_query.size());
+ fprintf(stderr,"index query %d\n", index_query.size());
 
 }
 
