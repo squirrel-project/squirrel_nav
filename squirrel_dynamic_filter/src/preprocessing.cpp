@@ -87,15 +87,15 @@ class tfPointCloud
    static_cloud->width = static_cloud->points.size();
    static_cloud->height = 1;
 
-  pcl::VoxelGrid<Point> sor;
+  //pcl::VoxelGrid<Point> sor;
    dynamic_cloud->width = dynamic_cloud->points.size();
    dynamic_cloud->height = 1;
   
-   sor.setInputCloud (dynamic_cloud);
-   sor.setLeafSize (down_sampling_radius,down_sampling_radius,down_sampling_radius);
-   PointCloud dynamic_cloud_sampled;
-   sor.filter (dynamic_cloud_sampled);
-   pcl::toROSMsg(dynamic_cloud_sampled,dynamic_srv.request.cloud);
+ // .. sor.setInputCloud (dynamic_cloud);
+ // sor.setLeafSize (down_sampling_radius,down_sampling_radius,down_sampling_radius);
+ //  PointCloud dynamic_cloud_sampled;
+ //  sor.filter (dynamic_cloud_sampled);
+   pcl::toROSMsg(*dynamic_cloud,dynamic_srv.request.cloud);
   
    dynamic_srv.request.odometry[0] = sensor_msg.odometry[0];
    dynamic_srv.request.odometry[1] = sensor_msg.odometry[1];
@@ -105,11 +105,11 @@ class tfPointCloud
    dynamic_srv.request.odometry[5] = sensor_msg.odometry[5];
    dynamic_srv.request.odometry[6] = sensor_msg.odometry[6];
    dynamic_srv.request.frame_id = counter;
-   if(dynamic_cloud_sampled.points.size() > 50)
+   if(dynamic_cloud->points.size() > 50)
    {
     if(client.call(dynamic_srv))
     {
-     fprintf(stderr,"score %d,%d,%d,%d\n",dynamic_cloud_sampled.points.size(),dynamic_srv.response.cloud_static.width,counter,dynamic_srv.response.cloud_static.width);
+     fprintf(stderr,"score %d,%d,%d,%d\n",dynamic_cloud->points.size(),dynamic_srv.response.cloud_static.width,counter,dynamic_srv.response.cloud_static.width);
 
      PointCloud cloud_dynamic;
      pcl::fromROSMsg(dynamic_srv.response.cloud_static,cloud_dynamic);

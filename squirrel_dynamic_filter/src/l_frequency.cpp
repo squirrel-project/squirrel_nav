@@ -7,22 +7,26 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/io/pcd_io.h>
+
+#include <pcl/filters/voxel_grid.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include "squirrel_dynamic_filter_msgs/CloudMsg.h"
+#include "datatypes_squirrel.h"
 using namespace std;
 class tfPointCloud
 {
 	private:
 
  
-
   message_filters::Subscriber<sensor_msgs::PointCloud2> cloud_sub_;	           
   tf::TransformListener tf_;
   ros::Publisher  pub;   
   ros::Publisher  pub2;   
-  tf::MessageFilter<sensor_msgs::PointCloud2> * tf_filter_;
+  tf::MessageFilter <sensor_msgs::PointCloud2> * tf_filter_;
   ros::NodeHandle n_;
 
+  pcl::VoxelGrid<Point> sor;
+  float down_sampling_radius;
   //ros::Subscriber cloud_sub_1 = n_.subscribe("/kinect/depth/points", 1000,&tfPointCloud::Callback, this);
 		int counter;
 		ofstream write_odom;
@@ -41,8 +45,7 @@ class tfPointCloud
   //pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/slow",1000);
   pub2 = n_.advertise<squirrel_dynamic_filter_msgs::CloudMsg>("/squirrel/cloud_msg",10);
   cloud_msg.odometry.resize(7);
-
-
+  n_.getParam("DownSamplingRadius",down_sampling_radius); 
 		}
   void msgCallback(const sensor_msgs::PointCloud2::ConstPtr& sensor_msg) 
   {
@@ -57,10 +60,21 @@ class tfPointCloud
     ros::Duration(1.0).sleep();
    }
  
+   PointCloud::Ptr cloud(new PointCloud);
+   PointCloud::Ptr cloud_sampled(new PointCloud);
+
+   pcl::fromROSMsg(*sensor_msg,*cloud);
+   sor.setInputCloud (cloud);
+   sor.setLeafSize (down_sampling_radius,down_sampling_radius,down_sampling_radius);
+   sor.filter (*cloud_sampled);
+   cloud_sampled->width = cloud_sampled->points.size();
+   cloud_sampled->height = 1;
+
+   pcl::toROSMsg(*cloud_sampled, cloud_msg.cloud_msg);
    tf::Vector3 pos = transform.getOrigin();
    tf::Quaternion rot = transform.getRotation();
-
-   cloud_msg.cloud_msg = *sensor_msg;
+   
+//   cloud_msg.cloud_msg = *sensor_msg;
    cloud_msg.odometry[0] = pos[0];
    cloud_msg.odometry[1] = pos[1];
    cloud_msg.odometry[2] = pos[2];
