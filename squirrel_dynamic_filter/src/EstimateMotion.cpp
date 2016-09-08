@@ -328,7 +328,7 @@ void DynamicFilter::EstimateMotion2(const std::vector <int> &index_query,const s
 
 ////Motion for each cluster is calculated separately. Clustering makes things
 //faster and constraints the problem better
-void DynamicFilter::EstimateMotion(const std::vector <int> &index_query,const std::vector <int> &index_match)
+void DynamicFilter::EstimateMotion(const std::vector <int> &index_query,const std::vector <int> &index_match,PointCloud &cloud_dynamic)
 {
  PointCloud cloud_t_current;
  Isometry3D Identity;
@@ -681,8 +681,17 @@ void DynamicFilter::EstimateMotion(const std::vector <int> &index_query,const st
   if(frame_1.prior_dynamic.empty())
    check = true;
   DynamicScore(cloud_save,check,score); 
+
+  int count_point = 0; 
   for(auto &score:frame_1.prior_dynamic)
+  {
+   if(score < 0.15)
+    cloud_dynamic.points.push_back(cloud_save->points[count_point]);
    write_intensity_z << score << endl;
+
+   count_point += 1;
+
+  }
  }
  else
  {

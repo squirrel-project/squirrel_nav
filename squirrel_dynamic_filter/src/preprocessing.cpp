@@ -48,6 +48,7 @@ class tfPointCloud
   std::stringstream ss;
   float down_sampling_radius;
   pcl::VoxelGrid<Point> sor;
+  PointCloud previous_cloud;
  public:
 		tfPointCloud():counter(0)
 		{
@@ -57,7 +58,7 @@ class tfPointCloud
    n_.getParam("InputFolder",input_folder); 
    n_.getParam("OutputFolder",output_folder); 
    n_.getParam("DownSamplingRadius",down_sampling_radius); 
-//   pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/slow",1000);
+   pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/slow",1000);
   // pub2 = n_.advertise<squirrel_dynamic_filter_msgs::CloudMsg>("/squirrel/cloud_msg",1000);
    
    cloud_sub = n_.subscribe("/squirrel/cloud_msg", 5000, &tfPointCloud::msgCallback, this);
@@ -78,6 +79,8 @@ class tfPointCloud
    std::vector <int> dynamic_indices;
 
    preprocessing(sensor_msg.cloud_msg,cloud_processed,static_indices,dynamic_indices);   
+
+   
    pcl::copyPointCloud(*cloud_processed,static_indices,*static_cloud);
    pcl::copyPointCloud(*cloud_processed,dynamic_indices,*dynamic_cloud);
 
@@ -105,19 +108,38 @@ class tfPointCloud
    {
     if(client.call(dynamic_srv))
     {
+     fprintf(stderr,"score %d,%d,%d\n",dynamic_cloud_sampled.points.size(),dynamic_srv.response.cloud_static.width,counter);
+
+     PointCloud cloud_dynamic;
+     pcl::fromROSMsg(dynamic_srv.response.cloud_static,cloud_dynamic);
+
+     for(auto &point:cloud_dynamic.points)
+      previous_cloud.points.push_back(point);
+
+
+
+
 
 
     }
    }
 
-//  ss.str("");
-//  ss << output_folder << "ground_a_" << counter << ".pcd";
-//  writer.write(ss.str(),*static_cloud,true);
+  ss.str("");
+  ss << output_folder << "ground_a_" << counter << ".pcd";
+  writer.write(ss.str(),*static_cloud,true);
   counter+=1;
-  pcl::toROSMsg(*static_cloud,filtered_msg);
+
+  previous_cloud.width = previous_cloud.points.size();
+  previous_cloud.height = 1;
+
+
+    
+  pcl::toROSMsg(previous_cloud,filtered_msg);
   filtered_msg.header.frame_id = "/base_link";
   pub.publish(filtered_msg);
 
+  previous_cloud.points.clear();
+  previous_cloud.points = static_cloud->points;
  /* 
 //   pcl::toROSMsg(*dynamic_cloud,filtered_msg);
    //pcl::toROSMsg(*cloud_processed,filtered_msg);

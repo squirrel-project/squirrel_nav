@@ -193,6 +193,7 @@ bool DynamicFilter::DynamicFilterSrvCallback(squirrel_dynamic_filter_msgs::Dynam
      EstimateCorrespondencePoint(max_motion,sampling_radius,2,index_query,index_match);///Estimate correspondences
     }
    }
+
   frame_1.raw_input->width = frame_1.raw_input->points.size();
   frame_1.raw_input->height = 1;
   frame_2.raw_input->width = frame_2.raw_input->points.size();
@@ -226,17 +227,16 @@ bool DynamicFilter::DynamicFilterSrvCallback(squirrel_dynamic_filter_msgs::Dynam
 
 
 
-
+  PointCloud cloud_dynamic;
   end = SystemClock::now();
   time_diff = end - start;
   feature_time = time_diff.count();
   start = SystemClock::now(); 
   if(!index_query.empty())
-   EstimateMotion(index_query,index_match);///Estimate the motion
+   EstimateMotion(index_query,index_match,cloud_dynamic);///Estimate the motion
   end = SystemClock::now();
   time_diff = end - start;
   motion_time = time_diff.count();
-  frame_2.copy(frame_1);
   end_total = SystemClock::now(); 
 
   time_diff = end_total - start_total;
@@ -244,6 +244,15 @@ bool DynamicFilter::DynamicFilterSrvCallback(squirrel_dynamic_filter_msgs::Dynam
 
    time_write << feature_time << "," << correspondence_time << "," << motion_time << "," << total_time << "," << frame_1.frame_id << endl;
 
+   frame_1.raw_input->width = frame_1.raw_input->points.size();
+   frame_1.raw_input->height = 1;
+   
+   pcl::toROSMsg(cloud_dynamic,res.cloud_static);
+
+   fprintf(stderr,"score filter  %d,%d\n", frame_1.raw_input->width,frame_2.frame_id);
+
+
+  frame_2.copy(frame_1);
 
 
 

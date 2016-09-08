@@ -56,7 +56,7 @@ private:
  void EstimateFeature(Frame &frame);
  void EstimateFeature(Frame &frame,const std::vector<int>&dynamic_indices);
  void EstimateCorrespondence(const float sampling_radius,const float max_motion, std::vector<int>&index_query, std::vector<int> &index_match);
- void EstimateMotion(const std::vector <int> &index_query,const std::vector <int> &index_match);
+ void EstimateMotion(const std::vector <int> &index_query,const std::vector <int> &index_match,PointCloud &cloud_dynamic);
  void EstimateMotion2(const std::vector <int> &index_query,const std::vector <int> &index_match);
  void EstimateCorrespondencePoint(const float radius,const float sampling_radius,int number_correspondences,std::vector<int>&index_query, std::vector<int> &index_match);
  void filter_correspondences(const float neighbour_radius,const float covariance_value,const float score_threshold);
