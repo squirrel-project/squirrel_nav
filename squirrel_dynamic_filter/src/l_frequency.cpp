@@ -8,7 +8,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include "dynamic_filter/CloudMsg.h"
+#include "squirrel_dynamic_filter_msgs/CloudMsg.h"
 using namespace std;
 class tfPointCloud
 {
@@ -29,7 +29,7 @@ class tfPointCloud
 		pcl::PCDWriter writer;
 		tf::StampedTransform old_transform;
   ros::Time start_time;
-  dynamic_filter::CloudMsg cloud_msg;
+  squirrel_dynamic_filter_msgs::CloudMsg cloud_msg;
 	public:
   int msg_id;
 		tfPointCloud():tf_(),counter(0),msg_id(0)
@@ -39,7 +39,7 @@ class tfPointCloud
 //		tf_filter_ = new tf::MessageFilter<sensor_msgs::PointCloud2> (cloud_sub_, tf_, "kinect_rgb_optical_frame", 1000);
 		tf_filter_->registerCallback(boost::bind(&tfPointCloud::msgCallback, this, _1) );
   pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/slow",1000);
-  pub2 = n_.advertise<dynamic_filter::CloudMsg>("/squirrel/cloud_msg",1000);
+  pub2 = n_.advertise<squirrel_dynamic_filter_msgs::CloudMsg>("/squirrel/cloud_msg",1000);
   cloud_msg.odometry.resize(7);
 
 

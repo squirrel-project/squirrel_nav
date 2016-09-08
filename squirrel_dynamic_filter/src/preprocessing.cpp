@@ -113,14 +113,15 @@ class tfPointCloud
   ss << output_folder << "ground_a_" << counter << ".pcd";
   writer.write(ss.str(),*static_cloud,true);
   counter+=1;
+  pcl::toROSMsg(*static_cloud,filtered_msg);
+  filtered_msg.header.frame_id = "/base_link";
+  pub.publish(filtered_msg);
+
  /* 
-   //  pcl::toROSMsg(*static_cloud,filtered_msg);
 //   pcl::toROSMsg(*dynamic_cloud,filtered_msg);
    //pcl::toROSMsg(*cloud_processed,filtered_msg);
 
-  // filtered_msg.header.frame_id = "/base_link";
-  // pub.publish(filtered_msg);
-      pub2.publish(cloud_msg);
+  /      pub2.publish(cloud_msg);
    pub.publish(*sensor_msg);
    msg_id = counter;
    */
