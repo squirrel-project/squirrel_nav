@@ -168,7 +168,28 @@ bool DynamicFilter::DynamicFilterSrvCallback(squirrel_dynamic_filter_msgs::Dynam
   time_diff = end - start;
   correspondence_time = time_diff.count();
   start = SystemClock::now(); 
+  
+  ss.str("");
+  ss << output_folder << "query_a_" << frame_1.frame_id << ".csv";
 
+  ofstream myfile_query(ss.str().c_str());
+
+  ss.str("");
+  ss << output_folder << "match_a_" << frame_1.frame_id << ".csv";
+  ofstream myfile_match(ss.str().c_str());
+  
+  for(size_t i = 0; i < index_query.size(); ++i)
+  {
+   myfile_query << index_query[i] << endl;
+   myfile_match << index_match[i] << endl;
+  }
+
+  myfile_query.close();
+  myfile_match.close();
+
+
+
+ 
   
   
   if(frame_1.prior_dynamic.empty() || !indices_dynamic.empty())
@@ -210,14 +231,14 @@ bool DynamicFilter::DynamicFilterSrvCallback(squirrel_dynamic_filter_msgs::Dynam
   ss << output_folder << "a_" << frame_2.frame_id << ".pcd";
   writer.write(ss.str(),*frame_2.raw_input,true);
 
-   ss.str("");
-  ss << output_folder << "query_a_" << frame_1.frame_id << ".csv";
+  ss.str("");
+  ss << output_folder << "/all/query_a_" << frame_1.frame_id << ".csv";
 
-  ofstream myfile_query(ss.str().c_str());
+  myfile_query.open(ss.str().c_str());
 
   ss.str("");
-  ss << output_folder << "match_a_" << frame_1.frame_id << ".csv";
-  ofstream myfile_match(ss.str().c_str());
+  ss << output_folder << "/all/match_a_" << frame_1.frame_id << ".csv";
+  myfile_match.open(ss.str().c_str());
   
   for(size_t i = 0; i < index_query.size(); ++i)
   {
@@ -227,7 +248,7 @@ bool DynamicFilter::DynamicFilterSrvCallback(squirrel_dynamic_filter_msgs::Dynam
 
 
 
-  PointCloud cloud_dynamic;
+ PointCloud cloud_dynamic;
   end = SystemClock::now();
   time_diff = end - start;
   feature_time = time_diff.count();

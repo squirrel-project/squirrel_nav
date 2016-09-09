@@ -391,7 +391,7 @@ void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,
  est.setInputSource (frame_1.raw_input);
  est.setInputTarget (frame_1.cloud_transformed);
  est.determineCorrespondences (corr);
- const double max_distance = 0.001 * 0.001;
+ const double max_distance = 0.01 * 0.01;
  std::vector <int> indices_corr;
  PointCloud::Ptr cloud_trans(new PointCloud);
  for(auto &corr_point:corr)
@@ -433,7 +433,7 @@ void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,
  pcl::Correspondences corr_final;
  est.setInputSource (cloud_trans_sampled);
  est.setInputTarget (frame_2.raw_input);
- est.determineCorrespondences (corr_final);
+ est.determineReciprocalCorrespondences (corr_final);
  fprintf(stderr,"check size %d,%d\n",corr_final.size(),frame_2.raw_input->points.size());
 /*
  frame_1.raw_input->width = frame_1.raw_input->points.size();

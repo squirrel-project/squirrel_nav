@@ -47,7 +47,7 @@ private:
  ros::ServiceServer dynamic_filter_service;
  const float p_s_d = 0.05;
  const float p_s_s = 0.95;
- const float p_d_s = 0.05;
+ const float p_d_s = 0.65;
  const float p_d_d = 0.95;
 
 

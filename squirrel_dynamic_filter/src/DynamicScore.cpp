@@ -47,7 +47,7 @@ void DynamicFilter::DynamicScore(const PointCloud::Ptr &cloud,const bool is_firs
    prior = frame_1.prior_dynamic[i];
   else
   {
-   if(all_correspondences[i].distance <= 0.1)
+   if(all_correspondences[i].distance <= 0.01 * 0.01 )
    {
     if(all_correspondences[i].index_match >= frame_1.prior_dynamic.size())
     {
