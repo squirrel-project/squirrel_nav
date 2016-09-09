@@ -9,7 +9,6 @@ using namespace std;
 void DynamicFilter::filter_correspondences(const float neighbour_radius,const float covariance_value,const float score_threshold)
 {
 
- fprintf(stderr,"inside filter\n");
  c_vec_actual.clear();
  std::vector< std::pair<int,float> >neighbour_info;
  std::vector <int> query_vec; 
@@ -252,9 +251,6 @@ void DynamicFilter::EstimateCorrespondencePoint(const float radius,const float s
 
    c.query = frame_1.sampled_points[counter];
 
-  // index_query.push_back(frame_1.sampled_points[counter]);
-  // index_match.push_back(neighbour_info[0].first);
-  //
    if(number_correspondences > pointIdxRadiusSearch.size())
     number_correspondences = pointIdxRadiusSearch.size(); 
    for(int i = 0; i < number_correspondences ; ++i)
@@ -285,7 +281,6 @@ void DynamicFilter::EstimateCorrespondencePoint(const float radius,const float s
 
  
  filter_correspondences(filter_radius,filter_variance,0.65);
- cout << "c_vec_compariosn" <<  c_vec.size() << "," << c_vec_actual.size() << "," << sampled_indices.points.size() << "," << counter_check << endl;
  
 
  pcl::PCDWriter writer;
@@ -380,12 +375,14 @@ void DynamicFilter::EstimateCorrespondencePoint(const float radius,const float s
 
 }
 
-
+///Estimate correspondences for static points using nearest neighbours instead
+//of using features.
 
 
 void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,std::vector<int>&index_query, std::vector<int> &index_match,std::vector<int> &indices_dynamic)
 {
-
+///Associtaing points in scan t-1(frame_1.cloud_transformed) and points in scan
+//t(frame_1.raw_input)
  pcl::Correspondences corr;
  pcl::registration::CorrespondenceEstimation <Point,Point> est; 
  est.setInputSource (frame_1.raw_input);
@@ -402,7 +399,7 @@ void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,
    {
     Vector4f point = frame_1.raw_input->points[corr_point.index_query].getVector4fMap();
     point[3] = 1;
-    Vector4d point_trans = frame_1.motion_init[corr_point.index_match] * point.cast<double>();
+    Vector4d point_trans = frame_1.motion_init[corr_point.index_match] * point.cast<double>();//Predicitng the location of point in scan t to location of scan t+1 using the motion calculated between t-1 and t
     Point pointPCL;
     pointPCL.x = point_trans[0];
     pointPCL.y = point_trans[1];
@@ -410,16 +407,10 @@ void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,
     indices_corr.push_back(corr_point.index_query);
     cloud_trans->points.push_back(pointPCL);
    }
-//  else
-//   indices_dynamic.push_back(corr_point.index_query); 
   }
-//  else
-//   indices_dynamic.push_back(corr_point.index_query); 
- 
  }
  
- 
- fprintf(stderr,"inside function %d,%d\n",frame_1.cloud_transformed->points.size(),cloud_trans->points.size());
+///uniform sampling for correspondences 
  pcl::PointCloud <int> sampled_indices;
  pcl::UniformSampling <pcl::PointXYZ> uniform_sampling;
  uniform_sampling.setInputCloud (cloud_trans);
@@ -429,40 +420,14 @@ void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,
  PointCloud::Ptr cloud_trans_sampled(new PointCloud);
 
  pcl::copyPointCloud(*cloud_trans,sampled_indices.points, *cloud_trans_sampled); 
- 
+ ///calculating correspondence between t and t+1
  pcl::Correspondences corr_final;
  est.setInputSource (cloud_trans_sampled);
  est.setInputTarget (frame_2.raw_input);
  est.determineReciprocalCorrespondences (corr_final);
- fprintf(stderr,"check size %d,%d\n",corr_final.size(),frame_2.raw_input->points.size());
-/*
- frame_1.raw_input->width = frame_1.raw_input->points.size();
- frame_1.raw_input->height = 1;
- frame_2.raw_input->width = frame_2.raw_input->points.size();
- frame_2.raw_input->height = 1;
 
+///segmenting the static scene from the whole scan
 
- pcl::PCDWriter writer;
- ss.str("");
- ss << output_folder << "a_" << frame_1.frame_id << ".pcd";
- writer.write(ss.str(),*frame_1.raw_input,true);
- 
-
- ss.str("");
- ss << output_folder << "a_" << frame_2.frame_id << ".pcd";
- writer.write(ss.str(),*frame_2.raw_input,true);
-
- 
-
- ss.str("");
- ss << output_folder << "query_a_" << frame_1.frame_id << ".csv";
-
- ofstream myfile_query(ss.str().c_str());
-
- ss.str("");
- ss << output_folder << "match_a_" << frame_1.frame_id << ".csv";
- ofstream myfile_match(ss.str().c_str());
-*/
  pcl::search::KdTree <pcl::PointXYZ> kdtree;
  kdtree.setInputCloud(frame_2.raw_input);
  
@@ -480,25 +445,13 @@ void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,
    for(auto &index:pointIdxRadiusSearch)
    is_dynamic[index] = false;
   }
-
-
-  //myfile_query << indices_corr[sampled_indices.points[c.index_query]] << endl;
-  //myfile_match << c.index_match << endl;
-
-
-
  }
-
  std::vector<int>frame_2_dynamic;
-
  for(size_t i = 0; i < is_dynamic.size(); ++i)
  {
   if(is_dynamic[i]) 
    indices_dynamic.push_back(i);
-
  }
-
- fprintf(stderr,"index query %d\n", index_query.size());
 
 }
 
@@ -506,127 +459,3 @@ void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,
 
 
 
-void DynamicFilter::EstimateCorrespondence(const float sampling_radius,const float max_motion,std::vector<int>&index_query,std::vector<int> &index_match)
-{
-
-
-
- 
- pcl::PointCloud <int> sampled_indices;
- pcl::UniformSampling <pcl::PointXYZ> uniform_sampling;
- uniform_sampling.setInputCloud (frame_1.cloud_input);
- uniform_sampling.setRadiusSearch (sampling_radius);//0.4 in general
- uniform_sampling.compute (sampled_indices);
- 
- for(auto &i:sampled_indices.points)
-  frame_1.sampled_points.push_back(frame_1.finite_points[i]);
- 
-
-
- PointCloud::Ptr scene_1_sampled(new PointCloud);
-
- SHOTCloud::Ptr scene_1_feature_sampled(new SHOTCloud);
-
- pcl::copyPointCloud( *frame_1.feature , sampled_indices.points , *scene_1_feature_sampled); 
- pcl::copyPointCloud( *frame_1.cloud_input , sampled_indices.points , *scene_1_sampled);
-////Calculating correspondences
- pcl::Correspondences corr;
- pcl::registration::CorrespondenceEstimation <PointSHOT, PointSHOT> est; 
- est.setInputSource (scene_1_feature_sampled);
- est.setInputTarget (frame_2.feature);
- est.determineReciprocalCorrespondences (corr);
- 
- std::vector<int>sampled_indices_match;
- 
-  ////removing far away correspondence
- for( int i =0 ;i < corr.size(); i++)
- {
-  Vector3f vec1 = scene_1_sampled->points[corr.at(i).index_query].getVector3fMap();
-  Vector3f vec2 = frame_2.cloud_input->points[corr.at(i).index_match].getVector3fMap();
-  if((vec1-vec2).lpNorm<2>()<(max_motion))
-  {    
-   index_query.push_back(frame_1.sampled_points[corr.at(i).index_query]);
-   index_match.push_back(frame_2.finite_points[corr.at(i).index_match]);
-  
-  }
-
- }
-/////storing correspondences and the filtered cloud
- pcl::PCDWriter writer;
- #if 0
- if(!frame_1.cloud_input->points.empty() && !frame_2.cloud_input->points.empty()) 
- {
-
- frame_1.ground->width = frame_1.ground->points.size();
- frame_1.ground->height = 1;
-
-
- ss.str("");
- ss << output_folder << "ground_a_" << frame_1.frame_id << ".pcd";
- writer.write(ss.str(),*frame_1.ground,true);
- 
- for(auto &c:c_vec_actual)
-  {
-   index_query.push_back(c.query);
-   index_match.push_back(c.match);
-
-  }
- }
-#else
- if(!frame_1.cloud_input->points.empty() && !frame_2.cloud_input->points.empty()) 
- {
-  frame_1.raw_input->width = frame_1.raw_input->points.size();
-  frame_1.raw_input->height = 1;
-
-  frame_2.raw_input->width = frame_2.raw_input->points.size();
-  frame_2.raw_input->height = 1;
-
- // frame_1.ground->width = frame_1.ground->points.size();
- // frame_1.ground->height = 1;
-
-//  frame_2.ground->width = frame_2.ground->points.size();
-//  frame_2.ground->height = 1;
-
-
-  ss.str("");
-  ss << output_folder << "a_" << frame_1.frame_id << ".pcd";
-  writer.write(ss.str(),*frame_1.raw_input,true);
-  
-//  ss.str("");
-//  ss << output_folder << "ground_a_" << frame_1.frame_id << ".pcd";
-//  writer.write(ss.str(),*frame_1.ground,true);
-  
-  ss.str("");
-  ss << output_folder << "a_" << frame_2.frame_id << ".pcd";
-  writer.write(ss.str(),*frame_2.raw_input,true);
-
-//  ss.str("");
-//  ss << output_folder << "ground_a_" << frame_2.frame_id << ".pcd";
-//  writer.write(ss.str(),*frame_2.ground,true);
-  
-
-  ss.str("");
-  ss << output_folder << "query_a_" << frame_1.frame_id << ".csv";
-
-  ofstream myfile_query(ss.str().c_str());
-
-  ss.str("");
-  ss << output_folder << "match_a_" << frame_1.frame_id << ".csv";
-
-
-  ofstream myfile_match(ss.str().c_str());
-
-  for(auto query:index_query)
-   myfile_query << query << endl;
-
-  for(auto match:index_match)
-   myfile_query << match << endl;
-
-
- }
-
-#endif
-
-
-
-}

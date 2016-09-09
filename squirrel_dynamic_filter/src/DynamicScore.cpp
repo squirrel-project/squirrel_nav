@@ -1,5 +1,6 @@
 #include "dynamic_filter_node.h"
-
+///Used for calculating whether a point is static or dynamic by comparing the
+//estimated motion with odometry of the robot
 
 void DynamicFilter::DynamicScore(const PointCloud::Ptr &cloud,const bool is_first,const PointCloud::Ptr &score) 
 {
@@ -22,6 +23,8 @@ void DynamicFilter::DynamicScore(const PointCloud::Ptr &cloud,const bool is_firs
 
  pcl::Correspondences all_correspondences;
  pcl::registration::CorrespondenceEstimation< Point, Point> est;
+
+/// Associate points from t-1 to t to transfer the prior information
  if(!is_first)
  {
   est.setInputSource (cloud);
@@ -29,12 +32,10 @@ void DynamicFilter::DynamicScore(const PointCloud::Ptr &cloud,const bool is_firs
   est.determineCorrespondences (all_correspondences);
  }
  else
-  frame_1.prior_dynamic.assign(cloud->points.size(),0.2); 
+  frame_1.prior_dynamic.assign(cloud->points.size(),0.2);//Points have a higher chance of being static if no previous information is available 
  
  
  std::vector <float> current_belief(frame_1.motion_init.size(),0.0);
- //fprintf(stderr,"error%d,%d,%d",frame_1.prior_dynamic.size(),score->points.size(),cloud->points.size());
- 
  float prior;
  #pragma parallel omp for num_threads(8)
  for(size_t i = 0; i < frame_1.motion_init.size(); ++i)
@@ -53,7 +54,7 @@ void DynamicFilter::DynamicScore(const PointCloud::Ptr &cloud,const bool is_firs
     {
 
 
-     fprintf(stderr,"error%d,%d,%d",frame_1.prior_dynamic.size(),score->points.size(),cloud->points.size());
+      ROS_ERROR("%s:%ld,%ld,%ld",ros::this_node::getName().c_str(),frame_1.prior_dynamic.size(),score->points.size(),cloud->points.size());
      getchar();
 
      
@@ -74,18 +75,16 @@ void DynamicFilter::DynamicScore(const PointCloud::Ptr &cloud,const bool is_firs
   float probability = posterior_d/(posterior_d + posterior_s);
   if(probability < 0.0)
   {
-
-   fprintf(stderr,"%f,%f,%f,%f\n", posterior_d,posterior_s,prior,dist.Probability(observation)/max);
-   getchar(); 
-
-
+   
+   ROS_ERROR("%s:%f,%f,%f",ros::this_node::getName().c_str(),posterior_d,posterior_s,prior,dist.Probability(observation)/max);
+   getchar();
   } 
   if(probability > 1.0)
   {
 
-   fprintf(stderr,"greater than 1 %f,%f,%f,%f\n", posterior_d,posterior_s,prior,dist.Probability(observation)/max);
-   getchar(); 
+   ROS_ERROR("%s:%f,%f,%f",ros::this_node::getName().c_str(),posterior_d,posterior_s,prior,dist.Probability(observation)/max);
 
+   getchar();
 
   } 
 

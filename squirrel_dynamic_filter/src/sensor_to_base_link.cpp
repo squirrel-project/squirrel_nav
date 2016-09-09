@@ -2,6 +2,11 @@
 #include <tf/transform_listener.h>
 #include <string>
 #include <fstream>
+
+/////File used for listening to transform between sensor optical frame and
+//base_link. Required for removing the ground plane
+
+
 using namespace std;
 int main(int argc, char** argv)
 {
@@ -20,7 +25,7 @@ int main(int argc, char** argv)
  ss << input_folder << "/params/sensor_to_base_link.csv";
 
  ofstream myfile(ss.str().c_str());
-
+ ROS_INFO("%s","Listening to base_link and kinect_rgb_optical_frame transforms");
  while (node.ok() && !transform_found)
  {
   tf::StampedTransform transform;
@@ -44,5 +49,7 @@ int main(int argc, char** argv)
   }
   rate.sleep();
  }
+
+
  return 0;
 };

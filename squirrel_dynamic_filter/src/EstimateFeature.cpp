@@ -119,7 +119,7 @@ void DynamicFilter::sample_dynamic(const PointCloud::Ptr dynamic ,const float ra
 
 }
 
-
+///Estimate feature for dynamic points. 
 void DynamicFilter::EstimateFeature(Frame &frame,const std::vector <int> &dynamic_indices)
 {
 

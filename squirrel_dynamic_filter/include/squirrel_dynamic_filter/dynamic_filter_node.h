@@ -25,22 +25,14 @@ typedef Matrix<uint8_t, Dynamic, Dynamic> MatrixXint;
 class DynamicFilter
 {
 private:
- message_filters::Subscriber<sensor_msgs::PointCloud2> cloud_sub_;
- ros::Subscriber cloud_sub_1;
- ros::Publisher pub_tracked_gt;
- ros::Publisher pub;
- tf::TransformListener tf_;
- tf::MessageFilter <sensor_msgs::PointCloud2> * tf_filter_;
  ros::NodeHandle n_;
  Frame frame_1;
  Frame frame_2;
  Isometry3D odometry_diff;
- std::vector<correspondences>c_vec;
- std::vector<correspondences>c_vec_actual;
+ std::vector <correspondences> c_vec;
+ std::vector <correspondences> c_vec_actual;
  bool is_first_frame;
  int frame_counter;
- PointCloud::Ptr cloud_input;
- PointCloud::Ptr cloud_input_objects;
  pcl::VoxelGrid<Point> sor;
  std::stringstream ss;
  std::vector< std::vector<int> > neighbours;
@@ -50,12 +42,13 @@ private:
  const float p_d_s = 0.65;
  const float p_d_d = 0.95;
 
+ bool is_verbose;
+ bool store_results;
 
 
- void preprocessing(Frame &frame);
+
  void EstimateFeature(Frame &frame);
  void EstimateFeature(Frame &frame,const std::vector<int>&dynamic_indices);
- void EstimateCorrespondence(const float sampling_radius,const float max_motion, std::vector<int>&index_query, std::vector<int> &index_match);
  void EstimateMotion(const std::vector <int> &index_query,const std::vector <int> &index_match,PointCloud &cloud_dynamic);
  void EstimateMotion2(const std::vector <int> &index_query,const std::vector <int> &index_match);
  void EstimateCorrespondencePoint(const float radius,const float sampling_radius,int number_correspondences,std::vector<int>&index_query, std::vector<int> &index_match);
@@ -100,8 +93,6 @@ Eigen::Matrix4f trans;
 public:
  DynamicFilter();
  string output_folder;
- //void cloudMsgCallback(const squirrel_dynamic_filter_msgs::CloudMsg& sensor_msg);
-
  ofstream myfile_odom;
 
 };
