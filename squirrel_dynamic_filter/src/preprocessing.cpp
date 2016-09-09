@@ -28,7 +28,7 @@ class tfPointCloud
 
   ros::Subscriber cloud_sub; 
   ros::Publisher  pub;   
-  ros::Publisher  pub2;   
+  ros::Publisher  pub_2;   
   ros::NodeHandle n_;
   int counter;
 		ofstream write_odom;
@@ -43,11 +43,13 @@ class tfPointCloud
   string output_folder;
   Matrix4f sensor_base_link_trans; 
   sensor_msgs::PointCloud2 filtered_msg;
+  sensor_msgs::PointCloud2 full_scene;
   ros::ServiceClient client = n_.serviceClient<squirrel_dynamic_filter_msgs::DynamicFilterSrv>("dynamic_filter");
   squirrel_dynamic_filter_msgs::DynamicFilterSrv dynamic_srv;
   std::stringstream ss;
   float down_sampling_radius;
   PointCloud previous_cloud;
+  PointCloud previous_dynamic;
  public:
 		tfPointCloud():counter(0)
 		{
@@ -57,10 +59,10 @@ class tfPointCloud
    n_.getParam("InputFolder",input_folder); 
    n_.getParam("OutputFolder",output_folder); 
    n_.getParam("DownSamplingRadius",down_sampling_radius); 
-   pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/slow",10);
-  // pub2 = n_.advertise<squirrel_dynamic_filter_msgs::CloudMsg>("/squirrel/cloud_msg",1000);
+   pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static",10);
+   pub_2 = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/scene",1000);
    
-   cloud_sub = n_.subscribe("/squirrel/cloud_msg", 2000, &tfPointCloud::msgCallback, this);
+   cloud_sub = n_.subscribe("/squirrel/cloud_msg", 5000, &tfPointCloud::msgCallback, this);
    dynamic_srv.request.odometry.resize(7);
   }
   
@@ -89,8 +91,14 @@ class tfPointCloud
 
   //pcl::VoxelGrid<Point> sor;
    dynamic_cloud->width = dynamic_cloud->points.size();
-   dynamic_cloud->height = 1;
+   dynamic_cloud->height = 1; 
+   
+   for(auto &point:previous_cloud.points)
+      previous_dynamic.points.push_back(point);
+
+
   
+
  // .. sor.setInputCloud (dynamic_cloud);
  // sor.setLeafSize (down_sampling_radius,down_sampling_radius,down_sampling_radius);
  //  PointCloud dynamic_cloud_sampled;
@@ -133,14 +141,25 @@ class tfPointCloud
   previous_cloud.width = previous_cloud.points.size();
   previous_cloud.height = 1;
 
+  previous_dynamic.width = previous_dynamic.points.size();
+  previous_dynamic.height = 1;
 
-    
+
+  pcl::toROSMsg(previous_dynamic,full_scene);
+  full_scene.header.frame_id = "/base_link";
+  pub_2.publish(full_scene);
+
+ 
   pcl::toROSMsg(previous_cloud,filtered_msg);
   filtered_msg.header.frame_id = "/base_link";
   pub.publish(filtered_msg);
 
   previous_cloud.points.clear();
   previous_cloud.points = static_cloud->points;
+  previous_dynamic.points.clear();
+  previous_dynamic.points = dynamic_cloud->points;
+
+
  /* 
 //   pcl::toROSMsg(*dynamic_cloud,filtered_msg);
    //pcl::toROSMsg(*cloud_processed,filtered_msg);
