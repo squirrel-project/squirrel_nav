@@ -51,6 +51,7 @@ class tfPointCloud
    n_.getParam("InputFolder",input_folder); 
    n_.getParam("OutputFolder",output_folder); 
    n_.getParam("DownSamplingRadius",down_sampling_radius); 
+   n_.getParam("StaticFrontThreshold",static_front_threshold); 
    n_.getParam("Verbose",is_verbose); 
    pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static",10);//Publising the filtered pointcloud
   
@@ -67,6 +68,7 @@ class tfPointCloud
     ROS_INFO_STREAM(ros::this_node::getName() << ":waiting for the transform");
     return;
    }
+
   ////The input cloud goes through a preprocessing step which involves
   //estimatimg the static points and potentially dynamic points
    PointCloud::Ptr cloud_processed(new PointCloud);
@@ -76,7 +78,6 @@ class tfPointCloud
    std::vector <int> dynamic_indices;//indices from cloud_processed
 
    preprocessing(sensor_msg.cloud_msg,cloud_processed,static_indices,dynamic_indices);   
-
    
    pcl::copyPointCloud(*cloud_processed,static_indices,*static_cloud);
    pcl::copyPointCloud(*cloud_processed,dynamic_indices,*dynamic_cloud);
