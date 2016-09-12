@@ -134,6 +134,7 @@ class tfPointCloud
   
    pcl::toROSMsg(previous_cloud,filtered_msg);
    filtered_msg.header.frame_id = "/base_link";
+   filtered_msg.header.stamp = dynamic_srv.request.cloud.header.stamp;
    pub.publish(filtered_msg);
 
    previous_cloud.points.clear();

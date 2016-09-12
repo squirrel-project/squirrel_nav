@@ -76,6 +76,7 @@ class tfPointCloud
   
   ///Publising the cloud and odometry
    pcl::toROSMsg(*cloud_sampled, cloud_msg.cloud_msg);
+   cloud_msg.cloud_msg.header.stamp = sensor_msg->header.stamp;
    tf::Vector3 pos = transform.getOrigin();
    tf::Quaternion rot = transform.getRotation();
    cloud_msg.odometry[0] = pos[0];
