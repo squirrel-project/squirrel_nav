@@ -5,3 +5,6 @@ g2o(and all its dependecies): use the version from here: https://github.com/Rain
 libmlpack : https://github.com/mlpack/mlpack
 
 libarmadillo(required by mlpack): http://arma.sourceforge.net/
+
+
+Change the InputFolder and OutputFolder(params/parameters.xml) accordingly. 
