@@ -224,7 +224,7 @@ return true;
 
 int main(int argc,char **argv)
 {
- ros::init(argc, argv, "squirrel dynamic filter service");
+ ros::init(argc, argv, "squirrel_dynamic_filter_service");
  DynamicFilter filter;
 	while(ros::ok())
 	{
