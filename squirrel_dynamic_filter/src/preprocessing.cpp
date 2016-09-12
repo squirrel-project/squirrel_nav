@@ -109,8 +109,8 @@ class tfPointCloud
    {
     if(client.call(dynamic_srv))
     {
-     if(is_verbose)
-      ROS_INFO("%s: score: %ld,%d,%d\n",ros::this_node::getName().c_str(),dynamic_cloud->points.size(),dynamic_srv.response.cloud_static.width,counter);
+//     if(is_verbose)
+  //    ROS_INFO("%s: score: %ld,%d,%d\n",ros::this_node::getName().c_str(),dynamic_cloud->points.size(),dynamic_srv.response.cloud_static.width,counter);
      PointCloud cloud_dynamic;
      pcl::fromROSMsg(dynamic_srv.response.cloud_static,cloud_dynamic);
 
@@ -119,6 +119,7 @@ class tfPointCloud
      for(auto &point:cloud_dynamic.points)
       previous_cloud.points.push_back(point);
     }
+
    }
    counter+=1;
    previous_cloud.width = previous_cloud.points.size();
