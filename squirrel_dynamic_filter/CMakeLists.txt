@@ -155,15 +155,10 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
 )
 
-SET(CMAKE_CXX_FLAGS "-fopenmp -std=c++11 -Wno-deprecated" )
 
 add_library(vertex_se3_vector3D src/vertex_se3_vector3D.cpp src/edge_unary.cpp src/edge.cpp)
 TARGET_LINK_LIBRARIES (vertex_se3_vector3D ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY})
-#add_executable(sensor_msgs_to_pcl_tf src/sensor_msgs_to_pcl_tf.cpp)
-#target_link_libraries(sensor_msgs_to_pcl_tf ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
-
-#add_executable(dynamic_filter_node src/dynamic_filter_node.cpp)
 
 add_executable(dynamic_filter_node src/dynamic_filter_node.cpp
                src/EstimateFeature.cpp src/EstimateCorrespondence
@@ -171,8 +166,6 @@ add_executable(dynamic_filter_node src/dynamic_filter_node.cpp
 target_link_libraries(dynamic_filter_node ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} vertex_se3_vector3D ${G2O_CORE_LIBRARY} ${G2O_TYPES_SLAM3D} ${PCL_LIBRARIES} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION} "/usr/local/lib/libmlpack.so" "/usr/lib/libarmadillo.so")
 add_dependencies(dynamic_filter_node squirrel_dynamic_filter_msgs_message_generates_cpp)
 
-#add_executable(publish_cloud src/publish_cloud.cpp)
-#target_link_libraries(publish_cloud ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 add_executable(preprocessing src/preprocessing.cpp)
 target_link_libraries(preprocessing ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY})
 add_dependencies(preprocessing squirrel_dynamic_filter_msgs_generate_messages_cpp)
@@ -180,14 +173,6 @@ add_dependencies(preprocessing squirrel_dynamic_filter_msgs_generate_messages_cp
 add_executable(l_frequency src/l_frequency.cpp)
 target_link_libraries(l_frequency ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(l_frequency squirrel_dynamic_filter_msgs_generate_messages_cpp)
-#add_executable(test_odometry src/test_odometry)
-#target_link_libraries(test_odometry ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} vertex_se3_vector3D ${G2O_CORE_LIBRARY} ${G2O_TYPES_SLAM3D} ${PCL_LIBRARIES} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION})
-
-#add_executable(visualize_intensity src/visalize_intensity.cpp)
-#target_link_libraries(visualize_intensity ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
-#add_executable(remove_dynamic src/remove_dynamic.cpp)
-#target_link_libraries(remove_dynamic ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
-
 add_executable(temporal_inference src/TemporalInference.cpp)
 target_link_libraries(temporal_inference ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} "/usr/local/lib/libmlpack.so" "/usr/lib/libarmadillo.so" vertex_se3_vector3D ${G2O_CORE_LIBRARY} ${G2O_TYPES_SLAM3D} ${PCL_LIBRARIES} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION})
 
