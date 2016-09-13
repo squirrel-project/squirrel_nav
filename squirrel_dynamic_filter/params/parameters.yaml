@@ -15,6 +15,6 @@ StaticFrontThreshold : 1.5
 Verbose : true
 StoreResults : true
 OutputFolder : "/home/dewan/squirrel/catkin_ws/src/squirrel_nav/squirrel_dynamic_filter/results/test/"
-#InputFolder : "/home/dewan/squirrel/catkin_ws/src/squirrel_nav/squirrel_dynamic_filter/"
-InputFolder : "/home/alufr/catkin_ws/src/squirrel_nav/squirrel_dynamic_filter/"
+InputFolder : "/home/dewan/squirrel/catkin_ws/src/squirrel_nav/squirrel_dynamic_filter/"
+#InputFolder : "/home/alufr/catkin_ws/src/squirrel_nav/squirrel_dynamic_filter/"
 

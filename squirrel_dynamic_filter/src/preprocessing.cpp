@@ -11,6 +11,7 @@
 #include <pcl/keypoints/uniform_sampling.h>
 #include <pcl_ros/transforms.h>
 #include <pcl/filters/voxel_grid.h>
+#include <tf/transform_broadcaster.h>
 
 using namespace std;
 using namespace Eigen;
@@ -42,6 +43,8 @@ class tfPointCloud
   PointCloud previous_cloud;
   PointCloud previous_dynamic;
   bool is_verbose;
+  tf::TransformBroadcaster br;
+  tf::Transform transform_map_base_link;
  public:
 		tfPointCloud():counter(0)
 		{
@@ -103,14 +106,18 @@ class tfPointCloud
    dynamic_srv.request.odometry[6] = sensor_msg.odometry[6];
    dynamic_srv.request.frame_id = counter;
 
+   
+   transform_map_base_link.setOrigin(tf::Vector3(sensor_msg.odometry[0],sensor_msg.odometry[1],sensor_msg.odometry[2]));
+   tf::Quaternion q(sensor_msg.odometry[3],sensor_msg.odometry[4],sensor_msg.odometry[5],sensor_msg.odometry[6]);
+   transform_map_base_link.setRotation(q);
    /////Calling the dynamic filter service only if they are enough potentially
    //dynamic points
    if(dynamic_cloud->points.size() > 50)
    {
     if(client.call(dynamic_srv))
     {
-//     if(is_verbose)
-  //    ROS_INFO("%s: score: %ld,%d,%d\n",ros::this_node::getName().c_str(),dynamic_cloud->points.size(),dynamic_srv.response.cloud_static.width,counter);
+     if(is_verbose)
+      ROS_INFO("%s: score: %ld,%d,%d\n",ros::this_node::getName().c_str(),dynamic_cloud->points.size(),dynamic_srv.response.cloud_static.width,counter);
      PointCloud cloud_dynamic;
      pcl::fromROSMsg(dynamic_srv.response.cloud_static,cloud_dynamic);
 
@@ -131,9 +138,11 @@ class tfPointCloud
  //  pcl::toROSMsg(previous_dynamic,full_scene);
  //  full_scene.header.frame_id = "/base_link";
 
-  
+
+   br.sendTransform(tf::StampedTransform(transform_map_base_link, sensor_msg.cloud_msg.header.stamp, "map", "base_link_static"));  
    pcl::toROSMsg(previous_cloud,filtered_msg);
-   filtered_msg.header.frame_id = "/base_link";
+   filtered_msg.header.frame_id = "/base_link_static";
+   filtered_msg.header.stamp = sensor_msg.cloud_msg.header.stamp;
    pub.publish(filtered_msg);
 
    previous_cloud.points.clear();

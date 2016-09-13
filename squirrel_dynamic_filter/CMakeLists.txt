@@ -155,7 +155,6 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
 )
 
-SET(CMAKE_CXX_FLAGS "-fopenmp -std=c++11 -Wno-deprecated" )
 
 add_library(vertex_se3_vector3D src/vertex_se3_vector3D.cpp src/edge_unary.cpp src/edge.cpp)
 TARGET_LINK_LIBRARIES (vertex_se3_vector3D ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY})
