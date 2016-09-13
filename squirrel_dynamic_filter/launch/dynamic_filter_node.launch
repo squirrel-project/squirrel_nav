@@ -1,0 +1,4 @@
+<launch>
+ <param name="OutputFolder" type="string" value="$(find squirrel_dynamic_filter)/results/test/" />
+ <node name="dynamic_filter_node" type="dynamic_filter_node"  pkg="squirrel_dynamic_filter"/>
+</launch>
