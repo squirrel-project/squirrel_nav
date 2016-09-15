@@ -300,7 +300,7 @@ void DynamicFilter::EstimateMotion(const std::vector <int> &index_query,const st
   int count_point = 0; 
   for(auto &score:frame_1.prior_dynamic)
   {
-   if(score < 0.15)///if point is static
+   if(score < 0.05)///if point is static
     cloud_dynamic.points.push_back(cloud_save->points[count_point]);
    if(store_results)
     write_intensity_z << score << endl;

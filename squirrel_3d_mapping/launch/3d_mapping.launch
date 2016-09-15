@@ -15,7 +15,7 @@
     <param name="pointcloud_max_x" value="2.5" />
     <param name="filter_ground" value="false" />
     <param name="ground_filter/plane_distance" value="0.03" />
-    <param name="base_frame_id" value="/base_link_static" /> 
+    <param name="base_frame_id" value="/base_link" /> 
     <param name="distance_transform/enabled" value="false" />
     <param name="distance_transform/max_dist" value="1.0" />
     <param name="distance_transform/unknown_as_occupied" value="false" />
@@ -25,7 +25,11 @@
     <param name="distance_transform/max_y" value="5.0" />
     <param name="distance_transform/min_z" value="0.0" />
     <param name="distance_transform/max_z" value="0.9" />
-    <remap from="/cloud_in" to="/kinect/depth/static" />
+    <param name="sensor_model/max" value="0.5" />
+    <param name="sensor_model/min" value="0.05" />
+    <param name="latch" value="false" />
+
+    <remap from="/cloud_in" to="/kinect/depth/points" />
   </node>
 </launch>
 
