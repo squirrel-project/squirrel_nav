@@ -9,8 +9,6 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake-mod
 
 
 set(squirrel_dynamic_filter_DEPENDENCIES
-  message_generation
-  message_runtime
   roscpp
   rospy
   sensor_msgs
@@ -60,6 +58,8 @@ if (OPENMP_FOUND)
   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
+
+find_package(Armadillo 4.2 REQUIRED)
 
 ## Enable C++11 support
 include(CheckCXXCompilerFlag)
@@ -167,7 +167,7 @@ TARGET_LINK_LIBRARIES (vertex_se3_vector3D ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRAR
 add_executable(dynamic_filter_node src/dynamic_filter_node.cpp
                src/EstimateFeature.cpp src/EstimateCorrespondence
               src/EstimateMotion.cpp src/DynamicScore.cpp)
-target_link_libraries(dynamic_filter_node ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} vertex_se3_vector3D ${G2O_CORE_LIBRARY} ${G2O_TYPES_SLAM3D} ${PCL_LIBRARIES} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION} "/usr/local/lib/libmlpack.so" "/usr/lib/libarmadillo.so")
+target_link_libraries(dynamic_filter_node ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} vertex_se3_vector3D ${G2O_CORE_LIBRARY} ${G2O_TYPES_SLAM3D} ${PCL_LIBRARIES} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION} "/usr/local/lib/libmlpack.so" ${ARMADILLO_LIBRARIES})
 add_dependencies(dynamic_filter_node squirrel_dynamic_filter_msgs_message_generates_cpp)
 
 #add_executable(publish_cloud src/publish_cloud.cpp)
