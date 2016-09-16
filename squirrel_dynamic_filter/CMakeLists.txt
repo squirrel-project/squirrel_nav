@@ -43,7 +43,7 @@ if(G2O_FOUND)
   include_directories( ${G2O_INCLUDE_DIR})
   link_directories(${G2O_LIBRARY_DIR})
 endif(G2O_FOUND)
-MESSAGE(${G2O_INCLUDE_DIR})
+MESSAGE(${G2O_FOUND})
 
 ## Import Eigen3 
 find_package(Eigen3 REQUIRED)
