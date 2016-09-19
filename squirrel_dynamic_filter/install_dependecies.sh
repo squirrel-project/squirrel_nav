@@ -20,5 +20,6 @@
  cmake ..
  make
  echo export G2O_ROOT="$PROJECT_DIR"/dependicies/g2o >> ~/.bashrc
+ source ~/.bashrc
  cp "$PROJECT_DIR"/dependicies/g2o/build/g2o/config.h "$PROJECT_DIR"/dependicies/g2o/g2o/
  
