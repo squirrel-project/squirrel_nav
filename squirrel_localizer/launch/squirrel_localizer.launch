@@ -16,7 +16,7 @@
   </node>
 
   <!-- Localiser -->
-  <node name="localizer" pkg="squirrel_localizer" type="squirrel_localizer_localization_node" output="screen">
+  <node name="squirrel_localizer" pkg="squirrel_localizer" type="squirrel_localizer_localization_node" output="screen">
     <param name="verbose" value="false"/>
     <param name="number_of_particles" value="1500"/>
     <param name="maxLocalizationRange" value="5.0"/>
@@ -32,7 +32,7 @@
     <param name="dMapTheshold" value="2"/>
     <param name="observationSigma" value="0.6"/>
     <param name="use_second_laser" value="false"/>
-    <param name="base_link_frame_ID" value="/base_link"/>
+    <!-- <param name="base_link_frame_ID" value="/base_link"/> -->
     <param name="odom_frame_ID" value="/odom"/>
     <param name="front_laser_frame_ID" value="/hokuyo_link"/>
     <param name="scan_front_topic" value="/scan"/>
