@@ -5,6 +5,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include "squirrel_dynamic_filter_msgs/CloudMsg.h"
 #include "squirrel_dynamic_filter_msgs/DynamicFilterSrv.h"
+#include "squirrel_dynamic_filter_msgs/ClassifyStaticSrv.h"
 #include "edge_unary.h"
 #include "edge.h"
 #include "datatypes_squirrel.h"
@@ -35,6 +36,11 @@ class tfPointCloud
   Matrix4f sensor_base_link_trans; 
   sensor_msgs::PointCloud2 filtered_msg;
   sensor_msgs::PointCloud2 full_scene;
+ 
+ 
+  ros::ServiceClient classify_static_client = n_.serviceClient<squirrel_dynamic_filter_msgs::ClassifyStaticSrv>("classify_static");
+  squirrel_dynamic_filter_msgs::ClassifyStaticSrv classify_static_srv;
+
   ros::ServiceClient client = n_.serviceClient<squirrel_dynamic_filter_msgs::DynamicFilterSrv>("dynamic_filter");
   squirrel_dynamic_filter_msgs::DynamicFilterSrv dynamic_srv;
   std::stringstream ss;
@@ -84,15 +90,43 @@ class tfPointCloud
    
    pcl::copyPointCloud(*cloud_processed,static_indices,*static_cloud);
    pcl::copyPointCloud(*cloud_processed,dynamic_indices,*dynamic_cloud);
+ 
 
 
    static_cloud->width = static_cloud->points.size();
    static_cloud->height = 1;
 
    dynamic_cloud->width = dynamic_cloud->points.size();
-   dynamic_cloud->height = 1; 
+   dynamic_cloud->height = 1;
+   
+   pcl::toROSMsg(*dynamic_cloud,classify_static_srv.request.cloud);
+   
+   classify_static_srv.request.odometry.resize(7);
+
+   classify_static_srv.request.tree_filename = "/home/dewan/integration_meeting_maps/map.bt";
+   classify_static_srv.request.odometry[0] = sensor_msg.odometry[0];
+   classify_static_srv.request.odometry[1] = sensor_msg.odometry[1];
+   classify_static_srv.request.odometry[2] = sensor_msg.odometry[2];
+   classify_static_srv.request.odometry[3] = sensor_msg.odometry[3];
+   classify_static_srv.request.odometry[4] = sensor_msg.odometry[4];
+   classify_static_srv.request.odometry[5] = sensor_msg.odometry[5];
+   classify_static_srv.request.odometry[6] = sensor_msg.odometry[6];
+
+   
+   if(dynamic_cloud->points.size() > 50)
+   {
+    if(classify_static_client.call(classify_static_srv))
+    {
+   
+    }
+
+
+   }
 ///The motion is estimated for cloud at t-1 using the cloud at t. Therefore the
 //previous cloud has to be stored   
+  
+  /*
+  
    for(auto &point:previous_cloud.points)
       previous_dynamic.points.push_back(point);
 
@@ -149,7 +183,7 @@ class tfPointCloud
    previous_cloud.points = static_cloud->points;
    previous_dynamic.points.clear();
    previous_dynamic.points = dynamic_cloud->points;
-
+*/
   }  
   
   void preprocessing(const sensor_msgs::PointCloud2 cloud_msg,PointCloud::Ptr &cloud_processed,std::vector<int>&static_indices,std::vector<int>&dynamic_indices)
@@ -234,7 +268,8 @@ class tfPointCloud
    #pragma omp parallel for
    for(size_t i = 0; i < cloud_processed->points.size();++i)
    {
-    if(cloud_processed->points[i].z < 0.02 || cloud_processed->points[i].x > static_front_threshold)
+    Eigen::Vector3f point_eigen = cloud_processed->points[i].getVector3fMap();
+    if(cloud_processed->points[i].z < 0.02 || point_eigen.lpNorm<2>() > static_front_threshold)
      is_ground[i] = true;
    }
    int count = 0;

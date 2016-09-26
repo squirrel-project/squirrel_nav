@@ -13,8 +13,11 @@ set(squirrel_dynamic_filter_DEPENDENCIES
   rospy
   sensor_msgs
   std_msgs
+  pcl_ros
   squirrel_dynamic_filter_msgs
   tf
+  octomap_ros
+  octomap_msgs
 )
 
 #set(PCL_DIR "/export/home/dewan/software/pcl/build/")
@@ -184,14 +187,23 @@ add_dependencies(l_frequency squirrel_dynamic_filter_msgs_generate_messages_cpp)
 
 #add_executable(visualize_intensity src/visalize_intensity.cpp)
 #target_link_libraries(visualize_intensity ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
-#add_executable(remove_dynamic src/remove_dynamic.cpp)
-#target_link_libraries(remove_dynamic ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+add_executable(remove_dynamic src/remove_dynamic.cpp)
+target_link_libraries(remove_dynamic ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
 add_executable(temporal_inference src/TemporalInference.cpp)
 target_link_libraries(temporal_inference ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} "/usr/local/lib/libmlpack.so" "/usr/lib/libarmadillo.so" vertex_se3_vector3D ${G2O_CORE_LIBRARY} ${G2O_TYPES_SLAM3D} ${PCL_LIBRARIES} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION})
 
 add_executable(sensor_to_base_link src/sensor_to_base_link.cpp)
 target_link_libraries(sensor_to_base_link ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
+
+add_executable(store_cloud src/store_cloud.cpp)
+target_link_libraries(store_cloud ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable(static_classify src/StaticClassifyOctoMap.cpp)
+target_link_libraries(static_classify ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY})
+
+
 
 
 ## Declare a C++ library

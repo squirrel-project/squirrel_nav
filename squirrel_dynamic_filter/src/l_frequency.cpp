@@ -8,6 +8,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/io/pcd_io.h>
 
+#include <pcl_ros/transforms.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include "squirrel_dynamic_filter_msgs/CloudMsg.h"
