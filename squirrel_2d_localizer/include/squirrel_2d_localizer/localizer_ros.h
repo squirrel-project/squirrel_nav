@@ -63,7 +63,7 @@ class LocalizerROS {
     const size_t eff_j = j < 3 ? j : 5;
     return 6 * eff_i + eff_j;
   }
-  
+
  private:
   Localizer::Ptr localizer_;
 

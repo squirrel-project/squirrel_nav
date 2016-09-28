@@ -68,9 +68,9 @@ class Localizer {
 
  private:
   inline void setDefaultParams() {
-    loc_params_.num_particles     = 1000;
-    loc_params_.min_lin_update    = 1.0;
-    loc_params_.min_ang_update    = 1.0;
+    loc_params_.num_particles  = 1000;
+    loc_params_.min_lin_update = 1.0;
+    loc_params_.min_ang_update = 1.0;
   }
 
  private:
@@ -86,7 +86,7 @@ class Localizer {
   Params loc_params_;
 
   double cum_lin_motion_, cum_ang_motion_;
-  
+
   std::mutex init_mtx_;
 };
 

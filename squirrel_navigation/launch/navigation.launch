@@ -8,18 +8,14 @@
   <arg name="twist_mux" default="true"/>
   <arg name="plan_with_arm" default="false"/>
 
-  <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/robot_6dof_params.yaml" 
+  <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/robot_6dof_base_params.yaml" 
             command="load" if="$(arg plan_with_arm)"/>
-  <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/robot_params.yaml" 
+  <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/robot_base_params.yaml" 
             command="load" unless="$(arg plan_with_arm)"/>
-  
-  <!--- Run mapserver -->
-  <include file="$(find squirrel_navigation)/launch/map_server.launch">
-    <arg name="map_file" value="$(arg map_file)" />
-  </include>
-  
+    
   <!-- Run Monte Carlo Localization (many parameters in squirrel_localizer.launch) -->
-  <include file="$(find squirrel_localizer)/launch/squirrel_localizer.launch">
+  <include file="$(find squirrel_2d_localizer)/launch/squirrel_2d_localizer.launch">
+    <arg name="map_file" value="$(arg map_file)"/>
     <arg name="use_last_pose" value="$(arg use_last_pose)"/>
   </include>
 

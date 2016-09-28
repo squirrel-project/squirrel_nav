@@ -32,17 +32,17 @@ namespace squirrel_2d_localizer {
 void Localizer::initialize(
     GridMap::Ptr& map, LikelihoodField::Ptr& likelihood_field,
     LaserModel::Ptr& laser_model, MotionModel::Ptr& motion_model) {
-  map_ = std::move(map);
+  map_              = std::move(map);
   likelihood_field_ = std::move(likelihood_field);
   laser_model_      = std::move(laser_model);
   motion_model_     = std::move(motion_model);
 }
 
-void Localizer::resetPose(const Pose2d& init_pose) {  
+void Localizer::resetPose(const Pose2d& init_pose) {
   std::unique_lock<std::mutex> lock(init_mtx_);
   std::mt19937 rnd_eng(std::rand());
   std::normal_distribution<double> randn(0., 1.);
-    if (!particles_.empty())
+  if (!particles_.empty())
     particles_.clear();
   particles_.reserve(loc_params_.num_particles);
   particles_.emplace_back(init_pose, 1.);

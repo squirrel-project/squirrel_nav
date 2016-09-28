@@ -48,14 +48,14 @@ include_directories(${catkin_INCLUDE_DIRS})
 
 ## Catkin package
 catkin_package(
- INCLUDE_DIRS include external
+ INCLUDE_DIRS include
  LIBRARIES squirrel_2d_localizer
  CATKIN_DEPENDS ${squirrel_2d_localizer_DEPENDENCIES}
  DEPENDS G2O Eigen3
 )
 
 ## Building the localizer
-include_directories(include external)
+include_directories(include)
 add_executable(squirrel_2d_localizer_node  
   src/distance_transform.cpp
   src/grid_map.cpp

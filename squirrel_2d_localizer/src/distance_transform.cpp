@@ -42,8 +42,7 @@ void computeSquaredDistanceTransform2d(
 #pragma omp parallel for default(shared)
   for (size_t c = 0; c < cols; ++c) {
     Vector<> dt_vec;
-    internal::computeSquaredDistanceTransform1d(
-        f.col(c), 1.0, &dt_vec);
+    internal::computeSquaredDistanceTransform1d(f.col(c), 1.0, &dt_vec);
     sq_distance_transform->col(c) = dt_vec;
   }
 #pragma omp parallel for default(shared)
@@ -70,9 +69,9 @@ void computeSquaredDistanceTransform1d(
   Vector<> z(n + 1);
   std::vector<int> v(n);
   int k = 0;
-  v[0] = 0;
-  z[0] = -std::numeric_limits<double>::infinity();
-  z[1] = std::numeric_limits<double>::infinity();
+  v[0]  = 0;
+  z[0]  = -std::numeric_limits<double>::infinity();
+  z[1]  = std::numeric_limits<double>::infinity();
   for (int q = 1, k = 0; q < n; ++q) {
     double s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
     while (s <= z[k]) {

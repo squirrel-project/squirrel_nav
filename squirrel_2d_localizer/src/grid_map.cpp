@@ -43,8 +43,8 @@ void GridMap::initialize(std::vector<signed char>& data) {
 void GridMap::pointToIndices(const EndPoint2d& e, int* i, int* j) const {
   const double x = e[0] - map_params_.origin[0];
   const double y = e[1] - map_params_.origin[1];
-  *i             = map_params_.height - std::floor(y / map_params_.resolution) - 1;
-  *j             = std::floor(x / map_params_.resolution);
+  *i = map_params_.height - std::floor(y / map_params_.resolution) - 1;
+  *j = std::floor(x / map_params_.resolution);
 }
 
 bool GridMap::inside(int i, int j) const {

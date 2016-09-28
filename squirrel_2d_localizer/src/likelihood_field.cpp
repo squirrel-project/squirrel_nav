@@ -29,8 +29,8 @@
 namespace squirrel_2d_localizer {
 
 void LikelihoodField::initialize(const GridMap& map) {
-  const size_t w = map.width();
-  const size_t h = map.height();
+  const size_t w   = map.width();
+  const size_t h   = map.height();
   const double res = map.resolution();
   Matrix<> obstacles_indicator(h, w), sq_edt(h, w);
 #pragma omp parallel for schedule(dynamic, 1) collapse(2)
@@ -46,8 +46,7 @@ void LikelihoodField::initialize(const GridMap& map) {
 #pragma omp parallel for schedule(dynamic, 1) collapse(2)
   for (size_t i = 0; i < h; ++i)
     for (size_t j = 0; j < w; ++j)
-      sq_saturated_edt_(i, j) =
-          std::min(sq_edt(i, j), sq_saturation_distance_);
+      sq_saturated_edt_(i, j) = std::min(sq_edt(i, j), sq_saturation_distance_);
 }
 
 double LikelihoodField::logLikelihood(int i, int j) const {

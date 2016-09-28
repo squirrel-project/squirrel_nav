@@ -61,13 +61,13 @@ class GridMap {
   int operator()(int i, int j) const { return occupancy_map_(i, j); };
 
   inline Params& params() { return map_params_; }
-  
+
  private:
   inline void setDefaultParams() {
-    map_params_.resolution           = 0.05;
-    map_params_.origin               = Pose2d(-10., -10., 0.);
-    map_params_.height               = 400;
-    map_params_.width                = 400;
+    map_params_.resolution = 0.05;
+    map_params_.origin     = Pose2d(-10., -10., 0.);
+    map_params_.height     = 400;
+    map_params_.width      = 400;
   }
 
  private:

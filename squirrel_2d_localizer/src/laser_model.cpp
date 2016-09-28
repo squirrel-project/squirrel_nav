@@ -58,9 +58,8 @@ void LaserModel::prepareLaserReadings(const std::vector<float>& measurement) {
       std::pow(laser_params_.endpoints_min_distance, 2);
   EndPoint2d last_endpoint({-std::numeric_limits<double>::max(), 0.});
   for (size_t i = 0; i < measurement.size(); ++i) {
-    const float ray = measurement[i];
-    const double ray_angle =
-        laser_params_.angle_min + i * angle_increment;
+    const float ray        = measurement[i];
+    const double ray_angle = laser_params_.angle_min + i * angle_increment;
     if (!std::isfinite(ray) || ray < laser_params_.range_min ||
         ray > laser_params_.range_max)
       continue;

@@ -31,6 +31,6 @@ int main(int argc, char* argv[]) {
 
   squirrel_2d_localizer::LocalizerROS localizer;
   localizer.spin();
-  
+
   return EXIT_SUCCESS;
 }

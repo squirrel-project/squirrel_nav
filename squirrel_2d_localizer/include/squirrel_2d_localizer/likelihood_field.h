@@ -45,7 +45,7 @@ class LikelihoodField {
   LikelihoodField() { setDefaultParams(); }
   LikelihoodField(const Params& lf_params) : lf_params_(lf_params) {}
   virtual ~LikelihoodField() {}
-  
+
   void initialize(const GridMap& gridmap);
 
   double logLikelihood(int i, int j) const;
@@ -53,7 +53,7 @@ class LikelihoodField {
  private:
   inline bool inside(int i, int j) const {
     return i >= 0 && i < sq_saturated_edt_.rows() && j >= 0 &&
-        j < sq_saturated_edt_.cols();
+           j < sq_saturated_edt_.cols();
   }
 
   inline void setDefaultParams() {
@@ -62,12 +62,12 @@ class LikelihoodField {
   }
 
   inline Params& params() { return lf_params_; }
-  
+
  private:
   Matrix<> sq_saturated_edt_;
 
   double sq_saturation_distance_;
-  
+
   Params lf_params_;
 };
 

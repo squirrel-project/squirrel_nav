@@ -36,8 +36,7 @@
 namespace squirrel_2d_localizer {
 
 LocalizerROS::LocalizerROS()
-    : node_name_(ros::this_node::getName()),
-      update_laser_params_(true) {
+    : node_name_(ros::this_node::getName()), update_laser_params_(true) {
   ros::NodeHandle nh("~"), gnh;
   // frames.
   nh.param<std::string>("map_frame", map_frame_id_, "/map");
@@ -90,8 +89,9 @@ LocalizerROS::LocalizerROS()
       map_params.width      = get_map.response.map.info.width;
       map_params.origin =
           ros_conversions::fromROSMsg(get_map.response.map.info.origin);
-      ROS_INFO("%s: Received map %ld x %ld (%f m/px)", node_name_.c_str(),
-               map_params.height, map_params.width, map_params.resolution);
+      ROS_INFO(
+          "%s: Received map %ld x %ld (%f m/px)", node_name_.c_str(),
+          map_params.height, map_params.width, map_params.resolution);
     } else {
       ROS_ERROR_STREAM(
           node_name_ << ": Unable to fetch the map. Shutting down.");
@@ -169,8 +169,8 @@ void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
       tfl_.lookupTransform(
           robot_frame_id_, msg->header.frame_id, ros::Time(0), tf_r2l);
     } catch (tf::TransformException& ex) {
-      ROS_ERROR_STREAM(
-          node_name_ << ": Unable to retrieve laser pose. " << ex.what());
+      ROS_WARN_STREAM(
+          node_name_ << ": Unable to retrieve laser pose. Trying again.");
       return;
     }
     // update parameters in the laser model.
@@ -180,7 +180,7 @@ void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
     laser_params.angle_min           = msg->angle_min;
     laser_params.angle_max           = msg->angle_max;
     laser_params.tf_r2l              = ros_conversions::fromTFMsg(tf_r2l);
-    update_laser_params_ = false;
+    update_laser_params_             = false;
     return;
   }
   // update filter.
@@ -188,10 +188,10 @@ void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
   tf::StampedTransform tf_o2r_new;
   if (!lookupOdometry(scan_time, ros::Duration(0.01), &tf_o2r_new))
     return;
-  const Pose2d motion = 
+  const Pose2d motion =
       ros_conversions::fromTFMsg(tf_o2r_.inverse() * tf_o2r_new);
   if (localizer_->updateFilter(motion, msg->ranges)) {
-    tf_o2r_ = tf_o2r_new;        
+    tf_o2r_ = tf_o2r_new;
     publishParticles(scan_time);
     publishPoseWithCovariance(scan_time);
   }
@@ -200,7 +200,7 @@ void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
 void LocalizerROS::initialPoseCallback(
     const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
   std::unique_lock<std::mutex> lock(reset_mtx_);
-  while(!lookupOdometry(msg->header.stamp, ros::Duration(0.1), &tf_o2r_))
+  while (!lookupOdometry(msg->header.stamp, ros::Duration(0.1), &tf_o2r_))
     ROS_WARN_STREAM(node_name_ << ": Trying to reinitialize odometry.");
   localizer_->resetPose(ros_conversions::fromROSMsg(msg->pose.pose));
   publishParticles(msg->header.stamp);
