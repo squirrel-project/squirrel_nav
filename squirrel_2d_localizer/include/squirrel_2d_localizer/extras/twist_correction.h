@@ -23,8 +23,8 @@
 #ifndef SQUIRREL_2D_LOCALIZATION_TWIST_CORRECTION_H_
 #define SQUIRREL_2D_LOCALIZATION_TWIST_CORRECTION_H_
 
-#include "squirrel_2d_localizer/math_types.h"
 #include "squirrel_2d_localizer/se2_types.h"
+#include "squirrel_2d_localizer/extras/twist_types.h"
 
 #include <cmath>
 #include <memory>

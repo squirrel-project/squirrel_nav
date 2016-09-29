@@ -31,7 +31,8 @@ mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j${NUM_MAKE_THREADS}
+export G2O_ROOT="$PROJECT_DIR"/dependencies/g2o
 echo export G2O_ROOT="$PROJECT_DIR"/dependencies/g2o >> ~/.bashrc
-source ~/.bashrc
+. ~/.bashrc
 cp "$PROJECT_DIR"/dependencies/g2o/build/g2o/config.h "$PROJECT_DIR"/dependencies/g2o/g2o/
  

@@ -22,11 +22,6 @@ if(OPENMP_FOUND)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif(OPENMP_FOUND)
 
-## Import g2o
-find_package(G2O REQUIRED)
-include_directories(${G2O_INCLUDE_DIR})
-link_directories(${G2O_LIBRARY_DIR})
-
 ## Import Eigen3.
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
@@ -67,10 +62,11 @@ add_executable(squirrel_2d_localizer_node
   src/localizer_ros_node.cpp
   src/motion_model.cpp
   src/resampling.cpp
+  src/se2_types.cpp
   src/extras/twist_correction.cpp
   src/extras/twist_correction_ros.cpp
 )
-target_link_libraries(squirrel_2d_localizer_node ${catkin_LIBRARIES} ${G2O_TYPES_SLAM2D})
+target_link_libraries(squirrel_2d_localizer_node ${catkin_LIBRARIES})
 
 #############
 ## Install ##

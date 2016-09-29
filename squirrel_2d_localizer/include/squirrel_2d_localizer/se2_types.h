@@ -23,33 +23,54 @@
 #ifndef SQUIRREL_2D_LOCALIZER_SE2_TYPES_H_
 #define SQUIRREL_2D_LOCALIZER_SE2_TYPES_H_
 
-#include <Eigen/Core>
-#include <Eigen/Geometry>
-
-#include <g2o/core/eigen_types.h>
-#include <g2o/types/slam2d/se2.h>
+#include "squirrel_2d_localizer/math_types.h"
 
 #include <geometry_msgs/Pose.h>
-#include <geometry_msgs/Twist.h>
 
 #include <tf/tf.h>
 
 namespace squirrel_2d_localizer {
 
-typedef g2o::SE2 Pose2d;
-typedef g2o::SE2 Transform2d;
+class Pose2d {
+ public:
+  Pose2d() : translation_(0., 0.), rotation_(0.) {}
+  Pose2d(double x, double y, double a);
+  Pose2d(const Vector<2>& translation, double a);
+  Pose2d(const Pose2d& model) = default;
+  virtual ~Pose2d() {}
 
-typedef Eigen::Vector3d Twist2d;
+  const Vector<2>& translation() const { return translation_; }
+  Vector<2>& translation() { return translation_; }
+
+  const Rotation2d& rotation() const { return rotation_; }
+  Rotation2d& rotation() { return rotation_; }
+
+  double operator[](const size_t i) const;
+  double& operator[](const size_t i);
+  
+  Pose2d& operator=(const Pose2d& rhs);
+
+  Pose2d operator*(const Pose2d& rhs) const;
+  Pose2d& operator*=(const Pose2d& rhs);
+
+  Pose2d inverse() const;
+  
+ private:
+  Vector<2> translation_;
+  Rotation2d rotation_;
+};
+
+typedef Pose2d Transform2d;
 
 namespace ros_conversions {
 
-template<typename TypeSE2>
+template <typename TypeSE2>
 TypeSE2 fromROSMsgTo(const geometry_msgs::Pose& p) {
   TypeSE2 output(p.position.x, p.position.y, tf::getYaw(p.orientation));
   return output;
 }
 
-template<typename TypeSE2>
+template <typename TypeSE2>
 TypeSE2 fromTFMsgTo(const tf::Transform& tf) {
   TypeSE2 output(
       tf.getOrigin().getX(), tf.getOrigin().getY(),
@@ -57,7 +78,7 @@ TypeSE2 fromTFMsgTo(const tf::Transform& tf) {
   return output;
 }
 
-template<typename TypeSE2>
+template <typename TypeSE2>
 geometry_msgs::Pose toROSMsgFrom(const TypeSE2& p) {
   geometry_msgs::Pose output;
   output.position.x  = p[0];
@@ -66,7 +87,7 @@ geometry_msgs::Pose toROSMsgFrom(const TypeSE2& p) {
   return output;
 }
 
-template<typename TypeSE2>
+template <typename TypeSE2>
 tf::Transform toTFMsgFrom(const TypeSE2& p) {
   tf::Vector3 translation(p[0], p[1], 0.);
   tf::Quaternion rotation;
