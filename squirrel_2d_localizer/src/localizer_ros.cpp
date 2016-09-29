@@ -247,9 +247,13 @@ void LocalizerROS::publishPoseWithCovariance(const ros::Time& stamp) {
   msg.header.frame_id = map_frame_id_;
   msg.header.stamp    = stamp;
   msg.pose.pose       = ros_conversions::toROSMsg(pose);
-  for (size_t i = 0; i < 3; ++i)
-    for (size_t j = 0; j < 3; ++j)
-      msg.pose.covariance[index3x3ToPacked6x6(i, j)] = cov(i, j);
+  for (size_t i = 0, ei; i < 3; ++i) {
+    ei = i < 3 ? i : 5; 
+    for (size_t j = 0, ej; j < 3; ++j) {
+      ej = j < 3 ? j : 5;
+      msg.pose.covariance[6 * ei + ej] = cov(i, j);
+    }
+  }
   pose_pub_.publish(msg);
 }
 

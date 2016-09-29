@@ -30,6 +30,7 @@
 #include <tf/transform_listener.h>
 
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <nav_msgs/Odometry.h>
 #include <sensor_msgs/LaserScan.h>
 
 #include "squirrel_2d_localizer/localizer.h"
@@ -57,12 +58,6 @@ class LocalizerROS {
   void publishTransform(const ros::Time& stamp);
   void publishParticles(const ros::Time& stamp);
   void publishPoseWithCovariance(const ros::Time& stamp);
-
-  inline size_t index3x3ToPacked6x6(size_t i, size_t j) {
-    const size_t eff_i = i < 3 ? i : 5;
-    const size_t eff_j = j < 3 ? j : 5;
-    return 6 * eff_i + eff_j;
-  }
 
  private:
   Localizer::Ptr localizer_;

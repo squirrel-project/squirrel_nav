@@ -1,3 +1,4 @@
+#include "g2o/core/eigen_types.h"
 #include "g2o/core/base_binary_edge.h"
 #include "g2o/types/slam3d/g2o_types_slam3d_api.h"
 #include "vertex_se3_append.h"
