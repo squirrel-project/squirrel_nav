@@ -53,7 +53,9 @@ class Localizer {
       LaserModel::Ptr& laser_model, MotionModel::Ptr& motion_model);
 
   void resetPose(const Pose2d& init_pose = Pose2d(0., 0., 0.));
-  bool updateFilter(const Transform2d& motion, const std::vector<float>& scan);
+  bool updateFilter(
+      const Transform2d& motion, const std::vector<float>& scan,
+      const Transform2d& extra_correction = Pose2d(0., 0., 0.));
 
   const ParticleSet& particles() const { return particles_; }
   const Pose2d& pose() const { return pose_; }

@@ -64,7 +64,8 @@ void Localizer::resetPose(const Pose2d& init_pose) {
 }
 
 bool Localizer::updateFilter(
-    const Transform2d& motion, const std::vector<float>& scan) {
+    const Transform2d& motion, const std::vector<float>& scan,
+    const Transform2d& extra_correction) {
   cum_lin_motion_ += motion.translation().norm();
   cum_ang_motion_ += std::abs(angles::normalize_angle(motion[2]));
   if (cum_lin_motion_ < loc_params_.min_lin_update &&
@@ -75,6 +76,7 @@ bool Localizer::updateFilter(
       *map_, *likelihood_field_, scan, &particles_);
   resampling::importanceSampling(&particles_);
   particles::computeMeanAndCovariance(particles_, &pose_, &covariance_);
+  pose_ *= extra_correction;
   cum_lin_motion_ = 0.;
   cum_ang_motion_ = 0.;
   return true;
