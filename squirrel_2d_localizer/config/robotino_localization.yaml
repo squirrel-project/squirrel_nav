@@ -8,7 +8,7 @@ init_pose_y: 0.0
 init_pose_a: 0.0
 
 # twist correction
-use_twist_correction: true
+use_twist_correction: false
 twist_correction:
   corr_aa: 1.0
   correction_magnitude: 0.1
