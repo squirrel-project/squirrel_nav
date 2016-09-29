@@ -55,6 +55,7 @@ catkin_package(
 )
 
 ## Building the localizer
+set(ROS_BUILD_TYPE Release)
 include_directories(include)
 add_executable(squirrel_2d_localizer_node  
   src/distance_transform.cpp
