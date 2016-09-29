@@ -37,7 +37,7 @@
 #include <message_filters/subscriber.h>
 
 #include "squirrel_2d_localizer/localizer.h"
-#include "squirrel_2d_localizer/extras/twist_correction.h"
+#include "squirrel_2d_localizer/extras/twist_correction_ros.h"
 
 #include <mutex>
 
@@ -77,6 +77,7 @@ class LocalizerROS {
   double init_x_, init_y_, init_a_;
 
   bool use_twist_correction_;
+  TwistCorrectionROS::Ptr twist_correction_;
   
   std::string map_frame_id_, odom_frame_id_, robot_frame_id_;
   std::string node_name_;

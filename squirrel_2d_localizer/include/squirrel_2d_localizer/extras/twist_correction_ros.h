@@ -45,7 +45,7 @@ class TwistCorrectionROS {
   TwistCorrectionROS();
   virtual ~TwistCorrectionROS() {}
 
-  tf::Transform correction(const ros::Time& time) const;
+  Pose2d correction(const ros::Time& time) const;
 
  private:
   inline double linearInterpolation(

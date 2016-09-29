@@ -47,6 +47,9 @@ LocalizerROS::LocalizerROS()
   nh.param<double>("init_pose_x", init_x_, 0.);
   nh.param<double>("init_pose_y", init_y_, 0.);
   nh.param<double>("init_pose_a", init_a_, 0.);
+  nh.param<bool>("use_twist_correction", use_twist_correction_, false);
+  if (use_twist_correction_)
+    twist_correction_.reset(new TwistCorrectionROS);
   // localizer parameters.
   ros::NodeHandle loc_nh("~/localizer");
   Localizer::Params loc_param;
@@ -188,9 +191,12 @@ void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
   tf::StampedTransform tf_o2r_new;
   if (!lookupOdometry(scan_time, ros::Duration(0.01), &tf_o2r_new))
     return;
-  const Pose2d motion =
+  const Pose2d& motion =
       ros_conversions::fromTFMsgTo<Pose2d>(tf_o2r_.inverse() * tf_o2r_new);
-  if (localizer_->updateFilter(motion, msg->ranges)) {
+  const Pose2d& correction = use_twist_correction_
+                          ? twist_correction_->correction(scan_time)
+                          : Pose2d(0., 0., 0.);
+  if (localizer_->updateFilter(motion, msg->ranges, correction)) {
     tf_o2r_ = tf_o2r_new;
     publishParticles(scan_time);
     publishPoseWithCovariance(scan_time);
@@ -200,11 +206,12 @@ void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
 void LocalizerROS::initialPoseCallback(
     const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
   std::unique_lock<std::mutex> lock(reset_mtx_);
-  while (!lookupOdometry(msg->header.stamp, ros::Duration(0.1), &tf_o2r_))
+  ros::Time now;
+  while (!lookupOdometry(now = ros::Time::now(), ros::Duration(0.1), &tf_o2r_))
     ROS_WARN_STREAM(node_name_ << ": Trying to reinitialize odometry.");
   localizer_->resetPose(ros_conversions::fromROSMsgTo<Pose2d>(msg->pose.pose));
-  publishParticles(msg->header.stamp);
-  publishPoseWithCovariance(msg->header.stamp);
+  publishParticles(now);
+  publishPoseWithCovariance(now);
 }
 
 bool LocalizerROS::lookupOdometry(

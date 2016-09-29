@@ -68,6 +68,7 @@ class TwistCorrection {
     corr_(1, 1) = params_.corr_xy;
     corr_(1, 2) = corr_(2, 1) = params_.corr_ya;
     corr_(2, 2) = params_.corr_aa;
+    corr_ *= params_.corr_magnitude;
   }
 
  private:

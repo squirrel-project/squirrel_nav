@@ -41,7 +41,7 @@ TwistCorrectionROS::TwistCorrectionROS()
   twist_correction_.reset(new TwistCorrection(params));
 }
 
-tf::Transform TwistCorrectionROS::correction(const ros::Time& time) const {
+Pose2d TwistCorrectionROS::correction(const ros::Time& time) const {
   const geometry_msgs::Twist& tw0 = cache_.getElemBeforeTime(time)->twist.twist;
   const geometry_msgs::Twist& tw1 = cache_.getElemAfterTime(time)->twist.twist;
   const double t0 = cache_.getElemBeforeTime(time)->header.stamp.toSec();
@@ -53,8 +53,7 @@ tf::Transform TwistCorrectionROS::correction(const ros::Time& time) const {
       linearInterpolation(tw0.linear.x, tw1.linear.x, t, dt),
       linearInterpolation(tw0.linear.y, tw1.linear.y, t, dt),
       linearInterpolation(tw0.angular.z, tw1.angular.z, t, dt));
-  const Pose2d correction = twist_correction_->correction(twist);
-  return ros_conversions::toTFMsgFrom<Pose2d>(correction);
+  return twist_correction_->correction(twist);
 }
 
 }  // namespace squirrel_2d_localizer
