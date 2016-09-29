@@ -66,6 +66,8 @@ add_executable(squirrel_2d_localizer_node
   src/localizer_ros_node.cpp
   src/motion_model.cpp
   src/resampling.cpp
+  src/extras/twist_correction.cpp
+  src/extras/twist_correction_ros.cpp
 )
 target_link_libraries(squirrel_2d_localizer_node ${catkin_LIBRARIES} ${G2O_TYPES_SLAM2D})
 

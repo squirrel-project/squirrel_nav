@@ -87,8 +87,8 @@ LocalizerROS::LocalizerROS()
       map_params.resolution = get_map.response.map.info.resolution;
       map_params.height     = get_map.response.map.info.height;
       map_params.width      = get_map.response.map.info.width;
-      map_params.origin =
-          ros_conversions::fromROSMsg(get_map.response.map.info.origin);
+      map_params.origin     = ros_conversions::fromROSMsgTo<Pose2d>(
+          get_map.response.map.info.origin);
       ROS_INFO(
           "%s: Received map %ld x %ld (%f m/px)", node_name_.c_str(),
           map_params.height, map_params.width, map_params.resolution);
@@ -179,8 +179,8 @@ void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
     laser_params.range_max           = msg->range_max;
     laser_params.angle_min           = msg->angle_min;
     laser_params.angle_max           = msg->angle_max;
-    laser_params.tf_r2l              = ros_conversions::fromTFMsg(tf_r2l);
-    update_laser_params_             = false;
+    laser_params.tf_r2l  = ros_conversions::fromTFMsgTo<Pose2d>(tf_r2l);
+    update_laser_params_ = false;
     return;
   }
   // update filter.
@@ -189,7 +189,7 @@ void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
   if (!lookupOdometry(scan_time, ros::Duration(0.01), &tf_o2r_new))
     return;
   const Pose2d motion =
-      ros_conversions::fromTFMsg(tf_o2r_.inverse() * tf_o2r_new);
+      ros_conversions::fromTFMsgTo<Pose2d>(tf_o2r_.inverse() * tf_o2r_new);
   if (localizer_->updateFilter(motion, msg->ranges)) {
     tf_o2r_ = tf_o2r_new;
     publishParticles(scan_time);
@@ -202,7 +202,7 @@ void LocalizerROS::initialPoseCallback(
   std::unique_lock<std::mutex> lock(reset_mtx_);
   while (!lookupOdometry(msg->header.stamp, ros::Duration(0.1), &tf_o2r_))
     ROS_WARN_STREAM(node_name_ << ": Trying to reinitialize odometry.");
-  localizer_->resetPose(ros_conversions::fromROSMsg(msg->pose.pose));
+  localizer_->resetPose(ros_conversions::fromROSMsgTo<Pose2d>(msg->pose.pose));
   publishParticles(msg->header.stamp);
   publishPoseWithCovariance(msg->header.stamp);
 }
@@ -222,8 +222,9 @@ bool LocalizerROS::lookupOdometry(
 
 void LocalizerROS::publishTransform(const ros::Time& stamp) {
   std::unique_lock<std::mutex> lock(tf_mtx_);
-  tf::Transform tf_m2o, tf_m2r = ros_conversions::toTFMsg(localizer_->pose());
-  tf_m2o = tf_m2r * tf_o2r_.inverse();
+  tf::Transform tf_m2o,
+      tf_m2r = ros_conversions::toTFMsgFrom<Pose2d>(localizer_->pose());
+  tf_m2o     = tf_m2r * tf_o2r_.inverse();
   tfb_.sendTransform(
       tf::StampedTransform(tf_m2o, stamp, map_frame_id_, odom_frame_id_));
 }
@@ -236,7 +237,7 @@ void LocalizerROS::publishParticles(const ros::Time& stamp) {
   msg.poses.resize(particles.size());
 #pragma omp parallel for default(shared)
   for (size_t i  = 0; i < particles.size(); ++i)
-    msg.poses[i] = ros_conversions::toROSMsg(particles[i].pose);
+    msg.poses[i] = ros_conversions::toROSMsgFrom<Pose2d>(particles[i].pose);
   particles_pub_.publish(msg);
 }
 
@@ -246,11 +247,11 @@ void LocalizerROS::publishPoseWithCovariance(const ros::Time& stamp) {
   geometry_msgs::PoseWithCovarianceStamped msg;
   msg.header.frame_id = map_frame_id_;
   msg.header.stamp    = stamp;
-  msg.pose.pose       = ros_conversions::toROSMsg(pose);
+  msg.pose.pose       = ros_conversions::toROSMsgFrom<Pose2d>(pose);
   for (size_t i = 0, ei; i < 3; ++i) {
-    ei = i < 3 ? i : 5; 
+    ei = i < 3 ? i : 5;
     for (size_t j = 0, ej; j < 3; ++j) {
-      ej = j < 3 ? j : 5;
+      ej                               = j < 3 ? j : 5;
       msg.pose.covariance[6 * ei + ej] = cov(i, j);
     }
   }

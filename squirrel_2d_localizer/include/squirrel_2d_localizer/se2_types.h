@@ -30,6 +30,7 @@
 #include <g2o/types/slam2d/se2.h>
 
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Twist.h>
 
 #include <tf/tf.h>
 
@@ -37,22 +38,26 @@ namespace squirrel_2d_localizer {
 
 typedef g2o::SE2 Pose2d;
 typedef g2o::SE2 Transform2d;
+typedef g2o::SE2 Twist2d;
 
 namespace ros_conversions {
 
-inline Pose2d fromROSMsg(const geometry_msgs::Pose& p) {
-  Pose2d output(p.position.x, p.position.y, tf::getYaw(p.orientation));
+template<typename TypeSE2>
+TypeSE2 fromROSMsgTo(const geometry_msgs::Pose& p) {
+  TypeSE2 output(p.position.x, p.position.y, tf::getYaw(p.orientation));
   return output;
 }
 
-inline Pose2d fromTFMsg(const tf::Transform& tf) {
-  Pose2d output(
+template<typename TypeSE2>
+TypeSE2 fromTFMsgTo(const tf::Transform& tf) {
+  TypeSE2 output(
       tf.getOrigin().getX(), tf.getOrigin().getY(),
       tf::getYaw(tf.getRotation()));
   return output;
 }
 
-inline geometry_msgs::Pose toROSMsg(const Pose2d& p) {
+template<typename TypeSE2>
+geometry_msgs::Pose toROSMsgFrom(const TypeSE2& p) {
   geometry_msgs::Pose output;
   output.position.x  = p[0];
   output.position.y  = p[1];
@@ -60,7 +65,8 @@ inline geometry_msgs::Pose toROSMsg(const Pose2d& p) {
   return output;
 }
 
-inline tf::Transform toTFMsg(const Pose2d& p) {
+template<typename TypeSE2>
+tf::Transform toTFMsgFrom(const TypeSE2& p) {
   tf::Vector3 translation(p[0], p[1], 0.);
   tf::Quaternion rotation;
   rotation.setRPY(0., 0., p[2]);
