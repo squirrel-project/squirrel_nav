@@ -38,6 +38,9 @@ TwistCorrectionROS::TwistCorrectionROS()
   pnh.param<double>("corr_ya", params.corr_ya, 0.);
   pnh.param<double>("corr_aa", params.corr_aa, 1.);
   pnh.param<double>("corr_magnitude", params.corr_magnitude, 1.);
+  pnh.param<double>("alpha_filter", params.alpha, 0.5);
+  pnh.param<double>("max_lin_vel", params.max_lin_vel, 0.5);
+  pnh.param<double>("max_ang_vel", params.max_ang_vel, 0.7);
   twist_correction_.reset(new TwistCorrection(params));
 }
 

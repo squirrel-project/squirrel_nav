@@ -38,7 +38,8 @@ namespace squirrel_2d_localizer {
 
 typedef g2o::SE2 Pose2d;
 typedef g2o::SE2 Transform2d;
-typedef g2o::SE2 Twist2d;
+
+typedef Eigen::Vector3d Twist2d;
 
 namespace ros_conversions {
 

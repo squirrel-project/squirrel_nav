@@ -28,19 +28,49 @@
 
 namespace squirrel_2d_localizer {
 
-TwistCorrection::TwistCorrection() {
+TwistCorrection::TwistCorrection() : twist_(nullptr) {
   setDefaultParams();
   initialize();
 }
 
-Pose2d TwistCorrection::correction(const Twist2d& twist) const {
-  // clang-format off
-  const Vector<3> sq_twist({std::copysign(twist[0] * twist[0], twist[0]),
-                            std::copysign(twist[1] * twist[1], twist[1]),
-                            std::copysign(twist[2] * twist[2], twist[2])});
-  // clang-format on
+TwistCorrection::TwistCorrection(const Params& params)
+    : twist_(nullptr), params_(params) {
+  initialize();
+}
+
+Pose2d TwistCorrection::correction(const Twist2d& twist) {
+  if (!twist_) {
+    twist_.reset(new Twist2d(twist));
+    return Pose2d(0., 0., 0.);
+  } else {
+    applyAlphaFilter(twist);
+  }
+  const Twist2d& sq_twist    = thresholdSquaredMagnitude(*twist_);
   const Vector<3> correction = corr_ * sq_twist;
   return Pose2d(correction[0], correction[1], correction[2]);
+}
+
+void TwistCorrection::applyAlphaFilter(const Twist2d& twist) {
+  if (twist.norm() < 0.01)
+    *twist_ = Twist2d();
+  else {
+    (*twist_)[0] = a_ * (*twist_)[0] + (1 - a_) * twist[0];
+    (*twist_)[1] = a_ * (*twist_)[1] + (1 - a_) * twist[1];
+    (*twist_)[2] = a_ * (*twist_)[2] + (1 - a_) * twist[2];
+  }
+}
+
+Twist2d TwistCorrection::thresholdSquaredMagnitude(const Twist2d& twist) const {
+  const double sq_max_lin_vel = std::pow(params_.max_lin_vel, 2);
+  const double sq_max_ang_vel = std::pow(params_.max_ang_vel, 2);
+  const double sq_twist_x     = twist[0] * twist[0];
+  const double sq_twist_y     = twist[1] * twist[1];
+  const double sq_twist_a     = twist[2] * twist[2];
+  Twist2d output;
+  output[0] = std::copysign(std::min(sq_max_lin_vel, sq_twist_x), twist[0]);
+  output[1] = std::copysign(std::min(sq_max_lin_vel, sq_twist_y), twist[1]);
+  output[2] = std::copysign(std::min(sq_max_ang_vel, sq_twist_a), twist[2]);
+  return output;
 }
 
 }  // namespace squirrel_2d_localizer

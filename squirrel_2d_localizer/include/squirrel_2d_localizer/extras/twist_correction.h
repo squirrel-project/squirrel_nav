@@ -39,14 +39,16 @@ class TwistCorrection {
   struct Params {
     double corr_xx, corr_xy, corr_xa, corr_yy, corr_ya, corr_aa;
     double corr_magnitude;
+    double max_lin_vel, max_ang_vel;
+    double alpha;
   };
 
  public:
   TwistCorrection();
-  TwistCorrection(const Params& params) : params_(params) { initialize(); }
+  TwistCorrection(const Params& params);
   virtual ~TwistCorrection() {}
   
-  Pose2d correction(const Twist2d& twist) const;
+  Pose2d correction(const Twist2d& twist);
 
   Params& params() { return params_; }
 
@@ -59,6 +61,7 @@ class TwistCorrection {
     params_.corr_yy        = 0.;
     params_.corr_ya        = 0.;
     params_.corr_aa        = 1.;
+    params_.alpha          = 0.5;
   }
 
   inline void initialize() {
@@ -69,11 +72,19 @@ class TwistCorrection {
     corr_(1, 2) = corr_(2, 1) = params_.corr_ya;
     corr_(2, 2) = params_.corr_aa;
     corr_ *= params_.corr_magnitude;
+    a_ = params_.alpha;
   }
 
  private:
+  void applyAlphaFilter(const Twist2d& twist);
+  Twist2d thresholdSquaredMagnitude(const Twist2d& twist) const;
+  
+ private:
   Matrix<3, 3> corr_;
+  double a_;
 
+  std::unique_ptr<Twist2d> twist_;
+  
   Params params_;
 };
 
