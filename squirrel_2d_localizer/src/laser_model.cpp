@@ -46,6 +46,7 @@ void LaserModel::computeParticlesLikelihood(
       grid_map.pointToIndices(e, &e_i, &e_j);
       weight *= likelihood_field.likelihood(e_i, e_j);
     }
+    particles->at(i).weight = weight;
   }
 }
 
