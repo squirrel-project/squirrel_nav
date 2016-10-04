@@ -7,7 +7,6 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake-mod
 #SET(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules)
 #SET(libg2o_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules)
 
-
 set(squirrel_dynamic_filter_DEPENDENCIES
   roscpp
   rospy

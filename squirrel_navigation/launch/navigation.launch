@@ -4,18 +4,18 @@
   <arg name="robot_id" default="alufr-robotino" />
   <arg name="autolocalization" default="false"/>
   <arg name="3d_mapping" default="true" />
-  <arg name="use_scan_matcher_odom" default="false"/>
   <arg name="use_last_pose" default="true"/>
   <arg name="twist_mux" default="true"/>
-  
-  <!--- Run mapserver -->
-  <include file="$(find squirrel_navigation)/launch/map_server.launch">
-    <arg name="map_file" value="$(arg map_file)" />
-  </include>
-  
+  <arg name="plan_with_arm" default="false"/>
+
+  <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/robot_6dof_base_params.yaml" 
+            command="load" if="$(arg plan_with_arm)"/>
+  <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/robot_base_params.yaml" 
+            command="load" unless="$(arg plan_with_arm)"/>
+    
   <!-- Run Monte Carlo Localization (many parameters in squirrel_localizer.launch) -->
-  <include file="$(find squirrel_localizer)/launch/squirrel_localizer.launch">
-    <arg name="use_scan_matcher_odom" value="$(arg use_scan_matcher_odom)"/>
+  <include file="$(find squirrel_2d_localizer)/launch/squirrel_2d_localizer.launch">
+    <arg name="map_file" value="$(arg map_file)"/>
     <arg name="use_last_pose" value="$(arg use_last_pose)"/>
   </include>
 
@@ -48,7 +48,7 @@
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/base_local_planner_params.yaml" command="load" />
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/base_global_planner_params.yaml" command="load" />
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/move_base_params.yaml" command="load" />
-    <param name="GlobalPlanner/lattice/primitive_filename" value="$(find squirrel_navigation)/config/alufr-robotino/move_base/motion-primitives/motion_primitives_50mm.mprim"/>
+    <param name="GlobalPlanner/lattice/primitive_filename" value="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/motion-primitives/motion_primitives_50mm.mprim"/>
     <remap from="/cmd_vel" to="/cmd_navigation" if="$(arg twist_mux)"/>
   </node>
   

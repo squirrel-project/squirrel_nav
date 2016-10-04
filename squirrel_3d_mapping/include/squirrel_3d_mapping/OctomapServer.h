@@ -313,6 +313,10 @@ protected:
 
   bool m_updateOctree;
   squirrel_3d_mapping_msgs::OctomapUpdate m_updateMsg;
+
+  // voxelization
+  bool m_useVoxelFiltering;
+  double m_downsamplingVoxelSize;
   
   // downprojected 2D map:
   bool m_incrementalUpdate;
