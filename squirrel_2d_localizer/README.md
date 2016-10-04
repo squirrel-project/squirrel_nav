@@ -30,9 +30,9 @@ to retrieve the map.
   0.0, 1.0}`), noise components of the odometry model.
 - `noise_magnitude` (default `1.0`): rescaling factor for the noise
   parameters.
-- `~/likelihood_fields/saturation_distance` (default `0.5`): saturation distance of
+- `~/likelihood_field/saturation_distance` (default `0.5`): saturation distance of
   the Gaussian kernels.
-- `~/likelihood_fields/observation_sigma` (default `0.5`): variance
+- `~/likelihood_field/observation_sigma` (default `0.5`): variance
   parameter of the gaussian kernels.
 - `~/laser_model/beam_min_distance` (default `0.1`) downsampling
   factor for the laser readings.
