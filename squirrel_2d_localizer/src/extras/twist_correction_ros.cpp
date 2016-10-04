@@ -45,12 +45,14 @@ TwistCorrectionROS::TwistCorrectionROS()
 }
 
 Pose2d TwistCorrectionROS::correction(const ros::Time& time) const {
-  if (!cache_.getElemBeforeTime(time) || !cache_.getElemAfterTime(time))
+  const auto& odom_before_time = cache_.getElemBeforeTime(time);
+  const auto& odom_after_time  = cache_.getElemAfterTime(time);
+  if (!odom_before_time || !odom_after_time)
     return Pose2d(0., 0., 0.);
-  const geometry_msgs::Twist& tw0 = cache_.getElemBeforeTime(time)->twist.twist;
-  const geometry_msgs::Twist& tw1 = cache_.getElemAfterTime(time)->twist.twist;
-  const double t0 = cache_.getElemBeforeTime(time)->header.stamp.toSec();
-  const double t1 = cache_.getElemAfterTime(time)->header.stamp.toSec();
+  const geometry_msgs::Twist& tw0 = odom_before_time->twist.twist;
+  const geometry_msgs::Twist& tw1 = odom_after_time->twist.twist;
+  const double t0 = odom_before_time->header.stamp.toSec();
+  const double t1 = odom_after_time->header.stamp.toSec();
   // interpolate the twist
   const double dt = t1 - t0;
   const double t  = time.toSec() - t0;
