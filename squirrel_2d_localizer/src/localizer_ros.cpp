@@ -111,7 +111,7 @@ LocalizerROS::LocalizerROS()
   ROS_INFO_STREAM(node_name_ << ": Initialized LikelihoodField.");
   // initialize objects;
   localizer_->initialize(grid_map, likelihood_field, laser_model, motion_model);
-  while (!lookupOdometry(ros::Time(0), ros::Duration(1.0), &tf_o2r_))
+  while (!lookupOdometry(ros::Time::now(), ros::Duration(1.0), &tf_o2r_))
     ROS_WARN_STREAM(node_name_ << ": Trying to initialize odometry.");
   ROS_INFO_STREAM(node_name_ << ": Odometry initialized.");
   if (use_last_pose_) {
@@ -170,7 +170,7 @@ void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
     tf::StampedTransform tf_r2l;
     try {
       tfl_.lookupTransform(
-          robot_frame_id_, msg->header.frame_id, ros::Time(0), tf_r2l);
+          robot_frame_id_, msg->header.frame_id, ros::Time::now(), tf_r2l);
     } catch (tf::TransformException& ex) {
       ROS_WARN_STREAM(
           node_name_ << ": Unable to retrieve laser pose. Trying again.");
@@ -189,13 +189,13 @@ void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
   // update filter.
   std::unique_lock<std::mutex> lock(update_mtx_);
   tf::StampedTransform tf_o2r_new;
-  if (!lookupOdometry(scan_time, ros::Duration(0.01), &tf_o2r_new))
+  if (!lookupOdometry(scan_time, ros::Duration(0.05), &tf_o2r_new))
     return;
   const Pose2d& motion =
       ros_conversions::fromTFMsgTo<Pose2d>(tf_o2r_.inverse() * tf_o2r_new);
   const Pose2d& correction = use_twist_correction_
-                          ? twist_correction_->correction(scan_time)
-                          : Pose2d(0., 0., 0.);
+                                 ? twist_correction_->correction(scan_time)
+                                 : Pose2d(0., 0., 0.);
   if (localizer_->updateFilter(motion, msg->ranges, correction)) {
     tf_o2r_ = tf_o2r_new;
     publishParticles(scan_time);
