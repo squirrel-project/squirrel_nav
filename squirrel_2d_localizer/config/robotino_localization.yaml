@@ -11,7 +11,7 @@ init_pose_a: 0.0
 use_twist_correction: false
 twist_correction:
   corr_aa: 1.0
-  corr_magnitude: 0.075
+  corr_magnitude: 0.09
   alpha_filter: 0.75
   max_lin_vel: 0.5
   max_ang_vel: 0.7
