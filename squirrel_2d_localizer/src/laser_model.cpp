@@ -37,14 +37,13 @@ void LaserModel::computeParticlesLikelihood(
 #pragma omp parallel for default(shared)
   for (size_t i = 0; i < particles->size(); ++i) {
     const Pose2d& pose = particles->at(i).pose;
-    double weight      = 0.;
+    double weight      = 1.;
     for (const auto& beam_endpoint : eff_measurement_) {
       const EndPoint2d& e =
           pose.rotation() * beam_endpoint + pose.translation();
       grid_map.pointToIndices(e, &e_i, &e_j);
-      weight += likelihood_field.logLikelihood(e_i, e_j);
+      weight *= likelihood_field.likelihood(e_i, e_j);
     }
-    particles->at(i).weight = std::exp(weight);
   }
 }
 

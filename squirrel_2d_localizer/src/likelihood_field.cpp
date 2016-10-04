@@ -40,20 +40,24 @@ void LikelihoodField::initialize(const GridMap& map) {
           map(i, j) ? 0. : std::numeric_limits<double>::max();
   distance_transform::computeSquaredDistanceTransform2d(
       obstacles_indicator, res, &sq_edt);
-  sq_saturated_edt_.resize(h, w);
+  likelihood_cache_.resize(h, w);
   sq_saturation_distance_ =
       lf_params_.saturation_distance * lf_params_.saturation_distance;
 #pragma omp parallel for schedule(dynamic, 1) collapse(2)
   for (size_t i = 0; i < h; ++i)
-    for (size_t j = 0; j < w; ++j)
-      sq_saturated_edt_(i, j) = std::min(sq_edt(i, j), sq_saturation_distance_);
+    for (size_t j = 0; j < w; ++j) {
+      const double sq_saturated_edt =
+          std::min(sq_edt(i, j), sq_saturation_distance_);
+      likelihood_cache_(i, j) =
+          std::exp(-lf_params_.observation_sigma * sq_saturated_edt);
+    }
 }
 
-double LikelihoodField::logLikelihood(int i, int j) const {
+double LikelihoodField::likelihood(int i, int j) const {
   if (inside(i, j))
-    return -lf_params_.observation_sigma * sq_saturated_edt_(i, j);
+    return likelihood_cache_(i, j);
   else
-    return -lf_params_.observation_sigma * sq_saturation_distance_;
+    return std::exp(-lf_params_.observation_sigma * sq_saturation_distance_);
 }
 
 }  // namespace squirrel_2d_localizer
