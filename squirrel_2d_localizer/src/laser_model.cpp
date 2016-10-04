@@ -38,8 +38,9 @@ void LaserModel::computeParticlesLikelihood(
   for (size_t i = 0; i < particles->size(); ++i) {
     const Pose2d& pose = particles->at(i).pose;
     double weight      = 1.;
-#pragma omp parallel reduction(*: weight)
-    for (const auto& beam_endpoint : eff_measurement_) {
+#pragma omp parallel for reduction(*: weight)
+    for (size_t j = 0; j < eff_measurement_.size(); ++j) {
+      const EndPoint2d& beam_endpoint = eff_measurement_[j];
       const EndPoint2d& e =
           pose.rotation() * beam_endpoint + pose.translation();
       grid_map.pointToIndices(e, &e_i, &e_j);
