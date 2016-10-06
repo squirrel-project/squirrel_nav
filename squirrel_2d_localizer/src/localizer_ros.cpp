@@ -80,7 +80,7 @@ LocalizerROS::LocalizerROS()
   // laser model params.
   ros::NodeHandle lm_nh("~/laser_model");
   LaserModel::Params lm_param;
-  lm_nh.param<double>("beam_min_distance", lm_param.endpoints_min_distance, 1.);
+  lm_nh.param<double>("beam_min_distance", lm_param.endpoints_min_distance, 0.1);
   LaserModel::Ptr laser_model(new LaserModel(lm_param));
   // init grid map
   GridMap::Params map_params;
