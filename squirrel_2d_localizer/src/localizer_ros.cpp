@@ -237,7 +237,7 @@ void LocalizerROS::publishTransform(const ros::Time& stamp) {
 }
 
 void LocalizerROS::publishParticles(const ros::Time& stamp) {
-  const ParticleSet& particles = localizer_->particles();
+  const std::vector<Particle>& particles = localizer_->particles();
   geometry_msgs::PoseArray msg;
   msg.header.frame_id = map_frame_id_;
   msg.header.stamp    = stamp;

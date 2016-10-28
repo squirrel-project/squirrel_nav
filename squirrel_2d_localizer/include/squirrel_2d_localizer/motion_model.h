@@ -49,7 +49,7 @@ class MotionModel {
   virtual ~MotionModel() {}
 
   void propagateParticles(
-      const Transform2d& motion, ParticleSet* particles) const;
+      const Transform2d& motion, std::vector<Particle>* particles) const;
 
   inline Params& params() { return motion_params_; }
 
