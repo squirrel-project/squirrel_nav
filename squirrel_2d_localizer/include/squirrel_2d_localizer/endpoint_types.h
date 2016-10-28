@@ -20,6 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#ifndef SQUIRREL_2D_LOCALIZER_ENDPOINT_TYPES_H_
+#define SQUIRREL_2D_LOCALIZER_ENDPOINT_TYPES_H_
+
 #include "squirrel_2d_localizer/math_types.h"
 
 namespace squirrel_2d_localizer {
@@ -27,3 +30,5 @@ namespace squirrel_2d_localizer {
 typedef Vector<2> EndPoint2d; 
 
 }  // namespace squirrel_2d_localizer
+
+#endif /* SQUIRREL_2D_LOCALIZER_ENDPOINT_TYPES_H_ */

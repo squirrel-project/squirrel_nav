@@ -11,7 +11,7 @@ init_pose_a: 0.0
 use_twist_correction: true
 twist_correction:
   corr_aa: 1.0
-  corr_magnitude: 0.09
+  corr_magnitude: 0.001
   alpha_filter: 0.75
   max_lin_vel: 0.5
   max_ang_vel: 0.7
@@ -19,8 +19,8 @@ twist_correction:
 ## localizer parameters
 localizer:
   num_particles: 750
-  min_lin_update: 0.1
-  min_ang_update: 0.1
+  min_lin_update: 0.0
+  min_ang_update: 0.0
   init_stddev_x: 0.2
   init_stddev_y: 0.2
   init_stddev_a: 0.5
