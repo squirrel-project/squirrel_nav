@@ -55,7 +55,7 @@ class LaserModel {
 
   void computeParticlesLikelihood(
       const GridMap& grid_map, const LikelihoodField& likelihood_field,
-      const std::vector<float>& measurement, ParticleSet* particles);
+      const std::vector<float>& measurement, std::vector<Particle>* particles);
 
   inline Params& params() { return laser_params_; }
 

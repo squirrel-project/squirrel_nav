@@ -57,7 +57,7 @@ class Localizer {
       const Transform2d& motion, const std::vector<float>& scan,
       const Transform2d& extra_correction = Pose2d(0., 0., 0.));
 
-  const ParticleSet& particles() const { return particles_; }
+  const std::vector<Particle>& particles() const { return particles_; }
   const Pose2d& pose() const { return pose_; }
   const Matrix<3, 3>& covariance() const { return covariance_; }
 
@@ -81,7 +81,7 @@ class Localizer {
   LaserModel::Ptr laser_model_;
   MotionModel::Ptr motion_model_;
 
-  ParticleSet particles_;
+  std::vector<Particle> particles_;
   Pose2d pose_;
   Matrix<3, 3> covariance_;
 

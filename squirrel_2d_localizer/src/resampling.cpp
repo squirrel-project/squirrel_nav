@@ -30,7 +30,7 @@ namespace squirrel_2d_localizer {
 
 namespace resampling {
 
-void importanceSampling(ParticleSet* particles) {
+void importanceSampling(std::vector<Particle>* particles) {
   std::unique_lock<std::mutex> lock(internal::resampling_mtx_);
   std::mt19937 eng(std::rand());
   std::uniform_real_distribution<double> rand(0., 1.);

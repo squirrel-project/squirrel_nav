@@ -42,11 +42,9 @@ struct Particle {
   double weight;
 };
 
-typedef std::vector<Particle> ParticleSet;
-
 namespace particles {
 
-inline double computeTotalWeight(const ParticleSet& particles) {
+inline double computeTotalWeight(const std::vector<Particle>& particles) {
   double tot_weight = 0.;
 #pragma omp parallel for reduction(+ : tot_weight)
   for (size_t i = 0; i < particles.size(); ++i)
@@ -54,7 +52,8 @@ inline double computeTotalWeight(const ParticleSet& particles) {
   return tot_weight;
 }
 
-inline void setPoses(const std::vector<Pose2d> poses, ParticleSet* particles) {
+inline void setPoses(
+    const std::vector<Pose2d> poses, std::vector<Particle>* particles) {
   assert(poses.size() == particles->size());
 #pragma omp parallel for default(shared)
   for (size_t i           = 0; i < particles->size(); ++i)
@@ -62,21 +61,22 @@ inline void setPoses(const std::vector<Pose2d> poses, ParticleSet* particles) {
 }
 
 inline void setWeights(
-    const std::vector<double>& weights, ParticleSet* particles) {
+    const std::vector<double>& weights, std::vector<Particle>* particles) {
   assert(weights.size() == particles->size());
 #pragma omp parallel for default(shared)
   for (size_t i             = 0; i < particles->size(); ++i)
     particles->at(i).weight = weights[i];
 }
 
-inline void setWeight(double weight, ParticleSet* particles) {
+inline void setWeight(double weight, std::vector<Particle>* particles) {
 #pragma omp parallel for default(shared)
   for (size_t i             = 0; i < particles->size(); ++i)
     particles->at(i).weight = weight;
 }
 
 inline void computeMeanAndCovariance(
-    const ParticleSet& particles, Pose2d* mean, Matrix<3, 3>* covariance) {
+    const std::vector<Particle>& particles, Pose2d* mean,
+    Matrix<3, 3>* covariance) {
   double mean_x = 0., mean_y = 0., mean_c = 0., mean_s = 0., sq_tot_w = 0.;
 #pragma omp parallel for reduction(+ : mean_x, mean_y, mean_c, mean_s, sq_tot_w)
   for (size_t i = 0; i < particles.size(); ++i) {

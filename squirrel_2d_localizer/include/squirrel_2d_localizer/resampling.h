@@ -31,7 +31,7 @@ namespace squirrel_2d_localizer {
 
 namespace resampling {
 
-void importanceSampling(ParticleSet* particles);
+void importanceSampling(std::vector<Particle>* particles);
 
 namespace internal {
 

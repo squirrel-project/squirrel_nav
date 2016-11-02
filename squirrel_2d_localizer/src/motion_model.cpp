@@ -32,7 +32,7 @@ MotionModel::MotionModel(const Params& motion_params)
     : rnd_eng_(std::rand()), motion_params_(motion_params) {}
 
 void MotionModel::propagateParticles(
-    const Transform2d& motion, ParticleSet* particles) const {
+    const Transform2d& motion, std::vector<Particle>* particles) const {
   std::unique_lock<std::mutex> lock(mtx_);
   std::normal_distribution<double> randn(0., 1.);
   const double dx = motion[0], dy = motion[1],
