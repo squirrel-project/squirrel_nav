@@ -1,7 +1,10 @@
 <launch>
- <rosparam command= "load" file="$(find squirrel_dynamic_filter)/params/parameters.yaml" />
- <param name="InputFolder" type="string" value="$(find squirrel_dynamic_filter)"/>
- <node name="preprocessing" type="preprocessing"  pkg="squirrel_dynamic_filter"/>
- <node name="sensor_to_base_link" type="sensor_to_base_link" pkg="squirrel_dynamic_filter"/>
- <node name="l_frequency" type="l_frequency" pkg="squirrel_dynamic_filter"/>
+<arg name="map_file" default="$(find squirrel_navigation)/octomaps/default-octomap.bt"/>
+<node name="octomap_server" type="octomap_server_node" pkg="octomap_server" args="$(arg map_file)"/>
+<rosparam command= "load" file="$(find squirrel_dynamic_filter)/params/parameters.yaml" />
+<param name="InputFolder" type="string" value="$(find squirrel_dynamic_filter)"/>
+<node name="preprocessing" type="preprocessing"  pkg="squirrel_dynamic_filter"/>
+<node name="sensor_to_base_link" type="sensor_to_base_link" pkg="squirrel_dynamic_filter"/>
+<node name="l_frequency" type="l_frequency" pkg="squirrel_dynamic_filter"/>
+<node name="static_classify" type="static_classify" pkg="squirrel_dynamic_filter" args="$(arg map_file)" />
 </launch>

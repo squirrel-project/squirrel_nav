@@ -9,7 +9,7 @@
 #include "squirrel_dynamic_filter_msgs/ClassifyStaticSrv.h"
 #include "edge_unary.h"
 #include "edge.h"
-
+#include <tf/transform_broadcaster.h>
 #include <pcl_ros/transforms.h>
 using namespace octomap;
 using namespace std;
@@ -19,22 +19,25 @@ using namespace g2o;
 
 class ClassifyStatic
 {
- 
+
  private:
  ros::NodeHandle n;
  ros::ServiceServer service;
  ros::Publisher pub_static,pub_dynamic;
+ tf::TransformBroadcaster br;
+ tf::Transform transform_map_base_link;
 
 
  public:
 
+ string map_filename;
  ClassifyStatic()
  {
   service = n.advertiseService("classify_static", &ClassifyStatic::ClassifyStaticCallback,this);
   pub_static = n.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static",100);
   pub_dynamic = n.advertise<sensor_msgs::PointCloud2>("/kinect/depth/dynamic",100);
  }
- 
+
  bool ClassifyStaticCallback(squirrel_dynamic_filter_msgs::ClassifyStaticSrv::Request &req,squirrel_dynamic_filter_msgs::ClassifyStaticSrv::Response &res)
  {
 
@@ -69,155 +72,69 @@ class ClassifyStatic
 
   pcl::fromROSMsg(req.cloud,cloud_input_raw);
 
-  pcl::transformPointCloud(cloud_input_raw,cloud_input,sensor_base_link_trans);
-  
-  OcTree *tree = new OcTree(req.tree_filename);
+  pcl::transformPointCloud(cloud_input_raw,cloud_input,sensor_base_link_trans);///Transforming cloud in base_link frame
+
+  OcTree *tree = new OcTree(map_filename);
   PointCloud::Ptr static_cloud(new PointCloud);
   PointCloud::Ptr dynamic_cloud(new PointCloud);
 
   res.static_points.clear();
   res.unclassified_points.clear();
-
+///if a point is in a occupied voxel then its static, otherswise might be new static or dynamic
   int point_index = 0;
   for(auto &point:cloud_input.points)
   {
    OcTreeNode *node = tree->search(point.x,point.y,point.z);
    if((node) && (tree->isNodeOccupied(node)))
-    res.static_points.push_back(point_index);
+    res.static_points.push_back(point_index);///static
    else
-    res.unclassified_points.push_back(point_index);
-
+    res.unclassified_points.push_back(point_index);//new static or dynamic
 
    point_index += 1;
   }
 
+  transform_map_base_link.setOrigin(tf::Vector3(odometry[0],odometry[1],odometry[2]));
+  tf::Quaternion q(odometry[3],odometry[4],odometry[5],odometry[6]);
+  transform_map_base_link.setRotation(q);
 
-  pcl::copyPointCloud(cloud_input,res.static_points,*static_cloud);
-  pcl::copyPointCloud(cloud_input,res.unclassified_points,*dynamic_cloud);
+  br.sendTransform(tf::StampedTransform(transform_map_base_link, ros::Time::now(), "map", "base_link_static"));//publish the tf corresponding to points
+
+  pcl::copyPointCloud(cloud_input,res.static_points,*static_cloud);//points corresponding to map(static)
+
+  //pcl::copyPointCloud(cloud_input,res.unclassified_points,*dynamic_cloud);
 
 
   sensor_msgs::PointCloud2 cloud_msg;
-  sensor_msgs::PointCloud2 cloud_msg_2;
+ // sensor_msgs::PointCloud2 cloud_msg_2;
 
 
   static_cloud->width = static_cloud->points.size();
   static_cloud->height = 1;
-  dynamic_cloud->width = dynamic_cloud->points.size();
-  dynamic_cloud->height = 1;
+  //dynamic_cloud->width = dynamic_cloud->points.size();
+  //dynamic_cloud->height = 1;
 
-  pcl::toROSMsg(*dynamic_cloud,cloud_msg_2);
-  cloud_msg_2.header.frame_id = "map";
+//  pcl::toROSMsg(*dynamic_cloud,cloud_msg_2);
+//  cloud_msg_2.header.frame_id = "map";
 
   pcl::toROSMsg(*static_cloud,cloud_msg);
-  cloud_msg.header.frame_id = "map";
+  cloud_msg.header.frame_id = "base_link_static";
 
   pub_static.publish(cloud_msg);
-  pub_dynamic.publish(cloud_msg_2);
+//  pub_dynamic.publish(cloud_msg_2);
 
   return true;
 
  }
 
-
-
-
-
 };
-
-
-
-
-
-
-
-
-
-
 
 int main(int argc,char **argv)
 {
-
-	ros::init(argc, argv, "static_classify");
- ClassifyStatic classify;
- while(ros::ok())
-  ros::spinOnce();
-
-/*
-
- string input_tree = argv[1];
- string occupancy_info = argv[2];
- int start_frame = atoi(argv[3]);
- int end_frame = atoi(argv[4]);
- pcl::PCDReader reader;
- boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer ("3D Viewer"));
- std::stringstream ss;
- for(size_t i = start_frame; i < end_frame; ++i)
- {
-  fprintf(stderr,"%d\n",i);
-  PointCloud::Ptr scan_full(new PointCloud);
-  PointCloud scan_full_sampled;
-  PointCloud::Ptr scan(new PointCloud);
-  ss.str("");
-  ss << occupancy_info << i << ".pcd";
-  reader.read(ss.str(),*scan_full);
-
-  if(scan_full->points.empty())
-   continue;
-
-  std::vector <int> static_indices;
-  std::vector <int> dynamic_indices;
-
-  pcl::VoxelGrid<Point> sor;
-  
-  //int start_s=clock();
- 
-  sor.setInputCloud (scan_full);
-  sor.setLeafSize (0.008,0.008,0.008);
-  sor.filter (scan_full_sampled);
-//  int stop_s=clock();
-//  cout << "time: " << (stop_s-start_s)/double(CLOCKS_PER_SEC)*1000 << endl;
- 
-  remove_ground(scan_full_sampled,static_indices,dynamic_indices);
-
-  pcl::copyPointCloud(scan_full_sampled,static_indices,*scan);
-  OcTree *tree = new OcTree(input_tree);
-  for(auto &point:scan->points)
-  {
-   OcTreeNode *node = tree->search(point.x,point.y,point.z);
-   if((node) && (tree->isNodeOccupied(node)))
-    static_cloud->points.push_back(point);
-   else
-    dynamic_cloud->points.push_back(point);
-  }
-
-  pcl::visualization::PointCloudColorHandlerCustom <Point> single_color(dynamic_cloud, 0, 255, 0);
-  viewer->addPointCloud <Point> (static_cloud,"cloud");
-  viewer->addPointCloud <Point> (dynamic_cloud,single_color,"cloud1");
-  std::clock_t start;
-  double duration;
-  start = std::clock(); 
-
-  while (( std::clock() - start ) / (double)CLOCKS_PER_SEC <0.001) 
-//  while (!viewer->wasStopped ())
-//  while(!close_viewer)
-  {
-   viewer->spinOnce (100);
-   boost::this_thread::sleep (boost::posix_time::microseconds (100000));
-  }
-
-  viewer->removeAllPointClouds ();
-  viewer->removeAllShapes ();
-
-
-
-
-
-
- }
-
- */
-
-
+    ros::init(argc, argv, "static_classify");
+    ClassifyStatic classify;
+    classify.map_filename = argv[1];
+    while(ros::ok())
+        ros::spinOnce();
 }
 
 

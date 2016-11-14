@@ -21,147 +21,141 @@ using namespace g2o;
 
 class tfPointCloud
 {
-	private:
+    private:
+        ros::Subscriber cloud_sub;//subsriber to messahe from l_frequency
+        ros::Publisher  pub;   ///publisher for filtrered cloud
+        ros::NodeHandle n_;
+        int counter;
+        squirrel_dynamic_filter_msgs::CloudMsg cloud_msg;
+        string input_msg;
+        bool transform_found;
+        bool load_transform;
+        string input_folder;
+        string output_folder;
+        Matrix4f sensor_base_link_trans;
+        sensor_msgs::PointCloud2 filtered_msg;
+        sensor_msgs::PointCloud2 full_scene;
+        ros::ServiceClient classify_static_client = n_.serviceClient<squirrel_dynamic_filter_msgs::ClassifyStaticSrv>("classify_static");
+        squirrel_dynamic_filter_msgs::ClassifyStaticSrv classify_static_srv;
+        ros::ServiceClient client = n_.serviceClient<squirrel_dynamic_filter_msgs::DynamicFilterSrv>("dynamic_filter");
+        squirrel_dynamic_filter_msgs::DynamicFilterSrv dynamic_srv;
+        std::stringstream ss;
+        float down_sampling_radius;
+        float static_front_threshold;
+        PointCloud previous_cloud;
+        PointCloud previous_dynamic;
+        bool is_verbose;
+        tf::TransformBroadcaster br;
+        tf::Transform transform_map_base_link;
+    public:
+        tfPointCloud():counter(0)
+    {
 
-  ros::Subscriber cloud_sub;//subsriber to messahe from l_frequency 
-  ros::Publisher  pub;   ///publisher for filtrered cloud
-  ros::NodeHandle n_;
-  int counter;
-  squirrel_dynamic_filter_msgs::CloudMsg cloud_msg;
-  string input_msg;
-  bool transform_found;
-  bool load_transform;
-  string input_folder;
-  string output_folder;
-  Matrix4f sensor_base_link_trans; 
-  sensor_msgs::PointCloud2 filtered_msg;
-  sensor_msgs::PointCloud2 full_scene;
- 
- 
-  ros::ServiceClient classify_static_client = n_.serviceClient<squirrel_dynamic_filter_msgs::ClassifyStaticSrv>("classify_static");
-  squirrel_dynamic_filter_msgs::ClassifyStaticSrv classify_static_srv;
-
-  ros::ServiceClient client = n_.serviceClient<squirrel_dynamic_filter_msgs::DynamicFilterSrv>("dynamic_filter");
-  squirrel_dynamic_filter_msgs::DynamicFilterSrv dynamic_srv;
-  std::stringstream ss;
-  float down_sampling_radius;
-  float static_front_threshold;
-  PointCloud previous_cloud;
-  PointCloud previous_dynamic;
-  bool is_verbose;
-  tf::TransformBroadcaster br;
-  tf::Transform transform_map_base_link;
- public:
-		tfPointCloud():counter(0)
-		{
-   filtered_msg.header.frame_id = "base_link";
-   load_transform = false;
-   n_.getParam("InputMsg",input_msg); 
-   n_.getParam("InputFolder",input_folder); 
-   n_.getParam("OutputFolder",output_folder); 
-   n_.getParam("DownSamplingRadius",down_sampling_radius); 
-   n_.getParam("StaticFrontThreshold",static_front_threshold); 
-   n_.getParam("Verbose",is_verbose); 
-   pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static",10);//Publising the filtered pointcloud
-  
-   cloud_sub = n_.subscribe("/squirrel/cloud_msg", 5000, &tfPointCloud::msgCallback, this);
-   ///subscribing to the message sent by l_frequency
-   dynamic_srv.request.odometry.resize(7);
+        filtered_msg.header.frame_id = "base_link";
+        load_transform = false;
+        n_.getParam("InputMsg",input_msg);
+        n_.getParam("InputFolder",input_folder);
+        n_.getParam("OutputFolder",output_folder);
+        n_.getParam("DownSamplingRadius",down_sampling_radius);
+        n_.getParam("StaticFrontThreshold",static_front_threshold);
+        n_.getParam("Verbose",is_verbose);
+        pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static",10);//Publising the filtered pointcloud
+        cloud_sub = n_.subscribe("/squirrel/cloud_msg", 5000, &tfPointCloud::msgCallback, this);
+       ///subscribing to the message sent by l_frequency
+        dynamic_srv.request.odometry.resize(7);
   }
-  
-  void msgCallback(const squirrel_dynamic_filter_msgs::CloudMsg& sensor_msg) 
-  {
-   n_.getParam("TransformFound",transform_found); 
-   if(!transform_found)
-   {
-    ROS_INFO_STREAM(ros::this_node::getName() << ":waiting for the transform");
-    return;
-   }
 
-  ////The input cloud goes through a preprocessing step which involves
-  //estimatimg the static points and potentially dynamic points
-   PointCloud::Ptr cloud_processed(new PointCloud);
-   PointCloud::Ptr static_cloud(new PointCloud);///Static
-   PointCloud::Ptr dynamic_cloud(new PointCloud);///potentially dynamic
-   std::vector <int> static_indices;// indices from cloud_processed
-   std::vector <int> dynamic_indices;//indices from cloud_processed
+        void msgCallback(const squirrel_dynamic_filter_msgs::CloudMsg& sensor_msg)
+        {
+            n_.getParam("TransformFound",transform_found);
+            if(!transform_found)
+            {
+                ROS_INFO_STREAM(ros::this_node::getName() << ":waiting for the transform");
+                return;
+            }
 
-   preprocessing(sensor_msg.cloud_msg,cloud_processed,static_indices,dynamic_indices);   
-   
-   pcl::copyPointCloud(*cloud_processed,static_indices,*static_cloud);
-   pcl::copyPointCloud(*cloud_processed,dynamic_indices,*dynamic_cloud);
- 
+          ////The input cloud goes through a preprocessing step which involves
+          //estimatimg the static points and potentially dynamic points
+           PointCloud::Ptr cloud_processed(new PointCloud);
+           PointCloud::Ptr static_cloud(new PointCloud);///Static
+           PointCloud::Ptr dynamic_cloud(new PointCloud);///dynamic
+           PointCloud::Ptr ground(new PointCloud);///ground and far away points
+           PointCloud::Ptr not_ground(new PointCloud);///not ground
+           std::vector <int> ground_indices;// indices from cloud_processed
+           std::vector <int> non_ground_indices;//indices from cloud_processed
 
+           preprocessing(sensor_msg.cloud_msg,cloud_processed,ground_indices,non_ground_indices);//remove ground and far away points
 
-   static_cloud->width = static_cloud->points.size();
-   static_cloud->height = 1;
+           pcl::copyPointCloud(*cloud_processed,ground_indices,*ground);//ground
+           pcl::copyPointCloud(*cloud_processed,non_ground_indices,*not_ground);//non-ground
 
-   dynamic_cloud->width = dynamic_cloud->points.size();
-   dynamic_cloud->height = 1;
-   
-   pcl::toROSMsg(*dynamic_cloud,classify_static_srv.request.cloud);
-   
-   classify_static_srv.request.odometry.resize(7);
+           not_ground->width = not_ground->points.size();
+           not_ground->height = 1;
 
-   classify_static_srv.request.tree_filename = "/home/dewan/integration_meeting_maps/map.bt";
-   classify_static_srv.request.odometry[0] = sensor_msg.odometry[0];
-   classify_static_srv.request.odometry[1] = sensor_msg.odometry[1];
-   classify_static_srv.request.odometry[2] = sensor_msg.odometry[2];
-   classify_static_srv.request.odometry[3] = sensor_msg.odometry[3];
-   classify_static_srv.request.odometry[4] = sensor_msg.odometry[4];
-   classify_static_srv.request.odometry[5] = sensor_msg.odometry[5];
-   classify_static_srv.request.odometry[6] = sensor_msg.odometry[6];
+        /*   dynamic_cloud->width = dynamic_cloud->points.size();*/
+           //dynamic_cloud->height = 1;
 
-   
-   if(dynamic_cloud->points.size() > 50)
-   {
-    if(classify_static_client.call(classify_static_srv))
-    {
-   
-    }
+           pcl::toROSMsg(*not_ground,classify_static_srv.request.cloud);
+
+           classify_static_srv.request.odometry.resize(7);
+           classify_static_srv.request.odometry[0] = sensor_msg.odometry[0];
+           classify_static_srv.request.odometry[1] = sensor_msg.odometry[1];
+           classify_static_srv.request.odometry[2] = sensor_msg.odometry[2];
+           classify_static_srv.request.odometry[3] = sensor_msg.odometry[3];
+           classify_static_srv.request.odometry[4] = sensor_msg.odometry[4];
+           classify_static_srv.request.odometry[5] = sensor_msg.odometry[5];
+           classify_static_srv.request.odometry[6] = sensor_msg.odometry[6];
 
 
-   }
+           if(not_ground->points.size() > 50)
+           {
+            if(classify_static_client.call(classify_static_srv))
+            {
+                pcl::copyPointCloud(*not_ground,classify_static_srv.response.static_points,*static_cloud);///to be used for localization
+                pcl::copyPointCloud(*not_ground,classify_static_srv.response.unclassified_points,*dynamic_cloud);
+            }
+           }
 ///The motion is estimated for cloud at t-1 using the cloud at t. Therefore the
-//previous cloud has to be stored   
-  
-  /*
-  
-   for(auto &point:previous_cloud.points)
-      previous_dynamic.points.push_back(point);
+//previous cloud has to be stored
 
-   pcl::toROSMsg(*dynamic_cloud,dynamic_srv.request.cloud);
-   dynamic_srv.request.odometry[0] = sensor_msg.odometry[0];
-   dynamic_srv.request.odometry[1] = sensor_msg.odometry[1];
-   dynamic_srv.request.odometry[2] = sensor_msg.odometry[2];
-   dynamic_srv.request.odometry[3] = sensor_msg.odometry[3];
-   dynamic_srv.request.odometry[4] = sensor_msg.odometry[4];
-   dynamic_srv.request.odometry[5] = sensor_msg.odometry[5];
-   dynamic_srv.request.odometry[6] = sensor_msg.odometry[6];
-   dynamic_srv.request.frame_id = counter;
 
-   
-   transform_map_base_link.setOrigin(tf::Vector3(sensor_msg.odometry[0],sensor_msg.odometry[1],sensor_msg.odometry[2]));
-   tf::Quaternion q(sensor_msg.odometry[3],sensor_msg.odometry[4],sensor_msg.odometry[5],sensor_msg.odometry[6]);
-   transform_map_base_link.setRotation(q);
-   /////Calling the dynamic filter service only if they are enough potentially
-   //dynamic points
-   if(dynamic_cloud->points.size() > 50)
-   {
-    if(client.call(dynamic_srv))
-    {
-     if(is_verbose)
-      ROS_INFO("%s: score: %ld,%d,%d\n",ros::this_node::getName().c_str(),dynamic_cloud->points.size(),dynamic_srv.response.cloud_static.width,counter);
-     PointCloud cloud_dynamic;
-     pcl::fromROSMsg(dynamic_srv.response.cloud_static,cloud_dynamic);
+//adding static previous static points to previous dynamic points to have the complete previous scan
 
-     ///Adding the static points from potentally dynamic points to already
-     //preprocessed static point
-     for(auto &point:cloud_dynamic.points)
-      previous_cloud.points.push_back(point);
-    }
+/*   for(auto &point:previous_cloud.points)*/
+       //previous_dynamic.points.push_back(point);
 
-   }
+   //pcl::toROSMsg(*dynamic_cloud,dynamic_srv.request.cloud);
+   //dynamic_srv.request.odometry[0] = sensor_msg.odometry[0];
+   //dynamic_srv.request.odometry[1] = sensor_msg.odometry[1];
+   //dynamic_srv.request.odometry[2] = sensor_msg.odometry[2];
+   //dynamic_srv.request.odometry[3] = sensor_msg.odometry[3];
+   //dynamic_srv.request.odometry[4] = sensor_msg.odometry[4];
+   //dynamic_srv.request.odometry[5] = sensor_msg.odometry[5];
+   //dynamic_srv.request.odometry[6] = sensor_msg.odometry[6];
+   //dynamic_srv.request.frame_id = counter;
+
+
+   //transform_map_base_link.setOrigin(tf::Vector3(sensor_msg.odometry[0],sensor_msg.odometry[1],sensor_msg.odometry[2]));
+   //tf::Quaternion q(sensor_msg.odometry[3],sensor_msg.odometry[4],sensor_msg.odometry[5],sensor_msg.odometry[6]);
+   //transform_map_base_link.setRotation(q);
+   ///////Calling the dynamic filter service only if they are enough potentially
+   ////dynamic points
+   //if(dynamic_cloud->points.size() > 50)
+   //{
+    //if(client.call(dynamic_srv))
+    //{
+     //if(is_verbose)
+      //ROS_INFO("%s: score: %ld,%d,%d\n",ros::this_node::getName().c_str(),dynamic_cloud->points.size(),dynamic_srv.response.cloud_static.width,counter);
+     //PointCloud cloud_dynamic;
+     //pcl::fromROSMsg(dynamic_srv.response.cloud_static,cloud_dynamic);
+
+     /////Adding the static points from potentally dynamic points to already
+     ////preprocessed static point
+     //for(auto &point:cloud_dynamic.points)
+      //previous_cloud.points.push_back(point);
+    //}
+
+   /*}*/
    counter+=1;
    previous_cloud.width = previous_cloud.points.size();
    previous_cloud.height = 1;
@@ -173,19 +167,18 @@ class tfPointCloud
  //  full_scene.header.frame_id = "/base_link";
 
 
-   br.sendTransform(tf::StampedTransform(transform_map_base_link, sensor_msg.cloud_msg.header.stamp, "map", "base_link_static"));  
+//   br.sendTransform(tf::StampedTransform(transform_map_base_link, sensor_msg.cloud_msg.header.stamp, "map", "base_link_static"));
    pcl::toROSMsg(previous_cloud,filtered_msg);
    filtered_msg.header.frame_id = "/base_link_static";
    filtered_msg.header.stamp = sensor_msg.cloud_msg.header.stamp;
-   pub.publish(filtered_msg);
+  // pub.publish(filtered_msg);
 
    previous_cloud.points.clear();
    previous_cloud.points = static_cloud->points;
    previous_dynamic.points.clear();
    previous_dynamic.points = dynamic_cloud->points;
-*/
-  }  
-  
+  }
+
   void preprocessing(const sensor_msgs::PointCloud2 cloud_msg,PointCloud::Ptr &cloud_processed,std::vector<int>&static_indices,std::vector<int>&dynamic_indices)
   {
 ///if its first frame then load the transform between sensor and base_link
@@ -204,7 +197,7 @@ class tfPointCloud
      {
       for(int i = 0 ; i<7;i++)
       {
-     
+
        std::size_t found = line.find(",");
        if(i==0)
         trans[0] = atof(line.substr(0,found).c_str());
@@ -220,13 +213,13 @@ class tfPointCloud
         trans[5] = atof(line.substr(0,found).c_str());
        if(i==6)
         trans[6] = atof(line.substr(0,found).c_str());
-     
+
        string line_new=line.substr(found+1);
        line=line_new;
-       
+
       }
-      
-    
+
+
      }
      sensor_to_base_link_trans = g2o::internal::fromVectorQT(trans);
     }
@@ -260,7 +253,7 @@ class tfPointCloud
      cloud_nan.points.push_back(point);
    }///removes infinite points
  ///transforming the scan to base_link. z is now upward and x goes forward. All
- //the ground points and far away points are assumned to be static 
+ //the ground points and far away points are assumned to be static
    pcl::transformPointCloud(cloud_nan,*cloud_processed,sensor_base_link_trans);
    std::vector <bool> is_ground(cloud_processed->points.size(),false);
    std::vector <int> indices;
@@ -269,7 +262,8 @@ class tfPointCloud
    for(size_t i = 0; i < cloud_processed->points.size();++i)
    {
     Eigen::Vector3f point_eigen = cloud_processed->points[i].getVector3fMap();
-    if(cloud_processed->points[i].z < 0.02 || point_eigen.lpNorm<2>() > static_front_threshold)
+    //if(cloud_processed->points[i].z < 0.02 || point_eigen.lpNorm<2>() > static_front_threshold)
+    if(cloud_processed->points[i].z < 0.02)
      is_ground[i] = true;
    }
    int count = 0;
@@ -283,7 +277,7 @@ class tfPointCloud
     count+=1;
    }
 
-  
+
 
 
   }
@@ -293,8 +287,8 @@ class tfPointCloud
 
 int main(int argc, char ** argv)
 {
-	
-	
+
+
 	ros::init(argc, argv, "squirrel_dynamic_filter_preprocessing");
 	tfPointCloud cloud;
 	while(ros::ok())
