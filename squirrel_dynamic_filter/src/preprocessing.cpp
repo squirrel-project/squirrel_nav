@@ -59,7 +59,7 @@ class tfPointCloud
     n_.getParam("StaticFrontThreshold",static_front_threshold);
     n_.getParam("Verbose",is_verbose);
     pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static",10);//Publising the filtered pointcloud
-    cloud_sub = n_.subscribe("/squirrel/cloud_msg", 5000, &tfPointCloud::msgCallback, this);
+    cloud_sub = n_.subscribe("/squirrel/cloud_msg", 500, &tfPointCloud::msgCallback, this);
         ///subscribing to the message sent by l_frequency
     dynamic_srv.request.odometry.resize(7);
   }
@@ -69,7 +69,7 @@ class tfPointCloud
     if(!transform_found)
     {
       ROS_INFO_STREAM(ros::this_node::getName() << ":waiting for the transform");
-      return,
+      return;
     }
 
           ////The input cloud goes through a preprocessing step which involves
@@ -102,7 +102,7 @@ class tfPointCloud
      if(not_ground->points.size() > 50)
      {
        if(classify_static_client.call(classify_static_srv))
-       {
+        {
          pcl::copyPointCloud(*not_ground,classify_static_srv.response.static_points,*static_cloud);///to be used for localization
          pcl::copyPointCloud(*not_ground,classify_static_srv.response.unclassified_points,*dynamic_cloud);
        }
@@ -153,17 +153,22 @@ class tfPointCloud
    previous_cloud.height = 1;
    previous_dynamic.width = previous_dynamic.points.size();
    previous_dynamic.height = 1;
+   not_ground->width = not_ground->points.size();
+   not_ground->height = 1;
 
 
- //  pcl::toROSMsg(previous_dynamic,full_scene);
- //  full_scene.header.frame_id = "/base_link";
+
+
+
+ //  pcl::toROSMsg(*not_ground,full_scene);
+  // full_scene.header.frame_id = "/base_link";
 
 
 //   br.sendTransform(tf::StampedTransform(transform_map_base_link, sensor_msg.cloud_msg.header.stamp, "map", "base_link_static"));
-   pcl::toROSMsg(previous_cloud,filtered_msg);
-   filtered_msg.header.frame_id = "/base_link_static";
+//   pcl::toROSMsg(previous_cloud,filtered_msg);
+   filtered_msg.header.frame_id = "/base_link";
    filtered_msg.header.stamp = sensor_msg.cloud_msg.header.stamp;
-  // pub.publish(filtered_msg);
+  // pub.publish(full_scene);
 
    previous_cloud.points.clear();
    previous_cloud.points = static_cloud->points;
@@ -253,7 +258,7 @@ class tfPointCloud
     {
       Eigen::Vector3f point_eigen = cloud_processed->points[i].getVector3fMap();
     //if(cloud_processed->points[i].z < 0.02 || point_eigen.lpNorm<2>() > static_front_threshold)
-      if(cloud_processed->points[i].z < 0.02)
+      if(cloud_processed->points[i].z < 0.05)
         is_ground[i] = true;
     }
     int count = 0;

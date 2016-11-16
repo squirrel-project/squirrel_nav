@@ -27,15 +27,23 @@ class ClassifyStatic
  tf::TransformBroadcaster br;
  tf::Transform transform_map_base_link;
 
-
+ OcTree *tree;
  public:
-
  string map_filename;
+ void load_map()
+ {
+  tree = new OcTree(map_filename);
+
+ }
+
+
+
+
  ClassifyStatic()
  {
   service = n.advertiseService("classify_static", &ClassifyStatic::ClassifyStaticCallback,this);
-  pub_static = n.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static",100);
-  pub_dynamic = n.advertise<sensor_msgs::PointCloud2>("/kinect/depth/dynamic",100);
+  pub_static = n.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static",10);
+  pub_dynamic = n.advertise<sensor_msgs::PointCloud2>("/kinect/depth/dynamic",10);
  }
 
  bool ClassifyStaticCallback(squirrel_dynamic_filter_msgs::ClassifyStaticSrv::Request &req,squirrel_dynamic_filter_msgs::ClassifyStaticSrv::Response &res)
@@ -70,11 +78,12 @@ class ClassifyStatic
   sensor_base_link_trans(3,3) = sensor_to_base_link_trans(3,3);
   PointCloud cloud_input,cloud_input_raw;
 
+  //OcTree *tree = new OcTree(map_filename);
+ 
   pcl::fromROSMsg(req.cloud,cloud_input_raw);
 
   pcl::transformPointCloud(cloud_input_raw,cloud_input,sensor_base_link_trans);///Transforming cloud in base_link frame
 
-  OcTree *tree = new OcTree(map_filename);
   PointCloud::Ptr static_cloud(new PointCloud);
   PointCloud::Ptr dynamic_cloud(new PointCloud);
 
@@ -99,28 +108,30 @@ class ClassifyStatic
 
   br.sendTransform(tf::StampedTransform(transform_map_base_link, ros::Time::now(), "map", "base_link_static"));//publish the tf corresponding to points
 
-  pcl::copyPointCloud(cloud_input,res.static_points,*static_cloud);//points corresponding to map(static)
+  pcl::copyPointCloud(cloud_input_raw,res.static_points,*static_cloud);//points corresponding to map(static)
 
-  //pcl::copyPointCloud(cloud_input,res.unclassified_points,*dynamic_cloud);
+  pcl::copyPointCloud(cloud_input_raw,res.unclassified_points,*dynamic_cloud);
 
+// pcl::transformPointCloud(*static_cloud_map,*static_cloud,sensor_base_link_trans);///Transforming cloud in base_link frame
 
   sensor_msgs::PointCloud2 cloud_msg;
- // sensor_msgs::PointCloud2 cloud_msg_2;
+  sensor_msgs::PointCloud2 cloud_msg_2;
 
 
   static_cloud->width = static_cloud->points.size();
   static_cloud->height = 1;
-  //dynamic_cloud->width = dynamic_cloud->points.size();
-  //dynamic_cloud->height = 1;
+  dynamic_cloud->width = dynamic_cloud->points.size();
+  dynamic_cloud->height = 1;
+//  delete tree;
 
-//  pcl::toROSMsg(*dynamic_cloud,cloud_msg_2);
-//  cloud_msg_2.header.frame_id = "map";
 
+
+  pcl::toROSMsg(*dynamic_cloud,cloud_msg_2);
+  cloud_msg_2.header.frame_id = "base_link_static";
   pcl::toROSMsg(*static_cloud,cloud_msg);
   cloud_msg.header.frame_id = "base_link_static";
-
   pub_static.publish(cloud_msg);
-//  pub_dynamic.publish(cloud_msg_2);
+  pub_dynamic.publish(cloud_msg_2);
 
   return true;
 
@@ -133,6 +144,7 @@ int main(int argc,char **argv)
     ros::init(argc, argv, "static_classify");
     ClassifyStatic classify;
     classify.map_filename = argv[1];
+    classify.load_map();
     while(ros::ok())
         ros::spinOnce();
 }
