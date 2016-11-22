@@ -11,6 +11,7 @@
 #include "edge.h"
 #include <tf/transform_broadcaster.h>
 #include <pcl_ros/transforms.h>
+#include <pcl/kdtree/kdtree_flann.h>
 using namespace octomap;
 using namespace std;
 using namespace Eigen;
@@ -76,26 +77,63 @@ class ClassifyStatic
   sensor_base_link_trans(3,1) = sensor_to_base_link_trans(3,1);
   sensor_base_link_trans(3,2) = sensor_to_base_link_trans(3,2);
   sensor_base_link_trans(3,3) = sensor_to_base_link_trans(3,3);
-  PointCloud cloud_input,cloud_input_raw;
+  PointCloud cloud_input_raw;
+  PointCloud::Ptr cloud_input(new PointCloud);
+
 
   //OcTree *tree = new OcTree(map_filename);
  
   pcl::fromROSMsg(req.cloud,cloud_input_raw);
 
-  pcl::transformPointCloud(cloud_input_raw,cloud_input,sensor_base_link_trans);///Transforming cloud in base_link frame
+  pcl::transformPointCloud(cloud_input_raw,*cloud_input,sensor_base_link_trans);///Transforming cloud in base_link frame
 
   PointCloud::Ptr static_cloud(new PointCloud);
   PointCloud::Ptr dynamic_cloud(new PointCloud);
+
+  pcl::KdTreeFLANN <Point> kdtree;
+  
+  kdtree.setInputCloud(cloud_input);
+
+  
+
+  
+  
 
   res.static_points.clear();
   res.unclassified_points.clear();
 ///if a point is in a occupied voxel then its static, otherswise might be new static or dynamic
   int point_index = 0;
-  for(auto &point:cloud_input.points)
+  std::vector <bool> is_processed(cloud_input->points.size(),false); 
+  for(auto &point:cloud_input->points)
   {
+
+   if(is_processed[point_index])
+   { 
+     point_index+=1;
+     continue;
+   }
    OcTreeNode *node = tree->search(point.x,point.y,point.z);
    if((node) && (tree->isNodeOccupied(node)))
-    res.static_points.push_back(point_index);///static
+   { 
+     std::vector <int> pointIdxRadiusSearch;
+     std::vector <float> pointRadiusSquaredDistance;
+     if(kdtree.radiusSearch(point,0.2,pointIdxRadiusSearch,pointRadiusSquaredDistance) > 0)
+     {
+
+       for(auto &index:pointIdxRadiusSearch)
+         {
+           res.static_points.push_back(index);///static
+           is_processed[index] = true;
+         }
+
+
+
+     }
+
+    
+//    res.static_points.push_back(point_index);///static
+
+   }
    else
     res.unclassified_points.push_back(point_index);//new static or dynamic
 
@@ -122,7 +160,6 @@ class ClassifyStatic
   static_cloud->height = 1;
   dynamic_cloud->width = dynamic_cloud->points.size();
   dynamic_cloud->height = 1;
-//  delete tree;
 
 
 

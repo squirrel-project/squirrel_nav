@@ -47,6 +47,7 @@ class tfPointCloud
    bool is_verbose;
    tf::TransformBroadcaster br;
    tf::Transform transform_map_base_link;
+   ofstream time_write;
  public:
    tfPointCloud():counter(0)
   {
@@ -58,10 +59,15 @@ class tfPointCloud
     n_.getParam("DownSamplingRadius",down_sampling_radius);
     n_.getParam("StaticFrontThreshold",static_front_threshold);
     n_.getParam("Verbose",is_verbose);
-    pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static",10);//Publising the filtered pointcloud
+    pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static_final/",10);//Publising the filtered pointcloud
     cloud_sub = n_.subscribe("/squirrel/cloud_msg", 500, &tfPointCloud::msgCallback, this);
         ///subscribing to the message sent by l_frequency
     dynamic_srv.request.odometry.resize(7);
+    std::stringstream ss;
+    ss.str("");
+    ss << output_folder << "time.csv";
+    time_write.open(ss.str().c_str());
+ 
   }
   void msgCallback(const squirrel_dynamic_filter_msgs::CloudMsg& sensor_msg)
   {
@@ -99,6 +105,7 @@ class tfPointCloud
      classify_static_srv.request.odometry[4] = sensor_msg.odometry[4];
      classify_static_srv.request.odometry[5] = sensor_msg.odometry[5];
      classify_static_srv.request.odometry[6] = sensor_msg.odometry[6];
+     measure_time start = SystemClock::now(); 
      if(not_ground->points.size() > 50)
      {
        if(classify_static_client.call(classify_static_srv))
@@ -107,47 +114,53 @@ class tfPointCloud
          pcl::copyPointCloud(*not_ground,classify_static_srv.response.unclassified_points,*dynamic_cloud);
        }
      }
+
+  measure_time end = SystemClock::now();
+  TimeDiff time_diff = end - start;
+  double correspondence_time = time_diff.count();
+  time_write << correspondence_time << endl;
+
+
 ///The motion is estimated for cloud at t-1 using the cloud at t. Therefore the
 //previous cloud has to be stored
 
 
 //adding static previous static points to previous dynamic points to have the complete previous scan
 
-/*   for(auto &point:previous_cloud.points)*/
-       //previous_dynamic.points.push_back(point);
+   for(auto &point:previous_cloud.points)
+     previous_dynamic.points.push_back(point);
 
-   //pcl::toROSMsg(*dynamic_cloud,dynamic_srv.request.cloud);
-   //dynamic_srv.request.odometry[0] = sensor_msg.odometry[0];
-   //dynamic_srv.request.odometry[1] = sensor_msg.odometry[1];
-   //dynamic_srv.request.odometry[2] = sensor_msg.odometry[2];
-   //dynamic_srv.request.odometry[3] = sensor_msg.odometry[3];
-   //dynamic_srv.request.odometry[4] = sensor_msg.odometry[4];
-   //dynamic_srv.request.odometry[5] = sensor_msg.odometry[5];
-   //dynamic_srv.request.odometry[6] = sensor_msg.odometry[6];
-   //dynamic_srv.request.frame_id = counter;
-
+   pcl::toROSMsg(*dynamic_cloud,dynamic_srv.request.cloud);
+   dynamic_srv.request.odometry[0] = sensor_msg.odometry[0];
+   dynamic_srv.request.odometry[1] = sensor_msg.odometry[1];
+   dynamic_srv.request.odometry[2] = sensor_msg.odometry[2];
+   dynamic_srv.request.odometry[3] = sensor_msg.odometry[3];
+   dynamic_srv.request.odometry[4] = sensor_msg.odometry[4];
+   dynamic_srv.request.odometry[5] = sensor_msg.odometry[5];
+   dynamic_srv.request.odometry[6] = sensor_msg.odometry[6];
+   dynamic_srv.request.frame_id = counter;
+   PointCloud cloud_dynamic;
 
    //transform_map_base_link.setOrigin(tf::Vector3(sensor_msg.odometry[0],sensor_msg.odometry[1],sensor_msg.odometry[2]));
    //tf::Quaternion q(sensor_msg.odometry[3],sensor_msg.odometry[4],sensor_msg.odometry[5],sensor_msg.odometry[6]);
    //transform_map_base_link.setRotation(q);
    ///////Calling the dynamic filter service only if they are enough potentially
    ////dynamic points
-   //if(dynamic_cloud->points.size() > 50)
-   //{
-    //if(client.call(dynamic_srv))
-    //{
-     //if(is_verbose)
-      //ROS_INFO("%s: score: %ld,%d,%d\n",ros::this_node::getName().c_str(),dynamic_cloud->points.size(),dynamic_srv.response.cloud_static.width,counter);
-     //PointCloud cloud_dynamic;
-     //pcl::fromROSMsg(dynamic_srv.response.cloud_static,cloud_dynamic);
+   if(dynamic_cloud->points.size() > 50)
+   {
+    if(client.call(dynamic_srv))
+    {
+    if(is_verbose)
+      ROS_INFO("%s: score: %ld,%d,%d\n",ros::this_node::getName().c_str(),dynamic_cloud->points.size(),dynamic_srv.response.cloud_static.width,counter);
+     pcl::fromROSMsg(dynamic_srv.response.cloud_static,cloud_dynamic);
 
      /////Adding the static points from potentally dynamic points to already
      ////preprocessed static point
-     //for(auto &point:cloud_dynamic.points)
-      //previous_cloud.points.push_back(point);
-    //}
+//    for(auto &point:cloud_dynamic.points)
+  //    previous_cloud.points.push_back(point);
+    }
 
-   /*}*/
+   }
    counter+=1;
    previous_cloud.width = previous_cloud.points.size();
    previous_cloud.height = 1;
@@ -155,6 +168,11 @@ class tfPointCloud
    previous_dynamic.height = 1;
    not_ground->width = not_ground->points.size();
    not_ground->height = 1;
+
+   cloud_dynamic.width = cloud_dynamic.points.size();
+   cloud_dynamic.height = 1;
+
+
 
 
 
@@ -165,10 +183,10 @@ class tfPointCloud
 
 
 //   br.sendTransform(tf::StampedTransform(transform_map_base_link, sensor_msg.cloud_msg.header.stamp, "map", "base_link_static"));
-//   pcl::toROSMsg(previous_cloud,filtered_msg);
-   filtered_msg.header.frame_id = "/base_link";
+   pcl::toROSMsg(cloud_dynamic,filtered_msg);
+   filtered_msg.header.frame_id = "/base_link_static";
    filtered_msg.header.stamp = sensor_msg.cloud_msg.header.stamp;
-  // pub.publish(full_scene);
+   pub.publish(filtered_msg);
 
    previous_cloud.points.clear();
    previous_cloud.points = static_cloud->points;
@@ -257,8 +275,8 @@ class tfPointCloud
     for(size_t i = 0; i < cloud_processed->points.size();++i)
     {
       Eigen::Vector3f point_eigen = cloud_processed->points[i].getVector3fMap();
-    //if(cloud_processed->points[i].z < 0.02 || point_eigen.lpNorm<2>() > static_front_threshold)
-      if(cloud_processed->points[i].z < 0.05)
+    if(cloud_processed->points[i].z < 0.05 || point_eigen.lpNorm<2>() > static_front_threshold)
+      //if(cloud_processed->points[i].z < 0.05)
         is_ground[i] = true;
     }
     int count = 0;
