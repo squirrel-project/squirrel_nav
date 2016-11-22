@@ -16,6 +16,7 @@
 #include <pcl/registration/impl/correspondence_estimation.hpp>
 #include "squirrel_dynamic_filter_msgs/CloudMsg.h"
 #include "squirrel_dynamic_filter_msgs/DynamicFilterSrv.h"
+#include "squirrel_dynamic_filter_msgs/DynamicFilterMsg.h"
 #include <mlpack/core.hpp>
 #include <mlpack/core/dists/gaussian_distribution.hpp>
 
@@ -39,12 +40,13 @@ private:
  ros::ServiceServer dynamic_filter_service;
  const float p_s_d = 0.65;
  const float p_d_d = 0.35;
- 
+
  const float p_s_s = 0.35;
  const float p_d_s = 0.65;
 
  bool is_verbose;
  bool store_results;
+ ros::Subscriber cloud_sub;
 
 
 
@@ -59,9 +61,9 @@ private:
  void sample(const Frame frame,const float radius, const float threshold,std::vector<int> &sampled_finite);
  void sample_dynamic(const PointCloud::Ptr dynamic,const float radius, const float threshold,std::vector<int> &sampled_finite);
  void DynamicScore(const PointCloud::Ptr &cloud,const bool is_first,const PointCloud::Ptr &score);
-
-void EstimateCorrespondenceEuclidean(const float sampling_radius,std::vector<int>&index_query, std::vector<int> &index_match,std::vector<int> &indices_dynamic);
-bool DynamicFilterSrvCallback(squirrel_dynamic_filter_msgs::DynamicFilterSrv::Request &req,squirrel_dynamic_filter_msgs::DynamicFilterSrv::Response &res);
+ void EstimateCorrespondenceEuclidean(const float sampling_radius,std::vector<int>&index_query, std::vector<int> &index_match,std::vector<int> &indices_dynamic);
+ bool DynamicFilterSrvCallback(squirrel_dynamic_filter_msgs::DynamicFilterSrv::Request &req,squirrel_dynamic_filter_msgs::DynamicFilterSrv::Response &res);
+ void msgCallback(const squirrel_dynamic_filter_msgs::DynamicFilterMsg& dynamic_msg);
 
 Eigen::Matrix4f trans;
 

@@ -5,6 +5,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include "squirrel_dynamic_filter_msgs/CloudMsg.h"
 #include "squirrel_dynamic_filter_msgs/DynamicFilterSrv.h"
+#include "squirrel_dynamic_filter_msgs/DynamicFilterMsg.h"
 #include "squirrel_dynamic_filter_msgs/ClassifyStaticSrv.h"
 #include "edge_unary.h"
 #include "edge.h"
@@ -24,6 +25,8 @@ class tfPointCloud
  private:
    ros::Subscriber cloud_sub;//subsriber to messahe from l_frequency
    ros::Publisher  pub;   ///publisher for filtrered cloud
+
+   ros::Publisher dynamic_filter_msg_pub;
    ros::NodeHandle n_;
    int counter;
    squirrel_dynamic_filter_msgs::CloudMsg cloud_msg;
@@ -39,6 +42,7 @@ class tfPointCloud
    squirrel_dynamic_filter_msgs::ClassifyStaticSrv classify_static_srv;
    ros::ServiceClient client = n_.serviceClient<squirrel_dynamic_filter_msgs::DynamicFilterSrv>("dynamic_filter");
    squirrel_dynamic_filter_msgs::DynamicFilterSrv dynamic_srv;
+   squirrel_dynamic_filter_msgs::DynamicFilterMsg dynamic_filter_msg;
    std::stringstream ss;
    float down_sampling_radius;
    float static_front_threshold;
@@ -67,7 +71,7 @@ class tfPointCloud
     ss.str("");
     ss << output_folder << "time.csv";
     time_write.open(ss.str().c_str());
- 
+
   }
   void msgCallback(const squirrel_dynamic_filter_msgs::CloudMsg& sensor_msg)
   {
@@ -105,7 +109,7 @@ class tfPointCloud
      classify_static_srv.request.odometry[4] = sensor_msg.odometry[4];
      classify_static_srv.request.odometry[5] = sensor_msg.odometry[5];
      classify_static_srv.request.odometry[6] = sensor_msg.odometry[6];
-     measure_time start = SystemClock::now(); 
+     measure_time start = SystemClock::now();
      if(not_ground->points.size() > 50)
      {
        if(classify_static_client.call(classify_static_srv))
@@ -120,6 +124,19 @@ class tfPointCloud
   double correspondence_time = time_diff.count();
   time_write << correspondence_time << endl;
 
+  pcl::toROSMsg(*dynamic_cloud,dynamic_filter_msg.cloud);
+  dynamic_filter_msg.odometry[0] = sensor_msg.odometry[0];
+  dynamic_filter_msg.odometry[1] = sensor_msg.odometry[1];
+  dynamic_filter_msg.odometry[2] = sensor_msg.odometry[2];
+  dynamic_filter_msg.odometry[3] = sensor_msg.odometry[3];
+  dynamic_filter_msg.odometry[4] = sensor_msg.odometry[4];
+  dynamic_filter_msg.odometry[5] = sensor_msg.odometry[5];
+  dynamic_filter_msg.odometry[6] = sensor_msg.odometry[6];
+  dynamic_filter_msg.frame_id = counter;
+
+  if(dynamic_cloud->points.size() > 50)
+    dynamic_filter_msg_pub.publish(dynamic_filter_msg);
+
 
 ///The motion is estimated for cloud at t-1 using the cloud at t. Therefore the
 //previous cloud has to be stored
@@ -127,50 +144,50 @@ class tfPointCloud
 
 //adding static previous static points to previous dynamic points to have the complete previous scan
 
-   for(auto &point:previous_cloud.points)
-     previous_dynamic.points.push_back(point);
+  /* for(auto &point:previous_cloud.points)*/
+/*     //previous_dynamic.points.push_back(point);*/
 
-   pcl::toROSMsg(*dynamic_cloud,dynamic_srv.request.cloud);
-   dynamic_srv.request.odometry[0] = sensor_msg.odometry[0];
-   dynamic_srv.request.odometry[1] = sensor_msg.odometry[1];
-   dynamic_srv.request.odometry[2] = sensor_msg.odometry[2];
-   dynamic_srv.request.odometry[3] = sensor_msg.odometry[3];
-   dynamic_srv.request.odometry[4] = sensor_msg.odometry[4];
-   dynamic_srv.request.odometry[5] = sensor_msg.odometry[5];
-   dynamic_srv.request.odometry[6] = sensor_msg.odometry[6];
-   dynamic_srv.request.frame_id = counter;
-   PointCloud cloud_dynamic;
+   //pcl::toROSMsg(*dynamic_cloud,dynamic_srv.request.cloud);
+   //dynamic_srv.request.odometry[0] = sensor_msg.odometry[0];
+   //dynamic_srv.request.odometry[1] = sensor_msg.odometry[1];
+   //dynamic_srv.request.odometry[2] = sensor_msg.odometry[2];
+   //dynamic_srv.request.odometry[3] = sensor_msg.odometry[3];
+   //dynamic_srv.request.odometry[4] = sensor_msg.odometry[4];
+   //dynamic_srv.request.odometry[5] = sensor_msg.odometry[5];
+   //dynamic_srv.request.odometry[6] = sensor_msg.odometry[6];
+   //dynamic_srv.request.frame_id = counter;
+   //PointCloud cloud_dynamic;
 
-   //transform_map_base_link.setOrigin(tf::Vector3(sensor_msg.odometry[0],sensor_msg.odometry[1],sensor_msg.odometry[2]));
-   //tf::Quaternion q(sensor_msg.odometry[3],sensor_msg.odometry[4],sensor_msg.odometry[5],sensor_msg.odometry[6]);
-   //transform_map_base_link.setRotation(q);
-   ///////Calling the dynamic filter service only if they are enough potentially
-   ////dynamic points
-   if(dynamic_cloud->points.size() > 50)
-   {
-    if(client.call(dynamic_srv))
-    {
-    if(is_verbose)
-      ROS_INFO("%s: score: %ld,%d,%d\n",ros::this_node::getName().c_str(),dynamic_cloud->points.size(),dynamic_srv.response.cloud_static.width,counter);
-     pcl::fromROSMsg(dynamic_srv.response.cloud_static,cloud_dynamic);
+   ////transform_map_base_link.setOrigin(tf::Vector3(sensor_msg.odometry[0],sensor_msg.odometry[1],sensor_msg.odometry[2]));
+   ////tf::Quaternion q(sensor_msg.odometry[3],sensor_msg.odometry[4],sensor_msg.odometry[5],sensor_msg.odometry[6]);
+   ////transform_map_base_link.setRotation(q);
+   /////////Calling the dynamic filter service only if they are enough potentially
+   //////dynamic points
+   //if(dynamic_cloud->points.size() > 50)
+   //{
+    //if(client.call(dynamic_srv))
+    //{
+    //if(is_verbose)
+      //ROS_INFO("%s: score: %ld,%d,%d\n",ros::this_node::getName().c_str(),dynamic_cloud->points.size(),dynamic_srv.response.cloud_static.width,counter);
+     //pcl::fromROSMsg(dynamic_srv.response.cloud_static,cloud_dynamic);
 
-     /////Adding the static points from potentally dynamic points to already
-     ////preprocessed static point
-//    for(auto &point:cloud_dynamic.points)
-  //    previous_cloud.points.push_back(point);
-    }
+     ///////Adding the static points from potentally dynamic points to already
+     //////preprocessed static point
+////    for(auto &point:cloud_dynamic.points)
+  ////    previous_cloud.points.push_back(point);
+    //}
 
-   }
+   /*}*/
    counter+=1;
-   previous_cloud.width = previous_cloud.points.size();
-   previous_cloud.height = 1;
-   previous_dynamic.width = previous_dynamic.points.size();
-   previous_dynamic.height = 1;
-   not_ground->width = not_ground->points.size();
-   not_ground->height = 1;
+   /*previous_cloud.width = previous_cloud.points.size();*/
+   //previous_cloud.height = 1;
+   //previous_dynamic.width = previous_dynamic.points.size();
+   //previous_dynamic.height = 1;
+   //not_ground->width = not_ground->points.size();
+   //not_ground->height = 1;
 
-   cloud_dynamic.width = cloud_dynamic.points.size();
-   cloud_dynamic.height = 1;
+   //cloud_dynamic.width = cloud_dynamic.points.size();
+   //cloud_dynamic.height = 1;
 
 
 
@@ -183,15 +200,15 @@ class tfPointCloud
 
 
 //   br.sendTransform(tf::StampedTransform(transform_map_base_link, sensor_msg.cloud_msg.header.stamp, "map", "base_link_static"));
-   pcl::toROSMsg(cloud_dynamic,filtered_msg);
-   filtered_msg.header.frame_id = "/base_link_static";
-   filtered_msg.header.stamp = sensor_msg.cloud_msg.header.stamp;
-   pub.publish(filtered_msg);
+   /*pcl::toROSMsg(cloud_dynamic,filtered_msg);*/
+   //filtered_msg.header.frame_id = "/base_link_static";
+   //filtered_msg.header.stamp = sensor_msg.cloud_msg.header.stamp;
+   //pub.publish(filtered_msg);
 
-   previous_cloud.points.clear();
-   previous_cloud.points = static_cloud->points;
-   previous_dynamic.points.clear();
-   previous_dynamic.points = dynamic_cloud->points;
+/*   previous_cloud.points.clear();*/
+   //previous_cloud.points = static_cloud->points;
+   //previous_dynamic.points.clear();
+   /*previous_dynamic.points = dynamic_cloud->points;*/
   }
 
   void preprocessing(const sensor_msgs::PointCloud2 cloud_msg,PointCloud::Ptr &cloud_processed,std::vector<int>&static_indices,std::vector<int>&dynamic_indices)
