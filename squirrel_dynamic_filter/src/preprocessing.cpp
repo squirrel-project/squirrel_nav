@@ -64,9 +64,11 @@ class tfPointCloud
     n_.getParam("StaticFrontThreshold",static_front_threshold);
     n_.getParam("Verbose",is_verbose);
     pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static_final/",10);//Publising the filtered pointcloud
+    dynamic_filter_msg_pub = n_.advertise<squirrel_dynamic_filter_msgs::DynamicFilterMsg>("/squirrel/dynamic_filter_msg",10);//Publising the filtered pointcloud
     cloud_sub = n_.subscribe("/squirrel/cloud_msg", 500, &tfPointCloud::msgCallback, this);
         ///subscribing to the message sent by l_frequency
     dynamic_srv.request.odometry.resize(7);
+    dynamic_filter_msg.odometry.resize(7);
     std::stringstream ss;
     ss.str("");
     ss << output_folder << "time.csv";
