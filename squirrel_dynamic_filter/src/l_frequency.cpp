@@ -62,31 +62,33 @@ class tfPointCloud
       ros::Duration(1.0).sleep();
       }
  ///Downampling the cloud
-     PointCloud::Ptr cloud(new PointCloud);
-     PointCloud::Ptr cloud_sampled(new PointCloud);
-     pcl::fromROSMsg(*sensor_msg,*cloud);
-     sor.setInputCloud (cloud);
-     sor.setLeafSize (down_sampling_radius,down_sampling_radius,down_sampling_radius);
-     sor.filter (*cloud_sampled);
-     cloud_sampled->width = cloud_sampled->points.size();
-     cloud_sampled->height = 1;
+
+      PointCloud::Ptr cloud(new PointCloud);
+      PointCloud::Ptr cloud_sampled(new PointCloud);
+      pcl::fromROSMsg(*sensor_msg,*cloud);
+      sor.setInputCloud (cloud);
+      sor.setLeafSize (down_sampling_radius,down_sampling_radius,down_sampling_radius);
+      sor.filter (*cloud_sampled);
+      cloud_sampled->width = cloud_sampled->points.size();
+      cloud_sampled->height = 1;
 
 
 
   ///Publising the cloud and odometry
-     pcl::toROSMsg(*cloud_sampled, cloud_msg.cloud_msg);
+      pcl::toROSMsg(*cloud_sampled, cloud_msg.cloud_msg);
 
-     cloud_msg.cloud_msg.header.stamp = sensor_msg->header.stamp;
-     tf::Vector3 pos = transform.getOrigin();
-     tf::Quaternion rot = transform.getRotation();
-     cloud_msg.odometry[0] = pos[0];
-     cloud_msg.odometry[1] = pos[1];
-     cloud_msg.odometry[2] = pos[2];
-     cloud_msg.odometry[3] = rot[0];
-     cloud_msg.odometry[4] = rot[1];
-     cloud_msg.odometry[5] = rot[2];
-     cloud_msg.odometry[6] = rot[3];
-     publisher.publish(cloud_msg);
+
+      cloud_msg.cloud_msg.header.stamp = sensor_msg->header.stamp;
+      tf::Vector3 pos = transform.getOrigin();
+      tf::Quaternion rot = transform.getRotation();
+      cloud_msg.odometry[0] = pos[0];
+      cloud_msg.odometry[1] = pos[1];
+      cloud_msg.odometry[2] = pos[2];
+      cloud_msg.odometry[3] = rot[0];
+      cloud_msg.odometry[4] = rot[1];
+      cloud_msg.odometry[5] = rot[2];
+      cloud_msg.odometry[6] = rot[3];
+      publisher.publish(cloud_msg);
     }
 
 };
