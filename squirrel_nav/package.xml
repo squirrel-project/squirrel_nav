@@ -9,10 +9,10 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <run_depend>squirrel_3d_localizer</run_depend>
-  <run_depend>squirrel_3d_mapping</run_depend>
+  <run_depend>squirrel_dynamic_filter</run_depend>
   <run_depend>squirrel_localizer</run_depend>
   <run_depend>squirrel_navigation</run_depend>
+  <run_depend>squirrel_3d_mapping</run_depend>
   <run_depend>squirrel_pushing_planner</run_depend>
 
   <export>

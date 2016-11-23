@@ -1,13 +1,13 @@
-<launch>
+<?xml version="1.0" encoding="utf-8"?>
+<<launch>
   <arg name="rviz" default="false" />
-  <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
   <arg name="robot_id" default="alufr-robotino" />
   <arg name="autolocalization" default="false"/>
   <arg name="3d_mapping" default="true" />
-  <arg name="use_scan_matcher_odom" default="false"/>
   <arg name="use_last_pose" default="true"/>
   <arg name="twist_mux" default="true"/>
-  
+  <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
+
   <!--- Run mapserver -->
   <include file="$(find squirrel_navigation)/launch/map_server.launch">
     <arg name="map_file" value="$(arg map_file)" />
@@ -15,6 +15,7 @@
   
   <!-- Run Monte Carlo Localization (many parameters in squirrel_localizer.launch) -->
   <include file="$(find squirrel_localizer)/launch/squirrel_localizer.launch">
+    <arg name="localizer_no_map" value="true" />
     <arg name="use_scan_matcher_odom" value="$(arg use_scan_matcher_odom)"/>
     <arg name="use_last_pose" value="$(arg use_last_pose)"/>
   </include>

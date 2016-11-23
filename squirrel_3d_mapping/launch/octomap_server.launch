@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+  <arg name="octomap_file" default="$(find squirrel_navigation)/octomaps/default-octomap.bt" />
+
+  <node pkg="squirrel_3d_mapping" type="octomap_server_node" name="squirrel_3d_mapping" 
+	output="screen" args="$(arg octomap_file)">
+    <param name="resolution" value="0.025"/>
+    <param name="frame_id" type="string" value="map"/>
+  </node>
+</launch>
+
