@@ -29,6 +29,8 @@
 
 #include "squirrel_3d_mapping/OctomapServer.h"
 
+#include <pcl/filters/voxel_grid.h>
+
 using namespace octomap;
 using octomap_msgs::Octomap;
 
@@ -51,6 +53,8 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
       m_probHit(0.7), m_probMiss(0.4),
       m_thresMin(0.12), m_thresMax(0.97),
       m_pointcloudMinX(-std::numeric_limits<double>::max()),
+  m_useVoxelFiltering(true),
+  m_downsamplingVoxelSize(0.008),
   m_pointcloudMaxX(std::numeric_limits<double>::max()),
   m_pointcloudMinY(-std::numeric_limits<double>::max()),
   m_pointcloudMaxY(std::numeric_limits<double>::max()),
@@ -90,6 +94,9 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
   private_nh.param("min_x_size", m_minSizeX,m_minSizeX);
   private_nh.param("min_y_size", m_minSizeY,m_minSizeY);
 
+  private_nh.param("voxel_filter/enable", m_useVoxelFiltering, m_useVoxelFiltering);
+  private_nh.param("voxel_filter/voxel_size", m_useVoxelFiltering, m_useVoxelFiltering);
+  
   private_nh.param("filter_speckles", m_filterSpeckles, m_filterSpeckles);
   private_nh.param("filter_ground", m_filterGroundPlane, m_filterGroundPlane);
   // distance of points from plane for RANSAC
@@ -297,13 +304,25 @@ bool OctomapServer::openFile(const std::string& filename){
 void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud){
   ros::WallTime startTime = ros::WallTime::now();
 
+  PCLPointCloud pc; // input cloud for filtering and ground-detection
+
+  //
+  // downsample with VoxelFilter
+  //
+  if (m_useVoxelFiltering) {
+    PCLPointCloud::Ptr pc_raw(new PCLPointCloud);
+    pcl::fromROSMsg(*cloud, *pc_raw);
+    pcl::VoxelGrid<pcl::PointXYZ> voxel_filter;
+    voxel_filter.setInputCloud(pc_raw);
+    voxel_filter.setLeafSize(m_downsamplingVoxelSize, m_downsamplingVoxelSize, m_downsamplingVoxelSize);
+    voxel_filter.filter(pc);
+  } else {
+    pcl::fromROSMsg(*cloud, pc);
+  }
 
   //
   // ground filtering in base frame
-  //
-  PCLPointCloud pc; // input cloud for filtering and ground-detection
-  pcl::fromROSMsg(*cloud, pc);
-
+  //  
   tf::StampedTransform sensorToWorldTf;
   try {
     m_tfListener.lookupTransform(m_worldFrameId, cloud->header.frame_id, cloud->header.stamp, sensorToWorldTf);
@@ -518,7 +537,7 @@ void OctomapServer::publishAll(const ros::Time& rostime){
   size_t octomapSize = m_octree->size();
   // TODO: estimate num occ. voxels for size of arrays (reserve)
   if (octomapSize <= 1){
-    ROS_WARN("%s: Nothing to publish, octree is empty", ros::this_node::getName().c_str());
+    ROS_WARN_ONCE("%s: Nothing to publish, octree is empty", ros::this_node::getName().c_str());
     return;
   }
 

@@ -10,9 +10,11 @@
     <param name="pointcloud_min_x" value="0.0" />
     <param name="pointcloud_max_x" value="2.5" />
     <param name="filter_ground" value="false" />
+    <!-- <param name="base_frame_id" value="/base_link" />  -->
     <param name="ground_filter/plane_distance" value="0.03" />
-    <param name="base_frame_id" value="/base_link" /> 
-    <param name="distance_transform/enabled" value="true" />
+    <param name="voxel_filter/enabled" value="true" />
+    <param name="voxel_filter/voxel_size" value="0.008" />
+    <param name="distance_transform/enabled" value="false" />
     <param name="distance_transform/max_dist" value="1.0" />
     <param name="distance_transform/unknown_as_occupied" value="false" />
     <param name="distance_transform/min_x" value="-5.0" />

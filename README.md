@@ -76,9 +76,9 @@ yaml file is in the current working directory.
 ### Localising in a 2D Gridmap
 
 Set at first an estimated pose with the button *2D Pose Estimate* and
-move the robot around the map to localise the robot. To store the last
-pose enable the parameter `use_last_pose` in the
-[squirrel_localizer](https://github.com/squirrel-project/squirrel_nav/tree/indigo_dev/squirrel_localizer)
+move the robot around the map to localise the robot. To start the
+robot in the last pose, set `use_last_pose` parameter to `true` in
+[squirrel_localizer](https://github.com/squirrel-project/squirrel_nav/tree/indigo_dev/squirrel_2d_localizer)
 package.
 
 ### Performing a navigation task

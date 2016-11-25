@@ -76,13 +76,13 @@ void DynamicFilter::DynamicScore(const PointCloud::Ptr &cloud,const bool is_firs
   if(probability < 0.0)
   {
    
-   ROS_ERROR("%s:%f,%f,%f",ros::this_node::getName().c_str(),posterior_d,posterior_s,prior,dist.Probability(observation)/max);
+   ROS_ERROR("%s: %f, %f, %f, %f",ros::this_node::getName().c_str(),posterior_d,posterior_s,prior,dist.Probability(observation)/max);
    getchar();
   } 
   if(probability > 1.0)
   {
 
-   ROS_ERROR("%s:%f,%f,%f",ros::this_node::getName().c_str(),posterior_d,posterior_s,prior,dist.Probability(observation)/max);
+   ROS_ERROR("%s: %f, %f, %f, %f",ros::this_node::getName().c_str(),posterior_d,posterior_s,prior,dist.Probability(observation)/max);
 
    getchar();
 

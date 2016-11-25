@@ -1,0 +1,15 @@
+move_base:
+  global_costmap:
+    robot_base_frame: "/base_linkz"
+  local_costmap:
+    robot_base_frame: "/base_linkz"
+
+squirrel_2d_localizer:
+  robot_frame: "/base_linkz"
+
+squirrel_3d_localizer:
+  base_frame_id: "/base_linkz"
+  base_footprint_id: "/base_linkz"
+
+squirrel_3d_mapping:
+  base_frame_id: "/base_linkz"
