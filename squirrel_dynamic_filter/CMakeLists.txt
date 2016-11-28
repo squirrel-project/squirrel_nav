@@ -12,8 +12,11 @@ set(squirrel_dynamic_filter_DEPENDENCIES
   rospy
   sensor_msgs
   std_msgs
+  pcl_ros
   squirrel_dynamic_filter_msgs
   tf
+  octomap_ros
+  octomap_msgs
 )
 
 #set(PCL_DIR "/export/home/dewan/software/pcl/build/")
@@ -42,7 +45,7 @@ if(G2O_FOUND)
   include_directories( ${G2O_INCLUDE_DIR})
   link_directories(${G2O_LIBRARY_DIR})
 endif(G2O_FOUND)
-MESSAGE(${G2O_FOUND})
+MESSAGE(${G2O_INCLUDE_DIR})
 
 ## Import Eigen3 
 find_package(Eigen3 REQUIRED)
@@ -59,6 +62,7 @@ if (OPENMP_FOUND)
 endif()
 
 find_package(Armadillo 4.2 REQUIRED)
+
 ## Enable C++11 support
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -71,7 +75,6 @@ else()
   message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 " 
     "support. Please use a different C++ compiler.")
 endif()
-
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -157,7 +160,11 @@ include_directories(
 
 add_library(vertex_se3_vector3D src/vertex_se3_vector3D.cpp src/edge_unary.cpp src/edge.cpp)
 TARGET_LINK_LIBRARIES (vertex_se3_vector3D ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY})
+#add_executable(sensor_msgs_to_pcl_tf src/sensor_msgs_to_pcl_tf.cpp)
+#target_link_libraries(sensor_msgs_to_pcl_tf ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
+
+#add_executable(dynamic_filter_node src/dynamic_filter_node.cpp)
 
 add_executable(dynamic_filter_node src/dynamic_filter_node.cpp
                src/EstimateFeature.cpp src/EstimateCorrespondence
@@ -172,11 +179,29 @@ add_dependencies(preprocessing squirrel_dynamic_filter_msgs_generate_messages_cp
 add_executable(l_frequency src/l_frequency.cpp)
 target_link_libraries(l_frequency ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(l_frequency squirrel_dynamic_filter_msgs_generate_messages_cpp)
+#add_executable(test_odometry src/test_odometry)
+#target_link_libraries(test_odometry ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} vertex_se3_vector3D ${G2O_CORE_LIBRARY} ${G2O_TYPES_SLAM3D} ${PCL_LIBRARIES} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION})
+
+#add_executable(visualize_intensity src/visalize_intensity.cpp)
+#target_link_libraries(visualize_intensity ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+add_executable(remove_dynamic src/remove_dynamic.cpp)
+target_link_libraries(remove_dynamic ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
 add_executable(temporal_inference src/TemporalInference.cpp)
 target_link_libraries(temporal_inference ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} "/usr/local/lib/libmlpack.so" "/usr/lib/libarmadillo.so" vertex_se3_vector3D ${G2O_CORE_LIBRARY} ${G2O_TYPES_SLAM3D} ${PCL_LIBRARIES} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION})
 
 add_executable(sensor_to_base_link src/sensor_to_base_link.cpp)
 target_link_libraries(sensor_to_base_link ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
+
+#add_executable(store_cloud src/store_cloud.cpp)
+#target_link_libraries(store_cloud ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable(static_classify src/StaticClassifyOctoMap.cpp)
+target_link_libraries(static_classify ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY})
+add_dependencies(static_classify squirrel_dynamic_filter_msgs_generate_messages_cpp)
+
+
 
 
 ## Declare a C++ library

@@ -15,14 +15,14 @@
   G2O_REGISTER_TYPE(EDGE_SE3:BINARY, Edge);
 
   Edge::Edge() : BaseBinaryEdge<6, Isometry3D,VertexSE3_Vector3D,VertexSE3_Vector3D>() {
-    
+
     //cerr << "dsdsE" << endl;
-    
+
     information().setIdentity();
   }
   bool Edge::read(std::istream& is) {
     Vector7d meas;
-    for (int i=0; i<7; i++) 
+    for (int i=0; i<7; i++)
       is >> meas[i];
     // normalize the quaternion to recover numerical precision lost by storing as human readable text
     Vector4D::MapType(meas.data()+3).normalize();
@@ -40,7 +40,7 @@
     if (is.bad()) {
   ;  //  we overwrite the information matrix with the Identity
       information().setIdentity();
-    } 
+    }
     return true;
   }
 
@@ -70,9 +70,9 @@
     setMeasurement(delta);
     return true;
   }
-  
+
   void Edge::linearizeOplus(){
-    
+
     // BaseBinaryEdge<6, Isometry3D, VertexSE3, VertexSE3>::linearizeOplus();
     // return;
 

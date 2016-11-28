@@ -36,7 +36,7 @@ namespace g2o {
   // point to camera projection, monocular
   EdgeICP::EdgeICP() : BaseUnaryEdge<3, Vector3D, VertexSE3_Vector3D>() {
   }
-  
+
     bool EdgeICP::read(std::istream& is)
     {
       Vector3D p;
@@ -54,7 +54,7 @@ namespace g2o {
 
   bool EdgeICP::write(std::ostream& os) const
     {
-      
+
       os << measurement()[0] << " " << measurement()[1]  << " " << measurement()[2] ;
       for (int i = 0; i < 3; ++i)
         for (int j = i; j < 3; ++j)
@@ -68,20 +68,20 @@ void EdgeSE3Prior::linearizeOplus(){
     _jacobianOplusXi.setZero();
 
          Isometry3D::ConstLinearPart Ri = extractRotation(v->estimate());
- 
+
       _jacobianOplusXi.template block<3,3>(0,0)=Ri;
-  
+
       Matrix3D s;
-  
+
       Vector3D p=v->getPosition();
 
      s(0,0)=0;       s(0,1)=-2*p(2);   s(0,2)=2*p(1);
 
      s(1,0)=2*p(2); s(1,1)=0;        s(1,2)=-2*p(0);
 
-   
+
     s(2,0)=-2*p(1);  s(2,1)=2*p(0);  s(2,2)=0;
-  
+
     _jacobianOplusXi.template block<3,3>(0,3)=s;
 
 
@@ -112,7 +112,7 @@ void EdgeSE3Prior::linearizeOplus(){
     for (int i=0; i<7; i++) is >> meas[i];
     setMeasurement(internal::fromVectorQT(meas));
     // don't need this if we don't use it in error calculation (???)
-    // information matrix is the identity for features, could be changed to allow arbitrary covariances    
+    // information matrix is the identity for features, could be changed to allow arbitrary covariances
     if (is.bad()) {
       return false;
     }
@@ -125,7 +125,7 @@ void EdgeSE3Prior::linearizeOplus(){
     if (is.bad()) {
       //  we overwrite the information matrix
       information().setIdentity();
-    } 
+    }
     return true;
   }
 
@@ -146,7 +146,7 @@ void EdgeSE3Prior::linearizeOplus(){
     _error = internal::toVectorMQT(delta);
   }
 
-  
+
   bool EdgeSE3Prior::setMeasurementFromState(){
     setMeasurement(_cache->n2w());
     return true;
