@@ -1,5 +1,5 @@
-// MapLayer.h --- 
-// 
+// MapLayer.h ---
+//
 // Filename: MapLayer.h
 // Description: Costmap layer related to static obstacles
 // Author: Federico Boniardi
@@ -9,17 +9,17 @@
 // Last-Updated: Tue Feb 3 15:34:16 2015 (+0100)
 //           By: Federico Boniardi
 //     Update #: 1
-// URL: 
-// Keywords: 
-// Compatibility: 
+// URL:
+// Keywords:
+// Compatibility:
 //   ROS Hydro, ROS Indigo
-// 
+//
 
-// Commentary: 
+// Commentary:
 //   The code therein is an integration of costmap_2d::InflationLayer into
 //   costmap_2d::StaticLayer. Both source codes are distributed by the authors
 //   under BSD license, that is below reported
-//   
+//
 //     /*********************************************************************
 //      *
 //      * Software License Agreement (BSD License)
@@ -57,22 +57,15 @@
 //      * Author: Eitan Marder-Eppstein
 //      *         David V. Lu!!
 //      *********************************************************************/
-//
-//   Tested on: - ROS Hydro on Ubuntu 12.04
-//              - ROS Indigo on Ubuntu 14.04
-//      
-//      
-
-// Code:
 
 #ifndef SQUIRREL_NAVIGATION_MAPLAYER_H_
 #define SQUIRREL_NAVIGATION_MAPLAYER_H_
 
 #include <ros/ros.h>
 
+#include <costmap_2d/GenericPluginConfig.h>
 #include <costmap_2d/costmap_layer.h>
 #include <costmap_2d/costmap_math.h>
-#include <costmap_2d/GenericPluginConfig.h>
 #include <costmap_2d/layered_costmap.h>
 #include <costmap_2d/static_layer.h>
 
@@ -95,47 +88,44 @@
 
 namespace squirrel_navigation {
 
-class MapLayer : public InflatedLayer
-{
+class MapLayer : public InflatedLayer {
  public:
-  MapLayer( void );
-  virtual ~MapLayer( void );
-  
-  virtual void onInitialize( void );
-  virtual void activate( void );
-  virtual void deactivate( void );
-  virtual void reset( void );
+  MapLayer(void);
+  virtual ~MapLayer(void);
 
-  virtual void updateBounds( double, double, double, double*, double*, double*, double* );
-  virtual void updateCosts( costmap_2d::Costmap2D&, int, int, int, int );
-  virtual void matchSize( void );  
-  inline bool isDiscretized( void ) { return true; };
-    
- private:  
+  virtual void onInitialize(void);
+  virtual void activate(void);
+  virtual void deactivate(void);
+  virtual void reset(void);
+
+  virtual void updateBounds(
+      double, double, double, double*, double*, double*, double*);
+  virtual void updateCosts(costmap_2d::Costmap2D&, int, int, int, int);
+  virtual void matchSize(void);
+  inline bool isDiscretized(void) { return true; };
+
+ private:
   std::string global_frame_;
   bool subscribe_to_updates_;
   bool map_received_;
   bool has_updated_data_;
-  unsigned int x_,y_,width_,height_;
+  unsigned int x_, y_, width_, height_;
   bool track_unknown_space_;
   bool use_maximum_;
   bool trinary_costmap_;
   ros::Subscriber map_sub_, map_update_sub_;
 
   unsigned char lethal_threshold_, unknown_cost_value_;
-  
+
   mutable boost::recursive_mutex lock_;
   dynamic_reconfigure::Server<MapLayerPluginConfig>* dsrv_;
 
-  void mapCallback_( const nav_msgs::OccupancyGridConstPtr& );
-  void mapUpdateCallback_( const map_msgs::OccupancyGridUpdateConstPtr& );
-  void reconfigureCallback_( MapLayerPluginConfig&, uint32_t );
-  unsigned char interpretValue_( unsigned char );
+  void mapCallback_(const nav_msgs::OccupancyGridConstPtr&);
+  void mapUpdateCallback_(const map_msgs::OccupancyGridUpdateConstPtr&);
+  void reconfigureCallback_(MapLayerPluginConfig&, uint32_t);
+  unsigned char interpretValue_(unsigned char);
 };
-  
+
 }  // namespace squirrel_navigation
 
-#endif // SQUIRREL_NAVIGATION_MAPLAYER_H_
-
-// 
-// MapLayer.h ends here
+#endif  // SQUIRREL_NAVIGATION_MAPLAYER_H_

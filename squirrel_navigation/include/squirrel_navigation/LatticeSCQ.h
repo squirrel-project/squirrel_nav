@@ -1,21 +1,21 @@
-// LatticeSCQ.h --- 
-// 
+// LatticeSCQ.h ---
+//
 // Filename: LatticeSCQ.h
 // Description: Utility for the global planner
 // Author: Federico Boniardi
 // Maintainer: boniardi@informatik.uni-freiburg.de
 // Created: Sun Jan 17 18:14:17 2016 (+0100)
 // Version: 0.1.0
-// Last-Updated: 
-//           By: 
+// Last-Updated:
+//           By:
 //     Update #: 0
-// URL: 
-// Keywords: 
-// Compatibility: 
-// 
-// 
+// URL:
+// Keywords:
+// Compatibility:
+//
+//
 
-// Commentary: 
+// Commentary:
 // /*********************************************************************
 // *
 // * Software License Agreement (BSD License)
@@ -53,8 +53,6 @@
 // * Author: Mike Phillips
 // *********************************************************************/
 
-// Code:
-
 #ifndef SQUIRREL_NAVIGATION_LATTICESCQ_H_
 #define SQUIRREL_NAVIGATION_LATTICESCQ_H_
 
@@ -64,16 +62,15 @@
 
 namespace squirrel_navigation {
 
-class LatticeSCQ : public StateChangeQuery
-{
+class LatticeSCQ : public StateChangeQuery {
  public:
-  LatticeSCQ( EnvironmentNAVXYTHETALAT*, std::vector<nav2dcell_t> const & );
+  LatticeSCQ(EnvironmentNAVXYTHETALAT*, std::vector<nav2dcell_t> const&);
 
-  virtual std::vector<int> const * getPredecessors( void ) const;
-  virtual std::vector<int> const * getSuccessors( void ) const;
+  virtual std::vector<int> const* getPredecessors(void) const;
+  virtual std::vector<int> const* getSuccessors(void) const;
 
-  EnvironmentNAVXYTHETALAT * env_;
-  std::vector<nav2dcell_t> const & changedcellsV_;
+  EnvironmentNAVXYTHETALAT* env_;
+  std::vector<nav2dcell_t> const& changedcellsV_;
   mutable std::vector<int> predsOfChangedCells_;
   mutable std::vector<int> succsOfChangedCells_;
 };
@@ -81,6 +78,3 @@ class LatticeSCQ : public StateChangeQuery
 }  // namespace squirrel_navigation
 
 #endif /* SQUIRREL_NAVIGATION_LATTICESCQ_H_ */
-
-// 
-// LatticeSCQ.h ends here

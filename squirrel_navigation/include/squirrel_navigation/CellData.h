@@ -1,7 +1,7 @@
-// CellData.h --- 
-// 
+// CellData.h ---
+//
 // Filename: CellData.h
-// Description: 
+// Description:
 // Author: Federico Boniardi
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Tue Feb  3 10:28:32 2015 (+0100)
@@ -9,13 +9,13 @@
 // Last-Updated: Tue Feb 3 10:30:28 2015 (+0100)
 //           By: Fderico Boniardi
 //     Update #: 1
-// URL: 
-// Keywords: 
-// Compatibility: 
+// URL:
+// Keywords:
+// Compatibility:
 //   ROS Hydro, ROS Indigo
-// 
+//
 
-// Commentary: 
+// Commentary:
 //     /*********************************************************************
 //      *
 //      * Software License Agreement (BSD License)
@@ -53,41 +53,29 @@
 //      * Author: Eitan Marder-Eppstein
 //      *         David V. Lu!!
 //      *********************************************************************/
-//      
-
-// Code:
 
 #ifndef SQUIRREL_NAVIGATION_CELLDATA_H_
 #define SQUIRREL_NAVIGATION_CELLDATA_H_
 
 namespace squirrel_navigation {
 
-class CellData
-{
+class CellData {
  public:
-  CellData(double d, double i, unsigned int x, unsigned int y, unsigned int sx, unsigned int sy) :
-      distance_(d),
-      index_(i),
-      x_(x),
-      y_(y),
-      src_x_(sx),
-      src_y_(sy)
-  {}
-  
+  CellData(
+      double d, double i, unsigned int x, unsigned int y, unsigned int sx,
+      unsigned int sy)
+      : distance_(d), index_(i), x_(x), y_(y), src_x_(sx), src_y_(sy) {}
+
   double distance_;
   unsigned int index_;
   unsigned int x_, y_;
   unsigned int src_x_, src_y_;
 };
 
-inline bool operator<(const CellData &a, const CellData &b)
-{
+inline bool operator<(const CellData& a, const CellData& b) {
   return a.distance_ > b.distance_;
 }
 
 }  // namespace squirrel_navigation
 
-#endif // SQUIRREL_NAVIGATION_CELLDATA_H_ 
-
-// 
-// CellData.h ends here
+#endif  // SQUIRREL_NAVIGATION_CELLDATA_H_
