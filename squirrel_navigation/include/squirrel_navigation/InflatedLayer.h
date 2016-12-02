@@ -1,24 +1,24 @@
-// InflatedLayer.h --- 
-// 
+// InflatedLayer.h ---
+//
 // Filename: InflatedLayer.h
 // Description: Obstacle inflator to simulate robot's configuration space
 // Author: Federico Boniardi
 // Maintainer: boniardi@cs.uni-freiburg.de
 // Created: Tue Feb  3 13:46:17 2015 (+0100)
 // Version: 0.1.0
-// Last-Updated: 
-//           By: 
+// Last-Updated:
+//           By:
 //     Update #: 0
-// URL: 
-// Keywords: 
-// Compatibility: 
-// 
-// 
+// URL:
+// Keywords:
+// Compatibility:
+//
+//
 
-// Commentary: 
+// Commentary:
 //   The code therein is based on costmap_2d::InflationLayer,
 //   distributed by its authors under BSD license which is below reported
-//   
+//
 //     /*********************************************************************
 //      *
 //      * Software License Agreement (BSD License)
@@ -56,21 +56,14 @@
 //      * Author: Eitan Marder-Eppstein
 //      *         David V. Lu!!
 //      *********************************************************************/
-//
-//   Tested on: - ROS Hydro on Ubuntu 12.04
-//              - ROS Indigo on Ubuntu 14.04
-//
-//      
-
-// Code:
 
 #ifndef SQUIRREL_NAVIGATION_INFLATEDLAYER_H_
 #define SQUIRREL_NAVIGATION_INFLATEDLAYER_H_
 
 #include <ros/ros.h>
 
-#include <costmap_2d/costmap_math.h>
 #include <costmap_2d/costmap_layer.h>
+#include <costmap_2d/costmap_math.h>
 #include <costmap_2d/footprint.h>
 #include <costmap_2d/layered_costmap.h>
 
@@ -83,48 +76,47 @@
 #include "squirrel_navigation/CellData.h"
 
 namespace squirrel_navigation {
-  
-class InflatedLayer : public costmap_2d::CostmapLayer
-{
+
+class InflatedLayer : public costmap_2d::CostmapLayer {
  public:
-  InflatedLayer( void );
-  virtual ~InflatedLayer( void );
-  
-  virtual void updateInflatedBounds( double, double, double, double*, double*, double*, double* );
-  virtual void updateInflatedCosts(costmap_2d::Costmap2D&, int, int, int, int );
-  virtual void matchInflatedSize( void );
-  unsigned char computeCost( double ) const;
+  InflatedLayer(void);
+  virtual ~InflatedLayer(void);
+
+  virtual void updateInflatedBounds(
+      double, double, double, double*, double*, double*, double*);
+  virtual void updateInflatedCosts(costmap_2d::Costmap2D&, int, int, int, int);
+  virtual void matchInflatedSize(void);
+  unsigned char computeCost(double) const;
 
  protected:
   std::set<unsigned int> obstacles_;
-  
+
   double inflation_radius_, inscribed_radius_, weight_;
-  bool *seen_, need_reinflation_; 
+  bool *seen_, need_reinflation_;
 
   unsigned int cell_inflation_radius_;
   unsigned int cached_cell_inflation_radius_;
 
   boost::shared_mutex* access_;
 
-  virtual void onFootprintChanged( void );
-  virtual void computeCaches( void );
-  virtual unsigned int cellDistance( double world_dist );
-  
+  virtual void onFootprintChanged(void);
+  virtual void computeCaches(void);
+  virtual unsigned int cellDistance(double world_dist);
+
  private:
   std::priority_queue<CellData> inflation_queue_;
-      
+
   unsigned char** cached_costs_;
   double** cached_distances_;
 
-  void deleteKernels_( void );
-  double distanceLookup_( int, int, int, int );
-  unsigned char costLookup_( int, int, int, int );
-  void enqueue_(unsigned char*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
+  void deleteKernels_(void);
+  double distanceLookup_(int, int, int, int);
+  unsigned char costLookup_(int, int, int, int);
+  void enqueue_(
+      unsigned char*, unsigned int, unsigned int, unsigned int, unsigned int,
+      unsigned int);
 };
 
 }  // namespace squirrel_navigation
 
-#endif // SQUIRREL_NAVIGATION_INFLATEDLAYER_H_
-
-// 
-// InflatedLayer.h ends here
+#endif  // SQUIRREL_NAVIGATION_INFLATEDLAYER_H_

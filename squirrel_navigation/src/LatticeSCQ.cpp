@@ -1,21 +1,21 @@
-// LatticeSCQ.cpp --- 
-// 
+// LatticeSCQ.cpp ---
+//
 // Filename: LatticeSCQ.cpp
 // Description: Utility for the global planner
 // Author: Federico Boniardi
 // Maintainer: boniardi@informatik.uni-freiburg.de
 // Created: Sun Jan 17 18:18:39 2016 (+0100)
 // Version: 0.1.0
-// Last-Updated: 
-//           By: 
+// Last-Updated:
+//           By:
 //     Update #: 0
-// URL: 
-// Keywords: 
-// Compatibility: 
-// 
-// 
+// URL:
+// Keywords:
+// Compatibility:
+//
+//
 
-// Commentary: 
+// Commentary:
 // /*********************************************************************
 // *
 // * Software License Agreement (BSD License)
@@ -53,34 +53,27 @@
 // * Author: Mike Phillips
 // *********************************************************************/
 
-// Code:
-
 #include "squirrel_navigation/LatticeSCQ.h"
 
 namespace squirrel_navigation {
 
-LatticeSCQ::LatticeSCQ( EnvironmentNAVXYTHETALAT* env, std::vector<nav2dcell_t> const & changedcellsV )  :
-    env_(env),
-    changedcellsV_(changedcellsV)
-{
+LatticeSCQ::LatticeSCQ(
+    EnvironmentNAVXYTHETALAT* env,
+    std::vector<nav2dcell_t> const& changedcellsV)
+    : env_(env), changedcellsV_(changedcellsV) {
   // Empty
 }
 
-std::vector<int> const * LatticeSCQ::getPredecessors( void ) const
-{
-  if( predsOfChangedCells_.empty() and (not changedcellsV_.empty()) )
+std::vector<int> const* LatticeSCQ::getPredecessors(void) const {
+  if (predsOfChangedCells_.empty() and (not changedcellsV_.empty()))
     env_->GetPredsofChangedEdges(&changedcellsV_, &predsOfChangedCells_);
   return &predsOfChangedCells_;
 }
 
-std::vector<int> const * LatticeSCQ::getSuccessors( void ) const
-{
-  if( succsOfChangedCells_.empty() and (not changedcellsV_.empty()) )
+std::vector<int> const* LatticeSCQ::getSuccessors(void) const {
+  if (succsOfChangedCells_.empty() and (not changedcellsV_.empty()))
     env_->GetSuccsofChangedEdges(&changedcellsV_, &succsOfChangedCells_);
   return &succsOfChangedCells_;
 }
 
 }  // namespace squirrel_navigation
-
-// 
-// LatticeSCQ.cpp ends here

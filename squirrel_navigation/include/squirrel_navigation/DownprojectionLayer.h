@@ -1,5 +1,5 @@
-// DownprojectionLayer.h --- 
-// 
+// DownprojectionLayer.h ---
+//
 // Filename: DownprojectionLayer.h
 // Description: Dynamic mapping of obstacles with RGBD
 //              and Laser sensors
@@ -10,16 +10,16 @@
 // Last-Updated: Mon Mar 21 14:29:34 2016 (+0100)
 //           By: Federico Boniardi
 //     Update #: 5
-// URL: 
-// Keywords: 
-// Compatibility: 
+// URL:
+// Keywords:
+// Compatibility:
 //   ROS Hydro, ROS Indigo
-// 
+//
 
-// Commentary: 
+// Commentary:
 //   The code therein is an improvement of costmap_2d::VoxelLayer which
 //   is distributed by the authors under BSD license, that is below reported
-//   
+//
 //     /*********************************************************************
 //      *
 //      * Software License Agreement (BSD License)
@@ -57,14 +57,6 @@
 //      * Author: Eitan Marder-Eppstein
 //      *         David V. Lu!!
 //      *********************************************************************/
-//
-//   Tested on: - ROS Hydro on Ubuntu 12.04
-//              - ROS Indigo on Ubuntu 14.04
-//   RGBD source: ASUS Xtion pro
-//      
-//      
-
-// Code:
 
 #ifndef SQUIRREL_NAVIGATION_DOWNPROJECTIONLAYER_H_
 #define SQUIRREL_NAVIGATION_DOWNPROJECTIONLAYER_H_
@@ -73,10 +65,10 @@
 
 #include <dynamic_reconfigure/server.h>
 
-#include <costmap_2d/footprint.h>
-#include <costmap_2d/obstacle_layer.h>
-#include <costmap_2d/observation_buffer.h>
 #include <costmap_2d/VoxelGrid.h>
+#include <costmap_2d/footprint.h>
+#include <costmap_2d/observation_buffer.h>
+#include <costmap_2d/obstacle_layer.h>
 
 #include <dynamixel_msgs/JointState.h>
 #include <std_msgs/Float64.h>
@@ -99,36 +91,36 @@
 
 namespace squirrel_navigation {
 
-class DownprojectionLayer : public costmap_2d::ObstacleLayer
-{
+class DownprojectionLayer : public costmap_2d::ObstacleLayer {
  public:
-  DownprojectionLayer( void );
-  virtual ~DownprojectionLayer( void );
+  DownprojectionLayer(void);
+  virtual ~DownprojectionLayer(void);
 
-  virtual void onInitialize( void );
-  virtual void updateBounds( double, double, double, double*, double*, double*, double* );
-  virtual void updateOrigin( double, double );
-  virtual void matchSize( void );
-  virtual void reset( void );
+  virtual void onInitialize(void);
+  virtual void updateBounds(
+      double, double, double, double*, double*, double*, double*);
+  virtual void updateOrigin(double, double);
+  virtual void matchSize(void);
+  virtual void reset(void);
 
-  inline bool isDiscretized( void ) { return true; };
-  
+  inline bool isDiscretized(void) { return true; };
+
  protected:
   RobotFootprint footprint_;
   double circ_radius_, in_radius_;
 
-  virtual void setupDynamicReconfigure( ros::NodeHandle& );
-  virtual void resetMaps( void );
+  virtual void setupDynamicReconfigure(ros::NodeHandle&);
+  virtual void resetMaps(void);
 
  private:
-  dynamic_reconfigure::Server<DownprojectionLayerPluginConfig> *dsrv_;
+  dynamic_reconfigure::Server<DownprojectionLayerPluginConfig>* dsrv_;
 
   // time based costmap layer
   std::map<unsigned int, ros::Time> clearing_index_stamped_;
 
   ros::Publisher voxel_pub_, clearing_endpoints_pub_;
   ros::Subscriber toggle_footprint_sub_, pushing_action_sub_;
-  
+
   voxel_grid::VoxelGrid voxel_grid_;
   double z_resolution_, origin_z_;
 
@@ -144,7 +136,7 @@ class DownprojectionLayer : public costmap_2d::ObstacleLayer
   JointHandle kinect_tilt_h_, kinect_pan_h_;
   std::string kinect_observation_frame_;
   geometry_msgs::Point kinect_origin_;
-  
+
   // Costmap update handle
   CostmapUpdateHandle* costmap_update_handle_;
 
@@ -152,14 +144,15 @@ class DownprojectionLayer : public costmap_2d::ObstacleLayer
   bool footprint_active_;
   bool pushing_action_;
   double laser_height_;
-  
-  void reconfigureCallback( DownprojectionLayerPluginConfig& , uint32_t );
-  void clearNonLethal( double, double, double, double, bool );
-  void raytraceFreespace( const costmap_2d::Observation&, double*, double*, double*, double* );
-    
-  inline bool worldToMap3DFloat( double wx, double wy, double wz, double& mx, double& my, double& mz )
-  {
-    if ( wx < origin_x_ or wy < origin_y_ or wz < origin_z_ )
+
+  void reconfigureCallback(DownprojectionLayerPluginConfig&, uint32_t);
+  void clearNonLethal(double, double, double, double, bool);
+  void raytraceFreespace(
+      const costmap_2d::Observation&, double*, double*, double*, double*);
+
+  inline bool worldToMap3DFloat(
+      double wx, double wy, double wz, double& mx, double& my, double& mz) {
+    if (wx < origin_x_ or wy < origin_y_ or wz < origin_z_)
       return false;
 
     mx = ((wx - origin_x_) / resolution_);
@@ -168,16 +161,17 @@ class DownprojectionLayer : public costmap_2d::ObstacleLayer
 
     if (mx < size_x_ and my < size_y_ and mz < size_z_)
       return true;
-    
+
     return false;
   };
 
-  inline bool worldToMap3D( double wx, double wy, double wz, unsigned int& mx, unsigned int& my, unsigned int& mz )
-  {
-    if ( wx < origin_x_ or wy < origin_y_ or wz < origin_z_ ) {
+  inline bool worldToMap3D(
+      double wx, double wy, double wz, unsigned int& mx, unsigned int& my,
+      unsigned int& mz) {
+    if (wx < origin_x_ or wy < origin_y_ or wz < origin_z_) {
       return false;
     }
-    
+
     mx = (int)((wx - origin_x_) / resolution_);
     my = (int)((wy - origin_y_) / resolution_);
     mz = (int)((wz - origin_z_) / z_resolution_);
@@ -189,26 +183,27 @@ class DownprojectionLayer : public costmap_2d::ObstacleLayer
     return false;
   };
 
-  inline void mapToWorld3D( unsigned int mx, unsigned int my, unsigned int mz, double& wx, double& wy, double& wz )
-  {
+  inline void mapToWorld3D(
+      unsigned int mx, unsigned int my, unsigned int mz, double& wx, double& wy,
+      double& wz) {
     wx = origin_x_ + (mx + 0.5) * resolution_;
     wy = origin_y_ + (my + 0.5) * resolution_;
     wz = origin_z_ + (mz + 0.5) * z_resolution_;
   };
 
-  inline double linearDistance( double x0, double y0, double z0, double x1, double y1, double z1 )
-  {
-    const double dx = x1-x0, dy = y1-y0, dz = z1-z0;
-    return std::sqrt(dx*dx + dy*dy + dz*dz);
+  inline double linearDistance(
+      double x0, double y0, double z0, double x1, double y1, double z1) {
+    const double dx = x1 - x0, dy = y1 - y0, dz = z1 - z0;
+    return std::sqrt(dx * dx + dy * dy + dz * dz);
   };
 
-  inline void toggleFootprintCallback( const std_msgs::Bool::ConstPtr& footprint_on )
-  {
+  inline void toggleFootprintCallback(
+      const std_msgs::Bool::ConstPtr& footprint_on) {
     footprint_active_ = footprint_on->data;
   };
 
-  inline void pushingActionCallback( const std_msgs::Bool::ConstPtr& pushing_action )
-  {
+  inline void pushingActionCallback(
+      const std_msgs::Bool::ConstPtr& pushing_action) {
     pushing_action_ = pushing_action->data;
   };
 };
@@ -216,6 +211,3 @@ class DownprojectionLayer : public costmap_2d::ObstacleLayer
 }  // namespace squirrel_navigation
 
 #endif  // SQUIRREL_NAVIGATION_DOWNPROJECTIONLAYER_H_
-
-// 
-// DownprojectionLayer.h ends here
