@@ -36,9 +36,9 @@ motion_model:
   noise_magnitude: 0.2
 
 ## likilihood field
-likelihood_field:
-  saturation_distance: 0.25
-  observation_sigma: 0.5
+latent_model_likelihood_field:
+  uniform_hit: 0.1
+  observation_sigma: 1.0
 
 ## laser beams model
 laser_model:

@@ -29,7 +29,7 @@
 namespace squirrel_2d_localizer {
 
 void LaserModel::computeParticlesLikelihood(
-    const GridMap& grid_map, const LikelihoodField& likelihood_field,
+    const GridMap& grid_map, const LatentModelLikelihoodField& likelihood_field,
     const std::vector<float>& measurement, std::vector<Particle>* particles) {
   std::unique_lock<std::mutex> lock(mtx_);
   prepareLaserReadings(measurement);
@@ -38,7 +38,7 @@ void LaserModel::computeParticlesLikelihood(
   for (size_t i = 0; i < particles->size(); ++i) {
     const Pose2d& pose = particles->at(i).pose;
     double weight      = 1.;
-#pragma omp parallel for reduction(*: weight)
+#pragma omp parallel for reduction(* : weight)
     for (size_t j = 0; j < eff_measurement_.size(); ++j) {
       const EndPoint2d& beam_endpoint = eff_measurement_[j];
       const EndPoint2d& e =

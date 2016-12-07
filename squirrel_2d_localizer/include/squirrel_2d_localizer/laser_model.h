@@ -25,7 +25,7 @@
 
 #include "squirrel_2d_localizer/endpoint_types.h"
 #include "squirrel_2d_localizer/grid_map.h"
-#include "squirrel_2d_localizer/likelihood_field.h"
+#include "squirrel_2d_localizer/latent_model_likelihood_field.h"
 #include "squirrel_2d_localizer/particle_types.h"
 #include "squirrel_2d_localizer/se2_types.h"
 
@@ -54,10 +54,12 @@ class LaserModel {
   virtual ~LaserModel() {}
 
   void computeParticlesLikelihood(
-      const GridMap& grid_map, const LikelihoodField& likelihood_field,
+      const GridMap& grid_map,
+      const LatentModelLikelihoodField& likelihood_field,
       const std::vector<float>& measurement, std::vector<Particle>* particles);
 
   inline Params& params() { return laser_params_; }
+  inline const Params& params() const { return laser_params_; }
 
  private:
   inline void setDefaultParams() {

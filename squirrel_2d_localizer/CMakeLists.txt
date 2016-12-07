@@ -53,10 +53,10 @@ catkin_package(
 set(ROS_BUILD_TYPE Release)
 include_directories(include)
 add_executable(squirrel_2d_localizer_node  
-  src/distance_transform.cpp
+  src/convolution.cpp
   src/grid_map.cpp
   src/laser_model.cpp
-  src/likelihood_field.cpp
+  src/latent_model_likelihood_field.cpp
   src/localizer.cpp
   src/localizer_ros.cpp
   src/localizer_ros_node.cpp

@@ -48,9 +48,10 @@ class MotionModel {
   MotionModel(const Params& motion_params);
   virtual ~MotionModel() {}
 
-  void propagateParticles(
+  void sampleProposal(
       const Transform2d& motion, std::vector<Particle>* particles) const;
 
+  inline const Params& params() const { return motion_params_; }
   inline Params& params() { return motion_params_; }
 
  private:
