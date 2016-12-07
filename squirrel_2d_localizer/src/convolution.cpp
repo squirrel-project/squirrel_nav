@@ -23,6 +23,7 @@
 #include "squirrel_2d_localizer/convolution.h"
 
 #include <cmath>
+#include <iostream>
 
 namespace squirrel_2d_localizer {
 
@@ -32,14 +33,14 @@ void computeGaussianConvolution2d(
     double sigma, double resolution, const Matrix<>& matrix, Matrix<>* output) {
 #pragma omp parallel for default(shared)
   for (size_t i = 0; i < matrix.rows(); ++i) {
-    Vector<> output_row(output->row(i).size());
+    Vector<> output_row = Vector<>::Zero(output->row(i).size());
     internal::computeGaussianConvolution1d(
         sigma, resolution, matrix.row(i), &output_row);
     output->row(i) = output_row;
   }
 #pragma omp parallel for default(shared)
   for (size_t j = 0; j < matrix.cols(); ++j) {
-    Vector<> output_col(output->col(j).size());
+    Vector<> output_col = Vector<>::Zero(output->col(j).size());
     internal::computeGaussianConvolution1d(
         sigma, resolution, output->col(j), &output_col);
     output->col(j) = output_col;

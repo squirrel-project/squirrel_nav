@@ -33,12 +33,12 @@ motion_model:
   noise_yy: 1.0
   noise_ya: 0.0
   noise_aa: 1.5
-  noise_magnitude: 0.2
+  noise_magnitude: 0.3
 
 ## likilihood field
 latent_model_likelihood_field:
   uniform_hit: 0.1
-  observation_sigma: 1.0
+  observation_sigma: 0.1
 
 ## laser beams model
 laser_model:

@@ -26,22 +26,22 @@
 #include "squirrel_2d_localizer/latent_model_likelihood_field.h"
 #include "squirrel_2d_localizer/convolution.h"
 
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/opencv.hpp>
+
 namespace squirrel_2d_localizer {
 
-void LatentModelLikelihoodField::initialize(
-    const GridMap& occupancy_gridmap) {
+void LatentModelLikelihoodField::initialize(const GridMap& occupancy_gridmap) {
   const size_t h   = occupancy_gridmap.height();
   const size_t w   = occupancy_gridmap.width();
   const double res = occupancy_gridmap.resolution();
-  likelihood_cache_.resize(likelihood_cache_rows_, likelihood_cache_cols_);
+  likelihood_cache_ = Matrix<>::Zero(h, w);
   // Compute Gaussian convolution on the map.
   convolution::computeGaussianConvolution2d(
       lmlf_params_.observation_sigma, res, occupancy_gridmap,
       &likelihood_cache_);
   // Add the uniform distribution.
-  likelihood_cache_ +=
-      lmlf_params_.uniform_hit *
-      Matrix<>::Identity(likelihood_cache_rows_, likelihood_cache_cols_);
+  likelihood_cache_ += lmlf_params_.uniform_hit * Matrix<>::Ones(h, w);
 }
 
 double LatentModelLikelihoodField::likelihood(int i, int j) const {
