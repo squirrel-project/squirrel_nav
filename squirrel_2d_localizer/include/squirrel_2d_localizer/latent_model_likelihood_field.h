@@ -20,10 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef SQUIRREL_2D_LOCALIZER_LIKELIHOOD_FIELD_H_
-#define SQUIRREL_2D_LOCALIZER_LIKELIHOOD_FIELD_H_
+#ifndef SQUIRREL_2D_LOCALIZER_LATENT_MODEL_LIKELIHOOD_FIELD_H_
+#define SQUIRREL_2D_LOCALIZER_LATENT_MODEL_LIKELIHOOD_FIELD_H_
 
-#include "squirrel_2d_localizer/distance_transform.h"
 #include "squirrel_2d_localizer/grid_map.h"
 #include "squirrel_2d_localizer/se2_types.h"
 
@@ -31,25 +30,28 @@
 
 namespace squirrel_2d_localizer {
 
-class LikelihoodField {
+class LatentModelLikelihoodField {
  public:
-  typedef std::unique_ptr<LikelihoodField> Ptr;
-  typedef std::unique_ptr<LikelihoodField const> ConstPtr;
+  typedef std::unique_ptr<LatentModelLikelihoodField> Ptr;
+  typedef std::unique_ptr<LatentModelLikelihoodField const> ConstPtr;
 
   struct Params {
-    double saturation_distance;
+    double uniform_hit;
     double observation_sigma;
   };
 
  public:
-  LikelihoodField() { setDefaultParams(); }
-  LikelihoodField(const Params& lf_params) : lf_params_(lf_params) {}
-  virtual ~LikelihoodField() {}
+  LatentModelLikelihoodField();
+  LatentModelLikelihoodField(const Params& params) : lmlf_params_(params) {};
+  virtual ~LatentModelLikelihoodField() {}
 
-  void initialize(const GridMap& gridmap);
+  void initialize(const GridMap& occupancy_gridmap);
 
   double likelihood(int i, int j) const;
 
+  inline Params& params() { return lmlf_params_; }
+  inline const Params& parmas() const { return lmlf_params_; }
+  
  private:
   inline bool inside(int i, int j) const {
     return i >= 0 && i < likelihood_cache_.rows() && j >= 0 &&
@@ -57,20 +59,17 @@ class LikelihoodField {
   }
 
   inline void setDefaultParams() {
-    lf_params_.saturation_distance = 1.0;
-    lf_params_.observation_sigma   = 0.5;
+    lmlf_params_.uniform_hit       = 0.1;
+    lmlf_params_.observation_sigma = 1.0;
   }
-
-  inline Params& params() { return lf_params_; }
 
  private:
   Matrix<> likelihood_cache_;
+  int likelihood_cache_rows_, likelihood_cache_cols_;
 
-  double sq_saturation_distance_;
-
-  Params lf_params_;
+  Params lmlf_params_;
 };
 
 }  // namespace squirrel_2d_localizer
 
-#endif /* SQUIRREL_2D_LOCALIZER_LIKELIHOOD_FIELD_H_ */
+#endif /* SQUIRREL_2D_LOCALIZER_LATENT_MODEL_LIKELIHOOD_FIELD_H_ */

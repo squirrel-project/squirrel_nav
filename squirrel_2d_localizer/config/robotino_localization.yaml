@@ -21,7 +21,7 @@ localizer:
   num_particles: 750
   min_lin_update: 0.0
   min_ang_update: 0.0
-  init_stddev_x: 0.2
+  init_stddev_x: 0.3
   init_stddev_y: 0.2
   init_stddev_a: 0.5
 
@@ -33,12 +33,12 @@ motion_model:
   noise_yy: 1.0
   noise_ya: 0.0
   noise_aa: 1.5
-  noise_magnitude: 0.2
+  noise_magnitude: 0.3
 
 ## likilihood field
-likelihood_field:
-  saturation_distance: 0.25
-  observation_sigma: 0.5
+latent_model_likelihood_field:
+  uniform_hit: 0.1
+  observation_sigma: 0.05
 
 ## laser beams model
 laser_model:

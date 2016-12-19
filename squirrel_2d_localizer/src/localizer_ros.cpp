@@ -72,15 +72,17 @@ LocalizerROS::LocalizerROS()
   mm_nh.param<double>("noise_magnitude", motion_param.noise_magnitude, 0.5);
   MotionModel::Ptr motion_model(new MotionModel(motion_param));
   // likelihood fields paramters.
-  ros::NodeHandle lf_nh("~/likelihood_field");
-  LikelihoodField::Params lf_param;
-  lf_nh.param<double>("saturation_distance", lf_param.saturation_distance, 0.5);
-  lf_nh.param<double>("observation_sigma", lf_param.observation_sigma, 0.5);
-  LikelihoodField::Ptr likelihood_field(new LikelihoodField(lf_param));
+  ros::NodeHandle lf_nh("~/latent_model_likelihood_field");
+  LatentModelLikelihoodField::Params lmlf_param;
+  lf_nh.param<double>("uniform_hit", lmlf_param.uniform_hit, 0.1);
+  lf_nh.param<double>("observation_sigma", lmlf_param.observation_sigma, 1.);
+  LatentModelLikelihoodField::Ptr likelihood_field(
+      new LatentModelLikelihoodField(lmlf_param));
   // laser model params.
   ros::NodeHandle lm_nh("~/laser_model");
   LaserModel::Params lm_param;
-  lm_nh.param<double>("beam_min_distance", lm_param.endpoints_min_distance, 0.1);
+  lm_nh.param<double>(
+      "beam_min_distance", lm_param.endpoints_min_distance, 0.1);
   LaserModel::Ptr laser_model(new LaserModel(lm_param));
   // init grid map
   GridMap::Params map_params;

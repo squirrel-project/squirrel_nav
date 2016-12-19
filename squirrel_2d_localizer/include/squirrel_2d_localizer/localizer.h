@@ -25,7 +25,7 @@
 
 #include "squirrel_2d_localizer/grid_map.h"
 #include "squirrel_2d_localizer/laser_model.h"
-#include "squirrel_2d_localizer/likelihood_field.h"
+#include "squirrel_2d_localizer/latent_model_likelihood_field.h"
 #include "squirrel_2d_localizer/motion_model.h"
 
 #include <memory>
@@ -49,7 +49,7 @@ class Localizer {
   virtual ~Localizer() {}
 
   void initialize(
-      GridMap::Ptr& map, LikelihoodField::Ptr& likelihood_field,
+      GridMap::Ptr& map, LatentModelLikelihoodField::Ptr& likelihood_field,
       LaserModel::Ptr& laser_model, MotionModel::Ptr& motion_model);
 
   void resetPose(const Pose2d& init_pose = Pose2d(0., 0., 0.));
@@ -64,7 +64,6 @@ class Localizer {
   inline Params& params() { return loc_params_; }
 
   inline GridMap* gridMap() { return map_.get(); }
-  inline LikelihoodField* likelihoodField() { return likelihood_field_.get(); }
   inline LaserModel* laserModel() { return laser_model_.get(); }
   inline MotionModel* motionModel() { return motion_model_.get(); }
 
@@ -77,7 +76,7 @@ class Localizer {
 
  private:
   GridMap::Ptr map_;
-  LikelihoodField::Ptr likelihood_field_;
+  LatentModelLikelihoodField::Ptr likelihood_field_;
   LaserModel::Ptr laser_model_;
   MotionModel::Ptr motion_model_;
 

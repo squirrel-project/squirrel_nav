@@ -30,7 +30,8 @@
 namespace squirrel_2d_localizer {
 
 void Localizer::initialize(
-    GridMap::Ptr& map, LikelihoodField::Ptr& likelihood_field,
+    GridMap::Ptr& map,
+    LatentModelLikelihoodField::Ptr& likelihood_field,
     LaserModel::Ptr& laser_model, MotionModel::Ptr& motion_model) {
   map_              = std::move(map);
   likelihood_field_ = std::move(likelihood_field);
@@ -71,7 +72,7 @@ bool Localizer::updateFilter(
   if (cum_lin_motion_ < loc_params_.min_lin_update &&
       cum_ang_motion_ < loc_params_.min_ang_update)
     return false;
-  motion_model_->propagateParticles(motion, &particles_);
+  motion_model_->sampleProposal(motion, &particles_);
   laser_model_->computeParticlesLikelihood(
       *map_, *likelihood_field_, scan, &particles_);
   resampling::importanceSampling(&particles_);

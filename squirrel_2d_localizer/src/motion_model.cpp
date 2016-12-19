@@ -31,7 +31,7 @@ namespace squirrel_2d_localizer {
 MotionModel::MotionModel(const Params& motion_params)
     : rnd_eng_(std::rand()), motion_params_(motion_params) {}
 
-void MotionModel::propagateParticles(
+void MotionModel::sampleProposal(
     const Transform2d& motion, std::vector<Particle>* particles) const {
   std::unique_lock<std::mutex> lock(mtx_);
   std::normal_distribution<double> randn(0., 1.);
