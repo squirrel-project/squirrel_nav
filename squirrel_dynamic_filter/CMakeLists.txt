@@ -7,7 +7,6 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake-mod
 #SET(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules)
 #SET(libg2o_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules)
 
-
 set(squirrel_dynamic_filter_DEPENDENCIES
   roscpp
   rospy
@@ -27,6 +26,8 @@ set(squirrel_dynamic_filter_DEPENDENCIES
 find_package(catkin REQUIRED COMPONENTS
   ${squirrel_dynamic_filter_DEPENDENCIES}
 )
+
+
 
 set(BOOST_LIBS program_options serialization random system)
 find_package(Boost REQUIRED COMPONENTS system signals thread)
@@ -173,8 +174,6 @@ add_executable(dynamic_filter_node src/dynamic_filter_node.cpp
 target_link_libraries(dynamic_filter_node ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} vertex_se3_vector3D ${G2O_CORE_LIBRARY} ${G2O_TYPES_SLAM3D} ${PCL_LIBRARIES} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION} "/usr/local/lib/libmlpack.so" ${ARMADILLO_LIBRARIES})
 add_dependencies(dynamic_filter_node squirrel_dynamic_filter_msgs_message_generates_cpp)
 
-#add_executable(publish_cloud src/publish_cloud.cpp)
-#target_link_libraries(publish_cloud ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 add_executable(preprocessing src/preprocessing.cpp)
 target_link_libraries(preprocessing ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY})
 add_dependencies(preprocessing squirrel_dynamic_filter_msgs_generate_messages_cpp)
@@ -196,12 +195,23 @@ target_link_libraries(temporal_inference ${catkin_LIBRARIES} ${Boost_LIBRARIES} 
 add_executable(sensor_to_base_link src/sensor_to_base_link.cpp)
 target_link_libraries(sensor_to_base_link ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
+add_executable(publish_color_octomap src/publish_color_octomap.cpp)
+target_link_libraries(publish_color_octomap ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable(octomap_to_cloud src/octomap_to_cloud.cpp)
+target_link_libraries(octomap_to_cloud ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable(writeOctree src/writeOctree.cpp)
+target_link_libraries(writeOctree ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
+
 
 #add_executable(store_cloud src/store_cloud.cpp)
 #target_link_libraries(store_cloud ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
 add_executable(static_classify src/StaticClassifyOctoMap.cpp)
 target_link_libraries(static_classify ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY})
+add_dependencies(static_classify squirrel_dynamic_filter_msgs_generate_messages_cpp)
 
 
 

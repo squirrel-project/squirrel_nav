@@ -52,6 +52,8 @@ class tfPointCloud
     tf::TransformBroadcaster br;
     tf::Transform transform_map_base_link;
     ofstream time_write;
+
+    pcl::PCDWriter writer;
   public:
     tfPointCloud():counter(0)
     {
@@ -120,6 +122,51 @@ class tfPointCloud
            pcl::copyPointCloud(*not_ground,classify_static_srv.response.unclassified_points,*dynamic_cloud);
          }
        }
+
+       static_cloud->width = static_cloud->points.size();
+       static_cloud->height = 1;
+
+
+       dynamic_cloud->width = dynamic_cloud->points.size();
+       dynamic_cloud->height = 1;
+
+
+       ground->width = ground->points.size();
+       ground->height = 1;
+
+
+       not_ground->width = not_ground->points.size();
+       not_ground->height = 1;
+
+
+
+
+       ss.str("");
+       ss << output_folder << "static_cloud_" << counter << ".pcd";
+
+       if(!static_cloud->points.empty())
+         writer.write(ss.str(),*static_cloud,true);
+       ss.str("");
+       ss << output_folder << "dynamic_cloud_" << counter << ".pcd";
+
+       if(!dynamic_cloud->points.empty())
+         writer.write(ss.str(),*dynamic_cloud,true);
+       ss.str("");
+       ss << output_folder << "ground_" << counter << ".pcd";
+
+       if(!ground->points.empty())
+         writer.write(ss.str(),*ground,true);
+       ss.str("");
+       ss << output_folder << "not_ground_" << counter << ".pcd";
+
+       if(!not_ground->points.empty())
+         writer.write(ss.str(),*not_ground,true);
+
+
+
+
+
+
        measure_time end = SystemClock::now();
        TimeDiff time_diff = end - start;
        double correspondence_time = time_diff.count();
@@ -137,6 +184,8 @@ class tfPointCloud
        if(dynamic_cloud->points.size() > 50)
          dynamic_filter_msg_pub.publish(dynamic_filter_msg);
        counter+=1;
+
+       fprintf(stderr,"%d\n",counter);
 
     }
     void preprocessing(const sensor_msgs::PointCloud2 cloud_msg,PointCloud::Ptr &cloud_processed,std::vector<int>&static_indices,std::vector<int>&dynamic_indices)
@@ -239,7 +288,10 @@ class tfPointCloud
 
 
 int main(int argc, char ** argv)
-{	ros::init(argc, argv, "squirrel_dynamic_filter_preprocessing");
+{
+
+
+ ros::init(argc, argv, "squirrel_dynamic_filter_preprocessing");
 	tfPointCloud cloud;
 	while(ros::ok())
 	{

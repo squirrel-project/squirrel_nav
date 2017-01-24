@@ -1,6 +1,6 @@
 TransformFound: false
 InputMsg: "/kinect/depth/points"
-DownSamplingRadius: 0.01
+DownSamplingRadius: 0.008
 FeatureClusterMaxLength: 0.1
 FeatureClusterMaxPoints: 200
 NormalRadius: 0.05

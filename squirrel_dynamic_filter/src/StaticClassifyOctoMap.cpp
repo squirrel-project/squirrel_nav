@@ -121,8 +121,14 @@ class ClassifyStatic
 
         }
         else
+        {
+
+          is_processed[point_index] = true;
           res.unclassified_points.push_back(point_index);//new static or dynamic
 
+
+
+        }
         point_index += 1;
       }
 
@@ -134,7 +140,36 @@ class ClassifyStatic
 
       pcl::copyPointCloud(cloud_input_raw,res.static_points,*static_cloud);//points corresponding to map(static)
 
-      pcl::copyPointCloud(cloud_input_raw,res.unclassified_points,*dynamic_cloud);
+      if(res.unclassified_points.size() > 100)
+        pcl::copyPointCloud(cloud_input_raw,res.unclassified_points,*dynamic_cloud);
+
+      //PointCloud::Ptr dynamic_cloud_initial(new PointCloud);
+      //pcl::copyPointCloud(cloud_input_raw,res.unclassified_points,*dynamic_cloud_initial);
+      //pcl::KdTreeFLANN <Point> kdtree_dynamic;
+      //kdtree_dynamic.setInputCloud(dynamic_cloud_initial);
+
+      //std::vector <int> final_dynamic;
+      //point_index = 0;
+      //for(auto &point:dynamic_cloud_initial->points)
+      //{
+
+        //std::vector <int> pointIdxRadiusSearch;
+        //std::vector <float> pointRadiusSquaredDistance;
+
+        //if(kdtree_dynamic.radiusSearch(point,0.2,pointIdxRadiusSearch,pointRadiusSquaredDistance) > 0)
+          //{
+            //if(pointRadiusSquaredDistance.size() > 50)
+              //final_dynamic.push_back(point_index);
+          //}
+
+
+        //point_index +=1;
+
+
+
+      //}
+
+      //pcl::copyPointCloud(*dynamic_cloud_initial,final_dynamic,*dynamic_cloud);//points corresponding to map(static)
 
     // pcl::transformPointCloud(*static_cloud_map,*static_cloud,sensor_base_link_trans);///Transforming cloud in base_link frame
 
