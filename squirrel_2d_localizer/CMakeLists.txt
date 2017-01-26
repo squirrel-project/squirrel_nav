@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(squirrel_2d_localizer)
 
+set(ROS_BUILD_TYPE Release)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
 
 ## Enable C++11 support
@@ -49,7 +51,7 @@ catkin_package(
  INCLUDE_DIRS include
  LIBRARIES squirrel_2d_localizer
  CATKIN_DEPENDS ${squirrel_2d_localizer_DEPENDENCIES}
- DEPENDS G2O Eigen3
+ DEPENDS Eigen3
 )
 
 ## Building the localizer

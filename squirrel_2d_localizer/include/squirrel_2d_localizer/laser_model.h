@@ -29,6 +29,8 @@
 #include "squirrel_2d_localizer/particle_types.h"
 #include "squirrel_2d_localizer/se2_types.h"
 
+#include <Eigen/StdVector>
+
 #include <cmath>
 #include <memory>
 #include <mutex>
@@ -47,6 +49,8 @@ class LaserModel {
     double angle_min, angle_max;
     Pose2d tf_r2l;
   };
+
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
  public:
   LaserModel() { setDefaultParams(); }
@@ -73,7 +77,8 @@ class LaserModel {
   void prepareLaserReadings(const std::vector<float>& measurement);
 
  private:
-  std::vector<EndPoint2d> eff_measurement_;
+  std::vector<EndPoint2d, Eigen::aligned_allocator<EndPoint2d>>
+      eff_measurement_;
 
   Params laser_params_;
 

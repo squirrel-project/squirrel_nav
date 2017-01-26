@@ -46,7 +46,6 @@ namespace particles {
 
 inline double computeTotalWeight(const std::vector<Particle>& particles) {
   double tot_weight = 0.;
-#pragma omp parallel for reduction(+ : tot_weight)
   for (size_t i = 0; i < particles.size(); ++i)
     tot_weight += particles[i].weight;
   return tot_weight;
@@ -55,7 +54,6 @@ inline double computeTotalWeight(const std::vector<Particle>& particles) {
 inline void setPoses(
     const std::vector<Pose2d> poses, std::vector<Particle>* particles) {
   assert(poses.size() == particles->size());
-#pragma omp parallel for default(shared)
   for (size_t i           = 0; i < particles->size(); ++i)
     particles->at(i).pose = poses[i];
 }
@@ -63,7 +61,6 @@ inline void setPoses(
 inline void setWeights(
     const std::vector<double>& weights, std::vector<Particle>* particles) {
   assert(weights.size() == particles->size());
-#pragma omp parallel for default(shared)
   for (size_t i             = 0; i < particles->size(); ++i)
     particles->at(i).weight = weights[i];
 }
@@ -78,7 +75,6 @@ inline void computeMeanAndCovariance(
     const std::vector<Particle>& particles, Pose2d* mean,
     Matrix<3, 3>* covariance) {
   double mean_x = 0., mean_y = 0., mean_c = 0., mean_s = 0., sq_tot_w = 0.;
-#pragma omp parallel for reduction(+ : mean_x, mean_y, mean_c, mean_s, sq_tot_w)
   for (size_t i = 0; i < particles.size(); ++i) {
     const double weight = particles[i].weight;
     mean_x += weight * particles[i].pose[0];
@@ -91,7 +87,6 @@ inline void computeMeanAndCovariance(
   *mean               = Pose2d(mean_x, mean_y, mean_a);
   const double unbias = 1 - sq_tot_w;
   double cov00 = 0., cov01 = 0., cov02 = 0., cov11 = 0., cov12 = 0., cov22 = 0.;
-#pragma omp parallel for reduction(+ : cov00, cov01, cov02, cov11, cov12, cov22)
   for (size_t i = 0; i < particles.size(); ++i) {
     const double dx = particles[i].pose[0] - mean_x;
     const double dy = particles[i].pose[1] - mean_y;

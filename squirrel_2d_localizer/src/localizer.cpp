@@ -47,7 +47,6 @@ void Localizer::resetPose(const Pose2d& init_pose) {
     particles_.clear();
   particles_.reserve(loc_params_.num_particles);
   particles_.emplace_back(init_pose, 1.);
-#pragma omp parallel for default(shared)
   for (size_t i = 1; i < loc_params_.num_particles; ++i) {
     const double x = init_pose[0] + loc_params_.init_stddev_x * randn(rnd_eng);
     const double y = init_pose[1] + loc_params_.init_stddev_y * randn(rnd_eng);
