@@ -40,6 +40,8 @@ class LatentModelLikelihoodField {
     double observation_sigma;
   };
 
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+  
  public:
   LatentModelLikelihoodField();
   LatentModelLikelihoodField(const Params& params) : lmlf_params_(params) {};

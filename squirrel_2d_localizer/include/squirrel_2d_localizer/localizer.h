@@ -67,6 +67,8 @@ class Localizer {
   inline LaserModel* laserModel() { return laser_model_.get(); }
   inline MotionModel* motionModel() { return motion_model_.get(); }
 
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+  
  private:
   inline void setDefaultParams() {
     loc_params_.num_particles  = 1000;

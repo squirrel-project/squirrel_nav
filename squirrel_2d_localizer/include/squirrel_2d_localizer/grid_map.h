@@ -63,6 +63,8 @@ class GridMap {
 
   inline Params& params() { return map_params_; }
 
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+  
  private:
   inline void setDefaultParams() {
     map_params_.resolution = 0.05;

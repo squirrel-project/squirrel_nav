@@ -42,7 +42,7 @@ class TwistCorrection {
     double max_lin_vel, max_ang_vel;
     double alpha;
   };
-
+  
  public:
   TwistCorrection();
   TwistCorrection(const Params& params);
@@ -50,8 +50,10 @@ class TwistCorrection {
   
   Pose2d correction(const Twist2d& twist);
 
-  Params& params() { return params_; }
+  inline Params& params() { return params_; }
 
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+  
  private:
   inline void setDefaultParams() {
     params_.corr_magnitude = 1.;

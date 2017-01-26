@@ -54,6 +54,8 @@ class Pose2d {
   Pose2d& operator*=(const Pose2d& rhs);
 
   Pose2d inverse() const;
+
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   
  private:
   Vector<2> translation_;

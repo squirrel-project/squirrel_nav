@@ -48,7 +48,7 @@ class LocalizerROS {
   LocalizerROS();
   virtual ~LocalizerROS();
 
-  void spin(double hz = 40.0);
+  void spin(double hz = 40.);
 
  private:
   void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg);
