@@ -46,7 +46,6 @@ void MotionModel::sampleProposal(
                     motion_params_.noise_yy * my + motion_params_.noise_ya * ma;
   const double sa = motion_params_.noise_xa * mx +
                     motion_params_.noise_ya * my + motion_params_.noise_aa * ma;
-#pragma omp parallel for default(shared)
   for (size_t i = 0; i < particles->size(); ++i) {
     const Pose2d e(
         dx + sx * randn(rnd_eng_), dy + sy * randn(rnd_eng_),

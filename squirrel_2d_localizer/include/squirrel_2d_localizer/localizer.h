@@ -71,7 +71,7 @@ class Localizer {
   
  private:
   inline void setDefaultParams() {
-    loc_params_.num_particles  = 1000;
+    loc_params_.num_particles  = 250;
     loc_params_.min_lin_update = 1.0;
     loc_params_.min_ang_update = 1.0;
   }

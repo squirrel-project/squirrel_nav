@@ -34,11 +34,9 @@ void LaserModel::computeParticlesLikelihood(
   std::unique_lock<std::mutex> lock(mtx_);
   prepareLaserReadings(measurement);
   int e_i, e_j;
-#pragma omp parallel for default(shared)
   for (size_t i = 0; i < particles->size(); ++i) {
     const Pose2d& pose = particles->at(i).pose;
     double weight      = 1.;
-#pragma omp parallel for reduction(* : weight)
     for (size_t j = 0; j < eff_measurement_.size(); ++j) {
       const EndPoint2d& beam_endpoint = eff_measurement_[j];
       const EndPoint2d& e =
