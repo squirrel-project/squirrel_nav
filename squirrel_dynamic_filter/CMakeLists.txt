@@ -113,7 +113,7 @@ set_target_properties(mlpack PROPERTIES LINKER_LANGUAGE CXX)
 add_dependencies(mlpack build_mlpack)
 
 add_library(vertex_se3_vector3D src/vertex_se3_vector3D.cpp src/edge_unary.cpp src/edge.cpp)
-TARGET_LINK_LIBRARIES (vertex_se3_vector3D ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/libg2o_types_slam3d.so ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/libg2o_core.so ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/libg2o_stuff.so)
+target_link_libraries(vertex_se3_vector3D ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/libg2o_types_slam3d.so ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/libg2o_core.so ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/libg2o_stuff.so)
 add_dependencies(vertex_se3_vector3D libg2o_types_slam3d libg2o_core libg2o_stuff)
 
 
