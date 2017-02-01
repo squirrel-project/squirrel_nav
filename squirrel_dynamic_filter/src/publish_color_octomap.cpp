@@ -48,7 +48,7 @@ class PublishOctomap
         }
       }
 
-      fprintf(stderr,"%d\n",cloud->points.size());
+      // fprintf(stderr,"%d\n",cloud->points.size());
       kdtree.setInputCloud(cloud);
 
     }

@@ -82,7 +82,7 @@ using namespace g2o::internal;
       virtual void oplusImpl(const double* update)
       {
         Eigen::Map<const Vector6d> v(update);
-        Isometry3D increment = internal::fromVectorMQT(v);
+        Isometry3D increment = ::internal::fromVectorMQT(v);
         _estimate = _estimate * increment;
         if (++_numOplusCalls > orthogonalizeAfter) {
           _numOplusCalls = 0;

@@ -101,8 +101,8 @@ int main(int argc,char **argv)
 
  myfile.close();	
  
- Isometry3D frame_1 = g2o::internal::fromVectorQT(motion_trans[start_frame]);
- Isometry3D frame_2 = g2o::internal::fromVectorQT(motion_trans[start_frame + 1]);
+ Isometry3D frame_1 = ::g2o::internal::fromVectorQT(motion_trans[start_frame]);
+ Isometry3D frame_2 = ::g2o::internal::fromVectorQT(motion_trans[start_frame + 1]);
  Isometry3D odometry = (frame_2.inverse() * frame_1);////odometry from the robot
  mean[0] = odometry(0,3);
  mean[1] = odometry(1,3);
@@ -170,7 +170,7 @@ int main(int argc,char **argv)
     line=line_new;
    }
   
-   Isometry3D estimated_motion = g2o::internal::fromVectorQT(trans);
+   Isometry3D estimated_motion = ::g2o::internal::fromVectorQT(trans);
 
    Vector4f point = cloud->points[counter].getVector4fMap();
 
@@ -231,8 +231,8 @@ int main(int argc,char **argv)
  for(size_t i = start_frame+1; i < end_frame; ++i)
  {
   cout << i << endl; 
-  frame_1 = g2o::internal::fromVectorQT(motion_trans[i]);
-  frame_2 = g2o::internal::fromVectorQT(motion_trans[i + 1]);
+  frame_1 = ::g2o::internal::fromVectorQT(motion_trans[i]);
+  frame_2 = ::g2o::internal::fromVectorQT(motion_trans[i + 1]);
   odometry = (frame_2.inverse() * frame_1);////odometry from the robot
 
   cloud->points.clear();
@@ -290,7 +290,7 @@ int main(int argc,char **argv)
      line=line_new;
     }
    
-    Isometry3D estimated_motion = g2o::internal::fromVectorQT(trans);
+    Isometry3D estimated_motion = ::g2o::internal::fromVectorQT(trans);
 
     Vector4f point = cloud->points[counter].getVector4fMap();
 
