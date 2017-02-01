@@ -52,10 +52,10 @@ class PublishOctomap
       kdtree.setInputCloud(cloud);
 
     }
-    PublishOctomap():cloud(new PointCloud),binary_sub(nh,"octomap_static_binary",50),full_sub(nh, "octomap_static_full", 50),sync(MySyncPolicy(10), binary_sub, full_sub)
+    PublishOctomap():cloud(new PointCloud),binary_sub(nh,"octomap_movable_binary",50),full_sub(nh, "octomap_movable_full", 50),sync(MySyncPolicy(10), binary_sub, full_sub)
     {
 
-      publisher = nh.advertise<octomap_msgs::Octomap>("/octomap_full_color",10);//Publising the filtered pointcloud
+      publisher = nh.advertise<octomap_msgs::Octomap>("/octomap_movable_color",10);//Publising the filtered pointcloud
 //      reader.read("/home/dewan/octo_maps/18012017.pcd",*cloud);
       sync.registerCallback(boost::bind(&PublishOctomap::callback,this, _1, _2));
 
