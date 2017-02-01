@@ -49,6 +49,7 @@ class tfPointCloud
     PointCloud previous_cloud;
     PointCloud previous_dynamic;
     bool is_verbose;
+    bool store_results;
     tf::TransformBroadcaster br;
     tf::Transform transform_map_base_link;
     ofstream time_write;
@@ -65,6 +66,7 @@ class tfPointCloud
       n_.getParam("DownSamplingRadius",down_sampling_radius);
       n_.getParam("StaticFrontThreshold",static_front_threshold);
       n_.getParam("Verbose",is_verbose);
+      n_.getParam("StoreResults",store_results);
       pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static_final/",10);//Publising the filtered pointcloud
       dynamic_filter_msg_pub = n_.advertise<squirrel_dynamic_filter_msgs::DynamicFilterMsg>("/squirrel/dynamic_filter_msg",10);//Publising the filtered pointcloud
       cloud_sub = n_.subscribe("/squirrel/cloud_msg", 500, &tfPointCloud::msgCallback, this);
@@ -104,6 +106,8 @@ class tfPointCloud
 
           /*   dynamic_cloud->width = dynamic_cloud->points.size();*/
              //dynamic_cloud->height = 1;
+       ////calling the static Classify service
+
        pcl::toROSMsg(*not_ground,classify_static_srv.request.cloud);
        classify_static_srv.request.odometry.resize(7);
        classify_static_srv.request.odometry[0] = sensor_msg.odometry[0];
@@ -140,31 +144,29 @@ class tfPointCloud
 
 
 
+       if(store_results)
+       {
+         ss.str("");
+         ss << output_folder << "static_cloud_" << counter << ".pcd";
 
-       ss.str("");
-       ss << output_folder << "static_cloud_" << counter << ".pcd";
+         if(!static_cloud->points.empty())
+           writer.write(ss.str(),*static_cloud,true);
+         ss.str("");
+         ss << output_folder << "dynamic_cloud_" << counter << ".pcd";
 
-       if(!static_cloud->points.empty())
-         writer.write(ss.str(),*static_cloud,true);
-       ss.str("");
-       ss << output_folder << "dynamic_cloud_" << counter << ".pcd";
+         if(!dynamic_cloud->points.empty())
+           writer.write(ss.str(),*dynamic_cloud,true);
+         ss.str("");
+         ss << output_folder << "ground_" << counter << ".pcd";
 
-       if(!dynamic_cloud->points.empty())
-         writer.write(ss.str(),*dynamic_cloud,true);
-       ss.str("");
-       ss << output_folder << "ground_" << counter << ".pcd";
+         if(!ground->points.empty())
+           writer.write(ss.str(),*ground,true);
+         ss.str("");
+         ss << output_folder << "not_ground_" << counter << ".pcd";
 
-       if(!ground->points.empty())
-         writer.write(ss.str(),*ground,true);
-       ss.str("");
-       ss << output_folder << "not_ground_" << counter << ".pcd";
-
-       if(!not_ground->points.empty())
-         writer.write(ss.str(),*not_ground,true);
-
-
-
-
+         if(!not_ground->points.empty())
+           writer.write(ss.str(),*not_ground,true);
+       }
 
 
        measure_time end = SystemClock::now();
@@ -185,7 +187,10 @@ class tfPointCloud
          dynamic_filter_msg_pub.publish(dynamic_filter_msg);
        counter+=1;
 
-       fprintf(stderr,"%d\n",counter);
+
+
+
+       //fprintf(stderr,"%d\n",counter);
 
     }
     void preprocessing(const sensor_msgs::PointCloud2 cloud_msg,PointCloud::Ptr &cloud_processed,std::vector<int>&static_indices,std::vector<int>&dynamic_indices)

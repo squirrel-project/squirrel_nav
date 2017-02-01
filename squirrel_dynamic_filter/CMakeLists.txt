@@ -198,11 +198,15 @@ target_link_libraries(sensor_to_base_link ${catkin_LIBRARIES} ${Boost_LIBRARIES}
 add_executable(publish_color_octomap src/publish_color_octomap.cpp)
 target_link_libraries(publish_color_octomap ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
-add_executable(octomap_to_cloud src/octomap_to_cloud.cpp)
-target_link_libraries(octomap_to_cloud ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+#add_executable(octomap_to_cloud src/octomap_to_cloud.cpp)
+#target_link_libraries(octomap_to_cloud ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
-add_executable(writeOctree src/writeOctree.cpp)
-target_link_libraries(writeOctree ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+#add_executable(writeOctree src/writeOctree.cpp)
+#target_link_libraries(writeOctree ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
+#add_executable(color_octomap src/color_octomap.cpp)
+#target_link_libraries(color_octomap ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
 
 
 

@@ -1,4 +1,10 @@
 <launch>
+ <arg name="map_file" default="$(find squirrel_navigation)/octomaps/default-octomap.bt"/>
  <param name="OutputFolder" type="string" value="$(find squirrel_dynamic_filter)/results/test/" />
  <node name="dynamic_filter_node" type="dynamic_filter_node"  pkg="squirrel_dynamic_filter"/>
-</launch>
+ <node name="publish_color_octomap" type="publish_color_octomap"  pkg="squirrel_dynamic_filter" args="$(arg map_file)" />
+ <include file="$(find squirrel_3d_mapping)/launch/3d_mapping_update.launch">
+  <arg name="input_topic" value="/kinect/depth/static_final" />
+  <arg name="base_frame" value="/base_link_static_final" />
+ </include>
+ </launch>
