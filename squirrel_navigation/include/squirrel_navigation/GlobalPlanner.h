@@ -1,21 +1,21 @@
-// GlobalPlanner.h --- 
-// 
+// GlobalPlanner.h ---
+//
 // Filename: GlobalPlanner.h
 // Description: ARA*/AD* planner with motion primitives
 // Author: Federico Boniardi
 // Maintainer: boniardi@informatik.uni-freiburg.de
 // Created: Sun Jan 17 18:04:06 2016 (+0100)
 // Version: 0.1.0
-// Last-Updated: 
-//           By: 
+// Last-Updated:
+//           By:
 //     Update #: 0
-// URL: 
-// Keywords: 
-// Compatibility: 
-// 
-// 
+// URL:
+// Keywords:
+// Compatibility:
+//
+//
 
-// Commentary: 
+// Commentary:
 // /*********************************************************************
 // *
 // * Software License Agreement (BSD License)
@@ -52,8 +52,6 @@
 // *
 // * Author: Mike Phillips
 // *********************************************************************/
-
-// Code:
 
 #ifndef SQUIRREL_NAVIGATION_GLOBALPLANNER_H_
 #define SQUIRREL_NAVIGATION_GLOBALPLANNER_H_
@@ -93,21 +91,22 @@
 
 namespace squirrel_navigation {
 
-class GlobalPlanner : public nav_core::BaseGlobalPlanner
-{
+class GlobalPlanner : public nav_core::BaseGlobalPlanner {
  public:
-  GlobalPlanner( void );
-  GlobalPlanner( std::string, costmap_2d::Costmap2DROS* );
-  virtual ~GlobalPlanner( void );
+  GlobalPlanner(void);
+  GlobalPlanner(std::string, costmap_2d::Costmap2DROS*);
+  virtual ~GlobalPlanner(void);
 
-  virtual void initialize( std::string, costmap_2d::Costmap2DROS* );
-  virtual bool makePlan( const geometry_msgs::PoseStamped&, const geometry_msgs::PoseStamped&, std::vector<geometry_msgs::PoseStamped>& );
-  
+  virtual void initialize(std::string, costmap_2d::Costmap2DROS*);
+  virtual bool makePlan(
+      const geometry_msgs::PoseStamped&, const geometry_msgs::PoseStamped&,
+      std::vector<geometry_msgs::PoseStamped>&);
+
  private:
-  typedef enum {DIJKSTRA, LATTICE} planner_t;
+  typedef enum { DIJKSTRA, LATTICE } planner_t;
 
   ros::NodeHandle nh_;
-  
+
   std::string name_;
   bool initialized_;
 
@@ -115,9 +114,9 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
   navfn::NavfnROS* dijkstra_planner_;
   SBPLPlanner* lattice_planner_;
   TrajectoryPlanner* trajectory_;
-  
+
   EnvironmentNAVXYTHETALAT* env_;
-  
+
   std::string lattice_planner_type_;
 
   double allocated_time_;
@@ -134,63 +133,62 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner
   unsigned char inscribed_inflated_obstacle_;
   unsigned char sbpl_cost_multiplier_;
 
-  costmap_2d::Costmap2DROS* costmap_ros_; 
-  
+  costmap_2d::Costmap2DROS* costmap_ros_;
+
   ros::Publisher traj_xy_pub_, stats_pub_, traj_xyth_pub_;
   ros::Subscriber update_sub_, odom_sub_;
 
   nav_msgs::Odometry odom_;
-  
+
   std::vector<geometry_msgs::Point> footprint_;
 
-  // replanning 
+  // replanning
   std::vector<geometry_msgs::PoseStamped> plan_;
   double heading_lookahead_, lookahead_dijkstra_, lookahead_lattice_;
-  
+
   bool verbose_;
 
   std::mutex guard_;
-  
-  unsigned char costMapCostToSBPLCost( unsigned char );
-  void publishStats( int, int , const geometry_msgs::PoseStamped&, const geometry_msgs::PoseStamped& );
-  void updatePlannerCallback( const std_msgs::Bool::ConstPtr& );
-  void odometryCallback( const nav_msgs::Odometry::ConstPtr& );
 
-  inline void publishTrajectory( const std::vector<TrajectoryPlanner::Pose2D>* poses )
-  {
+  unsigned char costMapCostToSBPLCost(unsigned char);
+  void publishStats(
+      int, int, const geometry_msgs::PoseStamped&,
+      const geometry_msgs::PoseStamped&);
+  void updatePlannerCallback(const std_msgs::Bool::ConstPtr&);
+  void odometryCallback(const nav_msgs::Odometry::ConstPtr&);
+
+  inline void publishTrajectory(
+      const std::vector<TrajectoryPlanner::Pose2D>* poses) {
     ros::Time traj_stamp = ros::Time::now();
 
     const size_t n = poses->size();
-    
+
     nav_msgs::Path gui_plan;
     gui_plan.header.frame_id = "/map";
-    gui_plan.header.stamp = traj_stamp;
-    
+    gui_plan.header.stamp    = traj_stamp;
+
     geometry_msgs::PoseArray gui_poses;
     gui_poses.header.frame_id = "/map";
-    gui_poses.header.stamp = traj_stamp;
-    
+    gui_poses.header.stamp    = traj_stamp;
+
     gui_poses.poses.resize(n);
     gui_plan.poses.resize(n);
-    for (size_t i=0; i<poses->size(); ++i) {
-      geometry_msgs::Pose pose = TrajectoryPlanner::Pose2D::toPoseMsg(poses->at(i));      
-      gui_poses.poses[i] = pose;
+    for (size_t i = 0; i < poses->size(); ++i) {
+      geometry_msgs::Pose pose =
+          TrajectoryPlanner::Pose2D::toPoseMsg(poses->at(i));
+      gui_poses.poses[i]     = pose;
       gui_plan.poses[i].pose = pose;
     }
-    
+
     traj_xy_pub_.publish(gui_plan);
     traj_xyth_pub_.publish(gui_poses);
   };
 
-  inline bool newGoal( const geometry_msgs::PoseStamped& goal ) const
-  {
-    return specialEuclideanDistance(trajectory_->getGoal(),goal.pose)>TOLL;
+  inline bool newGoal(const geometry_msgs::PoseStamped& goal) const {
+    return specialEuclideanDistance(trajectory_->getGoal(), goal.pose) > TOLL;
   };
 };
 
 }  // namespace squirrel_navigation
 
 #endif /* SQUIRREL_NAVIGATION_GLOBALPLANNER_H_ */
-
-// 
-// GlobalPlanner.h ends here

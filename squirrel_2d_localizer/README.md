@@ -20,19 +20,19 @@ to retrieve the map.
   pose.
 - `~/localizer/num_particles` (default: `750`): number of particles for
   the particle filter.
-- `~/min_lin_update` (default `0.5`): minimum (cummulative) linear
+- `~/localizer/min_lin_update` (default `0.5`): minimum (cummulative) linear
   distance before performing a filter update.
-- `~/min_ang_update` (default `0.5`): minimum (cummulative) angular
+- `~/localizer/min_ang_update` (default `0.5`): minimum (cummulative) angular
   distance before performing a filter update.
-- `~/init_stddev_{x,y,a}` (default `{0.5, 0.5, 0.5}`): initial
+- `~/localizer/init_stddev_{x,y,a}` (default `{0.5, 0.5, 0.5}`): initial
   standard deviations of particles (Gaussian distributed).
-- `~/noise_{xx, xy, xa, yy, ya, aa}` (default `{1.0, 0.0, 0.0, 1.0,
+- `~/motion_model/noise_{xx, xy, xa, yy, ya, aa}` (default `{1.0, 0.0, 0.0, 1.0,
   0.0, 1.0}`), noise components of the odometry model.
 - `noise_magnitude` (default `1.0`): rescaling factor for the noise
   parameters.
-- `~/likelihood_field/saturation_distance` (default `0.5`): saturation distance of
+- `~/latent_model_likelihood_field/saturation_distance` (default `0.5`): saturation distance of
   the Gaussian kernels.
-- `~/likelihood_field/observation_sigma` (default `0.5`): variance
+- `~/latent_model/likelihood_field/observation_sigma` (default `0.5`): variance
   parameter of the gaussian kernels.
 - `~/laser_model/beam_min_distance` (default `0.1`) downsampling
   factor for the laser readings.

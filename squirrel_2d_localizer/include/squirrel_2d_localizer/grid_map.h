@@ -49,7 +49,7 @@ class GridMap {
   GridMap(const Params& map_params);
   virtual ~GridMap() {}
 
-  void initialize(std::vector<signed char>& data);
+  void initialize(const std::vector<signed char>& data);
 
   void pointToIndices(const EndPoint2d& e, int* i, int* j) const;
   bool inside(int i, int j) const;
@@ -58,10 +58,13 @@ class GridMap {
   size_t width() const { return map_params_.width; }
   double resolution() const { return map_params_.resolution; }
 
-  int operator()(int i, int j) const { return occupancy_map_(i, j); };
+  double operator()(int i, int j) const { return occupancy_map_(i, j); };
+  operator const Matrix<>&() const { return occupancy_map_; }
 
   inline Params& params() { return map_params_; }
 
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+  
  private:
   inline void setDefaultParams() {
     map_params_.resolution = 0.05;
@@ -71,7 +74,7 @@ class GridMap {
   }
 
  private:
-  MatrixI<> occupancy_map_;
+  Matrix<> occupancy_map_;
 
   Params map_params_;
 };

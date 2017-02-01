@@ -20,27 +20,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CAD_LOCALIZATION_DISTANCE_TRANSFORM_H_
-#define CAD_LOCALIZATION_DISTANCE_TRANSFORM_H_
+#ifndef SQUIRREL_2D_LOCALIZER_CONVOLUTION_H_
+#define SQUIRREL_2D_LOCALIZER_CONVOLUTION_H_
 
 #include "squirrel_2d_localizer/math_types.h"
 
 namespace squirrel_2d_localizer {
 
-namespace distance_transform {
+namespace convolution {
+
+void computeGaussianConvolution2d(
+    double sigma, double resolution, const Matrix<>& matrix, Matrix<>* output);
 
 namespace internal {
 
-void computeSquaredDistanceTransform1d(
-    const Vector<>& f, double resolution, Vector<>* sq_distance_transform);
+void computeGaussianConvolution1d(
+    double sigma, double resolution, const Vector<>& vector,  Vector<>* output);
 
-}  // namespace distance_transform_internal
+}  // namespace internal
 
-void computeSquaredDistanceTransform2d(
-    const Matrix<>& f, double resolution, Matrix<>* sq_distance_transform);
-
-}  // namespace distance_transform
+}  // namespace convolution
 
 }  // namespace squirrel_2d_localizer
 
-#endif /* CAD_LOCALIZATION_DISTANCE_TRANSFORM_H_ */
+#endif /* SQUIRREL_2D_LOCALIZER_CONVOLUTION_H_ */

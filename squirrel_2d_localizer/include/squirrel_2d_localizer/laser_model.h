@@ -25,9 +25,11 @@
 
 #include "squirrel_2d_localizer/endpoint_types.h"
 #include "squirrel_2d_localizer/grid_map.h"
-#include "squirrel_2d_localizer/likelihood_field.h"
+#include "squirrel_2d_localizer/latent_model_likelihood_field.h"
 #include "squirrel_2d_localizer/particle_types.h"
 #include "squirrel_2d_localizer/se2_types.h"
+
+#include <Eigen/StdVector>
 
 #include <cmath>
 #include <memory>
@@ -48,16 +50,20 @@ class LaserModel {
     Pose2d tf_r2l;
   };
 
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
  public:
   LaserModel() { setDefaultParams(); }
   LaserModel(const Params& laser_params) : laser_params_(laser_params) {}
   virtual ~LaserModel() {}
 
   void computeParticlesLikelihood(
-      const GridMap& grid_map, const LikelihoodField& likelihood_field,
+      const GridMap& grid_map,
+      const LatentModelLikelihoodField& likelihood_field,
       const std::vector<float>& measurement, std::vector<Particle>* particles);
 
   inline Params& params() { return laser_params_; }
+  inline const Params& params() const { return laser_params_; }
 
  private:
   inline void setDefaultParams() {
@@ -71,7 +77,8 @@ class LaserModel {
   void prepareLaserReadings(const std::vector<float>& measurement);
 
  private:
-  std::vector<EndPoint2d> eff_measurement_;
+  std::vector<EndPoint2d, Eigen::aligned_allocator<EndPoint2d>>
+      eff_measurement_;
 
   Params laser_params_;
 

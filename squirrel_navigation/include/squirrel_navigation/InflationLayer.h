@@ -1,19 +1,19 @@
-// InflationLayer.h --- 
-// 
+// InflationLayer.h ---
+//
 // Filename: InflationLayer.h
-// Description: 
+// Description:
 // Author: Federico Boniardi
-// Maintainer: 
+// Maintainer:
 // Created: Mi Jan 20 15:09:36 2016 (+0100)
-// Version: 
-// Last-Updated: 
-//           By: 
+// Version:
+// Last-Updated:
+//           By:
 //     Update #: 0
-// URL: 
-// Keywords: 
-// Compatibility: 
-// 
-// 
+// URL:
+// Keywords:
+// Compatibility:
+//
+//
 
 // Commentary:
 // /*********************************************************************
@@ -54,11 +54,6 @@
 //  *         David V. Lu!!
 //  *********************************************************************/
 
-// Change Log:
-//
-
-// Code:
-
 #ifndef SQUIRREL_NAVIGATION_INFLATION_LAYER_H_
 #define SQUIRREL_NAVIGATION_INFLATION_LAYER_H_
 
@@ -78,51 +73,54 @@
 
 #include <pluginlib/class_list_macros.h>
 
-#include <queue>
 #include <algorithm>
 #include <boost/thread.hpp>
+#include <queue>
 
 namespace squirrel_navigation {
 
-class InflationLayer : public costmap_2d::Layer
-{
-public:
-  InflationLayer( void );
-  virtual ~InflationLayer( void );
- 
-  virtual void onInitialize( void );
-  virtual void updateBounds( double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y, double* max_x, double* max_y );
-  virtual void updateCosts( costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j );
-  virtual void matchSize( void );
-  virtual void reset( void ) { onInitialize(); };
-  void setInflationParameters( double inscribed_radius, double inflation_radius, double cost_scaling_factor );
+class InflationLayer : public costmap_2d::Layer {
+ public:
+  InflationLayer(void);
+  virtual ~InflationLayer(void);
 
-  virtual bool isDiscretized( void )
-  {
-    return true;
-  };
-  
-  inline unsigned char computeCost(double distance) const
-  {
+  virtual void onInitialize(void);
+  virtual void updateBounds(
+      double robot_x, double robot_y, double robot_yaw, double* min_x,
+      double* min_y, double* max_x, double* max_y);
+  virtual void updateCosts(
+      costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i,
+      int max_j);
+  virtual void matchSize(void);
+  virtual void reset(void) { onInitialize(); };
+  void setInflationParameters(
+      double inscribed_radius, double inflation_radius,
+      double cost_scaling_factor);
+
+  virtual bool isDiscretized(void) { return true; };
+
+  inline unsigned char computeCost(double distance) const {
     unsigned char cost = 0;
-    if ( distance == 0 )
+    if (distance == 0)
       cost = costmap_2d::LETHAL_OBSTACLE;
-    else if ( distance * resolution_ <= inscribed_radius_ )
+    else if (distance * resolution_ <= inscribed_radius_)
       cost = costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
     else {
       // make sure cost falls off by Euclidean distance
       double euclidean_distance = distance * resolution_;
-      double factor = exp(-1.0 * weight_ * (euclidean_distance - inscribed_radius_));
-      cost = (unsigned char)((costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
+      double factor =
+          exp(-1.0 * weight_ * (euclidean_distance - inscribed_radius_));
+      cost =
+          (unsigned char)((costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
     }
     return cost;
   }
 
-protected:
-  virtual void onFootprintChanged( void );
+ protected:
+  virtual void onFootprintChanged(void);
   boost::recursive_mutex* inflation_access_;
 
-private:
+ private:
   double inflation_radius_, inscribed_radius_, weight_;
   unsigned int cell_inflation_radius_;
   unsigned int cached_cell_inflation_radius_;
@@ -131,7 +129,7 @@ private:
   double resolution_;
 
   bool inscribed_radius_from_footprint_;
-  
+
   bool* seen_;
   int seen_size_;
 
@@ -139,32 +137,33 @@ private:
   double** cached_distances_;
   double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
 
-  dynamic_reconfigure::Server<InflationLayerPluginConfig> *dsrv_;
+  dynamic_reconfigure::Server<InflationLayerPluginConfig>* dsrv_;
 
-  bool need_reinflation_;  ///< Indicates that the entire costmap should be reinflated next time around.
+  bool need_reinflation_;  ///< Indicates that the entire costmap should be
+                           ///reinflated next time around.
 
-  void reconfigureCB( InflationLayerPluginConfig &config, uint32_t level );
-  void computeCaches( void );
-  void deleteKernels( void );
-  void inflate_area( int min_i, int min_j, int max_i, int max_j, unsigned char* master_grid );
-  inline void enqueue(unsigned char* grid, unsigned int index, unsigned int mx, unsigned int my, unsigned int src_x, unsigned int src_y);
+  void reconfigureCB(InflationLayerPluginConfig& config, uint32_t level);
+  void computeCaches(void);
+  void deleteKernels(void);
+  void inflate_area(
+      int min_i, int min_j, int max_i, int max_j, unsigned char* master_grid);
+  inline void enqueue(
+      unsigned char* grid, unsigned int index, unsigned int mx, unsigned int my,
+      unsigned int src_x, unsigned int src_y);
 
-  inline double distanceLookup( int mx, int my, int src_x, int src_y )
-  {
+  inline double distanceLookup(int mx, int my, int src_x, int src_y) {
     unsigned int dx = abs(mx - src_x);
     unsigned int dy = abs(my - src_y);
     return cached_distances_[dx][dy];
   };
 
-  inline unsigned char costLookup( int mx, int my, int src_x, int src_y )
-  {
+  inline unsigned char costLookup(int mx, int my, int src_x, int src_y) {
     unsigned int dx = abs(mx - src_x);
     unsigned int dy = abs(my - src_y);
     return cached_costs_[dx][dy];
   };
 
-  unsigned int cellDistance( double world_dist )
-  {
+  unsigned int cellDistance(double world_dist) {
     return layered_costmap_->getCostmap()->cellDistance(world_dist);
   };
 };
@@ -172,6 +171,3 @@ private:
 }  // namespace costmap_2d
 
 #endif  // SQUIRREL_NAVIGATION_INFLATION_LAYER_H_
-
-// 
-// InflationLayer.h ends here

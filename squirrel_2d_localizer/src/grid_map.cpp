@@ -30,13 +30,15 @@ GridMap::GridMap(const Params& map_params) : map_params_(map_params) {
   occupancy_map_.resize(h, w);
 }
 
-void GridMap::initialize(std::vector<signed char>& data) {
+void GridMap::initialize(const std::vector<signed char>& data) {
   assert(map_params_.height * map_params_.width == data.size());
-#pragma omp parallel for
+  const double normalizer = 1. / 100.;
+#pragma omp parallel for default(shared)
   for (size_t px = 0; px < data.size(); ++px) {
-    const size_t i = map_params_.height - 1 - px / map_params_.width;
-    const size_t j = px % map_params_.width;
-    occupancy_map_(i, j) = static_cast<int>(data[px]) > 0 ? 1 : 0;
+    const size_t i        = map_params_.height - 1 - px / map_params_.width;
+    const size_t j        = px % map_params_.width;
+    const int pixel_value = static_cast<int>(data[px]);
+    occupancy_map_(i, j) = pixel_value >= 0 ? pixel_value * normalizer : 0.;
   }
 }
 

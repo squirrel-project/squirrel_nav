@@ -3,7 +3,7 @@
   <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml"/>
 
   <!--- Run mapserver -->
-  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)"/> 
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)"/>
 
   <!-- Run the localizer -->
   <node name="squirrel_2d_localizer" pkg="squirrel_2d_localizer" type="squirrel_2d_localizer_node" output="screen">

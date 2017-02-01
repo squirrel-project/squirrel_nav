@@ -30,7 +30,8 @@
 namespace squirrel_2d_localizer {
 
 void Localizer::initialize(
-    GridMap::Ptr& map, LikelihoodField::Ptr& likelihood_field,
+    GridMap::Ptr& map,
+    LatentModelLikelihoodField::Ptr& likelihood_field,
     LaserModel::Ptr& laser_model, MotionModel::Ptr& motion_model) {
   map_              = std::move(map);
   likelihood_field_ = std::move(likelihood_field);
@@ -46,7 +47,6 @@ void Localizer::resetPose(const Pose2d& init_pose) {
     particles_.clear();
   particles_.reserve(loc_params_.num_particles);
   particles_.emplace_back(init_pose, 1.);
-#pragma omp parallel for default(shared)
   for (size_t i = 1; i < loc_params_.num_particles; ++i) {
     const double x = init_pose[0] + loc_params_.init_stddev_x * randn(rnd_eng);
     const double y = init_pose[1] + loc_params_.init_stddev_y * randn(rnd_eng);
@@ -71,7 +71,7 @@ bool Localizer::updateFilter(
   if (cum_lin_motion_ < loc_params_.min_lin_update &&
       cum_ang_motion_ < loc_params_.min_ang_update)
     return false;
-  motion_model_->propagateParticles(motion, &particles_);
+  motion_model_->sampleProposal(motion, &particles_);
   laser_model_->computeParticlesLikelihood(
       *map_, *likelihood_field_, scan, &particles_);
   resampling::importanceSampling(&particles_);

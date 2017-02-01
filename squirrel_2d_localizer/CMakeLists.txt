@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(squirrel_2d_localizer)
 
+set(ROS_BUILD_TYPE Release)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
 
 ## Enable C++11 support
@@ -41,22 +43,25 @@ set(squirrel_2d_localizer_DEPENDENCIES
 find_package(catkin REQUIRED COMPONENTS ${squirrel_2d_localizer_DEPENDENCIES})
 include_directories(${catkin_INCLUDE_DIRS})
 
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIR})
+
 ## Catkin package
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES squirrel_2d_localizer
  CATKIN_DEPENDS ${squirrel_2d_localizer_DEPENDENCIES}
- DEPENDS G2O Eigen3
+ DEPENDS Eigen3
 )
 
 ## Building the localizer
 set(ROS_BUILD_TYPE Release)
 include_directories(include)
 add_executable(squirrel_2d_localizer_node  
-  src/distance_transform.cpp
+  src/convolution.cpp
   src/grid_map.cpp
   src/laser_model.cpp
-  src/likelihood_field.cpp
+  src/latent_model_likelihood_field.cpp
   src/localizer.cpp
   src/localizer_ros.cpp
   src/localizer_ros_node.cpp
@@ -66,7 +71,7 @@ add_executable(squirrel_2d_localizer_node
   src/extras/twist_correction.cpp
   src/extras/twist_correction_ros.cpp
 )
-target_link_libraries(squirrel_2d_localizer_node ${catkin_LIBRARIES})
+target_link_libraries(squirrel_2d_localizer_node ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 #############
 ## Install ##
