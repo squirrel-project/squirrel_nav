@@ -27,6 +27,8 @@ find_package(catkin REQUIRED COMPONENTS
   ${squirrel_dynamic_filter_DEPENDENCIES}
 )
 
+
+
 set(BOOST_LIBS program_options serialization random system)
 find_package(Boost REQUIRED COMPONENTS system signals thread)
 find_package(PCL 1.7 REQUIRED)
@@ -192,6 +194,20 @@ target_link_libraries(temporal_inference ${catkin_LIBRARIES} ${Boost_LIBRARIES} 
 
 add_executable(sensor_to_base_link src/sensor_to_base_link.cpp)
 target_link_libraries(sensor_to_base_link ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable(publish_color_octomap src/publish_color_octomap.cpp)
+target_link_libraries(publish_color_octomap ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
+#add_executable(octomap_to_cloud src/octomap_to_cloud.cpp)
+#target_link_libraries(octomap_to_cloud ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
+#add_executable(writeOctree src/writeOctree.cpp)
+#target_link_libraries(writeOctree ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
+#add_executable(color_octomap src/color_octomap.cpp)
+#target_link_libraries(color_octomap ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
+
 
 
 #add_executable(store_cloud src/store_cloud.cpp)

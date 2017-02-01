@@ -54,6 +54,8 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
       m_thresMin(0.12), m_thresMax(0.97),
       m_pointcloudMinX(-std::numeric_limits<double>::max()),
   m_useVoxelFiltering(true),
+  m_maptopicBinary("octomap_binary"),
+  m_maptopicFull("octomap_full"),
   m_downsamplingVoxelSize(0.008),
   m_pointcloudMaxX(std::numeric_limits<double>::max()),
   m_pointcloudMinY(-std::numeric_limits<double>::max()),
@@ -78,6 +80,8 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
   private_nh.param("base_frame_id", m_baseFrameId, m_baseFrameId);
   private_nh.param("height_map", m_useHeightMap, m_useHeightMap);
   private_nh.param("color_factor", m_colorFactor, m_colorFactor);
+  private_nh.param("topic_binary", m_maptopicBinary, m_maptopicBinary);
+  private_nh.param("topic_full", m_maptopicFull, m_maptopicFull);
 
   private_nh.param("pointcloud_min_x", m_pointcloudMinX,m_pointcloudMinX);
   private_nh.param("pointcloud_max_x", m_pointcloudMaxX,m_pointcloudMaxX);
@@ -96,7 +100,7 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
 
   private_nh.param("voxel_filter/enable", m_useVoxelFiltering, m_useVoxelFiltering);
   private_nh.param("voxel_filter/voxel_size", m_useVoxelFiltering, m_useVoxelFiltering);
-  
+
   private_nh.param("filter_speckles", m_filterSpeckles, m_filterSpeckles);
   private_nh.param("filter_ground", m_filterGroundPlane, m_filterGroundPlane);
   // distance of points from plane for RANSAC
@@ -157,17 +161,17 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
     ROS_ERROR("%s: Error parsing the robot's shape parameters. Shutting down the node...", ros::this_node::getName().c_str());
     ros::shutdown();
   }
-  
+
   ROS_INFO("%s: Initializing Euclidean Distance Transform...", ros::this_node::getName().c_str());
-  if ( edt_dynamicEdt ) {    
+  if ( edt_dynamicEdt ) {
     point3d min(edt_minX, edt_minY, edt_minZ);
     point3d max(edt_maxX, edt_maxY, edt_maxZ);
-    
+
     ROS_INFO("%s: Creating Euclidean Distance Transform...", ros::this_node::getName().c_str());
-    edt_distanceTransform = new DynamicEDTOctomap((float) edt_maxDist, m_octree, min, max, edt_unknownAsOccupied); 
+    edt_distanceTransform = new DynamicEDTOctomap((float) edt_maxDist, m_octree, min, max, edt_unknownAsOccupied);
     edt_distanceTransform->update();
   }
-  
+
   double r, g, b, a;
   private_nh.param("color/r", r, 0.0);
   private_nh.param("color/g", g, 0.0);
@@ -196,29 +200,29 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
     ROS_INFO("%s: Publishing non-latched (topics are only prepared as needed, will only be re-published on map change", ros::this_node::getName().c_str());
 
   m_markerPub = m_nh.advertise<visualization_msgs::MarkerArray>("occupied_cells_vis_array", 1, m_latchedTopics);
-  m_binaryMapPub = m_nh.advertise<Octomap>("octomap_binary", 1, m_latchedTopics);
-  m_fullMapPub = m_nh.advertise<Octomap>("octomap_full", 1, m_latchedTopics);
+  m_binaryMapPub = m_nh.advertise<Octomap>(m_maptopicBinary, 1, m_latchedTopics);
+  m_fullMapPub = m_nh.advertise<Octomap>(m_maptopicFull, 1, m_latchedTopics);
   m_pointCloudPub = m_nh.advertise<sensor_msgs::PointCloud2>("octomap_point_cloud_centers", 1, m_latchedTopics);
-  m_mapPub = m_nh.advertise<nav_msgs::OccupancyGrid>("projected_map", 5, m_latchedTopics);	
+  m_mapPub = m_nh.advertise<nav_msgs::OccupancyGrid>("projected_map", 5, m_latchedTopics);
   m_fmarkerPub = m_nh.advertise<visualization_msgs::MarkerArray>("free_cells_vis_array", 1, m_latchedTopics);
   m_octomapUpdatePub = m_nh.advertise<squirrel_3d_mapping_msgs::OctomapUpdate>("octomap_updates", 1, m_latchedTopics);
-  
+
   m_updateSub = private_nh.subscribe("update", 1, &OctomapServer::updateCallback, this);
   m_pointCloudSub = new message_filters::Subscriber<sensor_msgs::PointCloud2> (m_nh, "cloud_in", 5);
   m_tfPointCloudSub = new tf::MessageFilter<sensor_msgs::PointCloud2> (*m_pointCloudSub, m_tfListener, m_worldFrameId, 5);
   m_tfPointCloudSub->registerCallback(boost::bind(&OctomapServer::insertCloudCallback, this, _1));
-  
+
   m_octomapBinaryService = m_nh.advertiseService("octomap_binary", &OctomapServer::octomapBinarySrv, this);
   m_octomapFullService = m_nh.advertiseService("octomap_full", &OctomapServer::octomapFullSrv, this);
   m_clearBBXService = private_nh.advertiseService("clear_bbx", &OctomapServer::clearBBXSrv, this);
   m_resetService = private_nh.advertiseService("reset", &OctomapServer::resetSrv, this);
 
   m_updateMsg.header.frame_id = m_worldFrameId;
-  
-  if ( edt_dynamicEdt ) {   
+
+  if ( edt_dynamicEdt ) {
     edt_collisionCheckService = m_nh.advertiseService("distance_transform/collisions/check", &OctomapServer::checkCollision, this);
   }
-  
+
   dynamic_reconfigure::Server<OctomapServerConfig>::CallbackType f;
 
   f = boost::bind(&OctomapServer::reconfigureCallback, this, _1, _2);
@@ -290,11 +294,11 @@ bool OctomapServer::openFile(const std::string& filename){
   m_updateBBXMin[0] = m_octree->coordToKey(minX);
   m_updateBBXMin[1] = m_octree->coordToKey(minY);
   m_updateBBXMin[2] = m_octree->coordToKey(minZ);
-  
+
   m_updateBBXMax[0] = m_octree->coordToKey(maxX);
   m_updateBBXMax[1] = m_octree->coordToKey(maxY);
   m_updateBBXMax[2] = m_octree->coordToKey(maxZ);
-  
+
   publishAll();
 
   return true;
@@ -322,7 +326,13 @@ void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr
 
   //
   // ground filtering in base frame
-  //  
+  //
+  //PCLPointCloud pc; // input cloud for filtering and ground-detection
+  //pcl::fromROSMsg(*cloud, pc);
+
+  //
+  // ground filtering in base frame
+  //
   tf::StampedTransform sensorToWorldTf;
   try {
     m_tfListener.lookupTransform(m_worldFrameId, cloud->header.frame_id, cloud->header.stamp, sensorToWorldTf);
@@ -357,7 +367,7 @@ void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr
 
     // transform pointcloud from sensor frame to fixed robot frame
     pcl::transformPointCloud(pc, pc, sensorToBase);
-  
+
     // set up filter for height range, also removes NANs:
     pcl::PassThrough<pcl::PointXYZ> passX;
     passX.setFilterFieldName("x");
@@ -377,12 +387,12 @@ void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr
     passZ.setInputCloud(pc.makeShared());
     passZ.filter(pc);
 
-    if (m_filterGroundPlane){    
+    if (m_filterGroundPlane){
       filterGroundPlane(pc, pc_ground, pc_nonground);
     } else {
       pc_nonground = pc;
     }
-    
+
     // transform clouds to world frame for insertion
     pcl::transformPointCloud(pc_ground, pc_ground, baseToWorld);
     pcl::transformPointCloud(pc_nonground, pc_nonground, baseToWorld);
@@ -391,12 +401,19 @@ void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr
     // pc_ground.header = pc.header;
     // pc_nonground.header = pc.header;
 
-  if ( m_updateOctree ) {    
+  if ( m_updateOctree ) {
     insertScan(sensorToWorldTf.getOrigin(), pc_ground, pc_nonground);
-    
+
+  /*  for(octomap::OcTree::leaf_iterator it = m_octree->begin_leafs(),end = m_octree->end_leafs(); it!= end; ++it)*/
+      //{
+
+          //fprintf(stderr,"%f\n",it->getOccupancy());
+      /*}*/
+    //			m_octree->updateNode(it.getKey(), -6.0f);
+
     double total_elapsed = (ros::WallTime::now() - startTime).toSec();
     ROS_DEBUG("Pointcloud insertion in OctomapServer done (%zu+%zu pts (ground/nonground), %f sec)", pc_ground.size(), pc_nonground.size(), total_elapsed);
-  
+
     publishAll(cloud->header.stamp);
   }
 }
@@ -472,7 +489,7 @@ void OctomapServer::insertScan(const tf::Point& sensorOriginTf, const PCLPointCl
     m_updateMsg.keys.clear();
   if (!m_updateMsg.occupied.empty())
     m_updateMsg.occupied.clear();
-    
+
   const size_t n = occupied_cells.size()+free_cells.size();
   m_updateMsg.keys.reserve(3*n);
   m_updateMsg.occupied.resize(n);
@@ -485,7 +502,7 @@ void OctomapServer::insertScan(const tf::Point& sensorOriginTf, const PCLPointCl
       m_updateMsg.keys.push_back((*it)[0]);
       m_updateMsg.keys.push_back((*it)[1]);
       m_updateMsg.keys.push_back((*it)[2]);
-      m_updateMsg.occupied.push_back(false); 
+      m_updateMsg.occupied.push_back(false);
     }
   }
 
@@ -496,10 +513,10 @@ void OctomapServer::insertScan(const tf::Point& sensorOriginTf, const PCLPointCl
     m_updateMsg.keys.push_back((*it)[0]);
     m_updateMsg.keys.push_back((*it)[1]);
     m_updateMsg.keys.push_back((*it)[2]);
-    m_updateMsg.occupied.push_back(true); 
+    m_updateMsg.occupied.push_back(true);
   }
-  
-  // update distance transform  
+
+  // update distance transform
   // TODO: eval lazy+updateInner vs. proper insertion
   // non-lazy by default (updateInnerOccupancy() too slow for large maps)
   //m_octree->updateInnerOccupancy();
@@ -526,7 +543,7 @@ void OctomapServer::insertScan(const tf::Point& sensorOriginTf, const PCLPointCl
 
   if (m_compressMap)
     m_octree->prune();
-   
+
   if ( edt_dynamicEdt )
     edt_distanceTransform->update();
 
@@ -720,7 +737,7 @@ void OctomapServer::publishAll(const ros::Time& rostime){
 
   if (publishOctomapUpdate)
     publishOctomapUpdates(rostime);
-    
+
   if (publishBinaryMap)
     publishBinaryOctoMap(rostime);
 
@@ -828,7 +845,7 @@ bool OctomapServer::resetSrv(std_srvs::Empty::Request& req, std_srvs::Empty::Res
 
 void OctomapServer::publishOctomapUpdates(const ros::Time& rostime) {
   m_updateMsg.header.stamp = rostime;
-  m_octomapUpdatePub.publish(m_updateMsg);    
+  m_octomapUpdatePub.publish(m_updateMsg);
 }
 
 void OctomapServer::publishBinaryOctoMap(const ros::Time& rostime) const{
@@ -982,7 +999,7 @@ void OctomapServer::handlePreNodeTraversal(const ros::Time& rostime){
     octomap::point3d maxPt(maxX, maxY, maxZ);
     octomap::OcTreeKey minKey = m_octree->coordToKey(minPt, m_maxTreeDepth);
     octomap::OcTreeKey maxKey = m_octree->coordToKey(maxPt, m_maxTreeDepth);
-    
+
     ROS_DEBUG("MinKey: %d %d %d / MaxKey: %d %d %d", minKey[0], minKey[1], minKey[2], maxKey[0], maxKey[1], maxKey[2]);
 
     // add padding if requested (= new min/maxPts in x&y):
@@ -1027,7 +1044,7 @@ void OctomapServer::handlePreNodeTraversal(const ros::Time& rostime){
       m_gridmap.info.origin.position.x -= m_res/2.0;
       m_gridmap.info.origin.position.y -= m_res/2.0;
     }
-    
+
     // workaround for  multires. projection not working properly for inner nodes:
     // force re-building complete map
     if (m_maxTreeDepth < m_treeDepth)

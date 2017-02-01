@@ -19,6 +19,7 @@
 #include "squirrel_dynamic_filter_msgs/DynamicFilterMsg.h"
 #include <mlpack/core.hpp>
 #include <mlpack/core/dists/gaussian_distribution.hpp>
+#include <tf/transform_broadcaster.h>
 
 using namespace Eigen;
 
@@ -38,11 +39,11 @@ class DynamicFilter
     std::stringstream ss;
     std::vector< std::vector<int> > neighbours;
     ros::ServiceServer dynamic_filter_service;
-    const float p_s_d = 0.65;
-    const float p_d_d = 0.35;
+    const float p_s_d = 0.35;
+    const float p_d_d = 0.65;
 
-    const float p_s_s = 0.35;
-    const float p_d_s = 0.65;
+    const float p_s_s = 0.65;
+    const float p_d_s = 0.35;
 
     bool is_verbose;
     bool store_results;
@@ -90,6 +91,8 @@ class DynamicFilter
     measure_time start_total;
     measure_time end_total;
     ofstream time_write;
+    tf::TransformBroadcaster br;
+    tf::Transform transform_map_base_link;
 
   public:
     DynamicFilter();

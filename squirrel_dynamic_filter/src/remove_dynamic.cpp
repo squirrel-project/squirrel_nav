@@ -91,7 +91,7 @@ int main(int argc, char** argv)
 
   reader.read(ss.str(),*cloud);
   ss.str("");
-  ss << folder << "ground_a_" << i << ".pcd";
+  ss << folder << "ground_" << i << ".pcd";
 
   reader.read(ss.str(),ground);
 
@@ -163,11 +163,12 @@ int main(int argc, char** argv)
     cam.view[2] = 0.75;
 
 
-//   viewer->setCameraParameters(cam,1);
+   viewer->setCameraParameters(cam,1);
 
 
+    viewer->setBackgroundColor(1,1,1);
 
-// while (( std::clock() - start ) / (double)CLOCKS_PER_SEC <0.01)
+// while (( std::clock() - start ) / (double)CLOCKS_PER_SEC <0.05)
  // while (!viewer->wasStopped ())
  while(!close_viewer)
   {
