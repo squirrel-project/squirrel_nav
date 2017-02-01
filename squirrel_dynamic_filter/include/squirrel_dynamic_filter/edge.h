@@ -22,13 +22,13 @@ using namespace g2o::internal;
 
       virtual bool setMeasurementData(const double* d){
         Eigen::Map<const Vector7d> v(d);
-        setMeasurement(internal::fromVectorQT(v));
+        setMeasurement(::internal::fromVectorQT(v));
         return true;
       }
 
       virtual bool getMeasurementData(double* d) const{
         Eigen::Map<Vector7d> v(d);
-        v = internal::toVectorQT(_measurement);
+        v = ::internal::toVectorQT(_measurement);
         return true;
       }
 
