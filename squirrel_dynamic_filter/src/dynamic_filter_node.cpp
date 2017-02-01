@@ -36,7 +36,7 @@ DynamicFilter::DynamicFilter()
 
   //dynamic_filter_service = n_.advertiseService("dynamic_filter",&DynamicFilter::DynamicFilterSrvCallback,this);
 
-  cloud_sub = n_.subscribe("/squirrel/dynamic_filter_msg", 500, &DynamicFilter::msgCallback, this);
+  cloud_sub = n_.subscribe("/squirrel/dynamic_filter_msg", 1000, &DynamicFilter::msgCallback, this);
 
   static_cloud_pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static_final/",10);//Publising the filtered pointcloud
 }
@@ -209,7 +209,13 @@ void DynamicFilter::msgCallback(const squirrel_dynamic_filter_msgs::DynamicFilte
     time_write << feature_time << "," << correspondence_time << "," << motion_time << "," << total_time << "," << frame_1.frame_id << endl;
     sensor_msgs::PointCloud2 cloud_static_msg;
     pcl::toROSMsg(cloud_static,cloud_static_msg);////service output, static cloud from potentially dynamic
-    cloud_static_msg.header.frame_id = "base_link_static";
+    cloud_static_msg.header.frame_id = "base_link_static_final";
+    transform_map_base_link.setOrigin(tf::Vector3(odometry[0],odometry[1],odometry[2]));
+    tf::Quaternion q(odometry[3],odometry[4],odometry[5],odometry[6]);
+    transform_map_base_link.setRotation(q);
+
+    br.sendTransform(tf::StampedTransform(transform_map_base_link, ros::Time::now(), "map", "base_link_static_final"));//publish the tf corresponding to points
+
     static_cloud_pub.publish(cloud_static_msg);
     frame_2.copy(frame_1);
   }

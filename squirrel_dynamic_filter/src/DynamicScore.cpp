@@ -17,7 +17,7 @@ void DynamicFilter::DynamicScore(const PointCloud::Ptr &cloud,const bool is_firs
  observation[0] = 0.0;
  observation[1] = 0.0;
  observation[2] = 0.0;
- 
+
  mlpack::distribution::GaussianDistribution dist(mean,covariance);
  float max = dist.Probability(observation);
 

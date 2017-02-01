@@ -86,12 +86,6 @@ class ClassifyStatic
       pcl::KdTreeFLANN <Point> kdtree;
 
       kdtree.setInputCloud(cloud_input);
-
-
-
-
-
-
       res.static_points.clear();
       res.unclassified_points.clear();
     ///if a point is in a occupied voxel then its static, otherswise might be new static or dynamic
@@ -121,8 +115,10 @@ class ClassifyStatic
 
         }
         else
+        {
+          is_processed[point_index] = true;
           res.unclassified_points.push_back(point_index);//new static or dynamic
-
+        }
         point_index += 1;
       }
 
@@ -134,10 +130,8 @@ class ClassifyStatic
 
       pcl::copyPointCloud(cloud_input_raw,res.static_points,*static_cloud);//points corresponding to map(static)
 
-      pcl::copyPointCloud(cloud_input_raw,res.unclassified_points,*dynamic_cloud);
-
-    // pcl::transformPointCloud(*static_cloud_map,*static_cloud,sensor_base_link_trans);///Transforming cloud in base_link frame
-
+      if(res.unclassified_points.size() > 100)
+        pcl::copyPointCloud(cloud_input_raw,res.unclassified_points,*dynamic_cloud);
       sensor_msgs::PointCloud2 cloud_msg;
       sensor_msgs::PointCloud2 cloud_msg_2;
 
@@ -164,7 +158,7 @@ class ClassifyStatic
 
 int main(int argc,char **argv)
 {
-    ros::init(argc, argv, "static_classify");
+    ros::init(argc, argv, "squirrel_dynamic_filter_static_classify");
     ClassifyStatic classify;
     classify.map_filename = argv[1];
     classify.load_map();
