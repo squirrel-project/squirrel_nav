@@ -195,8 +195,11 @@ target_link_libraries(temporal_inference ${catkin_LIBRARIES} ${Boost_LIBRARIES} 
 add_executable(sensor_to_base_link src/sensor_to_base_link.cpp)
 target_link_libraries(sensor_to_base_link ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
-add_executable(publish_color_octomap src/publish_color_octomap.cpp)
-target_link_libraries(publish_color_octomap ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+#add_executable(publish_color_octomap src/publish_color_octomap.cpp)
+#target_link_libraries(publish_color_octomap ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+#add_executable(publish_color_octomap_1 src/publish_color_octomap_1.cpp)
+#target_link_libraries(publish_color_octomap_1 ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+
 
 #add_executable(octomap_to_cloud src/octomap_to_cloud.cpp)
 #target_link_libraries(octomap_to_cloud ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
