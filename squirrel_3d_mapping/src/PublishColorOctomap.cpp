@@ -56,6 +56,7 @@ class PublishOctomap
     //  fprintf(stderr,"%d\n",cloud->points.size());
       kdtree.setInputCloud(cloud);
 
+
     }
     PublishOctomap():cloud(new pcl::PointCloud<pcl::PointXYZ>),binary_sub(nh,"octomap_binary",50),full_sub(nh, "octomap_full", 50),sync(MySyncPolicy(10), binary_sub, full_sub)
     {
@@ -69,12 +70,16 @@ class PublishOctomap
     {
 
       octomap::OcTree* octree = new octomap::OcTree(map_full->resolution);
-      octomap::ColorOcTree* octree_color = new octomap::ColorOcTree(map_binary->resolution);
+
+      delete original_tree;
+      original_tree = new ColorOcTree(0.05);
+      //octomap::ColorOcTree* octree_color = new octomap::ColorOcTree(map_binary->resolution);
       std::stringstream datastream;
       if(map_binary->data.size() > 0)
       {
         datastream.write((const char*) &map_binary->data[0], map_binary->data.size());
-        octree_color->readBinaryData(datastream);
+        original_tree->readBinaryData(datastream);
+        //octree_color->readBinaryData(datastream);
       }
       if(map_full->data.size() > 0)
       {
@@ -89,10 +94,11 @@ class PublishOctomap
         if(it->getOccupancy() < 0.9)
         {
           octomap::point3d pt = it.getCoordinate();
-          octree_color->deleteNode(pt,it.getDepth());
+          original_tree->deleteNode(pt,it.getDepth());
+          //octree_color->deleteNode(pt,it.getDepth());
         }
       }
-      for(octomap::ColorOcTree::leaf_iterator it = octree_color->begin_leafs(),end = octree_color->end_leafs(); it!= end; ++it)
+      for(octomap::ColorOcTree::leaf_iterator it = original_tree->begin_leafs(),end = original_tree->end_leafs(); it!= end; ++it)
       {
 
         octomap::point3d point = it.getCoordinate();
@@ -112,15 +118,26 @@ class PublishOctomap
 
 
       }
-      octomap_msgs::Octomap msg_pub;
-      octomap_msgs::fullMapToMsg(*octree_color, msg_pub);
-      msg_pub.header.frame_id = "map";
-      publisher.publish(msg_pub);
-      //delete octree;
-      delete octree_color;
+           //delete octree;
       delete octree;
     }
 
+
+    void run()
+    {
+
+      while(ros::ok())
+      {
+        octomap_msgs::Octomap msg_pub;
+        octomap_msgs::fullMapToMsg(*original_tree, msg_pub);
+        msg_pub.header.frame_id = "map";
+        publisher.publish(msg_pub);
+
+        ros::spinOnce();
+      }
+
+
+    }
 
 
 };
@@ -136,12 +153,9 @@ int main(int argc, char **argv)
 
   publish_octomap.map_filename = argv[1];
   publish_octomap.load_map();
+  publish_octomap.run();
 
 
-	while(ros::ok())
-	{
-		ros::spinOnce();
-  }
-  return 1;
+	  return 1;
 
 }
