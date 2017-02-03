@@ -2,6 +2,11 @@
 #include "datatypes_squirrel.h"
 #include <octomap/octomap.h>
 #include <octomap/OcTree.h>
+#include <octomap/octomap.h>
+#include <octomap_msgs/Octomap.h>
+#include <octomap_msgs/conversions.h>
+#include <octomap/ColorOcTree.h>
+#include <octomap/OcTreeNode.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/filters/voxel_grid.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -26,22 +31,54 @@ class ClassifyStatic
     ros::Publisher pub_static,pub_dynamic;
     tf::TransformBroadcaster br;
     tf::Transform transform_map_base_link;
-    OcTree *tree;
+    ros::Subscriber octomap_sub;
+    ColorOcTree *tree;
+
+    bool is_map;
   public:
     string map_filename;
-    void load_map()
-    {
-      tree = new OcTree(map_filename);
-    }
+   // void load_map()
+   // {
+    //  tree = new OcTree(map_filename);
+  //  }
 
     ClassifyStatic()
     {
+      is_map = true;
+      octomap_sub = n.subscribe("/octomap_full_color", 10, &ClassifyStatic::msgCallback, this);
       service = n.advertiseService("classify_static", &ClassifyStatic::ClassifyStaticCallback,this);
       pub_static = n.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static",10);
       pub_dynamic = n.advertise<sensor_msgs::PointCloud2>("/kinect/depth/dynamic",10);
     }
+
+    void msgCallback(const octomap_msgs::OctomapConstPtr &msg)
+    {
+
+      if(is_map)
+        return;
+
+      tree = new ColorOcTree(msg->resolution);
+
+
+      std::stringstream datastream;
+      if(msg->data.size() > 0)
+      {
+        octomap::AbstractOcTree* tree_input = tree_input->createTree(msg->id,msg->resolution);
+        datastream.write((const char*) &msg->data[0], msg->data.size());
+        tree_input->readData(datastream);
+        tree = dynamic_cast<octomap::ColorOcTree*>(tree_input);
+        is_map = true;
+      }
+
+
+
+    }
     bool ClassifyStaticCallback(squirrel_dynamic_filter_msgs::ClassifyStaticSrv::Request &req,squirrel_dynamic_filter_msgs::ClassifyStaticSrv::Response &res)
     {
+
+      is_map = false;
+      while(!is_map)
+        ros::spinOnce();
 
       Vector7d odometry;
 
@@ -122,6 +159,7 @@ class ClassifyStatic
         point_index += 1;
       }
 
+      delete tree;
       transform_map_base_link.setOrigin(tf::Vector3(odometry[0],odometry[1],odometry[2]));
       tf::Quaternion q(odometry[3],odometry[4],odometry[5],odometry[6]);
       transform_map_base_link.setRotation(q);
@@ -161,7 +199,7 @@ int main(int argc,char **argv)
     ros::init(argc, argv, "squirrel_dynamic_filter_static_classify");
     ClassifyStatic classify;
     classify.map_filename = argv[1];
-    classify.load_map();
+//    classify.load_map();
     while(ros::ok())
       ros::spinOnce();
 }

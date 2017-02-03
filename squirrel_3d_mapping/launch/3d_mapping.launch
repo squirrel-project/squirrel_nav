@@ -4,7 +4,9 @@
   <arg name="base_frame" default="/base_link"/>
   <arg name="output_binary" default="/octomap_binary"/>
   <arg name="output_full" default="/octomap_full"/>
-  <node pkg="squirrel_3d_mapping" type="octomap_server_node" name="squirrel_3d_mapping" output="screen">
+  <arg name="map_file" default="$(find squirrel_navigation)/octomaps/default-octomap.bt"/>
+  <node pkg="squirrel_3d_mapping" type="octomap_server_node"
+  name="squirrel_3d_mapping" output="screen" args="$(arg map_file)">
     <param name="resolution" value="0.05" />
     <param name="frame_id" type="string" value="map" />
     <param name="max_sensor_range" value="4.0" />
