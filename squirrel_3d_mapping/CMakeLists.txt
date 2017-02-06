@@ -88,6 +88,7 @@ add_dependencies(dynamic_edt squirrel_3d_mapping_msgs_generate_messages_cpp)
 add_library(${PROJECT_NAME} src/OctomapServer.cpp src/OctomapServerMultilayer.cpp src/TrackingOctomapServer.cpp)
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
+add_dependencies(${PROJECT_NAME} squirrel_3d_mapping_msgs_generate_messages_cpp)
 
 add_executable(octomap_server_node src/OctomapServerNode.cpp)
 target_link_libraries(octomap_server_node ${PROJECT_NAME} ${LINK_LIBS} dynamic_edt)
@@ -103,6 +104,10 @@ target_link_libraries(octomap_saver ${PROJECT_NAME} ${LINK_LIBS} dynamic_edt)
 
 add_executable(octomap_tracking_server_node src/OctomapTrackingServerNode.cpp)
 target_link_libraries(octomap_tracking_server_node ${PROJECT_NAME} ${LINK_LIBS} dynamic_edt)
+
+add_executable(publish_color_octomap src/PublishColorOctomap.cpp)
+target_link_libraries(publish_color_octomap ${LINK_LIBS})
+
 
 ## Nodelet
 add_library(octomap_server_nodelet src/OctomapServerNodelet.cpp)

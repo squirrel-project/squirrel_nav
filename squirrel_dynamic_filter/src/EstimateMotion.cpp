@@ -223,7 +223,7 @@ void DynamicFilter::EstimateMotion(const std::vector <int> &index_query,const st
    g2o::HyperGraph::VertexIDMap ver = optimizer.vertices();
    g2o::HyperGraph::EdgeSet edge_set = optimizer.edges();
    ver = optimizer.vertices();
-   for(std::unordered_map<int,HyperGraph::Vertex*>::iterator it=ver.begin();it!=ver.end();++it)
+   for(auto it=ver.begin();it!=ver.end();++it)
    {
     g2o::OptimizableGraph::Vertex* v=static_cast<g2o::OptimizableGraph::Vertex*>(it->second);
     std::vector <double> data;

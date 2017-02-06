@@ -1,20 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
 <launch>
-  <node pkg="squirrel_3d_mapping" type="octomap_server_node" name="squirrel_3d_mapping" output="screen">
+  <arg name="input_topic" default="/kinect/depth/points"/>
+  <arg name="base_frame" default="/base_link"/>
+  <arg name="output_binary" default="/octomap_binary"/>
+  <arg name="output_full" default="/octomap_full"/>
+  <arg name="map_file" default="$(find squirrel_navigation)/octomaps/default-octomap.bt"/>
+  <node pkg="squirrel_3d_mapping" type="octomap_server_node"
+  name="squirrel_3d_mapping" output="screen" args="$(arg map_file)">
     <param name="resolution" value="0.05" />
     <param name="frame_id" type="string" value="map" />
     <param name="max_sensor_range" value="4.0" />
-    <param name="pointcloud_min_z" value="0.0" />
+    <param name="pointcloud_min_z" value="0.07" />
     <param name="pointcloud_max_z" value="0.76" />
     <param name="pointcloud_min_y" value="-1.0" />
     <param name="pointcloud_max_y" value="1.0" />
     <param name="pointcloud_min_x" value="0.0" />
     <param name="pointcloud_max_x" value="2.5" />
-    <param name="filter_ground" value="false" />
-    <!-- <param name="base_frame_id" value="/base_link" />  -->
+    <param name="topic_binary" value="$(arg output_binary)" />
+    <param name="topic_full" value="$(arg output_full)" />
+    <param name="filter_ground" value="true" />
+    <param name="base_frame_id" value="$(arg base_frame)" />
     <param name="ground_filter/plane_distance" value="0.03" />
-    <param name="voxel_filter/enabled" value="true" />
-    <param name="voxel_filter/voxel_size" value="0.008" />
-    <param name="distance_transform/enabled" value="false" />
+    <!--param name="voxel_filter/enabled" value="true" /-->
+    <!--param name="voxel_filter/voxel_size" value="0.008" /-->
+    <param name="distance_transform/enabled" value="true" />
     <param name="distance_transform/max_dist" value="1.0" />
     <param name="distance_transform/unknown_as_occupied" value="false" />
     <param name="distance_transform/min_x" value="-5.0" />
@@ -23,7 +32,8 @@
     <param name="distance_transform/max_y" value="5.0" />
     <param name="distance_transform/min_z" value="0.0" />
     <param name="distance_transform/max_z" value="0.9" />
-    <remap from="/cloud_in" to="/kinect/depth/points" />
+    <param name="latch" value="false" />
+    <remap from="/cloud_in" to="$(arg input_topic)" />
   </node>
 </launch>
 

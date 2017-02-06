@@ -36,7 +36,7 @@ DynamicFilter::DynamicFilter()
 
   //dynamic_filter_service = n_.advertiseService("dynamic_filter",&DynamicFilter::DynamicFilterSrvCallback,this);
 
-  cloud_sub = n_.subscribe("/squirrel/dynamic_filter_msg", 500, &DynamicFilter::msgCallback, this);
+  cloud_sub = n_.subscribe("/squirrel/dynamic_filter_msg", 1000, &DynamicFilter::msgCallback, this);
 
   static_cloud_pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static_final/",10);//Publising the filtered pointcloud
 }
@@ -208,8 +208,44 @@ void DynamicFilter::msgCallback(const squirrel_dynamic_filter_msgs::DynamicFilte
     total_time = time_diff.count();
     time_write << feature_time << "," << correspondence_time << "," << motion_time << "," << total_time << "," << frame_1.frame_id << endl;
     sensor_msgs::PointCloud2 cloud_static_msg;
+
+    Eigen::Matrix4f frame_to_map = Eigen::Matrix4f::Identity();
+
+    frame_to_map(0,0) = frame_2.odometry(0,0);
+    frame_to_map(0,1) = frame_2.odometry(0,1);
+    frame_to_map(0,2) = frame_2.odometry(0,2);
+    frame_to_map(0,3) = frame_2.odometry(0,3);
+
+    frame_to_map(1,0) = frame_2.odometry(1,0);
+    frame_to_map(1,1) = frame_2.odometry(1,1);
+    frame_to_map(1,2) = frame_2.odometry(1,2);
+    frame_to_map(1,3) = frame_2.odometry(1,3);
+
+    frame_to_map(2,0) = frame_2.odometry(2,0);
+    frame_to_map(2,1) = frame_2.odometry(2,1);
+    frame_to_map(2,2) = frame_2.odometry(2,2);
+    frame_to_map(2,3) = frame_2.odometry(2,3);
+
+  //  PointCloud cloud_static_map;
+//    pcl::transformPointCloud(cloud_static,cloud_static_map,frame_to_map);
+
+
+
+   // frame_2.odometry = g2o::internal::fromVectorQT(odometry);
+
+
+
     pcl::toROSMsg(cloud_static,cloud_static_msg);////service output, static cloud from potentially dynamic
-    cloud_static_msg.header.frame_id = "base_link_static";
+
+
+    cloud_static_msg.header.frame_id = "base_link_static_final";
+    //cloud_static_msg.header.frame_id = "map";
+    transform_map_base_link.setOrigin(tf::Vector3(odometry[0],odometry[1],odometry[2]));
+    tf::Quaternion q(odometry[3],odometry[4],odometry[5],odometry[6]);
+    transform_map_base_link.setRotation(q);
+
+    br.sendTransform(tf::StampedTransform(transform_map_base_link, ros::Time::now(), "map", "base_link_static_final"));//publish the tf corresponding to points
+
     static_cloud_pub.publish(cloud_static_msg);
     frame_2.copy(frame_1);
   }

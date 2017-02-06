@@ -97,12 +97,12 @@ protected:
     for (unsigned i=0; i<3; ++i)
       min[i] = std::min(in[i], min[i]);
   };
-  
+
   inline static void updateMaxKey(const octomap::OcTreeKey& in, octomap::OcTreeKey& max){
     for (unsigned i=0; i<3; ++i)
       max[i] = std::max(in[i], max[i]);
   };
- 
+
   /// Test if key is within update area of map (2D, ignores height)
   inline bool isInUpdateBBX(const octomap::OcTree::iterator& it) const{
     // 2^(tree_depth-depth) voxels wide:
@@ -120,7 +120,7 @@ protected:
   void publishFullOctoMap(const ros::Time& rostime = ros::Time::now()) const;
   void publishAll(const ros::Time& rostime = ros::Time::now());
   bool checkCollision(squirrel_3d_mapping_msgs::CheckCollision::Request&, squirrel_3d_mapping_msgs::CheckCollision::Response&);
-  
+
   /**
   * @brief update occupancy map with a scan labeled as ground and nonground.
   * The scans should be in the global map frame.
@@ -213,7 +213,7 @@ protected:
   DynamicEDTOctomap *edt_distanceTransform;
 
   ros::ServiceServer edt_collisionCheckService;
-  
+
   double edt_maxDist;
   double edt_maxX, edt_minX;
   double edt_maxY, edt_minY;
@@ -268,7 +268,7 @@ protected:
   {
     m_updateOctree = update_msg->data;
   }
-  
+
   double m_maxRange;
   std::string m_worldFrameId; // the map frame
   std::string m_baseFrameId; // base of the robot for ground plane filtering
@@ -287,11 +287,13 @@ protected:
   double m_probMiss;
   double m_thresMin;
   double m_thresMax;
+  std::string m_maptopicBinary;
+  std::string m_maptopicFull;
 
   double m_pointcloudMinX;
   double m_pointcloudMaxX;
   double m_pointcloudMinY;
-  double m_pointcloudMaxY;  
+  double m_pointcloudMaxY;
   double m_pointcloudMinZ;
   double m_pointcloudMaxZ;
   double m_occupancyMinX;
@@ -317,7 +319,7 @@ protected:
   // voxelization
   bool m_useVoxelFiltering;
   double m_downsamplingVoxelSize;
-  
+
   // downprojected 2D map:
   bool m_incrementalUpdate;
   nav_msgs::OccupancyGrid m_gridmap;

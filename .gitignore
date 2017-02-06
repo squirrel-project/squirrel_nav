@@ -84,3 +84,6 @@ squirrel_navigation/config/robot1/rviz/debug_mcl.rviz
 squirrel_dynamic_filter/results/
 squirrel_dynamic_filter/params/sensor_to_base_link.csv
 squirrel_dynamic_filter/dependencies/*
+squirrel_dynamic_filter/external/g2o/build/*
+squirrel_dynamic_filter/external/g2o/lib/*
+squirrel_dynamic_filter/external/g2o/bin/*

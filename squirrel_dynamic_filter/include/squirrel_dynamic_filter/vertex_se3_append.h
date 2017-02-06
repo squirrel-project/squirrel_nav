@@ -18,7 +18,7 @@ using namespace g2o::internal;
  * matrices. Hence, no scaling or projection.  To avoid that the rotational
  * part of the Isometry3D gets numerically unstable we compute the nearest
  * orthogonal matrix after a large number of calls to the oplus method.
- * 
+ *
  * The parameterization for the increments constructed is a 6d vector
  * (x,y,z,qx,qy,qz) (note that we leave out the w part of the quaternion.
  */
@@ -82,7 +82,7 @@ using namespace g2o::internal;
       virtual void oplusImpl(const double* update)
       {
         Eigen::Map<const Vector6d> v(update);
-        Isometry3D increment = internal::fromVectorMQT(v);
+        Isometry3D increment = ::internal::fromVectorMQT(v);
         _estimate = _estimate * increment;
         if (++_numOplusCalls > orthogonalizeAfter) {
           _numOplusCalls = 0;
@@ -99,11 +99,11 @@ using namespace g2o::internal;
       Vector3D getPosition() const;
 
     protected:
-     
+
       int _numOplusCalls;     ///< store how often opluse was called to trigger orthogonaliation of the rotation matrixi
 
     private:
-     
+
       Vector3D position;
 
   };
@@ -114,14 +114,14 @@ using namespace g2o::internal;
   class VertexSE3WriteGnuplotAction: public WriteGnuplotAction {
     public:
       VertexSE3WriteGnuplotAction();
-      virtual HyperGraphElementAction* operator()(HyperGraph::HyperGraphElement* element, 
+      virtual HyperGraphElementAction* operator()(HyperGraph::HyperGraphElement* element,
           HyperGraphElementAction::Parameters* params_ );
   };
 /*
 #ifdef G2O_HAVE_OPENGL
-  
+
    * \brief visualize the 3D pose vertex
-   
+
 class G2O_TYPES_SLAM3D_API VertexSE3DrawAction: public DrawAction{
     public:
       VertexSE3DrawAction();
