@@ -21,7 +21,7 @@ set(squirrel_dynamic_filter_DEPENDENCIES
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/g2o/)
 add_subdirectory(external/g2o external/g2o/build)
-set(G2O_CORE core stuff types_slam2d types_slam3d solver_csparse csparse_extension)
+set(G2O_CORE g2ocore stuff types_slam2d types_slam3d solver_csparse csparse_extension)
 #set(PCL_DIR "/export/home/dewan/software/pcl/build/")
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
