@@ -13,8 +13,8 @@ The package provides different nodes:
 -   StaticClassifyOctomap: for classifying the non-movable parts of the scene
 
 -   preprocessing: it is the main node, which removes the ground, call the
-    StaticClassifyOctomap and dynamic_filter_node 
-    TemporalInference: for classifying points as movable or dynamic 
+-   StaticClassifyOctomap and dynamic_filter_node 
+-   TemporalInference: for classifying points as movable or dynamic 
 It requires the kinect point cloud and the octomap of the environment    
 
 ###Parameters
