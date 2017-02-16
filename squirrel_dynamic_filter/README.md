@@ -25,4 +25,7 @@ It requires the kinect point cloud and the octomap of the environment
 -    g2o: installed in the external folder
 -    mlpack: installed in the external folder
 -    libarmadillo: sudo apt-get install libarmadillo-dev -y
-    
+
+###Usage
+-   roslaunch squirrel_dynamic_filter dynamic_filer.launch
+-   roslaunch squirrel_dynamic_filter dynamic__filter_node.launch 
