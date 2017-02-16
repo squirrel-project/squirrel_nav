@@ -2,9 +2,8 @@ squirrel_dynamic_filter
 =====================
 
 This package is used for removing the dynamic points from the scan and
-for classification of the scene as movable and non-movable objects
+for classification of the scene into movable and non-movable objects
 
-Installation of this package requires the following dependicies
 
 ###
 The package provides different nodes:
@@ -27,5 +26,11 @@ It requires the kinect point cloud and the octomap of the environment
 -    libarmadillo: sudo apt-get install libarmadillo-dev -y
 
 ###Usage
--   roslaunch squirrel_dynamic_filter dynamic_filer.launch
+-   roslaunch squirrel_dynamic_filter dynamic_filter.launch
 -   roslaunch squirrel_dynamic_filter dynamic__filter_node.launch 
+
+###Output Topics
+-   /kinect/depth/static - pointcloud after filtering dynamic objects and the new
+                           static objects
+-   /octomap_full_color - colorized octomap. Green color corresponds to
+                          non-movable objects and blue color corresponds to movable objects
