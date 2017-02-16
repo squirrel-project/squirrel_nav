@@ -27,7 +27,7 @@ It requires the kinect point cloud and the octomap of the environment
 
 ###Usage
 -   roslaunch squirrel_dynamic_filter dynamic_filter.launch
--   roslaunch squirrel_dynamic_filter dynamic__filter_node.launch 
+-   roslaunch squirrel_dynamic_filter dynamic_filter_node.launch 
 
 ###Output Topics
 -   /kinect/depth/static - pointcloud after filtering dynamic objects and the new
