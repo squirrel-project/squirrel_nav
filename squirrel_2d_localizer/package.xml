@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <package>
   <name>squirrel_2d_localizer</name>
-  <version>0.0.1</version>
+  <version>1.0.0</version>
   <description>Monte Carlo Localizer for SQUIRREL project</description>
 
   <maintainer email="boniardi@cs.uni-freiburg.de"/>>
 
-  <license>MIT</license>
+  <license>BSD 3c</license>
   <author>Federico Boniardi</author>
 
   <buildtool_depend>catkin</buildtool_depend>
