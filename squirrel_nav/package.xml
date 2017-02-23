@@ -15,7 +15,8 @@
   <run_depend>squirrel_dynamic_filter</run_depend>
   <run_depend>squirrel_navigation</run_depend>
   <run_depend>squirrel_pushing_planner</run_depend>
-  <run_depend>squirrel_rgbd_mapping</run_depend>
+  <!-- CATKIN_IGNORE-->
+  <!--run_depend>squirrel_rgbd_mapping</run_depend-->
 
   <export>
     <metapackage/>

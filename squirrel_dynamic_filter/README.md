@@ -1,15 +1,36 @@
-Installation of this package requires the following dependicies
+squirrel_dynamic_filter
+=====================
 
-g2o(and all its dependecies): use the version from here: https://github.com/RainerKuemmerle/g2o  and the version that comes with ROS.
+This package is used for removing the dynamic points from the scan and
+for classification of the scene into movable and non-movable objects
 
-libmlpack : https://github.com/mlpack/mlpack
 
-libarmadillo(required by mlpack): http://arma.sourceforge.net/
+###
+The package provides different nodes:
 
-Change the InputFolder and OutputFolder(params/parameters.xml) accordingly. 
+-   dynamic_filter_node: for estimating point wise motion 
+-   StaticClassifyOctomap: for classifying the non-movable parts of the scene
 
-At every compilation, the environment variable `G2O_ROOT` should be set in the
-working shell. If not, run
-```
-	$ export G2O_ROOT=<full-path-to-squirrel_dynamic_filter>/dependencies/g2o
-```	
+-   preprocessing: it is the main node, which removes the ground, call the
+-   StaticClassifyOctomap and dynamic_filter_node 
+-   TemporalInference: for classifying points as movable or dynamic 
+It requires the kinect point cloud and the octomap of the environment    
+
+###Parameters
+-    Parameters can be accessed at params/parameters.yaml file
+
+###Dependices
+
+-    g2o: installed in the external folder
+-    mlpack: installed in the external folder
+-    libarmadillo: sudo apt-get install libarmadillo-dev -y
+
+###Usage
+-   roslaunch squirrel_dynamic_filter dynamic_filter.launch
+-   roslaunch squirrel_dynamic_filter dynamic_filter_node.launch 
+
+###Output Topics
+-   /kinect/depth/static - pointcloud after filtering dynamic objects and the new
+                           static objects
+-   /octomap_full_color - colorized octomap. Green color corresponds to
+                          non-movable objects and blue color corresponds to movable objects

@@ -18,11 +18,20 @@ set(squirrel_dynamic_filter_DEPENDENCIES
   octomap_ros
   octomap_msgs
 )
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/mlpack/src/)
 
-include_directories(external/g2o/g2o)
-add_subdirectory(external/g2o)
-set(G2O_CORE core stuff types_slam2d types_slam3d solver_csparse csparse_extension)
 
+MESSAGE(status "aaadadada")
+
+MESSAGE(status ${CMAKE_BINARY_DIR})
+
+#include_directories(${CMAKE_BINARY_DIR}/include/mlpack/)
+add_subdirectory(external/mlpack)
+set(mlpack_lib mlpack)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/g2o/)
+add_subdirectory(external/g2o external/g2o/build)
+set(G2O_CORE g2ocore stuff types_slam2d types_slam3d solver_csparse csparse_extension)
 #set(PCL_DIR "/export/home/dewan/software/pcl/build/")
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -163,7 +172,7 @@ include_directories(
 
 add_library(vertex_se3_vector3D src/vertex_se3_vector3D.cpp src/edge_unary.cpp src/edge.cpp)
 target_link_libraries (vertex_se3_vector3D ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY})
-# add_dependencies(vertex_se3_vector3D ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY})
+add_dependencies(vertex_se3_vector3D ${G2O_CORE})
 #add_executable(sensor_msgs_to_pcl_tf src/sensor_msgs_to_pcl_tf.cpp)
 #target_link_libraries(sensor_msgs_to_pcl_tf ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
@@ -173,8 +182,15 @@ target_link_libraries (vertex_se3_vector3D ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRAR
 add_executable(dynamic_filter_node src/dynamic_filter_node.cpp
                src/EstimateFeature.cpp src/EstimateCorrespondence
               src/EstimateMotion.cpp src/DynamicScore.cpp)
-target_link_libraries(dynamic_filter_node ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} vertex_se3_vector3D ${G2O_CORE_LIBRARY} ${G2O_TYPES_SLAM3D} ${PCL_LIBRARIES} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION} "/usr/local/lib/libmlpack.so" ${ARMADILLO_LIBRARIES} ${G2O_CORE})
-add_dependencies(dynamic_filter_node squirrel_dynamic_filter_msgs_generate_messages_cpp ${G2O_CORE})
+target_link_libraries(dynamic_filter_node ${catkin_LIBRARIES} ${Boost_LIBRARIES}
+                      ${PCL_LIBRARIES} vertex_se3_vector3D ${G2O_CORE_LIBRARY}
+                      ${G2O_TYPES_SLAM3D} ${PCL_LIBRARIES} ${G2O_STUFF_LIBRARY}
+                      ${G2O_SOLVER_CSPARSE} ${CSPARSE_LIBRARY}
+                      ${G2O_SOLVER_CSPARSE_EXTENSION} ${ARMADILLO_LIBRARIES}
+                      ${G2O_CORE} mlpack)
+add_dependencies(dynamic_filter_node
+                 squirrel_dynamic_filter_msgs_generate_messages_cpp ${G2O_CORE}
+                 ${mlpack_lib})
 
 add_executable(preprocessing src/preprocessing.cpp)
 target_link_libraries(preprocessing ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY} ${G2O_CORE}) 
@@ -193,16 +209,17 @@ target_link_libraries(remove_dynamic ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PC
 add_dependencies(remove_dynamic ${G2O_CORE})
 
 add_executable(temporal_inference src/TemporalInference.cpp)
-target_link_libraries(temporal_inference ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} "/usr/local/lib/libmlpack.so" "/usr/lib/libarmadillo.so" vertex_se3_vector3D ${G2O_CORE})
-add_dependencies(temporal_inference ${G2O_CORE})
+target_link_libraries(temporal_inference ${catkin_LIBRARIES} ${Boost_LIBRARIES}
+                      ${PCL_LIBRARIES} mlpack "/usr/lib/libarmadillo.so" vertex_se3_vector3D ${G2O_CORE})
+add_dependencies(temporal_inference ${G2O_CORE} ${mlpack_lib})
 
 add_executable(sensor_to_base_link src/sensor_to_base_link.cpp)
 target_link_libraries(sensor_to_base_link ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} ${G2O_CORE})
 add_dependencies(sensor_to_base_link ${G2O_CORE})
 
-add_executable(publish_color_octomap src/publish_color_octomap.cpp)
-target_link_libraries(publish_color_octomap ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES}
-${G2O_CORE})
+#add_executable(publish_color_octomap src/publish_color_octomap.cpp)
+#target_link_libraries(publish_color_octomap ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES}
+#${G2O_CORE})
 
 #add_executable(octomap_to_cloud src/octomap_to_cloud.cpp)
 #target_link_libraries(octomap_to_cloud ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})

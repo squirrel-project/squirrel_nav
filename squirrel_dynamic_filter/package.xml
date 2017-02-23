@@ -16,31 +16,33 @@
   <license>BSD</license>
 
 
-    <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin</buildtool_depend>
+
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>std_msgs</build_depend>
+  <build_depend>armadillo</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>squirrel_dynamic_filter_msgs</build_depend>
+  <build_depend>pcl_conversions</build_depend>
+  <build_depend>octomap_msgs</build_depend>
+  <build_depend>octomap_ros</build_depend>
+  <build_depend>suitesparse</build_depend>
+  <build_depend>qt5-qmake</build_depend>
+  <build_depend>libqglviewer-qt4-dev</build_depend>
+
+  <run_depend>pcl_ros</run_depend>
+  <run_depend>pcl_conversions</run_depend>
+  <run_depend>octomap_ros</run_depend>
+  <run_depend>octomap_msgs</run_depend>
+  <run_depend>squirrel_dynamic_filter_msgs</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>sensor_msgs</run_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>pcl_ros</build_depend>
-  <run_depend>pcl_ros</run_depend>
-  <build_depend>squirrel_dynamic_filter_msgs</build_depend>
-  <run_depend>squirrel_dynamic_filter_msgs</run_depend>
-  <build_depend>pcl_conversions</build_depend>
-  <run_depend>pcl_conversions</run_depend>
-  <build_depend>octomap_ros</build_depend>
-  <run_depend>octomap_ros</run_depend>
-  <build_depend>octomap_msgs</build_depend>
-  <run_depend>octomap_msgs</run_depend>
-  <build_depend>tf</build_depend>
-  
+  <run_depend>armadillo</run_depend>
 
-  <!-- The export tag contains other, unspecified, tags -->
-  <export>
-    <!-- Other tools can request additional information be placed here -->
 
-  </export>
 </package>

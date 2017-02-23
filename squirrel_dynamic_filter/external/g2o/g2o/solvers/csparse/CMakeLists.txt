@@ -20,7 +20,7 @@ ADD_LIBRARY(solver_csparse ${G2O_LIB_TYPE}
 )
 SET_TARGET_PROPERTIES(solver_csparse PROPERTIES OUTPUT_NAME ${LIB_PREFIX}solver_csparse)
 
-TARGET_LINK_LIBRARIES(solver_csparse csparse_extension core)
+TARGET_LINK_LIBRARIES(solver_csparse csparse_extension g2ocore)
 
 
 INSTALL(TARGETS solver_csparse csparse_extension

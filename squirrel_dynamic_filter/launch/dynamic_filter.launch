@@ -8,4 +8,13 @@
 <node name="sensor_to_base_link" type="sensor_to_base_link" pkg="squirrel_dynamic_filter"/>
 <node name="l_frequency" type="l_frequency" pkg="squirrel_dynamic_filter"/>
 <node name="static_classify" type="static_classify" pkg="squirrel_dynamic_filter" args="$(arg map_file)" />
+<node name="publish_color_octomap" type="publish_color_octomap"  pkg="squirrel_3d_mapping" args="$(arg
+ map_file)"/>
+ <include file="$(find squirrel_3d_mapping)/launch/3d_mapping.launch">
+  <arg name="input_topic" value="/kinect/depth/static_final" />
+  <!--arg name="output_binary" value="/octomap_movable_binary" /-->
+  <!--arg name="output_full" value="/octomap_movable_full" /-->
+  <arg name="base_frame" value="/base_link_static_final" />
+ </include>
+
 </launch>

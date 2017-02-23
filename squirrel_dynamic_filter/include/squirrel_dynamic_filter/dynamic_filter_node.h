@@ -45,8 +45,8 @@
 #include "squirrel_dynamic_filter_msgs/CloudMsg.h"
 #include "squirrel_dynamic_filter_msgs/DynamicFilterSrv.h"
 #include "squirrel_dynamic_filter_msgs/DynamicFilterMsg.h"
-#include <mlpack/core.hpp>
-#include <mlpack/core/dists/gaussian_distribution.hpp>
+#include "mlpack/core.hpp"
+#include "mlpack/core/dists/gaussian_distribution.hpp"
 #include <tf/transform_broadcaster.h>
 
 using namespace Eigen;
