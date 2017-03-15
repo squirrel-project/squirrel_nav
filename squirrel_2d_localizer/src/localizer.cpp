@@ -46,7 +46,7 @@ void Localizer::initialize(
 }
 
 void Localizer::resetPose(const Pose2d& init_pose) {
-  std::unique_lock<std::mutex> lock(init_mtx_);
+  std::unique_lock<std::mutex> lock(init_mtx);
   std::mt19937 rnd_eng(std::rand());
   std::normal_distribution<double> randn(0., 1.);
   if (!particles_.empty())
@@ -72,6 +72,7 @@ void Localizer::resetPose(const Pose2d& init_pose) {
 bool Localizer::updateFilter(
     const Transform2d& motion, const std::vector<float>& scan,
     const Transform2d& extra_correction) {
+  std::unique_lock<std::mutex> lock(init_mtx);
   cum_lin_motion_ += motion.translation().norm();
   cum_ang_motion_ += std::abs(angles::normalize_angle(motion[2]));
   if (cum_lin_motion_ < loc_params_.min_lin_update &&

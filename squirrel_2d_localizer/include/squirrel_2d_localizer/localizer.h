@@ -74,7 +74,10 @@ class Localizer {
   inline MotionModel* motionModel() { return motion_model_.get(); }
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-  
+
+ public:
+  mutable std::mutex init_mtx;
+
  private:
   inline void setDefaultParams() {
     loc_params_.num_particles  = 250;
@@ -95,8 +98,6 @@ class Localizer {
   Params loc_params_;
 
   double cum_lin_motion_, cum_ang_motion_;
-
-  std::mutex init_mtx_;
 };
 
 }  // namespace squirrel_2d_localizer

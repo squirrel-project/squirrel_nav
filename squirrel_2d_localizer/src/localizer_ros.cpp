@@ -195,7 +195,7 @@ void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
     return;
   }
   // update filter.
-  std::unique_lock<std::mutex> lock(update_mtx_);
+  std::unique_lock<std::mutex> lock(update_mtx);
   tf::StampedTransform tf_o2r_new;
   if (!lookupOdometry(scan_time, ros::Duration(0.05), &tf_o2r_new))
     return;
@@ -213,7 +213,6 @@ void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
 
 void LocalizerROS::initialPoseCallback(
     const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
-  std::unique_lock<std::mutex> lock(reset_mtx_);
   ros::Time now;
   while (!lookupOdometry(now = ros::Time::now(), ros::Duration(0.1), &tf_o2r_))
     ROS_WARN_STREAM(node_name_ << ": Trying to reinitialize odometry.");
@@ -236,7 +235,7 @@ bool LocalizerROS::lookupOdometry(
 }
 
 void LocalizerROS::publishTransform(const ros::Time& stamp) {
-  std::unique_lock<std::mutex> lock(tf_mtx_);
+  std::unique_lock<std::mutex> lock(update_mtx);
   tf::Transform tf_m2o,
       tf_m2r = ros_conversions::toTFMsgFrom<Pose2d>(localizer_->pose());
   tf_m2o     = tf_m2r * tf_o2r_.inverse();

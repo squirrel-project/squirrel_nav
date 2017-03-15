@@ -56,6 +56,9 @@ class LocalizerROS {
 
   void spin(double hz = 40.);
 
+ public:
+  mutable std::mutex update_mtx;
+  
  private:
   void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg);
   void initialPoseCallback(
@@ -89,8 +92,6 @@ class LocalizerROS {
   std::string node_name_;
 
   bool update_laser_params_;
-
-  mutable std::mutex update_mtx_, reset_mtx_, tf_mtx_;
 };
 
 }  // namespace squirrel_2d_localizer
