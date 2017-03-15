@@ -150,7 +150,7 @@ void FootprintObserver::enableCallback(const std_msgs::Bool::ConstPtr& msg) {
 bool FootprintObserver::footprintServiceCallback(
     squirrel_footprint_observer_msgs::get_footprint::Request& req,
     squirrel_footprint_observer_msgs::get_footprint::Response& res) {
-  std::unique_lock<std::mutex> lock(update_mtx);
+  updateFootprint(ros::Time::now());
   res.footprint = footprint_.polygon;
   return true;
 }
