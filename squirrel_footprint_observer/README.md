@@ -3,6 +3,8 @@ squirrel_footprint_observer
 
 Update the footprint of the robot according to arm configuration.
 
+![snapshot](https://github.com/federico-b/squirrel_nav/squirrel_footprint_observer/doc/snapshot.png)
+
 ### Nodes
 
 The package provide a single node
