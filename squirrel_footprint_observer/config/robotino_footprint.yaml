@@ -1,0 +1,4 @@
+base_frame_id: /base_link
+base_radius: 0.25
+joint_radius: 0.1
+joint_chain: [/arm_link1, /arm_link2, /arm_link3, /arm_link4, /arm_link5]

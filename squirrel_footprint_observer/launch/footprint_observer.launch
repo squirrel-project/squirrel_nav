@@ -1,0 +1,9 @@
+<launch>
+  <arg name="config_file" default="$(find squirrel_footprint_observer)/config/robotino_footprint.yaml"/>
+
+  <node name="squirrel_footprint_observer" pkg="squirrel_footprint_observer" type="squirrel_footprint_observer_node"
+	output="screen">
+    <rosparam file="$(arg config_file)" command="load"/>
+  </node>
+
+</launch>

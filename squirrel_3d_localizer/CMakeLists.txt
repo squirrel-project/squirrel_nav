@@ -3,6 +3,8 @@ project(squirrel_3d_localizer)
 
 set(ROS_BUILD_TYPE Release)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
+
 set(squirrel_3d_localizer_CATKIN_DEPENDENCIES 
   cmake_modules
   geometry_msgs
