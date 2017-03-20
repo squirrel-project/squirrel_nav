@@ -53,6 +53,8 @@ class tfPointCloud
     tf::TransformBroadcaster br;
     tf::Transform transform_map_base_link;
     ofstream time_write;
+    ofstream trans_write;
+
 
     pcl::PCDWriter writer;
   public:
@@ -69,7 +71,7 @@ class tfPointCloud
       n_.getParam("StoreResults",store_results);
       pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static_final/",10);//Publising the filtered pointcloud
       dynamic_filter_msg_pub = n_.advertise<squirrel_dynamic_filter_msgs::DynamicFilterMsg>("/squirrel/dynamic_filter_msg",10);//Publising the filtered pointcloud
-      cloud_sub = n_.subscribe("/squirrel/cloud_msg", 500, &tfPointCloud::msgCallback, this);
+      cloud_sub = n_.subscribe("/squirrel/cloud_msg", 30, &tfPointCloud::msgCallback, this);
           ///subscribing to the message sent by l_frequency
       dynamic_srv.request.odometry.resize(7);
       dynamic_filter_msg.odometry.resize(7);
@@ -143,9 +145,58 @@ class tfPointCloud
        not_ground->height = 1;
 
 
-
        if(store_results)
        {
+
+         ss.str("");
+         ss << output_folder << "map_base_link_" << counter << ".csv";
+
+
+         trans_write.open(ss.str());
+
+         trans_write << sensor_msg.odometry[0] << endl << sensor_msg.odometry[1] << endl << sensor_msg.odometry[2] << endl << sensor_msg.odometry[3] << endl << sensor_msg.odometry[4] << endl <<sensor_msg.odometry[5] << endl << sensor_msg.odometry[6] << endl;
+
+         trans_write.close();
+        // Vector7d odom_vec;
+        /* odom_vec[0] = sensor_msg.odometry[0];*/
+         //odom_vec[1] = sensor_msg.odometry[1];
+         //odom_vec[2] = sensor_msg.odometry[2];
+         //odom_vec[3] = sensor_msg.odometry[3];
+         //odom_vec[4] = sensor_msg.odometry[4];
+         //odom_vec[5] = sensor_msg.odometry[5];
+         //odom_vec[6] = sensor_msg.odometry[6];
+
+        /* Isometry3D base_link_to_map = g2o::internal::fromVectorQT(odom_vec);*/
+
+         //Eigen::Matrix4f base_link_to_map_eigen;
+
+         //base_link_to_map_eigen(0,0) = base_link_to_map(0,0);
+         //base_link_to_map_eigen(0,1) = base_link_to_map(0,1);
+         //base_link_to_map_eigen(0,2) = base_link_to_map(0,2);
+         //base_link_to_map_eigen(0,3) = base_link_to_map(0,3);
+         //base_link_to_map_eigen(1,0) = base_link_to_map(1,0);
+         //base_link_to_map_eigen(1,1) = base_link_to_map(1,1);
+         //base_link_to_map_eigen(1,2) = base_link_to_map(1,2);
+         //base_link_to_map_eigen(1,3) = base_link_to_map(1,3);
+         //base_link_to_map_eigen(2,0) = base_link_to_map(2,0);
+         //base_link_to_map_eigen(2,1) = base_link_to_map(2,1);
+         //base_link_to_map_eigen(2,2) = base_link_to_map(2,2);
+         //base_link_to_map_eigen(2,3) = base_link_to_map(2,3);
+         //base_link_to_map_eigen(3,0) = base_link_to_map(3,0);
+         //base_link_to_map_eigen(3,1) = base_link_to_map(3,1);
+         //base_link_to_map_eigen(3,2) = base_link_to_map(3,2);
+         //base_link_to_map_eigen(3,3) = base_link_to_map(3,3);
+
+         //PointCloud cloud_static_trans;
+         //PointCloud ground_trans;
+
+
+         //pcl::transformPointCloud(*static_cloud,cloud_static_trans,base_link_to_map_eigen);
+
+         //pcl::transformPointCloud(*ground,ground_trans,base_link_to_map_eigen);
+
+
+
          ss.str("");
          ss << output_folder << "static_cloud_" << counter << ".pcd";
 
@@ -161,6 +212,9 @@ class tfPointCloud
 
          if(!ground->points.empty())
            writer.write(ss.str(),*ground,true);
+
+
+
          ss.str("");
          ss << output_folder << "not_ground_" << counter << ".pcd";
 

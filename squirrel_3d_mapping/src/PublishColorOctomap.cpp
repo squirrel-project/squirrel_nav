@@ -110,7 +110,7 @@ class PublishOctomap
         std::vector <int> pointIdxRadiusSearch;
         std::vector <float> pointRadiusSquaredDistance;
         if(kdtree.nearestKSearch(pt_pcl,1,pointIdxRadiusSearch,pointRadiusSquaredDistance) > 0)
-          if(sqrt(pointRadiusSquaredDistance[0]) < 0.1)
+          if(sqrt(pointRadiusSquaredDistance[0]) < 0.2)
             it->setColor(0,255,0);
           else
             it->setColor(0,0,255);

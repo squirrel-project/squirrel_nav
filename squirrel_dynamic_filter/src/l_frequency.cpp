@@ -39,10 +39,10 @@ class tfPointCloud
 	public:
 		tfPointCloud():tf_()
 		{
-      cloud_sub_.subscribe(n_, "/kinect/depth/points/",200);///Subscriber
+      cloud_sub_.subscribe(n_, "/kinect/depth/points/",100);///Subscriber
 			tf_filter_ = new tf::MessageFilter<sensor_msgs::PointCloud2> (cloud_sub_, tf_, "base_link", 1);///Filter to synchronize
       tf_filter_->registerCallback(boost::bind(&tfPointCloud::msgCallback, this, _1) );
-      publisher = n_.advertise<squirrel_dynamic_filter_msgs::CloudMsg>("/squirrel/cloud_msg",100);///publisher
+      publisher = n_.advertise<squirrel_dynamic_filter_msgs::CloudMsg>("/squirrel/cloud_msg",10);///publisher
       cloud_msg.odometry.resize(7);
       n_.getParam("DownSamplingRadius",down_sampling_radius);
       n_.getParam("Verbose",is_verbose);
@@ -52,7 +52,7 @@ class tfPointCloud
 
    ////Waiting for the pose of the robot
       tf::StampedTransform transform;
-      tf_.waitForTransform("/map", "/base_link",sensor_msg->header.stamp, ros::Duration(5.0));
+      tf_.waitForTransform("/map", "/base_link",sensor_msg->header.stamp, ros::Duration(2.0));
       try
       {
         tf_.lookupTransform("/map", "/base_link",sensor_msg->header.stamp , transform);

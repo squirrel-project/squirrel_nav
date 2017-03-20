@@ -317,6 +317,27 @@ void DynamicFilter::EstimateMotion(const std::vector <int> &index_query,const st
    write_intensity_z.close();
 
 
+/*   Eigen::Matrix4f frame_to_map = Eigen::Matrix4f::Identity();*/
+
+   //frame_to_map(0,0) = frame_2.odometry(0,0);
+   //frame_to_map(0,1) = frame_2.odometry(0,1);
+   //frame_to_map(0,2) = frame_2.odometry(0,2);
+   //frame_to_map(0,3) = frame_2.odometry(0,3);
+
+   //frame_to_map(1,0) = frame_2.odometry(1,0);
+   //frame_to_map(1,1) = frame_2.odometry(1,1);
+   //frame_to_map(1,2) = frame_2.odometry(1,2);
+   //frame_to_map(1,3) = frame_2.odometry(1,3);
+
+   //frame_to_map(2,0) = frame_2.odometry(2,0);
+   //frame_to_map(2,1) = frame_2.odometry(2,1);
+   //frame_to_map(2,2) = frame_2.odometry(2,2);
+   //frame_to_map(2,3) = frame_2.odometry(2,3);
+
+   //PointCloud cloud_save_trans;
+
+   //pcl::transformPointCloud(*cloud_save,cloud_save_trans,frame_to_map);
+
    pcl::PCDWriter writer;
    frame_1.cloud_transformed->width = frame_1.cloud_transformed->points.size();
    frame_1.cloud_transformed->height = 1;

@@ -45,7 +45,7 @@ class ClassifyStatic
     ClassifyStatic()
     {
       is_map = true;
-      octomap_sub = n.subscribe("/octomap_full_color", 10, &ClassifyStatic::msgCallback, this);
+      octomap_sub = n.subscribe("/octomap_full_color", 100, &ClassifyStatic::msgCallback, this);
       service = n.advertiseService("classify_static", &ClassifyStatic::ClassifyStaticCallback,this);
       pub_static = n.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static",10);
       pub_dynamic = n.advertise<sensor_msgs::PointCloud2>("/kinect/depth/dynamic",10);
@@ -110,6 +110,8 @@ class ClassifyStatic
       PointCloud cloud_input_raw;
       PointCloud::Ptr cloud_input(new PointCloud);
 
+
+      fprintf(stderr, "inside service\n");
 
   //OcTree *tree = new OcTree(map_filename);
 

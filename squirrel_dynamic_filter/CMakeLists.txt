@@ -233,8 +233,8 @@ add_dependencies(sensor_to_base_link ${G2O_CORE})
 
 
 
-#add_executable(store_cloud src/store_cloud.cpp)
-#target_link_libraries(store_cloud ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+add_executable(publish_cloud src/publish_cloud.cpp)
+target_link_libraries(publish_cloud ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
 add_executable(static_classify src/StaticClassifyOctoMap.cpp)
 target_link_libraries(static_classify ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY} ${G2O_CORE})

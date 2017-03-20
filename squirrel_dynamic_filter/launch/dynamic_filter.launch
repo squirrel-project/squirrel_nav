@@ -1,6 +1,7 @@
 <launch>
 <arg name="map_file" default="$(find squirrel_navigation)/octomaps/default-octomap.bt"/>
-<node name="octomap_server" type="octomap_server_node" pkg="octomap_server" args="$(arg map_file)"/>
+<!--node name="octomap_server" type="octomap_server_node" pkg="octomap_server"
+args="$(arg map_file)"/-->
 <rosparam command= "load" file="$(find squirrel_dynamic_filter)/params/parameters.yaml" />
 <param name="InputFolder" type="string" value="$(find squirrel_dynamic_filter)"/>
 <param name="OutputFolder" type="string" value="$(find squirrel_dynamic_filter)/results/test/" />

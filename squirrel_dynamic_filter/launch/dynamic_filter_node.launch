@@ -2,4 +2,11 @@
  <arg name="map_file" default="$(find squirrel_navigation)/octomaps/default-octomap.bt"/>
  <param name="OutputFolder" type="string" value="$(find squirrel_dynamic_filter)/results/test/" />
  <node name="dynamic_filter_node" type="dynamic_filter_node"  pkg="squirrel_dynamic_filter"/>
-  </launch>
+ <!--include file="$(find squirrel_3d_mapping)/launch/3d_mapping.launch">
+  <arg name="input_topic" value="/kinect/depth/static_final" />
+  <arg name="output_binary" value="/octomap_movable_binary" />
+  <arg name="output_full" value="/octomap_movable_full" />
+  <arg name="base_frame" value="/base_link_static_final" />
+ </include-->
+
+ </launch>
