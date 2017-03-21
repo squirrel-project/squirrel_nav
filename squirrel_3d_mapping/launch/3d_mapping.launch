@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <launch>
-  <arg name="input_topic" default="/kinect/depth/points"/>
+  <arg name="input_topic" default="/rgbdscan"/>
   <arg name="base_frame" default="/base_link"/>
   <arg name="output_binary" default="/octomap_binary"/>
   <arg name="output_full" default="/octomap_full"/>
   <arg name="map_file" default="$(find squirrel_navigation)/octomaps/default-octomap.bt"/>
   <node pkg="squirrel_3d_mapping" type="octomap_server_node"
-  name="squirrel_3d_mapping" output="screen" args="$(arg map_file)">
+	name="squirrel_3d_mapping" output="screen" args="$(arg map_file)">
     <param name="resolution" value="0.05" />
     <param name="frame_id" type="string" value="map" />
     <param name="max_sensor_range" value="4.0" />
@@ -21,8 +21,8 @@
     <param name="filter_ground" value="true" />
     <param name="base_frame_id" value="$(arg base_frame)" />
     <param name="ground_filter/plane_distance" value="0.03" />
-    <!--param name="voxel_filter/enabled" value="true" /-->
-    <!--param name="voxel_filter/voxel_size" value="0.008" /-->
+    <param name="voxel_filter/enabled" value="false" />
+    <param name="voxel_filter/voxel_size" value="0.008" />
     <param name="distance_transform/enabled" value="true" />
     <param name="distance_transform/max_dist" value="1.0" />
     <param name="distance_transform/unknown_as_occupied" value="false" />

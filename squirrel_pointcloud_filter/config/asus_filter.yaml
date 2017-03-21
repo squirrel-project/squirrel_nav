@@ -1,0 +1,3 @@
+nanfree: true
+update_rate_hz: 10.0
+resolutions_xyz: [0.025, 0.025, 0.025]
