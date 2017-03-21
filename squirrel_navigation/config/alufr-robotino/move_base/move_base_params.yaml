@@ -11,9 +11,9 @@ base_local_planner: "squirrel_navigation/LocalPlanner"
 base_global_planner: "squirrel_navigation/GlobalPlanner"
 trajectory_planner:
   xy_smoother: 0.75
-  yaw_smoother: 0.5
+  yaw_smoother: 0.25
   time_scaler: 1.0
-  heading_lookahead: 10
+  heading_lookahead: 5
 planner_frequency: 1.0
 planner_patience: 3.0
 recovery_behavior: 

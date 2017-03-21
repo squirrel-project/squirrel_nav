@@ -20,11 +20,10 @@
   </include>
 
   <!-- Run pointcloud_filter_node: filter the PointCloud to speed up planning -->
-  <node pkg="squirrel_navigation" type="pointcloud_filter_node" name="pointcloud_filter" output="screen" respawn="true">
-    <param name="pointcloud_in" value="/kinect/depth/points" />
-    <param name="pointcloud_out" value="/rgbdscan" />
-    <param name="pointcloud_size" value="6500" />
-  </node>
+  <include file="$(find squirrel_pointcloud_filter)/launch/pointcloud_filter.launch">
+    <arg name="cloud_in" value="/kinect/depth/points"/>
+    <arg name="cloud_out" value="/rgbdscan"/>
+  </include>
 
   <!-- Run autolocalization_node: localize the robot before starting navigation tasks -->
   <node pkg="squirrel_navigation" type="autolocalization_node" name="autolocalization" output="screen" if="$(arg autolocalization)">
@@ -54,6 +53,9 @@
   
   <!-- Run the octomap server and the 3d collision check -->
   <include file="$(find squirrel_3d_mapping)/launch/3d_mapping.launch" if="$(arg 3d_mapping)"/>
+
+  <!-- Run the footprint observer -->
+  <include file="$(find squirrel_footprint_observer)/launch/footprint_observer.launch" />
 
   <!-- Run the planner for pushing task -->
   <include file="$(find squirrel_pushing_planner)/launch/pushing_planner.launch">
