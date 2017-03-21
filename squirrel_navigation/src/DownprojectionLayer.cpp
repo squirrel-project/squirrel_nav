@@ -83,7 +83,8 @@ DownprojectionLayer::DownprojectionLayer(void)
       verbose_(false),
       footprint_active_(true),
       in_radius_(-1.0),
-      circ_radius_(-1.0) {
+      circ_radius_(-1.0),
+      pushing_action_(false) {
   costmap_               = nullptr;
   costmap_update_handle_ = CostmapUpdateHandle::getHandle();
 
