@@ -55,6 +55,9 @@
   <!-- Run the octomap server and the 3d collision check -->
   <include file="$(find squirrel_3d_mapping)/launch/3d_mapping.launch" if="$(arg 3d_mapping)"/>
 
+  <!-- Run the footprint observer -->
+  <include file="$(find squirrel_footprint_observer)/launch/footprint_observer.launch" />
+
   <!-- Run the planner for pushing task -->
   <include file="$(find squirrel_pushing_planner)/launch/pushing_planner.launch">
     <arg name="tolerance" value="0.025" />

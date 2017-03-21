@@ -187,26 +187,29 @@ bool TrajectoryPlanner::initTrajectory(
   const double xy_smoother  = smooth ? xy_smoother_ : 0.0;
   const double yaw_smoother = smooth ? yaw_smoother_ : 0.0;
 
+  // First smooth the path in xy.
   for (size_t i = 0; i < n; ++i) {
-    if (i == 0) {
-      (*poses_)[i].x   = plan[i].pose.position.x;
-      (*poses_)[i].y   = plan[i].pose.position.y;
-      (*poses_)[i].yaw = tf::getYaw(plan[i].pose.orientation);
+    Pose2D& pose_i = poses_->at(i);
+    if (i < 1) {
+      pose_i.x   = plan[i].pose.position.x;
+      pose_i.y   = plan[i].pose.position.y;
+      pose_i.yaw = tf::getYaw(plan[i].pose.orientation); 
     } else {
-      double da = angles::normalize_angle(
-          (*poses_)[i - 1].yaw - tf::getYaw(plan[i].pose.orientation));
-
-      (*poses_)[i].x = xy_smoother * (*poses_)[i - 1].x +
-                       (1 - xy_smoother) * plan[i].pose.position.x;
-      (*poses_)[i].y = xy_smoother * (*poses_)[i - 1].y +
-                       (1 - xy_smoother) * plan[i].pose.position.y;
-      (*poses_)[i].yaw = angles::normalize_angle(
-          tf::getYaw(plan[i].pose.orientation) + yaw_smoother * da);
-      (*poses_)[i].t =
-          (*poses_)[i - 1].t + timeIncrement((*poses_)[i], (*poses_)[i - 1]);
-    }
+      pose_i.x =
+          xy_smoother * poses_->at(i - 1).x + (1 - xy_smoother) * plan[i].pose.position.x; 
+      pose_i.y =
+          xy_smoother * poses_->at(i - 1).y + (1 - xy_smoother) * plan[i].pose.position.y;
+      pose_i.t =
+          poses_->at(i - 1).t + timeIncrement(pose_i, poses_->at(i - 1));
+    }    
   }
-
+  // Then compute the orientations.
+  for (size_t i = 1; i < n; ++i) {
+    const Pose2D& pose_prev = poses_->at(i - 1);
+    const Pose2D& pose_next = poses_->at(i + 1);
+    poses_->at(i).yaw = slerp(pose_prev.yaw, pose_next.yaw, 0.5);
+  }
+  
   (*poses_)[n].x   = plan[n - 1].pose.position.x;
   (*poses_)[n].y   = plan[n - 1].pose.position.y;
   (*poses_)[n].yaw = tf::getYaw(plan[n - 1].pose.orientation);
@@ -233,14 +236,12 @@ bool TrajectoryPlanner::updateTrajectory(
 
   for (size_t i = init, pi = heading_lookahead_;
        i < init + n - heading_lookahead_; ++i, ++pi) {
-    double da = new_poses[i - 1].yaw - tf::getYaw(plan[pi].pose.orientation);
-
     new_poses[i].x = xy_smoother * new_poses[i - 1].x +
                      (1 - xy_smoother) * plan[pi].pose.position.x;
     new_poses[i].y = xy_smoother * new_poses[i - 1].y +
                      (1 - xy_smoother) * plan[pi].pose.position.y;
-    new_poses[i].yaw = angles::normalize_angle(
-        tf::getYaw(plan[pi].pose.orientation) + yaw_smoother * da);
+    new_poses[i].yaw = slerp(
+        new_poses[i - 1].yaw, tf::getYaw(plan[pi].pose.orientation), yaw_smoother);
     new_poses[i].t =
         new_poses[i - 1].t + timeIncrement(new_poses[i], new_poses[i - 1]);
   }

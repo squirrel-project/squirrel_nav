@@ -141,13 +141,18 @@ class TrajectoryPlanner {
            std::max(dl / max_linear_vel_, da / max_angular_vel_);
   };
 
-  inline double linearDistance(const Profile& p1, const Profile& p2) {
+  inline double linearDistance(const Profile& p1, const Profile& p2) const {
     return std::hypot(p1.x - p2.x, p1.y - p2.y);
   };
 
-  inline double angularDistance(const Profile& p1, const Profile& p2) {
+  inline double angularDistance(const Profile& p1, const Profile& p2) const {
     return std::abs(angles::normalize_angle(p1.yaw - p2.yaw));
   };
+
+  inline double slerp(double from, double to, double ratio) const {
+    const double da = angles::normalize_angle(to - from);
+    return angles::normalize_angle(from + ratio * da);
+  }
 };
 
 }  // namespace squirrel_navigation
