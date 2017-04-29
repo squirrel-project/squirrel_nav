@@ -101,6 +101,10 @@ link_directories(
   ${SBPL_LIBRARY_DIRS}
 )
 
+link_directories(
+  ${SBPL_LIBRARY_DIRS}
+)
+
 ## Compiling and linking the plugins
 add_library(squirrel_planners
   src/ControllerPID.cpp
