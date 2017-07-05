@@ -56,6 +56,7 @@ class TwistCorrection {
   
   Pose2d correction(const Twist2d& twist);
 
+  inline const Params& params() const { return params_; }
   inline Params& params() { return params_; }
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;

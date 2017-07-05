@@ -68,8 +68,8 @@ class LaserModel {
       const LatentModelLikelihoodField& likelihood_field,
       const std::vector<float>& measurement, std::vector<Particle>* particles);
 
-  inline Params& params() { return laser_params_; }
   inline const Params& params() const { return laser_params_; }
+  inline Params& params() { return laser_params_; }
 
  private:
   inline void setDefaultParams() {

@@ -67,6 +67,7 @@ class Localizer {
   const Pose2d& pose() const { return pose_; }
   const Matrix<3, 3>& covariance() const { return covariance_; }
 
+  inline const Params& params() const { loc_params_; }
   inline Params& params() { return loc_params_; }
 
   inline GridMap* gridMap() { return map_.get(); }

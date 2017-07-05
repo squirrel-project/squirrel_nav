@@ -67,6 +67,7 @@ class GridMap {
   double operator()(int i, int j) const { return occupancy_map_(i, j); };
   operator const Matrix<>&() const { return occupancy_map_; }
 
+  inline const Params& params() const { return map_params_; }
   inline Params& params() { return map_params_; }
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;

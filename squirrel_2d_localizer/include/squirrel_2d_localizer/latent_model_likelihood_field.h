@@ -57,8 +57,8 @@ class LatentModelLikelihoodField {
 
   double likelihood(int i, int j) const;
 
-  inline Params& params() { return lmlf_params_; }
   inline const Params& parmas() const { return lmlf_params_; }
+  inline Params& params() { return lmlf_params_; }
   
  private:
   inline bool inside(int i, int j) const {
