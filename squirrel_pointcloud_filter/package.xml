@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>squirrel_pointcloud_filter</name>
-  <version>0.0.0</version>
+  <version>1.0.0</version>
   <description>The squirrel_pointcloud_filter package</description>
 
   <maintainer email="boniardi@cs.uni-freiburg.de"/>
@@ -30,7 +30,6 @@
     OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
     WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   </license>
-
 
   <author>Federico Boniardi</author>
 

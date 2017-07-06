@@ -1,20 +1,23 @@
-GlobalPlanner: {
-  verbose: false,
-  heading_lookahead: 0.5,
-  dijkstra/heading_lookahead: 0.75, 
-  dijkstra/use_dijkstra: true,
-  dijkstra/allow_unknown: false,
-  dijkstra/default_tolerance: 0.0,
-  dijkstra/old_navfn_behavior: false,
-  dijkstra/use_quadratic: true,
-  dijkstra/use_grid_path: false,
-  dijkstra/visualize_potential: false,
-  lattice/heading_lookahead: 0.75, 
-  lattice/planner_type: ARAPlanner,
-  lattice/environment_type: XYThetaLattice,
-  lattice/allocated_time: 10.0,
-  lattice/initial_epsilon: 3.0,
-  lattice/force_scratch_limit: 500,
-  lattice/forward_search: false,
-  lattice/lethal_obstacle: 20,
-}
+GlobalPlanner: 
+  plan_with_footprint: false
+  plan_with_constant_heading: false
+  heading: 0.0
+  verbose: false
+
+  dijkstra_planner: 
+    use_dijkstra: true,
+    allow_unknown: false,
+    default_tolerance: 0.0,
+    old_navfn_behavior: false,
+    use_quadratic: true,
+    use_grid_path: false,
+    visualize_potential: false,
+
+  RRTstar:
+    verbose: false
+    footpint_topic: /footprint_observer/footprint
+    collision_check_resolution: 0.05
+    max_planning_time: 0.5
+    max_simplification_time: 0.5
+    map_resolution: 0.05
+    range: 1.0
