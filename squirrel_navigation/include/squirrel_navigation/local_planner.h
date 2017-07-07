@@ -26,6 +26,7 @@
 #include "squirrel_navigation/controller_pid.h"
 #include "squirrel_navigation/motion_planner.h"
 #include "squirrel_navigation/planners_shared.h"
+#include "squirrel_navigation/safety/scan_observer.h"
 
 #include <ros/console.h>
 #include <ros/publisher.h>
@@ -60,6 +61,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
     double goal_ang_tolerance, goal_lin_tolerance;
     double max_safe_lin_velocity, max_safe_ang_velocity;
     double max_safe_lin_displacement, max_safe_ang_displacement;
+    std::vector<std::string> safety_observers;
     bool verbose;
   };
 
@@ -83,7 +85,12 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   bool setPlan(
       const std::vector<geometry_msgs::PoseStamped>& waypoints) override;
 
- private:
+  // Parameter read/write utilities.
+  inline const Params& params() const { return params_; }
+  inline void setParams(const Params& params) { params_ = params; }
+  inline Params& params() { return params_; }
+
+ private:  
   // Callbacks.
   void odomCallback(const nav_msgs::Odometry::ConstPtr& odom);
   void reconfigureCallback(LocalPlannerConfig& config, uint32_t level);
@@ -111,7 +118,9 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   std::string odom_topic_;
 
   ControllerPID controller_;
-  MotionPlanner motion_planner;
+  MotionPlanner motion_planner_;
+
+  std::vector<std::unique_ptr<safety::Observer>> safety_observers_;
 
   geometry_msgs::TwistStamped robot_twist_;
   geometry_msgs::PoseStamped robot_pose_;

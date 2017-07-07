@@ -21,6 +21,8 @@
 // SOFTWARE.
 
 #include "squirrel_navigation/local_planner.h"
+#include "squirrel_navigation/safety/arm_skin_observer.h"
+#include "squirrel_navigation/safety/scan_observer.h"
 
 #include <pluginlib/class_list_macros.h>
 
@@ -50,6 +52,20 @@ void LocalPlanner::initialize(
   tfl_.reset(tfl);
   costmap_ros_.reset(costmap_ros);
   current_goal_.reset(nullptr);
+  // Initialize the safety observers.
+  for (const auto& safety_observer_tag : params_.safety_observers) {
+    // Scan observer.
+    if (safety_observer_tag == "ScanObserver") {
+      safety::ScanObserver* scan_observer = new safety::ScanObserver;
+      safety_observers_.emplace_back(new safety::ScanObserver(scan_observer));
+      scan_observer->initialize(name + "/ScanObserver");
+    }
+    if (safety_observer_tag == "ArmSkinObserver") {
+      safety::ArmSkinObserver* arm_observer = new safety::ArmSkinObserver; 
+      safety_observers_.emplace_back(new safety::ArmSkinObserver(arm_observer));
+      arm_observer->initialize(name + "/ArmSkinObserver");
+    }
+  }
   // Initialize publishers.
   ref_pub_  = pnh.advertise<visualization_msgs::Marker>("reference_pose", 1);
   traj_pub_ = pnh.advertise<geometry_msgs::PoseArray>("trajectory", 1);
@@ -61,6 +77,14 @@ void LocalPlanner::initialize(
 
 bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
   std::unique_lock<std::mutex> lock(state_mtx_);
+  // Check the scan observer.
+  for (const auto& safety_observer : safety_observers_)
+    if (!safety_observer->safe()) {
+      cmd.linear.x  = 0.0;
+      cmd.linear.y  = 0.0;
+      cmd.angluar.z = 0.0;
+      return true;
+    }
   // Compute the reference pose and perform safety check.
   geomeyty_msgs::Pose ref_pose;
   geometry_msgs::Twist ref_twist;
@@ -119,6 +143,10 @@ bool LocalPlanner::setPlan(
 }
 
 void LocalPlanner::odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
+  ROS_INFO_STREAM_ONCE(
+      "squirrel_localizer::LocalPlanner: Subscribed to odometry.");
+  // Update the internal state.
+  std::unique_lock<std::mutex> lock(state_mtx_);
   const std::string& map_frame_id = costmap_ros_->getFrameID();
   try {
     geometry_msgs::PoseStamped odom_robot_pose(odom->pose.pose, odom->header);
@@ -139,6 +167,7 @@ void LocalPlanner::reconfigureCallback(
   params_.max_safe_ang_velocity     = config.max_safe_ang_velocity;
   params_.max_safe_lin_displacement = config.max_safe_lin_displacement;
   params_.max_safe_ang_displacement = config.max_safe_ang_displacement;
+  params_.safety_observers          = config.safety_observers;
   params_.verbose                   = config.verbose;
 }
 
@@ -154,7 +183,7 @@ void LocalPlanner::publishReference(
   marker.pose            = ref_pose;
   marker.scale.x         = 0.22;
   marker.scale.y         = 0.035;
-  marker.scale.z         = 0.;
+  marker.scale.z         = 0.0;
   marker.color.r         = 0.0;
   marker.color.g         = 1.0;
   marker.color.b         = 0.0;
@@ -221,6 +250,7 @@ MotionPlanner::Params MotionPlanner::Params::defaultParams() {
   params.max_safe_ang_velocity     = 0.7;
   params.max_safe_lin_displacement = 0.5;
   params.max_safe_ang_displacement = 1.0;
+  params.safety_observers          = {"SafetyScanObserver"};
   params.verbose                   = false;
   return params;
 }

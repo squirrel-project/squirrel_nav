@@ -37,7 +37,7 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Polygon.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <squirrel_navigation/FootPrintPluginConfig.h>
+#include <squirrel_navigation/FootprintPlannerConfig.h>
 
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
@@ -55,7 +55,7 @@
 
 namespace squirrel_navigation {
 
-class FootPrintPlanner : public nav_core::BaseGlobalPlanner {
+class FootprintPlanner : public nav_core::BaseGlobalPlanner {
  public:
   class Params {
    public:
@@ -70,9 +70,9 @@ class FootPrintPlanner : public nav_core::BaseGlobalPlanner {
   };
 
  public:
-  FootPrintPlanner() : params_(Params::defaultParams()) {}
-  FootPrintPlanner(const Params& params) : params_(params) {}
-  virtual ~FootPrintPlanner() {}
+  FootprintPlanner() : params_(Params::defaultParams()) {}
+  FootprintPlanner(const Params& params) : params_(params) {}
+  virtual ~FootprintPlanner() {}
 
   // Initialize the internal observers.
   virtual void initialize(
@@ -91,7 +91,7 @@ class FootPrintPlanner : public nav_core::BaseGlobalPlanner {
   
  private:
   // Callbacks.
-  void reconfigureCallback(FootPrintPlanner& config, uint32_t level);
+  void reconfigureCallback(FootprintPlanner& config, uint32_t level);
   void footprintCallback(const geometry_msgs::Polygon::ConstPtr& footprint);
 
   // OMPL related utilities.
@@ -99,6 +99,7 @@ class FootPrintPlanner : public nav_core::BaseGlobalPlanner {
   bool checkValidState();
 
   // Utilities.
+  void initializeFootprintMarker();
   void publishPath(
       const std::vector<geometry_msgs::PoseStamped>& waypoints,
       const ros::Time& stamp) const;
@@ -110,6 +111,7 @@ class FootPrintPlanner : public nav_core::BaseGlobalPlanner {
   Params params_;
   std::unique_ptr<dynamic_reconfigure::Server<FootPrintPlannerConfig>> dsrv_;
 
+  visualization_msgs::Marker footprint_marker_;
   std::vector<geometry_msgs::Point> footprint_;
   std::unique_ptr<base_local_planner::CostmapModel> costmap_model_;
   std::shared_ptr<costmap_2d::Costmap2DROS> costmap_ros_;
@@ -120,7 +122,7 @@ class FootPrintPlanner : public nav_core::BaseGlobalPlanner {
   std::unique_ptr<ompl::base::RealVectorBounds> bounds_;
 
   ros::Subscriber footprint_sub_;
-  ros::Publisher plan_pub_, waypoints_pub_;
+  ros::Publisher plan_pub_, waypoints_pub_, footprints_pub_;
 
   bool ompl_need_reinitialization_;
 

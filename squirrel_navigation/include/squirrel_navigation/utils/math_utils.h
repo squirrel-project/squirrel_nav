@@ -39,7 +39,25 @@ namespace squirrel_navigation {
 
 namespace math {
 
-// Simple utilities.
+// SE2 transforms.
+inline geometry_msgs::Point applyTransform2D(
+    const geometry_msgs::Pose& tf_pose, const geometry_msgs::Point& point) {
+  const double c = std::cos(tf::getYaw(tf_pose.orientation));
+  const double s = std::sin(tf::getYaw(tf_pose.orientation));
+  geometry_msgs::Point output;
+  output.x = c * point.x - s * point.y + tf_pose.position.x;
+  output.y = s * point.x + c * point.y + tf_pose.position.y;
+  return output;
+}
+
+inline geometry_msgs::Point applyTransform2D(
+    const tf::Transform& tf, const geometry_msgs::Point& point) {
+  geometry_msgs::Pose tf_pose;
+  tf::poseTFToMsg(tf, tf_pose);
+  return applyTransform2D(tf_pose, point);
+}
+
+// Simple increment utilities.
 template <int N>
 inline double delta(
     const geometry_msgs::Pose& q1, const geometry_msgs::Pose& q2) const {
