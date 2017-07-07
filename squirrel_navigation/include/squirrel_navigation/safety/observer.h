@@ -30,7 +30,7 @@ namespace safety {
 class Observer {
  public:
   virtual ~Observer() {}
-  bool safe() const = 0;
+  virtual bool safe() const = 0;
 };
 
 }  // namespace safety
