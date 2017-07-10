@@ -43,6 +43,7 @@ class FootprintObserver {
   FootprintObserver();
   virtual ~FootprintObserver() {}
 
+  // Spinner.
   void spin(double hz = 10.);
 
  private:
