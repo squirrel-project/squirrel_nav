@@ -111,6 +111,9 @@ LocalizerROS::LocalizerROS()
         node_name_ << ": Service [/static_map] not advertised. Shutting down.");
     ros::shutdown();
   }
+  // Wait for annoying ROS crap to start up. Apparently no better solution.
+  ros::Duration(1.0).sleep();
+  // Initialize grid map and likelihood fields.
   GridMap::Ptr grid_map(new GridMap(map_params));
   grid_map->initialize(get_map.response.map.data);
   likelihood_field->initialize(*grid_map);

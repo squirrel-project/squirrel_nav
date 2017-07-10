@@ -1,5 +1,6 @@
 LocalPlanner: 
   verbose: false
+  odom_topic: /odom
   goal_lin_tolerance: 0.05
   goal_ang_tolerance: 0.05
   max_safe_lin_velocity: 0.5

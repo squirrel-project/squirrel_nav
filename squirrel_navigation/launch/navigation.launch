@@ -1,4 +1,5 @@
 <launch>
+
   <arg name="rviz" default="false" />
   <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
   <arg name="robot_id" default="alufr-robotino" />
@@ -28,6 +29,7 @@
   <include file="$(find squirrel_footprint_observer)/launch/footprint_observer.launch" />
 
   <!-- Run move_base -->
+  <rosparam command="delete" ns="move_base"/> <!-- Fix move_base bug -->
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/costmap_common_params.yaml" command="load" ns="global_costmap" />
     <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/costmap_common_params.yaml" command="load" ns="local_costmap" />

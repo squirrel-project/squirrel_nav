@@ -57,6 +57,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
    public:
     static Params defaultParams();
 
+    std::string odom_topic;
     double goal_ang_tolerance, goal_lin_tolerance;
     double max_safe_lin_velocity, max_safe_ang_velocity;
     double max_safe_lin_displacement, max_safe_ang_displacement;

@@ -77,7 +77,8 @@ void LocalPlanner::initialize(
   // Initialize publishers.
   ref_pub_  = pnh.advertise<visualization_msgs::Marker>("reference_pose", 1);
   traj_pub_ = pnh.advertise<geometry_msgs::PoseArray>("trajectory", 1);
-  odom_sub_ = nh.subscribe(odom_topic_, 1, &LocalPlanner::odomCallback, this);
+  odom_sub_ =
+      nh.subscribe(params_.odom_topic, 1, &LocalPlanner::odomCallback, this);
   // Initialization successful.
   init_ = true;
   ROS_INFO_STREAM(
@@ -163,7 +164,7 @@ void LocalPlanner::odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
     odom_robot_pose.pose   = odom->pose.pose;
     tfl_->waitForTransform(
         map_frame_id, odom->header.frame_id, odom->header.stamp,
-        ros::Duration(0.05));
+        ros::Duration(0.1));
     tfl_->transformPose(map_frame_id, odom_robot_pose, robot_pose_);
     robotToGlobalFrame(odom->twist.twist, &robot_twist_.twist);
   } catch (const tf::TransformException& ex) {
@@ -173,6 +174,7 @@ void LocalPlanner::odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
 
 void LocalPlanner::reconfigureCallback(
     LocalPlannerConfig& config, uint32_t level) {
+  params_.odom_topic                = config.odom_topic;
   params_.goal_lin_tolerance        = config.goal_lin_tolerance;
   params_.goal_ang_tolerance        = config.goal_ang_tolerance;
   params_.max_safe_lin_velocity     = config.max_safe_lin_velocity;
@@ -257,6 +259,7 @@ void LocalPlanner::safeVelocityCommands(
 
 LocalPlanner::Params LocalPlanner::Params::defaultParams() {
   Params params;
+  params.odom_topic                = "/odom";
   params.goal_ang_tolerance        = 0.05;
   params.goal_lin_tolerance        = 0.05;
   params.max_safe_lin_velocity     = 0.5;

@@ -6,12 +6,6 @@ plugins:
   - {name: navigation_layer, type: "squirrel_navigation::NavigationLayer"}
   - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
 
-# Parameters for squirrel_navigation::MapLayer, if using costmap_2d::StaticLayer, there lines are ignored
-map_layer:
-  robot_link_radius: 0.22
-  inflation_radius: 0.6
-  cost_scaling_factor: 10.0
-
 # Parameters for squirrel_navigation::DownprojectionLayer
 navigation_layer:
   use_kinect: true

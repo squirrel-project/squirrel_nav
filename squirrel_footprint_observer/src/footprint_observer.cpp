@@ -78,6 +78,8 @@ FootprintObserver::FootprintObserver() : enabled_(true) {
       ros::shutdown();
     }
   }
+  // Wait for annoying ROS crap to start up. Apparently no better solution.
+  ros::Duration(1.0).sleep();  
   // Read the robot frame id.
   pnh.param<std::string>(
       "base_frame_id", footprint_.header.frame_id, "/base_link");
@@ -166,8 +168,9 @@ void FootprintObserver::updateFootprint(const ros::Time& stamp) {
     const std::string& joint_frame_id = joint_chain_[i];
     try {
       tfl_.waitForTransform(
-          base_frame_id, joint_frame_id, stamp, ros::Duration(0.05));
-      tfl_.lookupTransform(base_frame_id, joint_frame_id, stamp, tf_base2joint);
+          base_frame_id, joint_frame_id, stamp, ros::Duration(1.0));
+      tfl_.lookupTransform(
+          base_frame_id, joint_frame_id, stamp, tf_base2joint);
     } catch (const tf::TransformException& ex) {
       const std::string& node_name = ros::this_node::getName();
       ROS_ERROR_STREAM(node_name << ": " << ex.what());
