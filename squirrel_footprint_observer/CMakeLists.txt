@@ -3,32 +3,8 @@ project(squirrel_footprint_observer)
 
 set(ROS_BUILD_TYPE Release)
 
+## Import cmake modules.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
-
-## Set ROS dependencies.
-set(squirrel_footprint_observer_DEPENDENCIES
-  geometry_msgs message_runtime message_generation roscpp 
-  tf squirrel_footprint_observer_msgs std_msgs)
-
-## Import ROS dependencies.
-find_package(catkin REQUIRED COMPONENTS ${squirrel_footprint_observer_DEPENDENCIES})
-include_directories(${catkin_INCLUDE_DIRS})
-
-## Import CGAL
-find_package(CGAL REQUIRED)
-include(${CGAL_USE_FILE})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frounding-math")
-
-## Import yaml-cpp
-find_package(YamlCpp REQUIRED)
-include_directories(${YAMLCPP_INCLUDE_DIR})
-
-## Catkin package.
-catkin_package(
- INCLUDE_DIRS include
- LIBRARIES squirrel_footprint_observer_node
- CATKIN_DEPENDS ${squirrel_footprint_observer_DEPENDENCIES}
- DEPENDS CGAL YamlCpp)
 
 ## Enable C++11 support.
 include(CheckCXXCompilerFlag)
@@ -43,6 +19,27 @@ else()
                       "support. Please use a different C++ compiler.")
 endif()
 
+## Set ROS dependencies.
+set(squirrel_footprint_observer_DEPENDENCIES
+  dynamic_reconfigure geometry_msgs message_runtime message_generation 
+  roscpp tf squirrel_footprint_observer_msgs std_msgs)
+
+## Import ROS dependencies.
+find_package(catkin REQUIRED COMPONENTS ${squirrel_footprint_observer_DEPENDENCIES})
+include_directories(${catkin_INCLUDE_DIRS})
+
+## Import CGAL
+find_package(CGAL REQUIRED)
+include(${CGAL_USE_FILE})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frounding-math")
+
+## Import yaml-cpp
+find_package(YamlCpp REQUIRED)
+include_directories(${YAMLCPP_INCLUDE_DIR})
+
+## Genereate reconfig files.
+generate_dynamic_reconfigure_options(cfg/footprint_observer.cfg)
+
 ## Building the footprint observer
 include_directories(include)
 add_executable(squirrel_footprint_observer_node
@@ -50,7 +47,15 @@ add_executable(squirrel_footprint_observer_node
 target_link_libraries(squirrel_footprint_observer_node 
   ${catkin_LIBRARIES} ${YAMLCPP_LIBRARY})
 add_dependencies(squirrel_footprint_observer_node 
-  squirrel_footprint_observer_msgs_generate_messages_cpp)
+  squirrel_footprint_observer_msgs_generate_messages_cpp
+  squirrel_footprint_observer_gencfg)
+
+## Catkin package.
+catkin_package(
+ INCLUDE_DIRS include
+ LIBRARIES squirrel_footprint_observer_node
+ CATKIN_DEPENDS ${squirrel_footprint_observer_DEPENDENCIES}
+ DEPENDS CGAL YamlCpp)
 
 ## Install
 install(TARGETS squirrel_footprint_observer_node

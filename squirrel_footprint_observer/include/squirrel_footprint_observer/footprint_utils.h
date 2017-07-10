@@ -18,6 +18,7 @@
 
 #include "squirrel_footprint_observer/geometry_types.h"
 
+#include <iostream>
 #include <cmath>
 #include <vector>
 
@@ -35,6 +36,8 @@ void approximatedCircle(double radius, std::vector<Point2D>* polygon) {
     polygon->emplace_back(radius * std::cos(a), radius * std::sin(a));
   }
 }
+
+
 
 }  // namespace squirrel_footprint_observer
 

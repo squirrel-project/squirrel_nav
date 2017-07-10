@@ -20,7 +20,8 @@ The package provide a single node
 See `robotino_footprint.yaml` as example.
 
 ### Services.
-- `~/getFootprint`: Retrieve the current footprint of the robot
+- `~/getFootprint`: Retrieve the current footprint of the robot.
+- `~/dumpFootprint`: Print footprint on file or stdout/stderr.
 
 ### Published topics.
 - `~/footprint`(*geometry_msgs/PolygonStamped*): The current footprint.
