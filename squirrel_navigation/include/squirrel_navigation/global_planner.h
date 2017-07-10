@@ -24,7 +24,7 @@
 #define SQUIRREL_NAVIGATION_GLOBAL_PLANNER_H_
 
 #include "squirrel_navigation/GlobalPlannerConfig.h"
-// #include "squirrel_navigation/footprint_planner.h"
+#include "squirrel_navigation/footprint_planner.h"
 
 #include <ros/subscriber.h>
 
@@ -87,7 +87,7 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
   std::unique_ptr<dynamic_reconfigure::Server<GlobalPlannerConfig>> dsrv_;
 
   std::unique_ptr<navfn::NavfnROS> dijkstra_planner_;
-  // std::unique_ptr<FootprintPlanner> footprint_planner_;
+  std::unique_ptr<FootprintPlanner> footprint_planner_;
 
   bool init_;
 
