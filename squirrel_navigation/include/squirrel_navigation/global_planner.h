@@ -40,7 +40,6 @@
 #include <squirrel_navigation/GlobalPlannerConfig.h>
 
 #include <memory>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -49,6 +48,7 @@ namespace squirrel_navigation {
 class GlobalPlanner : public nav_core::BaseGlobalPlanner {
  public:
   class Params {
+   public:
     static Params defaultParams();
 
     std::string footprint_topic;
@@ -59,8 +59,8 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
   };
 
  public:
-  GlobalPlanner() : params_(Params::defaultParams()) {}
-  GlobalPlanner(const Params& params) : params_(params) {}
+  GlobalPlanner() : params_(Params::defaultParams()), init_(false) {}
+  GlobalPlanner(const Params& params) : params_(params), init_(false) {}
   virtual ~GlobalPlanner() {}
 
   // Initialize the state observers.
@@ -73,15 +73,13 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
       const geometry_msgs::PoseStamped& goal,
       std::vector<geometry_msgs::PoseStamped>& waypoints) override;
 
-  // Mutex getter.
-  std::mutex& mutex() const { return mtx_; }
-
   // Parameters read/write utilities.
   inline const Params& params() const { return params_; }
   inline void setParams(const Params& params) { params_ = params; }
   inline Params& params() { return params_; }
-
+  
  private:
+  // Reconfigure the callback.
   void reconfigureCallback(GlobalPlannerConfig& config, uint32_t level);
 
  private:
@@ -89,11 +87,11 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
   std::unique_ptr<dynamic_reconfigure::Server<GlobalPlannerConfig>> dsrv_;
 
   std::unique_ptr<navfn::NavfnROS> dijkstra_planner_;
-  std::unique_ptr<FootPrintPlanner> footprint_planner_;
+  std::unique_ptr<FootprintPlanner> footprint_planner_;
+
+  bool init_;
   
   std::shared_ptr<costmap_2d::Costmap2DROS> costmap_ros_;
-
-  mutable std::mutex mtx_;
 };
 
 }  // namespace squirrel_navigation

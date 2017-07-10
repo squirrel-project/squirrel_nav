@@ -43,6 +43,7 @@ namespace safety {
 class ArmSkinObserver : public Observer {
  public:
   class Params {
+   public:
     static Params defaultParams();
 
     std::string topic_name;
@@ -51,8 +52,8 @@ class ArmSkinObserver : public Observer {
   };
 
  public:
-  ArmSkinObserver() : params_(Params::defaultParams()), hit_(false) {}
-  ArmSkinObserver(const Params& params) : params_(params),hit_(false) {}
+  ArmSkinObserver();
+  ArmSkinObserver(const Params& params);
   virtual ~ArmSkinObserver() {}
 
   // Initialize the internal observer.
@@ -68,7 +69,7 @@ class ArmSkinObserver : public Observer {
 
  private:
   // Callbacks.
-  void reconfigureCallback(ArnSkinObserverConfig& config, uint32_t level);
+  void reconfigureCallback(ArmSkinObserverConfig& config, uint32_t level);
   void bumpCallback(const std_msgs::Bool::ConstPtr& bump);
 
  private:
@@ -76,7 +77,7 @@ class ArmSkinObserver : public Observer {
   std::unique_ptr<dynamic_reconfigure::Server<ArmSkinObserverConfig>> dsrv_;
 
   bool hit_;
-  
+
   ros::Subscriber bump_sub_;
 
   mutable std::mutex mtx_;

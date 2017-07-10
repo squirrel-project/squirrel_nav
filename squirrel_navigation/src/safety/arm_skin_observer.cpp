@@ -30,7 +30,19 @@ namespace squirrel_navigation {
 
 namespace safety {
 
+ArmSkinObserver::ArmSkinObserver()
+    : params_(Params::defaultParams()), hit_(false) {
+  init_ = false;
+}
+
+ArmSkinObserver::ArmSkinObserver(const Params& params)
+    : params_(params), hit_(false) {
+  init_ = false;
+}
+
 void ArmSkinObserver::initialize(const std::string& name) {
+  if (init_)
+    return;
   // Initialize the parameter server.
   ros::NodeHandle pnh("~/" + name), nh;
   dsrv_.reset(new dynamic_reconfigure::Server<ArmSkinObserverConfig>(pnh));
@@ -40,6 +52,7 @@ void ArmSkinObserver::initialize(const std::string& name) {
   bump_sub_ =
       nh.subscribe(params_.topic_name, 1, &ArmSkinObserver::bumpCallback, this);
   // Intiialization successful.
+  init_ = true;
   ROS_INFO_STREAM(
       "squirrel_navigation::safety::ArmSkinObserver: Initialization "
       "successful.");
@@ -49,11 +62,11 @@ bool ArmSkinObserver::safe() const {
   std::unique_lock<std::mutex> lock(mtx_);
   if (params_.verbose && params_.enabled && hit_)
     ROS_WARN_STREAM("squirrel_navigation::safety::ArmSkinObserver: Arm hit.");
-  return !hit_ || !param_.enabled;
+  return !hit_ || !params_.enabled;
 }
 
 void ArmSkinObserver::reconfigureCallback(
-    ArnSkinObserverConfig& config, uint32_t level) {
+    ArmSkinObserverConfig& config, uint32_t level) {
   params_.verbose    = config.verbose;
   params_.topic_name = config.topic_name;
   params_.enabled    = config.enabled;
@@ -64,10 +77,12 @@ void ArmSkinObserver::bumpCallback(const std_msgs::Bool::ConstPtr& bump) {
   hit_ = bump->data;
 }
 
-ArkSkinObserver::Params ArkSkinObserver::Params::defaultParams() {
-  params_.verbose    = false;
-  params_.topic_name = "/arm_skin";
-  params_.enabled    = true;
+ArmSkinObserver::Params ArmSkinObserver::Params::defaultParams() {
+  Params params;
+  params.verbose    = false;
+  params.topic_name = "/arm_skin";
+  params.enabled    = true;
+  return params;
 }
 
 }  // namespace safety

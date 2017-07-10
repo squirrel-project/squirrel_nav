@@ -29,6 +29,12 @@ namespace squirrel_navigation {
 
 namespace utils {
 
+AlphaBetaFilter::AlphaBetaFilter()
+    : params_(Params::defaultParams()), state_(nullptr), init_(false) {}
+
+AlphaBetaFilter::AlphaBetaFilter(const Params& params)
+    : params_(params), state_(nullptr), init_(false) {}
+
 void AlphaBetaFilter::initialize(const std::string& name) {
   ros::NodeHandle pnh("~/" + name);
   dsrv_.reset(new dynamic_reconfigure::Server<AlphaBetaFilterConfig>(pnh));
@@ -36,18 +42,16 @@ void AlphaBetaFilter::initialize(const std::string& name) {
       boost::bind(&AlphaBetaFilter::reconfigureCallback, this, _1, _2));
 }
 
-Eigen::Matrix<> AlphaBetaFilter::operator()(
+Eigen::MatrixXf AlphaBetaFilter::operator()(
     const std::vector<float>& x, const ros::Time& stamp) {
   assert(dim_ == x.size());
   if (!state_) {
-    Eigen::VectorXf x0(dim_);
-    for (int i = 0; i < (int)dim_; ++i)
-      x0(i)    = x[i];
-    state_.reset(new State(x, Eigen::VectorXd::Zero(dim_), stamp.toSec()));
+    state_.reset(new State(
+        stdVectorToEigenVector(x), Eigen::VectorXf::Zero(dim_), stamp.toSec()));
   } else {
     const double dt          = stamp.toSec() - state_->t;
     const Eigen::VectorXf xp = state_->x + dt * state_->v;
-    const Eigen::VectorXf rc = x - xp;
+    const Eigen::VectorXf rc = stdVectorToEigenVector(x) - xp;
     // Update the state.
     state_->x = xp + params_.alpha * rc;
     state_->v = state_->v + (params_.beta / dt) * rc;
@@ -65,7 +69,16 @@ void AlphaBetaFilter::reconfigureCallback(
   params_.beta  = config.beta;
 }
 
-AlphaBetaFilter::Params AlphBetaFilter::Params::defaultParams() {
+Eigen::VectorXf AlphaBetaFilter::stdVectorToEigenVector(
+    const std::vector<float>& x) const {
+  const int n = x.size();
+  Eigen::VectorXf out(n);
+  for (int i = 0; i < n; ++i)
+    out(i)   = x[i];
+  return out;
+}
+
+AlphaBetaFilter::Params AlphaBetaFilter::Params::defaultParams() {
   Params params;
   params.alpha = 0.1;
   params.beta  = 2 * (2 - params.alpha) - 4 * std::sqrt(1. - params.alpha);

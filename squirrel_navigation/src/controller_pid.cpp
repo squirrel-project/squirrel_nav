@@ -21,7 +21,7 @@
 // SOFTWARE.
 
 #include "squirrel_navigation/controller_pid.h"
-#include "squirrel_navigation/math_utils.h"
+#include "squirrel_navigation/utils/math_utils.h"
 
 #include <ros/console.h>
 #include <ros/node_handle.h>
@@ -31,19 +31,22 @@
 namespace squirrel_navigation {
 
 void ControllerPID::initialize(const std::string& name) {
-  last_stamp_.reset(nullptr);
+  if (init_)
+    return;
   // Initialize the parameter server.
   ros::NodeHandle pnh(name + "/ControllerPID");
-  dsrv_.reset(new dynamic_configure::Server<ControllerPIDConfig>(pnh));
+  dsrv_.reset(new dynamic_reconfigure::Server<ControllerPIDConfig>(pnh));
   dsrv_->setCallback(
       boost::bind(&ControllerPID::reconfigureCallback, this, _1, _2));
+  // Initialization successful.
+  init_ = true;
   ROS_INFO_STREAM(
       "squirrel_navigation::ControllerPID: initialization succesful.");
 }
 
-void MotionPlanner::reset() {
-  if (!last_stamp_)
-    last_stamp_ = ros::Time::now();
+void ControllerPID::reset() {
+  const ros::Time& now = ros::Time::now();
+  last_stamp_.reset(new ros::Time(now));
   errIx_ = errIy_ = errIa_ = 0.;
 }
 
@@ -51,6 +54,7 @@ void ControllerPID::computeCommand(
     const ros::Time& stamp, const geometry_msgs::Pose& pose,
     const geometry_msgs::Pose& ref_pose, const geometry_msgs::Twist& vel,
     const geometry_msgs::Twist& ref_vel, geometry_msgs::Twist* twist) {
+  // Compute deltas...
   const double dt  = stamp.toSec() - last_stamp_->toSec();
   const double dx  = math::delta<0>(pose, ref_pose);
   const double dy  = math::delta<1>(pose, ref_pose);
@@ -58,9 +62,10 @@ void ControllerPID::computeCommand(
   const double dvx = math::delta<0>(vel, ref_vel);
   const double dvy = math::delta<1>(vel, ref_vel);
   const double dva = math::delta<2>(vel, ref_vel);
-  const double errIx_ += dx * dt;
-  const double errIy_ += dy * dt;
-  const double errIa_ += da * dt;
+  // Update the intergral term.
+  errIx_ += dx * dt;
+  errIy_ += dy * dt;
+  errIa_ += da * dt;
   // Compute the command.
   twist->linear.x =
       params_.kP_lin * dx + params_.kI_lin * errIx_ + params_.kD_lin * dvx;

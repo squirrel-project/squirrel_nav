@@ -59,14 +59,14 @@ class ScanObserver : public Observer {
     double unsafe_range;
     bool verbose;
     // Scan parameters.
-    double scan_angle_increment_;
-    double scan_angle_min_;
+    double scan_angle_increment;
+    double scan_angle_min;
     std::string scan_frame_id;
   };
 
  public:
-  ScanObserver() : params_(Params::defaultParams()), ranges_(nullptr) {}
-  ScanObserver(const Params& params) : params_(params), ranges_(nullptr) {}
+  ScanObserver() : params_(Params::defaultParams()) {}
+  ScanObserver(const Params& params) : params_(params) {}
   virtual ~ScanObserver() {}
 
   // Initialize the internal observer.
@@ -95,7 +95,7 @@ class ScanObserver : public Observer {
   // Publish visualization markers.
   geometry_msgs::Pose computeMarkerPose(int i) const;
   void publishMarkers(const ros::Time& stamp) const;
-
+  
  private:
   Params params_;
   std::unique_ptr<dynamic_reconfigure::Server<ScanObserverConfig>> dsrv_;

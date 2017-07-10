@@ -37,25 +37,23 @@ add_executable(squirrel_pointcloud_filter_node
 target_link_libraries(squirrel_pointcloud_filter_node ${catkin_LIBRARIES})
  
 ## Install
-install(squirrel_pointcloud_filter_node
+install(
+  TARGETS squirrel_pointcloud_filter_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-install(DIRECTORY include/${PROJECT_NAME}/
+install(
+  DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".git" EXCLUDE)
 
-install(FILES
-  config/asus_filter.yaml
+install(
+  FILES config/asus_filter.yaml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
-#############
-## Testing ##
-#############
-
-## Add gtest based cpp test target and link libraries
+## Testing.
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_squirrel_pointcloud_filter.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})

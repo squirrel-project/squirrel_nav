@@ -25,7 +25,13 @@
     <class name="squirrel_navigation/GlobalPlanner" type="squirrel_navigation::GlobalPlanner" 
 	   base_class_type="nav_core::BaseGlobalPlanner">
       <description> 
-	Path planner using Dijkstra or ARA* with motion primitive lattice. 
+	Path planner for retracted or extended arm. 
+      </description>
+    </class>
+    <class name="squirrel_navigation/FootprintPlanner" type="squirrel_navigation::FoortprintPlanner" 
+	   base_class_type="nav_core::BaseGlobalPlanner">
+      <description> 
+	Path planner with RRT*. 
       </description>
     </class>
     <class name="squirrel_navigation/LocalPlanner" type="squirrel_navigation::LocalPlanner" 

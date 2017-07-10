@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include "squirrel_navigation/global_planner.h"
+#include "squirrel_navigation/utils/math_utils.h"
 
 #include <pluginlib/class_list_macros.h>
 
@@ -32,6 +33,8 @@ namespace squirrel_navigation {
 
 void GlobalPlanner::initialize(
     std::string name, costmap_2d::Costmap2DROS* costmap_ros) {
+  if (init_)
+    return;
   // Initialize the parameter server.
   ros::NodeHandle pnh("~/" + name), nh;
   dsrv_.reset(new dynamic_reconfigure::Server<GlobalPlannerConfig>(pnh));
@@ -39,15 +42,13 @@ void GlobalPlanner::initialize(
       boost::bind(&GlobalPlanner::reconfigureCallback, this, _1, _2));
   // Initialize internal observers.
   costmap_ros_.reset(costmap_ros);
-  footprint_.reset(nullptr);
   // Initialize the path planners.
   dijkstra_planner_.reset(new navfn::NavfnROS);
-  dijkstra_planner_->initialize(name + "/dijkstra", costmap_ros);
-  footprint_planner_.reset(new FootPrintPlanner);
+  dijkstra_planner_->initialize(name + "/Dijkstra", costmap_ros);
+  footprint_planner_.reset(new FootprintPlanner);
   footprint_planner_->initialize(name + "/RRTstar", costmap_ros);
-  // Initialize publisher/subscribers.
-  footprint_sub_ = nh.subscribe(
-      params_.footprint_topic, 1, &GlobalPlanner::footprintCallback, this);
+  // Initialization successful.
+  init_ = true;
   ROS_INFO_STREAM(
       "squirrel_localizer::GlobalPlanner: initialization successful.");
 }
@@ -60,15 +61,17 @@ bool GlobalPlanner::makePlan(
   if (params_.plan_with_footprint) {
     return footprint_planner_->makePlan(start, goal, waypoints);
   } else if (dijkstra_planner_->makePlan(start, goal, waypoints)) {
-    for (int i = 0; i < (int)waypoints.size() - 1; ++i) {
+    for (int i = 1; i < (int)waypoints.size() - 1; ++i) {
       if (params_.plan_with_constant_heading) {
-        waypoints[i].orientation =
+        waypoints[i].pose.orientation =
             tf::createQuaternionMsgFromYaw(params_.heading);
       } else {
-        const double dx = math::delta<0>(waypoints[i - 1], waypoints[i + 1]);
-        const double dy = math::delta<1>(waypoints[i - 1], waypoints[i + 1]);
-        const double heading     = std::atan2(dy, dx);
-        waypoints[i].orientation = tf::createQuaternionMsgFromYaw(heading);
+        const auto& prev_waypoint = waypoints[i - 1].pose;
+        const auto& next_waypoint = waypoints[i + 1].pose;
+        const double dx = math::delta<0>(prev_waypoint, next_waypoint);
+        const double dy = math::delta<1>(prev_waypoint, next_waypoint);
+        waypoints[i].pose.orientation =
+            tf::createQuaternionMsgFromYaw(std::atan2(dy, dx));
       }
     }
     return true;
@@ -82,6 +85,15 @@ void GlobalPlanner::reconfigureCallback(
   params_.plan_with_constant_heading = config.plan_with_constant_heading;
   params_.heading                    = config.heading;
   params_.verbose                    = config.verbose;
+}
+
+GlobalPlanner::Params GlobalPlanner::Params::defaultParams() {
+  Params params;
+  params.plan_with_footprint        = false;
+  params.plan_with_constant_heading = false;
+  params.heading                    = 0.0;
+  params.verbose                    = false;
+  return params;
 }
 
 }  // namespace squirrel_navigation

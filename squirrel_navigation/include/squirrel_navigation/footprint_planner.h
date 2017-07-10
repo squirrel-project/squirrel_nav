@@ -25,6 +25,7 @@
 
 #include <ros/console.h>
 #include <ros/publisher.h>
+#include <ros/subscriber.h>
 #include <ros/time.h>
 
 #include <base_local_planner/costmap_model.h>
@@ -35,8 +36,10 @@
 #include <dynamic_reconfigure/server.h>
 
 #include <geometry_msgs/Point.h>
-#include <geometry_msgs/Polygon.h>
+#include <geometry_msgs/PolygonStamped.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <visualization_msgs/MarkerArray.h>
+
 #include <squirrel_navigation/FootprintPlannerConfig.h>
 
 #include <tf/tf.h>
@@ -64,14 +67,14 @@ class FootprintPlanner : public nav_core::BaseGlobalPlanner {
     std::string footprint_topic;
     double collision_check_resolution;
     double max_planning_time, max_simplification_time;
-    double map_resolution;
+    double waypoints_resolution;
     double range;
     bool verbose;
   };
 
  public:
-  FootprintPlanner() : params_(Params::defaultParams()) {}
-  FootprintPlanner(const Params& params) : params_(params) {}
+  FootprintPlanner() : params_(Params::defaultParams()), init_(false) {}
+  FootprintPlanner(const Params& params) : params_(params), init_(false) {}
   virtual ~FootprintPlanner() {}
 
   // Initialize the internal observers.
@@ -84,46 +87,53 @@ class FootprintPlanner : public nav_core::BaseGlobalPlanner {
       const geometry_msgs::PoseStamped& goal,
       std::vector<geometry_msgs::PoseStamped>& waypoints) override;
 
+  // Mutex getter.
+  inline std::mutex& mutex() const { return footprint_mtx_; }
+
   // Parameters read/write utilities.
   inline const Params& params() const { return params_; }
   inline void setParams(const Params& params) { params_ = params; }
   inline Params& params() { return params_; }
-  
+
  private:
   // Callbacks.
-  void reconfigureCallback(FootprintPlanner& config, uint32_t level);
-  void footprintCallback(const geometry_msgs::Polygon::ConstPtr& footprint);
+  void reconfigureCallback(FootprintPlannerConfig& config, uint32_t level);
+  void footprintCallback(
+      const geometry_msgs::PolygonStamped::ConstPtr& footprint);
 
   // OMPL related utilities.
   void initializeOMPLPlanner();
-  bool checkValidState();
+  bool checkValidState(
+      const ompl::base::SpaceInformation* ompl_simple_setup,
+      const ompl::base::State* state);
 
   // Utilities.
   void initializeFootprintMarker();
   void publishPath(
       const std::vector<geometry_msgs::PoseStamped>& waypoints,
-      const ros::Time& stamp) const;
+      const ros::Time& stamp);
   void convertOMPLStatesToWayPoints(
       const std::vector<ompl::base::State*>& ompl_states,
-      std::vector<geometry_msgs::PoseStamped>* waypoints) const;
+      std::vector<geometry_msgs::PoseStamped>* waypoints);
 
  private:
   Params params_;
-  std::unique_ptr<dynamic_reconfigure::Server<FootPrintPlannerConfig>> dsrv_;
+  std::unique_ptr<dynamic_reconfigure::Server<FootprintPlannerConfig>> dsrv_;
 
   visualization_msgs::Marker footprint_marker_;
   std::vector<geometry_msgs::Point> footprint_;
   std::unique_ptr<base_local_planner::CostmapModel> costmap_model_;
   std::shared_ptr<costmap_2d::Costmap2DROS> costmap_ros_;
 
-  std::shared_ptr<ompl::base::RRTstar> ompl_rrt_planner_;
-  std::shared_ptr<ompl::base::StateSpace> ompl_state_space_;
-  std::unique_ptr<ompl::base::SimpleSetup> ompl_simple_setup_;
-  std::unique_ptr<ompl::base::RealVectorBounds> bounds_;
+  std::unique_ptr<ompl::geometric::SimpleSetup> ompl_simple_setup_;
+  std::unique_ptr<ompl::base::RealVectorBounds> ompl_bounds_;
+  ompl::base::PlannerPtr ompl_planner_;        
+  ompl::base::StateSpacePtr ompl_state_space_; 
 
   ros::Subscriber footprint_sub_;
   ros::Publisher plan_pub_, waypoints_pub_, footprints_pub_;
 
+  bool init_;
   bool ompl_need_reinitialization_;
 
   mutable std::mutex footprint_mtx_;

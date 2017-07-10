@@ -20,10 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef SQUIRREL_NAVIGATION_MATH_UTILS_H_
-#define SQUIRREL_NAVIGATION_MATH_UTILS_H_
+#ifndef SQUIRREL_NAVIGATION_UTILS_MATH_UTILS_H_
+#define SQUIRREL_NAVIGATION_UTILS_MATH_UTILS_H_
 
-#include <geometry_msgs/Point.h
+#include <geometry_msgs/Point.h>
+#include <geometry_msgs/Point32.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Quaternion.h>
@@ -60,7 +61,7 @@ inline geometry_msgs::Point applyTransform2D(
 // Simple increment utilities.
 template <int N>
 inline double delta(
-    const geometry_msgs::Pose& q1, const geometry_msgs::Pose& q2) const {
+    const geometry_msgs::Pose& q1, const geometry_msgs::Pose& q2) {
   if (N < 1)
     return q2.position.x - q1.position.x;
   else if (N == 1)
@@ -83,6 +84,21 @@ inline double delta(
 
 // Linear distance in 2D.
 inline double linearDistance2D(
+    const geometry_msgs::Point32& p1, const geometry_msgs::Point32& p2) {
+  return std::hypot(p1.x - p2.x, p1.y - p2.y);
+}
+
+inline double linearDistance2D(
+    const geometry_msgs::Point32& p1, const geometry_msgs::Point& p2) {
+  return std::hypot(p1.x - p2.x, p1.y - p2.y);
+}
+
+inline double linearDistance2D(
+    const geometry_msgs::Point& p1, const geometry_msgs::Point32& p2) {
+  return std::hypot(p1.x - p2.x, p1.y - p2.y);
+}
+
+inline double linearDistance2D(
     const geometry_msgs::Point& p1, const geometry_msgs::Point& p2) {
   return std::hypot(p1.x - p2.x, p1.y - p2.y);
 }
@@ -101,7 +117,7 @@ inline double linearDistance2D(
 // Yaw distance.
 inline double angularDistanceYaw(
     const geometry_msgs::Quaternion& q1, const geometry_msgs::Quaternion& q2) {
-  return std::abs(angle::normalize_angle(tf::getYaw(q1) - tf::getYaw(q2)));
+  return std::abs(angles::normalize_angle(tf::getYaw(q1) - tf::getYaw(q2)));
 }
 
 inline double angularDistanceYaw(
@@ -112,7 +128,7 @@ inline double angularDistanceYaw(
 inline double angularDistanceYaw(
     const geometry_msgs::PoseStamped& q1,
     const geometry_msgs::PoseStamped& q2) {
-  return angularDistance(q1.pose, q2.pose);
+  return angularDistanceYaw(q1.pose, q2.pose);
 }
 
 // Linear interpolation
@@ -139,28 +155,29 @@ inline geometry_msgs::Point linearInterpolation2D(
 }
 
 // Angular interpolation
-inline geometry_msgs::Quaternion slerp2D(
+inline geometry_msgs::Quaternion slerpYaw(
     const geometry_msgs::Quaternion& q1, const geometry_msgs::Quaternion& q2,
     double alpha) {
-  const double da    = angles::normalize_angle(tf::getYaw(q2) - tf::getYaw(q1));
+  const double a1    = tf::getYaw(q1);
+  const double da    = angles::normalize_angle(tf::getYaw(q2) - a1);
   const double slerp = angles::normalize_angle(a1 + alpha * da);
   return tf::createQuaternionMsgFromYaw(slerp);
 }
 
-inline geometry_msgs::Quaternion slerp2D(
+inline geometry_msgs::Quaternion slerpYaw(
     const geometry_msgs::Pose& q1, const geometry_msgs::Pose& q2,
     double alpha) {
-  return slerp2D(q1.orientation, q2.orientation, alpha);
+  return slerpYaw(q1.orientation, q2.orientation, alpha);
 }
 
-inline geometry_msgs::Quaternion slerp2D(
+inline geometry_msgs::Quaternion slerpYaw(
     const geometry_msgs::PoseStamped& q1, const geometry_msgs::PoseStamped& q2,
     double alpha) {
-  return slerp2D(q1.pose, q2.pose, alpha);
+  return slerpYaw(q1.pose, q2.pose, alpha);
 }
 
 }  // namespace math
 
 }  // namespace squirrel_navigation
 
-#endif /* SQUIRREL_NAVIGATION_MATH_UTILS_H_ */
+#endif /* SQUIRREL_NAVIGATION_UTILS_MATH_UTILS_H_ */

@@ -21,39 +21,46 @@
 // SOFTWARE.
 
 #include "squirrel_navigation/footprint_planner.h"
+#include "squirrel_navigation/utils/math_utils.h"
 
-#include <pluginlib/class_list_macros.h>
+#include <ros/node_handle.h>
 
 #include <costmap_2d/cost_values.h>
+
+#include <pluginlib/class_list_macros.h>
 
 #include <geometry_msgs/PoseArray.h>
 #include <nav_msgs/Path.h>
 #include <std_msgs/Header.h>
-#include <visualization_msgs/MarkerArray.h>
 
+#include <ompl/tools/config/MagicConstants.h>
+
+#include <sstream>
 #include <thread>
 
-PLUGIN_EXPORT_CLASS(
-    squirreL_navigation, FootprintPlanner,
+PLUGINLIB_DECLARE_CLASS(
+    squirrel_navigation, FootprintPlanner,
     squirrel_navigation::FootprintPlanner, nav_core::BaseGlobalPlanner);
 
 namespace squirrel_navigation {
 
 void FootprintPlanner::initialize(
     std::string name, costmap_2d::Costmap2DROS* costmap_ros) {
-  const auto costmap = costmap_ros->getCostmap();
+  if (init_)
+    return;
   // Initialize the parameter server.
   ros::NodeHandle pnh("~/" + name), nh;
-  dsrv_.reset(new dynamic_reconfigure::Server<FootPrintPlannerConfig>(pnh));
+  dsrv_.reset(new dynamic_reconfigure::Server<FootprintPlannerConfig>(pnh));
   dsrv_->setCallback(
       boost::bind(&FootprintPlanner::reconfigureCallback, this, _1, _2));
   // Initialize the state observers.
+  const auto costmap = costmap_ros->getCostmap();
   costmap_ros_.reset(costmap_ros);
   costmap_model_.reset(new base_local_planner::CostmapModel(*costmap));
   // Publishers and subscribers.
   plan_pub_      = pnh.advertise<nav_msgs::Path>("plan", 1);
   waypoints_pub_ = pnh.advertise<geometry_msgs::PoseArray>("waypoints", 1);
-  footprint_pub_ =
+  footprints_pub_ =
       pnh.advertise<visualization_msgs::MarkerArray>("footprints", 1);
   footprint_sub_ = nh.subscribe(
       params_.footprint_topic, 1, &FootprintPlanner::footprintCallback, this);
@@ -61,12 +68,14 @@ void FootprintPlanner::initialize(
   initializeFootprintMarker();
   // Initialize the OMPL bounds.
   ompl_state_space_.reset(new ompl::base::SE2StateSpace);
-  bounds_.reset(new ompl::base::RealVectorBounds(2));
-  bounds_->setLow(0, costmap->getOriginX());
-  bounds_->setLow(1, costmap->getOriginY());
-  bounds_->setHigh(0, costmap->getOriginX() + costmap->getSizeInMetersX());
-  bounds_->setHigh(1, costmap->getOriginY() + costmap->getSizeInMetersY());
+  ompl_bounds_.reset(new ompl::base::RealVectorBounds(2));
+  ompl_bounds_->setLow(0, costmap->getOriginX());
+  ompl_bounds_->setLow(1, costmap->getOriginY());
+  ompl_bounds_->setHigh(0, costmap->getOriginX() + costmap->getSizeInMetersX());
+  ompl_bounds_->setHigh(1, costmap->getOriginY() + costmap->getSizeInMetersY());
   initializeOMPLPlanner();
+  // Initialization successful.
+  init_ = true;
   ROS_INFO_STREAM(
       "squirrel_localizer::FootprintPlanner: initialization successful.");
 }
@@ -87,9 +96,12 @@ bool FootprintPlanner::makePlan(
                                 tf::getYaw(goal.pose.orientation)};
   ompl_simple_setup_->setStartAndGoalStates(ss_start, ss_goal);
   // Compute plan.
-  ompl_rrt_planner_->setRange(params_.range);
-  if (params_.verbose)
-    ompl_simple_setup_->getPlanner()->printSettings(std::cout);
+  ompl_planner_->as<ompl::geometric::RRTstar>()->setRange(params_.range);
+  if (params_.verbose) {
+    std::stringstream output;
+    ompl_simple_setup_->getPlanner()->printSettings(output);
+    ROS_INFO_STREAM("squirrel_navigation::FootprintPlanner: " << output.str());
+  }
   ompl_simple_setup_->setup();
   if (ompl_simple_setup_->solve(params_.max_planning_time)) {
     if (params_.verbose)
@@ -97,7 +109,7 @@ bool FootprintPlanner::makePlan(
           "squirrel_navigation::FootprintPlanner: Path successfully found with "
           "RRT*.");
     ompl_simple_setup_->simplifySolution(params_.max_simplification_time);
-    const auto& solution_path = ompl_simpl_setup_->getSolutionPath();
+    auto& solution_path = ompl_simple_setup_->getSolutionPath();
     // Check for validity and repair if possible.
     const std::pair<bool, bool>& path_validity =
         solution_path.checkAndRepair(ompl::magic::MAX_VALID_SAMPLE_ATTEMPTS);
@@ -112,9 +124,9 @@ bool FootprintPlanner::makePlan(
           "an invalid region. Now Fixed.");
     }
     // Upsample path.
-    if (params_.map_resolution > 0.) {
+    if (params_.waypoints_resolution > 0.) {
       const int min_num_states =
-          std::ceil(solution_path.length() / params_.map_resolution_);
+          std::ceil(solution_path.length() / params_.waypoints_resolution);
       solution_path.interpolate(min_num_states);
     }
     // Convert to ROS path.
@@ -131,30 +143,29 @@ bool FootprintPlanner::makePlan(
 }
 
 void FootprintPlanner::reconfigureCallback(
-    FootprintPlanner& config, uint32_t level) {
+    FootprintPlannerConfig& config, uint32_t level) {
   params_.footprint_topic            = config.footprint_topic;
   params_.collision_check_resolution = config.collision_check_resolution;
   params_.max_planning_time          = config.max_planning_time;
   params_.max_simplification_time    = config.max_simplification_time;
-  params_.map_resolution             = config.map_resolution;
+  params_.waypoints_resolution       = config.waypoints_resolution;
   params_.range                      = config.range;
   params_.verbose                    = config.verbose;
 }
 
 void FootprintPlanner::footprintCallback(
-    const geometry_msgs::Polygon::ConstPtr& footprint) {
+    const geometry_msgs::PolygonStamped::ConstPtr& footprint) {
   ROS_INFO_STREAM_ONCE(
       "squirrel_navigation::FootprintPlanner: Subscribed to the footprint.");
   // Update the footprint.
   std::unique_lock<std::mutex> lock(footprint_mtx_);
-  if (footprint->points.size() != footprint_.size()) {
-    ompl_need_reinitialziation_ = true;
+  if (footprint->polygon.points.size() != footprint_.size()) {
+    ompl_need_reinitialization_ = true;
   } else {
     ompl_need_reinitialization_ = false;
     for (unsigned int i = 0; i < footprint_.size(); ++i) {
-      const double dx = footprint_[i].x - footprint->points[i].x;
-      const double dy = footprint_[i].y - footprint->points[i].y;
-      if (std::hypot(dx, dy) > 1e-8) {
+      if (math::linearDistance2D(footprint_[i], footprint->polygon.points[i]) >
+          1e-8) {
         ompl_need_reinitialization_ = true;
         break;
       }
@@ -164,8 +175,8 @@ void FootprintPlanner::footprintCallback(
   }
   // Footprint has changed.
   footprint_.clear();
-  footprint_.reserve(footprint->points.size());
-  for (const auto& point32 : point) {
+  footprint_.reserve(footprint->polygon.points.size());
+  for (const auto& point32 : footprint->polygon.points) {
     geometry_msgs::Point point;
     point.x = point32.x;
     point.y = point32.y;
@@ -175,30 +186,29 @@ void FootprintPlanner::footprintCallback(
 }
 
 void FootprintPlanner::initializeOMPLPlanner() {
-  ompl_state_space_->as<ompl::base::SE2StateSpace>()->setBounds(*bounds_);
-  ompl_simple_setup_.reset(new ompl::base::SimpleSetup(ompl_state_space_));
+  ompl_state_space_->as<ompl::base::SE2StateSpace>()->setBounds(*ompl_bounds_);
+  ompl_simple_setup_.reset(new ompl::geometric::SimpleSetup(ompl_state_space_));
   ompl_simple_setup_->setStateValidityChecker(boost::bind(
-      &FootprintPlanner::checkValidState,
+      &FootprintPlanner::checkValidState, this,
       ompl_simple_setup_->getSpaceInformation().get(), _1));
   ompl_simple_setup_->getSpaceInformation()->setStateValidityCheckingResolution(
       params_.collision_check_resolution);
-  ompl_rrt_planner_.reset(
-      new ompl::base::RRTstar(ompl_simple_setup_->getSpaceInformation()));
-  ompl_simple_setup_->setPlanner(ompl_rrt_planner_);
+  ompl_planner_.reset(
+      new ompl::geometric::RRTstar(ompl_simple_setup_->getSpaceInformation()));
+  ompl_simple_setup_->setPlanner(ompl_planner_);
   ompl_need_reinitialization_ = false;
 }
 
-void FootprintPlanner::checkValidState(
+bool FootprintPlanner::checkValidState(
     const ompl::base::SpaceInformation* ompl_simple_setup,
     const ompl::base::State* state) {
   if (!ompl_simple_setup->satisfiesBounds(state))
     return false;
   // Get x,y,a from state.
-  const auto state_se2 = state->as<ompl::base::SE2StateSpace::StateType>();
-  double x, y, a;
-  state_se2->getX(x);
-  state_se2->getY(y);
-  state_se2->getYaw(a);
+  auto state_se2 = state->as<ompl::base::SE2StateSpace::StateType>();
+  const double x = state_se2->getX();
+  const double y = state_se2->getY();
+  const double a = state_se2->getYaw();
   // Compute wheter footprint is colliding or not.
   return costmap_model_->footprintCost(x, y, a, footprint_) >= 0.;
 }
@@ -215,7 +225,7 @@ void FootprintPlanner::initializeFootprintMarker() {
 
 void FootprintPlanner::publishPath(
     const std::vector<geometry_msgs::PoseStamped>& waypoints,
-    const ros::Time& stamp) const {
+    const ros::Time& stamp) {
   const int nwaypoints = waypoints.size();
   // Initialize header.
   std_msgs::Header header;
@@ -227,11 +237,11 @@ void FootprintPlanner::publishPath(
   plan.poses  = waypoints;
   plan_pub_.publish(plan);
   // Publish waypoints.
-  geometry_msgs::PoseArray poses;
-  poses.reserve(nwaypoints);
+  geometry_msgs::PoseArray pose_array;
+  pose_array.poses.reserve(nwaypoints);
   for (const auto& waypoint : waypoints)
-    poses.poses.emplace_back(waypoint.pose);
-  waypoints_pub_.publish(poses);
+    pose_array.poses.emplace_back(waypoint.pose);
+  waypoints_pub_.publish(pose_array);
   // Publish the footprints.
   visualization_msgs::MarkerArray footprints_array;
   footprints_array.markers.reserve(nwaypoints);
@@ -246,22 +256,33 @@ void FootprintPlanner::publishPath(
 
 void FootprintPlanner::convertOMPLStatesToWayPoints(
     const std::vector<ompl::base::State*>& ompl_states,
-    std::vector<geometry_msgs::PoseStamped>* waypoints) const {
+    std::vector<geometry_msgs::PoseStamped>* waypoints) {
   waypoints->clear();
-  waypoints->reserve(waypoints.size());
+  waypoints->reserve(ompl_states.size());
   for (auto ompl_state : ompl_states) {
     auto ompl_state_se2 =
-        ompl_state->as<ompl::Base::SE2StateSpace::StateType>();
-    double x, y, a;
-    ompl_state_se2->getX(x);
-    ompl_state_se2->getY(y);
-    ompl_state_se2->getYaw(a);
+        ompl_state->as<ompl::base::SE2StateSpace::StateType>();
+    const double x = ompl_state_se2->getX();
+    const double y = ompl_state_se2->getY();
+    const double a = ompl_state_se2->getYaw();
     geometry_msgs::PoseStamped waypoint;
     waypoint.pose.position.x  = x;
     waypoint.pose.position.y  = y;
     waypoint.pose.orientation = tf::createQuaternionMsgFromYaw(a);
     waypoints->emplace_back(waypoint);
   }
+}
+
+FootprintPlanner::Params FootprintPlanner::Params::defaultParams() {
+  Params params;
+  params.footprint_topic            = "/footprint_observer/footprint";
+  params.collision_check_resolution = 0.05;
+  params.waypoints_resolution       = 0.05;
+  params.max_planning_time          = 0.5;
+  params.max_simplification_time    = 0.5;
+  params.range                      = 1.0;
+  params.verbose                    = true;
+  return params;
 }
 
 }  // namespace squirrel_navigation

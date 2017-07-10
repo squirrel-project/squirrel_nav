@@ -29,8 +29,8 @@
 
 #include <costmap_2d/costmap_layer.h>
 
+#include <squirrel_navigation/NavigationLayerConfig.h>
 #include <std_msgs/Bool.h>
-#include <squirrel_navigation/NavigationLayer.cfg>
 
 #include <costmap_2d_strip/obstacle_layer.h>
 #include <costmap_2d_strip/static_layer.h>
@@ -42,10 +42,11 @@ namespace squirrel_navigation {
 
 class NavigationLayer : public costmap_2d::CostmapLayer {
  public:
-  class Params{
+  class Params {
+   public:
     static Params defaultParams();
 
-    bool use_kinect, use_laser_scan; 
+    bool use_kinect, use_laser_scan;
   };
 
  public:
@@ -54,15 +55,15 @@ class NavigationLayer : public costmap_2d::CostmapLayer {
   virtual ~NavigationLayer() {}
 
   // Initialization function.
-  void onInitialize();
+  void onInitialize() override;
 
   // Update the costmap.
   void updateBounds(
       double robot_x, double robot_y, double robot_yaw, double* min_x,
-      double* min_y, double* max_x, double* max_y);
+      double* min_y, double* max_x, double* max_y) override;
   void updateCosts(
       costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i,
-      int max_j);
+      int max_j) override;
 
   // On/Off/Reset iterface.
   void activate();
@@ -73,13 +74,13 @@ class NavigationLayer : public costmap_2d::CostmapLayer {
   bool isDiscretized() { return true; }
 
   // Parameters read/write.
-  inline const Params& params() const { return params_ }
+  inline const Params& params() const { return params_; }
   inline void setParams(const Params& params) { params_ = params; }
   inline Params& params() { return params_; }
 
  private:
   // Update the parameters.
-  void reconfigureCallback(NavigationLayer& config, uint32_t level);
+  void reconfigureCallback(NavigationLayerConfig& config, uint32_t level);
 
   // Costs update.
   void resetMasterCostmapLocally(

@@ -20,24 +20,43 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef SQUIRREL_NAVIGATION_SAFETY_OBSERVER_H_
-#define SQUIRREL_NAVIGATION_SAFETY_OBSERVER_H_
+#ifndef SQUIRREL_NAVIGATION_UTILS_MOTION_PLANNER_H_
+#define SQUIRREL_NAVIGATION_UTILS_MOTION_PLANNER_H_
+
+#include <ros/time.h>
+
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Twist.h>
+
+#include <string>
+#include <vector>
 
 namespace squirrel_navigation {
 
-namespace safety {
+namespace utils {
 
-class Observer {
+class MotionPlanner {
  public:
-  virtual ~Observer() {}
-  virtual bool safe() const = 0;
+  virtual ~MotionPlanner() {}
+
+  virtual void initialize(const std::string& name) = 0;
+
+  virtual void reset(
+      const std::vector<geometry_msgs::PoseStamped>& waypoints) = 0;
+  virtual void update(
+      const std::vector<geometry_msgs::PoseStamped>& waypoints) = 0;
+
+  virtual void computeReference(
+    const ros::Time& ref_stamp, geometry_msgs::Pose* ref_pose,
+    geometry_msgs::Twist* ef_twist) = 0;
 
  protected:
   bool init_;
 };
 
-}  // namespace safety
+}  // namespace utils
 
 }  // namespace squirrel_navigation
 
-#endif /* SQUIRREL_NAVIGATION_SAFETY_OBSERVER_H_ */
+#endif /* SQUIRREL_NAVIGATION_UTILS_MOTION_PLANNER_H_ */

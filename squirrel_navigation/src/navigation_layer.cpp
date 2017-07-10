@@ -19,9 +19,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 
-#include <pluginlib/class_list_macros.h>
-
 #include "squirrel_navigation/navigation_layer.h"
+
+#include <pluginlib/class_list_macros.h>
 
 #include <vector>
 
@@ -104,7 +104,7 @@ void NavigationLayer::reset() {
 }
 
 void NavigationLayer::reconfigureCallback(
-    NavigationLayer& config, uint32_t level) {
+    NavigationLayerConfig& config, uint32_t level) {
   kinect_layer_.enabled() = config.use_kinect;
   laser_layer_.enabled()  = config.use_laser_scan;
 }
@@ -139,11 +139,11 @@ void NavigationLayer::mergeCostmaps(
   }
 }
 
-Navigation::Params Navigation::Params::defaultParams() {
+NavigationLayer::Params NavigationLayer::Params::defaultParams() {
   Params params;
   params.use_kinect     = true;
   params.use_laser_scan = true;
-  return Params;
+  return params;
 }
 
 }  // namespace squirrel_navigation

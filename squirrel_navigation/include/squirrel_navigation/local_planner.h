@@ -24,8 +24,7 @@
 #define SQUIRREL_NAVIGATION_LOCAL_PLANNER_H_
 
 #include "squirrel_navigation/controller_pid.h"
-#include "squirrel_navigation/motion_planner.h"
-#include "squirrel_navigation/planners_shared.h"
+#include "squirrel_navigation/linear_motion_planner.h"
 #include "squirrel_navigation/safety/scan_observer.h"
 
 #include <ros/console.h>
@@ -66,8 +65,8 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   };
 
  public:
-  LocalPlanner() : params_(Params::defaultParams()) {}
-  LocalPlanner(const Params& params) : params_(params) {}
+  LocalPlanner() : params_(Params::defaultParams()), init_(false) {}
+  LocalPlanner(const Params& params) : params_(params), init_(false) {}
   virtual ~LocalPlanner() {}
 
   // Initialization with full map/costmap structure.
@@ -90,7 +89,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   inline void setParams(const Params& params) { params_ = params; }
   inline Params& params() { return params_; }
 
- private:  
+ private:
   // Callbacks.
   void odomCallback(const nav_msgs::Odometry::ConstPtr& odom);
   void reconfigureCallback(LocalPlannerConfig& config, uint32_t level);
@@ -117,8 +116,8 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
 
   std::string odom_topic_;
 
-  ControllerPID controller_;
-  MotionPlanner motion_planner_;
+  std::unique_ptr<utils::Controller> controller_;
+  std::unique_ptr<utils::MotionPlanner> motion_planner_;
 
   std::vector<std::unique_ptr<safety::Observer>> safety_observers_;
 
@@ -131,6 +130,8 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   ros::Publisher ref_pub_, traj_pub_;
   ros::Subscriber odom_sub_;
 
+  bool init_;
+  
   mutable std::mutex state_mtx_;
 };
 

@@ -20,67 +20,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef SQUIRREL_NAVIGATION_CONTROLLER_PID_H_
-#define SQUIRREL_NAVIGATION_CONTROLLER_PID_H_
-
-#include "squirrel_navigation/utils/controller.h"
+#ifndef SQUIRREL_NAVIGATION_UTILS_CONTROLLER_H_
+#define SQUIRREL_NAVIGATION_UTILS_CONTROLLER_H_
 
 #include <ros/time.h>
-
-#include <dynamic_reconfigure/server.h>
-
-#include <squirrel_navigation/ControllerPIDConfig.h>
 
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
 
-#include <memory>
 #include <string>
 
 namespace squirrel_navigation {
 
-class ControllerPID : public utils::Controller {
+namespace utils {
+
+class Controller {
  public:
-  class Params {
-   public:
-    static Params defaultParams();
+  virtual ~Controller() {}
 
-    double kP_lin, kI_lin, kD_lin;
-    double kP_ang, kI_ang, kD_ang;
-  };
+  virtual void initialize(const std::string& name) = 0;
+  virtual void reset() = 0;
 
- public:
-  ControllerPID() : params_(Params::defaultParams()) { init_ = false; }
-  ControllerPID(const Params& params) : params_(params) { init_ = false; }
-  virtual ~ControllerPID() {}
-
-  // Reset the controller.
-  void initialize(const std::string& name) override;
-  void reset() override;
-
-  // Compute the command according to PID control law.
-  void computeCommand(
+  virtual void computeCommand(
       const ros::Time& stamp, const geometry_msgs::Pose& pose,
       const geometry_msgs::Pose& ref_pose, const geometry_msgs::Twist& vel,
-      const geometry_msgs::Twist& ref_vel,
-      geometry_msgs::Twist* twist) override;
+      const geometry_msgs::Twist& ref_vel, geometry_msgs::Twist* twist) = 0;
 
-  // Parameters' read/write utilities.
-  inline const Params& params() const { return params_; }
-  inline void setParams(const Params& params) { params_ = params; }
-  inline Params& params() { return params_; }
-
- private:
-  void reconfigureCallback(ControllerPIDConfig& config, uint32_t level);
-
- private:
-  Params params_;
-  std::unique_ptr<dynamic_reconfigure::Server<ControllerPIDConfig>> dsrv_;
-
-  double errIx_, errIy_, errIa_;
-  std::unique_ptr<ros::Time> last_stamp_;
+ protected:
+  bool init_;
 };
+
+}  // namespace utils
 
 }  // namespace squirrel_navigation
 
-#endif /* SQUIRREL_NAVIGATION_CONTROLLER_PID_H_ */
+#endif /* SQUIRREL_NAVIGATION_UTILS_CONTROLLER_H_ */

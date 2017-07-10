@@ -4,7 +4,7 @@ GlobalPlanner:
   heading: 0.0
   verbose: false
 
-  dijkstra_planner: 
+  Dijkstra: 
     use_dijkstra: true,
     allow_unknown: false,
     default_tolerance: 0.0,

@@ -23,6 +23,7 @@
 #include "squirrel_navigation/local_planner.h"
 #include "squirrel_navigation/safety/arm_skin_observer.h"
 #include "squirrel_navigation/safety/scan_observer.h"
+#include "squirrel_navigation/utils/math_utils.h"
 
 #include <pluginlib/class_list_macros.h>
 
@@ -40,37 +41,45 @@ namespace squirrel_navigation {
 void LocalPlanner::initialize(
     std::string name, tf::TransformListener* tfl,
     costmap_2d::Costmap2DROS* costmap_ros) {
+  if (init_)
+    return;
   // Initialize the parameter server.
   ros::NodeHandle pnh("~/" + name), nh;
   dsrv_.reset(new dynamic_reconfigure::Server<LocalPlannerConfig>(pnh));
   dsrv_->setCallback(
       boost::bind(&LocalPlanner::reconfigureCallback, this, _1, _2));
-  // Initlialize controller and motion planner.
-  motion_planner_.initialize("~/" + name);
-  cotroller_.initialize("~/" + name);
+  // Initlialize controller and motion planner, by now only PID and linear.
+  controller_.reset(new ControllerPID);
+  controller_->initialize("~/" + name);
+  motion_planner_.reset(new LinearMotionPlanner);
+  motion_planner_->initialize("~/" + name);
   // Initialize/reset internal observers.
   tfl_.reset(tfl);
   costmap_ros_.reset(costmap_ros);
   current_goal_.reset(nullptr);
   // Initialize the safety observers.
-  for (const auto& safety_observer_tag : params_.safety_observers) {
-    // Scan observer.
-    if (safety_observer_tag == "ScanObserver") {
-      safety::ScanObserver* scan_observer = new safety::ScanObserver;
-      safety_observers_.emplace_back(new safety::ScanObserver(scan_observer));
-      scan_observer->initialize(name + "/ScanObserver");
-    }
-    if (safety_observer_tag == "ArmSkinObserver") {
-      safety::ArmSkinObserver* arm_observer = new safety::ArmSkinObserver; 
-      safety_observers_.emplace_back(new safety::ArmSkinObserver(arm_observer));
-      arm_observer->initialize(name + "/ArmSkinObserver");
+  if (pnh.hasParam("safety_observers")) {
+    pnh.getParam("safety_observers", params_.safety_observers);
+    for (const auto& safety_observer_tag : params_.safety_observers) {
+      // Scan observer.
+      if (safety_observer_tag == "ScanObserver") {
+        safety::ScanObserver* scan_observer = new safety::ScanObserver;
+        safety_observers_.emplace_back(scan_observer);
+        scan_observer->initialize(name + "/ScanObserver");
+      }
+      if (safety_observer_tag == "ArmSkinObserver") {
+        safety::ArmSkinObserver* arm_observer = new safety::ArmSkinObserver;
+        safety_observers_.emplace_back(arm_observer);
+        arm_observer->initialize(name + "/ArmSkinObserver");
+      }
     }
   }
   // Initialize publishers.
   ref_pub_  = pnh.advertise<visualization_msgs::Marker>("reference_pose", 1);
   traj_pub_ = pnh.advertise<geometry_msgs::PoseArray>("trajectory", 1);
   odom_sub_ = nh.subscribe(odom_topic_, 1, &LocalPlanner::odomCallback, this);
-  // Print info.
+  // Initialization successful.
+  init_ = true;
   ROS_INFO_STREAM(
       "squirrel_navigation::LocalPlanner: initialization successful.");
 }
@@ -82,13 +91,13 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
     if (!safety_observer->safe()) {
       cmd.linear.x  = 0.0;
       cmd.linear.y  = 0.0;
-      cmd.angluar.z = 0.0;
+      cmd.angular.z = 0.0;
       return true;
     }
   // Compute the reference pose and perform safety check.
-  geomeyty_msgs::Pose ref_pose;
+  geometry_msgs::Pose ref_pose;
   geometry_msgs::Twist ref_twist;
-  motion_planner.computeReference(
+  motion_planner_->computeReference(
       robot_pose_.header.stamp, &ref_pose, &ref_twist);
   if (math::linearDistance2D(robot_pose_.pose, ref_pose) >
           params_.max_safe_lin_displacement ||
@@ -101,7 +110,7 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
   }
   // Compute the commands via PID controller in map frame.
   geometry_msgs::Twist map_cmd;
-  controller_.computeCommand(
+  controller_->computeCommand(
       robot_pose_.header.stamp, robot_pose_.pose, ref_pose, robot_twist_.twist,
       ref_twist, &map_cmd);
   // Transform the commands in robot frame.
@@ -115,9 +124,9 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
 bool LocalPlanner::isGoalReached() {
   if (!current_goal_)
     return false;
-  if (math::linearDistance2D(robot_pose_, *current_goal_) <=
+  if (math::linearDistance2D(robot_pose_.pose, *current_goal_) <=
           params_.goal_lin_tolerance &&
-      math::angularDistanceYaw(robot_pose_, *current_goal_) <=
+      math::angularDistanceYaw(robot_pose_.pose, *current_goal_) <=
           params_.goal_ang_tolerance) {
     current_goal_.reset(nullptr);
     if (params_.verbose)
@@ -132,11 +141,11 @@ bool LocalPlanner::setPlan(
   if (waypoints.empty())
     return false;
   if (!current_goal_) {
-    goal_.reset(new geometry_msgs::Pose(waypoints.back().pose));
-    controller_.reset();
-    motion_planner_.reset(waypoints);
+    current_goal_.reset(new geometry_msgs::Pose(waypoints.back().pose));
+    controller_->reset();
+    motion_planner_->reset(waypoints);
   } else {
-    motion_planner_.update(waypoints);
+    motion_planner_->update(waypoints);
   }
   publishTrajectory(ros::Time::now());
   return true;
@@ -147,15 +156,18 @@ void LocalPlanner::odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
       "squirrel_localizer::LocalPlanner: Subscribed to odometry.");
   // Update the internal state.
   std::unique_lock<std::mutex> lock(state_mtx_);
-  const std::string& map_frame_id = costmap_ros_->getFrameID();
+  const std::string& map_frame_id = costmap_ros_->getGlobalFrameID();
   try {
-    geometry_msgs::PoseStamped odom_robot_pose(odom->pose.pose, odom->header);
+    geometry_msgs::PoseStamped odom_robot_pose;
+    odom_robot_pose.header = odom->header;
+    odom_robot_pose.pose   = odom->pose.pose;
     tfl_->waitForTransform(
-        map_frame_id, odom_frame_id, odom->header.stamp, ros::Duration(0.05));
-    tfl_->transformPose(map_frame_id, odom_robot_pose, *robot_pose_);
-    robot_twist_.twist = odom->pose.twist.twist;
+        map_frame_id, odom->header.frame_id, odom->header.stamp,
+        ros::Duration(0.05));
+    tfl_->transformPose(map_frame_id, odom_robot_pose, robot_pose_);
+    robotToGlobalFrame(odom->twist.twist, &robot_twist_.twist);
   } catch (const tf::TransformException& ex) {
-    ROS_ERROR("squirrel_navigation::LocalPlanner: " << ex.what());
+    ROS_ERROR_STREAM("squirrel_navigation::LocalPlanner: " << ex.what());
   }
 }
 
@@ -167,7 +179,6 @@ void LocalPlanner::reconfigureCallback(
   params_.max_safe_ang_velocity     = config.max_safe_ang_velocity;
   params_.max_safe_lin_displacement = config.max_safe_lin_displacement;
   params_.max_safe_ang_displacement = config.max_safe_ang_displacement;
-  params_.safety_observers          = config.safety_observers;
   params_.verbose                   = config.verbose;
 }
 
@@ -192,21 +203,23 @@ void LocalPlanner::publishReference(
 }
 
 void LocalPlanner::publishTrajectory(const ros::Time& stamp) const {
-  const auto& waypoints = motion_planner.waypoints();
+  const auto& waypoints =
+      static_cast<const LinearMotionPlanner*>(motion_planner_.get())
+          ->waypoints();
   // Create the trajectory message.
   geometry_msgs::PoseArray trajectory;
   trajectory.header.frame_id = costmap_ros_->getGlobalFrameID();
   trajectory.header.stamp    = stamp;
-  trajectory.pose.reserve(waypoints.size());
+  trajectory.poses.reserve(waypoints.size());
   for (const auto& waypoint : waypoints)
-    trajectory.pose.emplace_back(waypoint.pose);
+    trajectory.poses.emplace_back(waypoint.pose);
   traj_pub_.publish(trajectory);
 }
 
 void LocalPlanner::robotToGlobalFrame(
     const geometry_msgs::Twist& robot_twist,
     geometry_msgs::Twist* map_twist) const {
-  const double robot_yaw = tf::getYaw(robot_pose_);
+  const double robot_yaw = tf::getYaw(robot_pose_.pose.orientation);
   // Transform the twist.
   const double c = std::cos(robot_yaw), s = std::sin(robot_yaw);
   map_twist->linear.x  = c * robot_twist.linear.x - s * robot_twist.linear.y;
@@ -217,12 +230,12 @@ void LocalPlanner::robotToGlobalFrame(
 void LocalPlanner::globalToRobotFrame(
     const geometry_msgs::Twist& map_twist,
     geometry_msgs::Twist* robot_twist) const {
-  const double robot_yaw = tf::getYaw(robot_pose_);
+  const double robot_yaw = tf::getYaw(robot_pose_.pose.orientation);
   // Transform the twist.
   const double c = std::cos(-robot_yaw), s = std::sin(-robot_yaw);
   robot_twist->linear.x  = c * map_twist.linear.x - s * map_twist.linear.y;
   robot_twist->linear.y  = s * map_twist.linear.y + c * map_twist.linear.y;
-  robot_twist->angular.z = map_twist.angular.z
+  robot_twist->angular.z = map_twist.angular.z;
 }
 
 void LocalPlanner::safeVelocityCommands(
@@ -239,10 +252,10 @@ void LocalPlanner::safeVelocityCommands(
   // Rescaling the angular twist.
   const double twist_ang_magnitude = std::abs(twist.angular.z);
   if (twist_ang_magnitude > params_.max_safe_ang_velocity)
-    safe_twist->angular.z = params_.max_sage_ang_velocity;
+    safe_twist->angular.z = params_.max_safe_ang_velocity;
 }
 
-MotionPlanner::Params MotionPlanner::Params::defaultParams() {
+LocalPlanner::Params LocalPlanner::Params::defaultParams() {
   Params params;
   params.goal_ang_tolerance        = 0.05;
   params.goal_lin_tolerance        = 0.05;

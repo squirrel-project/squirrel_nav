@@ -48,8 +48,8 @@ class AlphaBetaFilter {
   };
 
  public:
-  AlphaBetaFilter() : params_(Params::defaultParams()), state_(nullptr) {}
-  AlphaBetaFilter(const Params& params) : params_(params), state_(nullptr) {}
+  AlphaBetaFilter();
+  AlphaBetaFilter(const Params& params);
   virtual ~AlphaBetaFilter() {}
 
   // Initialization.
@@ -60,7 +60,7 @@ class AlphaBetaFilter {
   void setStateDimension(int n) { dim_ = n; }
 
   // Apply the filter.
-  Eigen::MarixXf operator()(
+  Eigen::MatrixXf operator()(
       const std::vector<float>& x, const ros::Time& stamp);
 
   // Parameter read/write utilities.
@@ -71,7 +71,7 @@ class AlphaBetaFilter {
  private:
   class State {
    public:
-    State(const Eigen::VectorXd& x0, const Eigen::VectorXd& v0, double t0);
+    State(const Eigen::VectorXf& x0, const Eigen::VectorXf& v0, double t0);
     State(const State& state) = default;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -82,6 +82,7 @@ class AlphaBetaFilter {
 
  private:
   void reconfigureCallback(AlphaBetaFilterConfig& config, uint32_t level);
+  Eigen::VectorXf stdVectorToEigenVector(const std::vector<float>& x) const;
 
  private:
   Params params_;
@@ -89,6 +90,8 @@ class AlphaBetaFilter {
 
   size_t dim_;
   std::unique_ptr<State> state_;
+
+  bool init_;
 };
 
 }  // namespace utils

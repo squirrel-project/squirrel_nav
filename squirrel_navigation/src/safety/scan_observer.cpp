@@ -36,6 +36,8 @@ namespace squirrel_navigation {
 namespace safety {
 
 void ScanObserver::initialize(const std::string& name) {
+  if (init_)
+    return;
   // Initialize the parameter server.
   ros::NodeHandle pnh("~/" + name), nh;
   dsrv_.reset(new dynamic_reconfigure::Server<ScanObserverConfig>(pnh));
@@ -45,10 +47,11 @@ void ScanObserver::initialize(const std::string& name) {
   ab_filter_.initialize(name + "/ab_filter");
   // Publishers subscribers.
   scan_sub_ = nh.subscribe(
-      params_.topic_name, &ScanObserver::laserScanCallback, this, 1);
+      params_.scan_topic, 1, &ScanObserver::laserScanCallback, this);
   rangevels_pub_ =
       pnh.advertise<visualization_msgs::MarkerArray>("ranges_velocities", 1);
   // Initialization successful.
+  init_ = true;
   ROS_INFO_STREAM(
       "squirrel_navigation::safety::ScanObserver: Initialization successful.");
 }
@@ -67,7 +70,7 @@ bool ScanObserver::safe() const {
 
 bool ScanObserver::safeCheck(int i) const {
   if (ranges_[i] > params_.unsafe_range ||
-      (std::abs(rangecelocities_[i]) <= params_.max_safety_rangevel &&
+      (std::abs(rangevelocities_[i]) <= params_.max_safety_rangevel &&
        rangevelocities_[i] < 0.))
     return true;
   return false;
@@ -101,32 +104,32 @@ void ScanObserver::updateState(
   static const int nranges = ranges.size();
   ab_filter_.setStateDimension(nranges);
   // Compute the velocities.
-  const Eigen::MatrixXf& state = ab_filter_(ranges, scan->header.stamp);
+  const Eigen::MatrixXf& state = ab_filter_(ranges, stamp);
   ranges_.resize(nranges);
   rangevelocities_.resize(nranges);
   for (int i = 0; i < nranges; ++i) {
     ranges_[i]          = ranges[i];
     rangevelocities_[i] = state(1, i);
   }
-  publishMarkers(ros::Time(state_->t));
+  publishMarkers(stamp);
 }
 
 geometry_msgs::Pose ScanObserver::computeMarkerPose(int i) const {
   const double vel_dir = rangevelocities_[i] >= 0. ? 0. : -M_PI;
   const double angle =
-      parmas_.scan_angle_min + i * params_.scan_angle_increment;
+      params_.scan_angle_min + i * params_.scan_angle_increment;
   // Computing the pose.
   geometry_msgs::Pose marker_pose;
   marker_pose.position.x  = ranges_[i] * std::cos(angle);
   marker_pose.position.y  = ranges_[i] * std::sin(angle);
   marker_pose.position.z  = 0.0;
   marker_pose.orientation = tf::createQuaternionMsgFromYaw(angle + vel_dir);
-  return maker_pose;
+  return marker_pose;
 }
 
 void ScanObserver::publishMarkers(const ros::Time& stamp) const {
-  visualization_msgs::MarkerArray markers;
-  markers.reserve(ab_filter_.stateDimension());
+  visualization_msgs::MarkerArray marker_array;
+  marker_array.markers.reserve(ab_filter_.stateDimension());
   for (int i = 0; i < ab_filter_.stateDimension(); ++i) {
     visualization_msgs::Marker marker;
     marker.id              = i;
@@ -139,12 +142,13 @@ void ScanObserver::publishMarkers(const ros::Time& stamp) const {
     marker.scale.x         = std::abs(rangevelocities_[i]);
     marker.scale.y         = 0.1;
     marker.scale.z         = 0.0;
-    marker.scale.r         = safeCheck(i);
-    marker.scale.g         = !safeCheck(i);
-    marker.scale.a         = 0.5;
-    markers.emplace_back(marker);
+    marker.color.r         = safeCheck(i);
+    marker.color.g         = !safeCheck(i);
+    marker.color.b         = 0.0;
+    marker.color.a         = 0.5;
+    marker_array.markers.emplace_back(marker);
   }
-  rangevels_pub_.publish(markers);
+  rangevels_pub_.publish(marker_array);
 }
 
 ScanObserver::Params ScanObserver::Params::defaultParams() {
