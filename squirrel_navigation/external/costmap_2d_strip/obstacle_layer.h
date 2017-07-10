@@ -76,6 +76,8 @@ public:
   virtual void deactivate();
   virtual void reset();
 
+  void resize(unsigned int size_x, unsigned int size_y, double resolution, double origin_x, double origin_y);
+
   /**
    * @brief  A callback to handle buffering LaserScan messages
    * @param message The message returned from a message notifier
@@ -174,7 +176,6 @@ protected:
 
 private:
   void reconfigureCB(costmap_2d::ObstaclePluginConfig &config, uint32_t level);
-  void resizePrivateMap();
 };
 
 }  // namespace costmap_2d

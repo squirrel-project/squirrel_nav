@@ -59,7 +59,7 @@ class Localizer {
 
   const std::vector<Particle>& particles() const { return particles_; }
   const Pose2d& pose() const { return pose_; }
-  const Matrix<3, 3>& covariance() const { return covariance_; }
+  const Eigen::Matrix3d& covariance() const { return covariance_; }
 
   inline const Params& params() const { loc_params_; }
   inline Params& params() { return loc_params_; }
@@ -88,7 +88,7 @@ class Localizer {
 
   std::vector<Particle> particles_;
   Pose2d pose_;
-  Matrix<3, 3> covariance_;
+  Eigen::Matrix3d covariance_;
 
   Params loc_params_;
 

@@ -180,16 +180,11 @@ void StaticLayer::incomingMap(const nav_msgs::OccupancyGridConstPtr& new_map)
     layered_costmap_->resizeMap(size_x, size_y, new_map->info.resolution, new_map->info.origin.position.x,
                                 new_map->info.origin.position.y, true);
   }
-  else if (size_x_ != size_x || size_y_ != size_y ||
-           resolution_ != new_map->info.resolution ||
-           origin_x_ != new_map->info.origin.position.x ||
-           origin_y_ != new_map->info.origin.position.y)
-  {
-    // only update the size of the costmap stored locally in this layer
-    ROS_INFO("Resizing static layer to %d X %d at %f m/pix", size_x, size_y, new_map->info.resolution);
-    resizeMap(size_x, size_y, new_map->info.resolution,
-              new_map->info.origin.position.x, new_map->info.origin.position.y); 
-  }
+
+  // only update the size of the costmap stored locally in this layer
+  ROS_INFO("Resizing static layer to %d X %d at %f m/pix", size_x, size_y, new_map->info.resolution);
+  resizeMap(size_x, size_y, new_map->info.resolution,
+            new_map->info.origin.position.x, new_map->info.origin.position.y); 
 
   unsigned int index = 0;
 

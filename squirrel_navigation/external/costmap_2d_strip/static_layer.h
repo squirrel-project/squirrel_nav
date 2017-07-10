@@ -65,7 +65,12 @@ public:
   virtual void updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j);
 
   virtual void matchSize();
-
+  template<typename LayerType> void matchSize(LayerType* layer) {
+    costmap_2d::Costmap2D* master = layered_costmap_->getCostmap();
+    layer->resize(master->getSizeInCellsX(), master->getSizeInCellsY(), master->getResolution(),
+              master->getOriginX(), master->getOriginY());
+  }
+  
   unsigned char* costmap() { return costmap_; }
   
 private:

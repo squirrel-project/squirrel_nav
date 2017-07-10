@@ -35,13 +35,18 @@ void NavigationLayer::onInitialize() {
   dsrv_.reset(new dynamic_reconfigure::Server<NavigationLayerConfig>(pnh));
   dsrv_->setCallback(
       boost::bind(&NavigationLayer::reconfigureCallback, this, _1, _2));
-  // Initialize the layers.
-  laser_layer_.initialize(layered_costmap_, name_ + "/laser_layer", tf_);
-  kinect_layer_.initialize(layered_costmap_, name_ + "/kinect_layer", tf_);
-  static_layer_.initialize(layered_costmap_, name_ + "/static_layer", tf_);
-  NavigationLayer::matchSize();
+  // Initialize the static layer to fit the map.
+  static_layer_.initialize(layered_costmap_, name_ + "/StaticLayer", tf_);
+  laser_layer_.initialize(layered_costmap_, name_ + "/LaserLayer", tf_);
+  kinect_layer_.initialize(layered_costmap_, name_ + "/KinectLayer", tf_);
+  // Align size of kinect and laser layer.
+  static_layer_.matchSize<ObstacleLayer>(&laser_layer_);
+  static_layer_.matchSize<VoxelLayer>(&kinect_layer_);
+  // Finalize intialization.
   current_ = true;
   enabled_ = true;
+  // Initialization Successful.
+  ROS_INFO("squirrel_navigation::NavigationLayer: Initializations successful.");
 }
 
 void NavigationLayer::updateBounds(
@@ -101,6 +106,13 @@ void NavigationLayer::reset() {
   static_layer_.reset();
   activate();
   current_ = true;
+}
+
+void NavigationLayer::matchSize() {
+  costmap_2d::Costmap2D* master = layered_costmap_->getCostmap();
+  resizeMap(
+      static_layer_.getSizeInCellsX(), static_layer_.getSizeInCellsY(),
+      static_layer_.getResolution(), static_layer_.getOriginX(), static_layer_.getOriginY());
 }
 
 void NavigationLayer::reconfigureCallback(

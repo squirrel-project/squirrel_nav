@@ -66,6 +66,9 @@ class NavigationLayer : public costmap_2d::CostmapLayer {
   void activate();
   void deactivate();
   void reset();
+  
+  // Match the size of the costmap.
+  void matchSize() override;
 
   // Whether the map is discrete or not.
   bool isDiscretized() { return true; }

@@ -1,13 +1,13 @@
 LocalPlanner: 
   verbose: false
-  odom_topic: /odom
+  odom_topic: "/odom"
   goal_lin_tolerance: 0.05
   goal_ang_tolerance: 0.05
   max_safe_lin_velocity: 0.5
   max_safe_ang_velocity: 0.7
   max_safe_lin_displacement: 0.5
   max_safe_ang_displacement: 1.0
-  safety_observers: [SafetyScanObserver, ArmSkinObserver]
+  safety_observers: ["SafetyScanObserver", "ArmSkinObserver"]
 
   MotionPlanner:
     max_linear_velocity: 0.5
@@ -25,15 +25,15 @@ LocalPlanner:
     kD_lin: 0.001
     kD_ang: 0.001
   
-  ScanObserver:
+  SafetyScanObserver:
     verbose: false
-    enabled: true
-    scan_topic: /scan
+    scan_topic: "/scan"
     max_safety_rangevel: 0.5
     unsafe_range: 0.75
     ab_filter: {alpha: 0.1, beta: 0.005}
+    enabled: true
 
   ArmSkinObserver:
     verbose: false
-    topic_name: /arm_skin
-    enabled: true
+    topic_name: "/arm_skin"
+    enabled: false

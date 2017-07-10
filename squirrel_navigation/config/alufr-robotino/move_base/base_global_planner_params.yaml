@@ -5,17 +5,17 @@ GlobalPlanner:
   verbose: false
 
   Dijkstra: 
-    use_dijkstra: true,
-    allow_unknown: false,
-    default_tolerance: 0.0,
-    old_navfn_behavior: false,
-    use_quadratic: true,
-    use_grid_path: false,
-    visualize_potential: false,
+    use_dijkstra: true
+    allow_unknown: false
+    default_tolerance: 0.0
+    old_navfn_behavior: false
+    use_quadratic: true
+    use_grid_path: false
+    visualize_potential: false
 
   RRTstar:
     verbose: false
-    footpint_topic: /footprint_observer/footprint
+    footpint_topic: "/squirrel_footprint_observer/footprint"
     collision_check_resolution: 0.05
     max_planning_time: 0.5
     max_simplification_time: 0.5

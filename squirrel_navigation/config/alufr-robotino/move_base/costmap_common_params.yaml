@@ -1,38 +1,49 @@
+## Robot radius.
 robot_radius: 0.22
 
 # costmap_2d plugins declaration.
 plugins:
-  - {name: map_layer, type: "costmap_2d::StaticLayer"}
-  - {name: navigation_layer, type: "squirrel_navigation::NavigationLayer"}
-  - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+  - {name: ObstaclesLayer, type: "squirrel_navigation::NavigationLayer"}
+  - {name: InflationLayer, type: "costmap_2d::InflationLayer"}
 
-# Parameters for squirrel_navigation::DownprojectionLayer
-navigation_layer:
+# Parameters for squirrel_navigation::NavigationLayer
+ObstaclesLayer:
   use_kinect: true
   use_laser_scan: true
 
-  laser_layer:
+  LaserLayer: 
+    enabled: true
+    publish_voxel_map: false
     obtacle_range: 5.0
     raytrace_range: 10.0
     observation_sources: laser_scan
-    laser_scan: {sensor_frame: hokuyo_link, data_type: LaserScan, topic: /scan, marking: true, clearing: true}
-    publish_voxel_map: false
+    laser_scan: 
+      sensor_frame: "/hokuyo_link" 
+      data_type: "LaserScan"
+      topic: "/scan" 
+      marking: true 
+      clearing: true
 
-  kinect_layer:
-    obstacle_range: 3.0
-    raytrace_range: 10.0
-    observation_sources: kinect_scan
-    kinect_scan: {sensor_frame: kinect_depth_optical_frame, data_type: PointCloud2, topic: /rgbdscan, marking: true, clearing: true}
+  KinectLayer:
+    enabled: true
     publish_voxel_map: false
     robot_height: 0.9
     floor_threshold: 0.05
+    obstacle_range: 3.0
+    raytrace_range: 10.0
+    observation_sources: kinect_cloud
+    kinect_cloud: 
+      sensor_frame: "/kinect_depth_optical_frame" 
+      data_type: "PointCloud2" 
+      topic: "/rgbdscan" 
+      marking: true 
+      clearing: true
 
-# Parameters for squirrel_navigation::InflationLayer
-inflation_layer:
+  StaticLayer:
+    enabled: true
+
+## Parameters for squirrel_navigation::InflationLayer
+InflationLayer:
   inscribed_radius: 0.22
-  inscribed_radius_from_footprint: false
-  inflation_radius: 0.6,
+  inflation_radius: 0.6
   cost_scaling_factor: 10.0
-
-#
-# costmap_common_params.yaml ends here

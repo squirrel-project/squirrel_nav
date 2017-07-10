@@ -28,14 +28,6 @@
 
 namespace squirrel_2d_localizer {
 
-// clang-format off
-template <int N = -1> using Vector = Eigen::Matrix<double, N, 1>;
-template <int N = -1, int M = -1> using Matrix = Eigen::Matrix<double, N, M>;
-
-template <int N = -1> using VectorI = Eigen::Matrix<int, N, 1>;
-template <int N = -1, int M = -1> using MatrixI = Eigen::Matrix<int, N, M>;
-// clang-format on
-
 typedef Eigen::Rotation2D<double> Rotation2d;
 
 }  // namespace squirrel_2d_localizer

@@ -54,7 +54,7 @@ void Localizer::resetPose(const Pose2d& init_pose) {
     particles_.emplace_back(Pose2d(x, y, a), 0.);
   }
   pose_       = init_pose;
-  covariance_ = Matrix<3, 3>();
+  covariance_ = Eigen::Matrix3d();
   covariance_(0, 0) = loc_params_.init_stddev_x;
   covariance_(1, 1) = loc_params_.init_stddev_y;
   covariance_(2, 2) = loc_params_.init_stddev_a;

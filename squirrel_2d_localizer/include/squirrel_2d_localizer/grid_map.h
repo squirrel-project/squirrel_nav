@@ -1,17 +1,17 @@
 // The MIT License (MIT)
-// 
+//
 // Copyright (c) 2017 Federico Boniardi and Wolfram Burgard
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -59,13 +59,13 @@ class GridMap {
   double resolution() const { return map_params_.resolution; }
 
   double operator()(int i, int j) const { return occupancy_map_(i, j); };
-  operator const Matrix<>&() const { return occupancy_map_; }
+  operator const Eigen::MatrixXd&() const { return occupancy_map_; }
 
   inline const Params& params() const { return map_params_; }
   inline Params& params() { return map_params_; }
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-  
+
  private:
   inline void setDefaultParams() {
     map_params_.resolution = 0.05;
@@ -75,7 +75,7 @@ class GridMap {
   }
 
  private:
-  Matrix<> occupancy_map_;
+  Eigen::MatrixXd occupancy_map_;
 
   Params map_params_;
 };

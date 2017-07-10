@@ -66,7 +66,7 @@ class LatentModelLikelihoodField {
   }
 
  private:
-  Matrix<> likelihood_cache_;
+  Eigen::MatrixXd likelihood_cache_;
   int likelihood_cache_rows_, likelihood_cache_cols_;
 
   Params lmlf_params_;

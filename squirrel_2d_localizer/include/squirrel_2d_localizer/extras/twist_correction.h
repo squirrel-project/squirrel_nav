@@ -1,17 +1,17 @@
 // The MIT License (MIT)
-// 
+//
 // Copyright (c) 2017 Federico Boniardi and Wolfram Burgard
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,8 +23,8 @@
 #ifndef SQUIRREL_2D_LOCALIZATION_TWIST_CORRECTION_H_
 #define SQUIRREL_2D_LOCALIZATION_TWIST_CORRECTION_H_
 
-#include "squirrel_2d_localizer/se2_types.h"
 #include "squirrel_2d_localizer/extras/twist_types.h"
+#include "squirrel_2d_localizer/se2_types.h"
 
 #include <cmath>
 #include <memory>
@@ -42,19 +42,19 @@ class TwistCorrection {
     double max_lin_vel, max_ang_vel;
     double alpha;
   };
-  
+
  public:
   TwistCorrection();
   TwistCorrection(const Params& params);
   virtual ~TwistCorrection() {}
-  
+
   Pose2d correction(const Twist2d& twist);
 
   inline const Params& params() const { return params_; }
   inline Params& params() { return params_; }
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-  
+
  private:
   inline void setDefaultParams() {
     params_.corr_magnitude = 1.;
@@ -81,13 +81,13 @@ class TwistCorrection {
  private:
   void applyAlphaFilter(const Twist2d& twist);
   Twist2d thresholdSquaredMagnitude(const Twist2d& twist) const;
-  
+
  private:
-  Matrix<3, 3> corr_;
+  Eigen::Matrix3d corr_;
   double a_;
 
   std::unique_ptr<Twist2d> twist_;
-  
+
   Params params_;
 };
 

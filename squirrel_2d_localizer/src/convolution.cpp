@@ -1,17 +1,17 @@
 // The MIT License (MIT)
-// 
+//
 // Copyright (c) 2017 Federico Boniardi and Wolfram Burgard
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,17 +30,18 @@ namespace squirrel_2d_localizer {
 namespace convolution {
 
 void computeGaussianConvolution2d(
-    double sigma, double resolution, const Matrix<>& matrix, Matrix<>* output) {
+    double sigma, double resolution, const Eigen::MatrixXd& matrix,
+    Eigen::MatrixXd* output) {
 #pragma omp parallel for default(shared)
   for (size_t i = 0; i < matrix.rows(); ++i) {
-    Vector<> output_row = Vector<>::Zero(output->row(i).size());
+    Eigen::VectorXd output_row = Eigen::VectorXd::Zero(output->row(i).size());
     internal::computeGaussianConvolution1d(
         sigma, resolution, matrix.row(i), &output_row);
     output->row(i) = output_row;
   }
 #pragma omp parallel for default(shared)
   for (size_t j = 0; j < matrix.cols(); ++j) {
-    Vector<> output_col = Vector<>::Zero(output->col(j).size());
+    Eigen::VectorXd output_col = Eigen::VectorXd::Zero(output->col(j).size());
     internal::computeGaussianConvolution1d(
         sigma, resolution, output->col(j), &output_col);
     output->col(j) = output_col;
@@ -50,7 +51,8 @@ void computeGaussianConvolution2d(
 namespace internal {
 
 void computeGaussianConvolution1d(
-    double sigma, double resolution, const Vector<>& vector, Vector<>* output) {
+    double sigma, double resolution, const Eigen::VectorXd& vector,
+    Eigen::VectorXd* output) {
   const int vsize = vector.size();
   if (vsize < 1)
     return;
