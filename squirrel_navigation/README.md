@@ -14,7 +14,8 @@ Autonomous navigation for SQUIRREL
 ## SQUIRREL Planners
 
 Contains `squirrel_navigation::GlobalPlanner`,
-`squirrel_navigation::LocalPlanner` used for 2D navigation. 
+`squirrel_navigation::FootprintPlanner` and
+`squirrel_navigation::LocalPlanner` used for 2D navigation.
 
 ## SQUIRREL Costmap layers
 
