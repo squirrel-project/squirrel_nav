@@ -58,29 +58,28 @@ catkin_package(
  DEPENDS CGAL YamlCpp)
 
 ## Install
-install(TARGETS squirrel_footprint_observer_node
+install(
+  TARGETS squirrel_footprint_observer_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-install(DIRECTORY include/${PROJECT_NAME}/
+install(
+  DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".git" EXCLUDE)
 
-install(FILES
-  config/robotino_footprint.yaml
+install(
+  FILES config/robotino_footprint.yaml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
-#############
-## Testing ##
-#############
 
-## Add gtest based cpp test target and link libraries
+## Testing.
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_squirrel_footprint_observer.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
-## Add folders to be run by python nosetests
+## Add folders to be run by python nosetests.
 # catkin_add_nosetests(test)
