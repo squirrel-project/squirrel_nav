@@ -23,6 +23,8 @@
 #ifndef SQUIRREL_NAVIGATION_FOOTPRINT_PLANNER_H_
 #define SQUIRREL_NAVIGATION_FOOTPRINT_PLANNER_H_
 
+#include "squirrel_navigation/FootprintPlannerConfig.h"
+
 #include <ros/console.h>
 #include <ros/publisher.h>
 #include <ros/subscriber.h>
@@ -39,8 +41,6 @@
 #include <geometry_msgs/PolygonStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <visualization_msgs/MarkerArray.h>
-
-#include <squirrel_navigation/FootprintPlannerConfig.h>
 
 #include <tf/tf.h>
 #include <tf/transform_listener.h>

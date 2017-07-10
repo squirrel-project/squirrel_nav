@@ -23,6 +23,7 @@
 #ifndef SQUIRREL_NAVIGATION_MOTION_PLANNER_H_
 #define SQUIRREL_NAVIGATION_MOTION_PLANNER_H_
 
+#include "squirrel_navigation/LinearMotionPlannerConfig.h"
 #include "squirrel_navigation/utils/motion_planner.h"
 
 #include <ros/publisher.h>
@@ -35,7 +36,6 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
-#include <squirrel_navigation/LinearMotionPlannerConfig.h>
 
 #include <angles/angles.h>
 

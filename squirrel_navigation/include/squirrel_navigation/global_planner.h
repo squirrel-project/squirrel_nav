@@ -23,6 +23,7 @@
 #ifndef SQUIRREL_NAVIGATION_GLOBAL_PLANNER_H_
 #define SQUIRREL_NAVIGATION_GLOBAL_PLANNER_H_
 
+#include "squirrel_navigation/GlobalPlannerConfig.h"
 #include "squirrel_navigation/footprint_planner.h"
 
 #include <ros/subscriber.h>
@@ -37,7 +38,6 @@
 
 #include <geometry_msgs/Polygon.h>
 #include <nav_msgs/Path.h>
-#include <squirrel_navigation/GlobalPlannerConfig.h>
 
 #include <memory>
 #include <string>
@@ -77,7 +77,7 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
   inline const Params& params() const { return params_; }
   inline void setParams(const Params& params) { params_ = params; }
   inline Params& params() { return params_; }
-  
+
  private:
   // Reconfigure the callback.
   void reconfigureCallback(GlobalPlannerConfig& config, uint32_t level);
@@ -90,7 +90,7 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
   std::unique_ptr<FootprintPlanner> footprint_planner_;
 
   bool init_;
-  
+
   std::shared_ptr<costmap_2d::Costmap2DROS> costmap_ros_;
 };
 

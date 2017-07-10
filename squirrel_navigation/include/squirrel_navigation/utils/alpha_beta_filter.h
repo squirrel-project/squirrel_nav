@@ -23,11 +23,11 @@
 #ifndef SQUIRREL_NAVIGATION_UTILS_ALPHA_BETA_FILTER_H_
 #define SQUIRREL_NAVIGATION_UTILS_ALPHA_BETA_FILTER_H_
 
+#include "squirrel_navigation/AlphaBetaFilterConfig.h"
+
 #include <ros/time.h>
 
 #include <dynamic_reconfigure/server.h>
-
-#include <squirrel_navigation/AlphaBetaFilterConfig.h>
 
 #include <Eigen/Core>
 

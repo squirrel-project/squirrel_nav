@@ -24,13 +24,13 @@
 #define SQUIRREL_NAVIGATION_SAFETY_ARM_SKIN_OBSERVER_H_
 
 #include "squirrel_navigation/safety/observer.h"
+#include "squirrel_navigation/ArmSkinObserverConfig.h"
 
 #include <ros/console.h>
 #include <ros/subscriber.h>
 
 #include <dynamic_reconfigure/server.h>
 
-#include <squirrel_navigation/ArmSkinObserverConfig.h>
 #include <std_msgs/Bool.h>
 
 #include <memory>

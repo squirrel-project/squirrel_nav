@@ -23,6 +23,7 @@
 #ifndef SQUIRREL_NAVIGATION_SAFETY_SCAN_OBSERVER_H_
 #define SQUIRREL_NAVIGATION_SAFETY_SCAN_OBSERVER_H_
 
+#include "squirrel_navigation/ScanObserverConfig.h"
 #include "squirrel_navigation/safety/observer.h"
 #include "squirrel_navigation/utils/alpha_beta_filter.h"
 
@@ -33,7 +34,6 @@
 #include <geometry_msgs/Pose.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud.h>
-#include <squirrel_navigation/ScanObserverConfig.h>
 
 #include <tf/transform_listener.h>
 
@@ -74,7 +74,7 @@ class ScanObserver : public Observer {
 
   // Query safety of the current scan.
   bool safe() const override;
-  
+
   // Parameter read/write utilities.
   inline const Params& params() const { return params_; }
   inline void setParams(const Params& params) { params_ = params; }
@@ -82,12 +82,11 @@ class ScanObserver : public Observer {
 
  private:
   // Safety checks, no mutex lock.
-  bool safeCheck(int i) const; 
-  
+  bool safeCheck(int i) const;
+
   // Callbacks.
   void reconfigureCallback(ScanObserverConfig& config, uint32_t level);
   void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
-  void pointCloudCallback(const sensor_msgs::PointCloud::ConstPtr& cloud);
 
   // Update the internal state.
   void updateState(const std::vector<float>& ranges, const ros::Time& stamp);
@@ -95,7 +94,8 @@ class ScanObserver : public Observer {
   // Publish visualization markers.
   geometry_msgs::Pose computeMarkerPose(int i) const;
   void publishMarkers(const ros::Time& stamp) const;
-  
+  void publishMessage(const ros::Time& stamp) const;
+
  private:
   Params params_;
   std::unique_ptr<dynamic_reconfigure::Server<ScanObserverConfig>> dsrv_;
@@ -105,7 +105,7 @@ class ScanObserver : public Observer {
   std::vector<float> ranges_, rangevelocities_;
 
   ros::Subscriber scan_sub_;
-  ros::Publisher rangevels_pub_;
+  ros::Publisher rangevels_pub_, safety_log_pub_;
 
   mutable std::mutex mtx_;
 };

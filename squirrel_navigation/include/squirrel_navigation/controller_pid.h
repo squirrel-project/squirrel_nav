@@ -24,12 +24,11 @@
 #define SQUIRREL_NAVIGATION_CONTROLLER_PID_H_
 
 #include "squirrel_navigation/utils/controller.h"
+#include "squirrel_navigation/ControllerPIDConfig.h"
 
 #include <ros/time.h>
 
 #include <dynamic_reconfigure/server.h>
-
-#include <squirrel_navigation/ControllerPIDConfig.h>
 
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>

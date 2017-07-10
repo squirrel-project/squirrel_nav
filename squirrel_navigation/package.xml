@@ -5,7 +5,7 @@
   <version>2.0.0</version>
   
   <description>
-    squirrel_navigation, autonomous 2D navigation for SQUIRREL project
+    squirrel_navigation, autonomous 2D navigation for the SQUIRREL robot.
   </description>
     
   <maintainer email="boniardi@cs.uni-freiburg.de">Federico Boniardi</maintainer>
@@ -44,7 +44,6 @@
   <build_depend>clear_costmap_recovery</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>geometry_msgs</build_depend>
-  <build_depend>message_generation</build_depend>
   <build_depend>message_runtime</build_depend>
   <build_depend>nav_core</build_depend>
   <build_depend>nav_msgs</build_depend>
@@ -63,7 +62,6 @@
   <run_depend>clear_costmap_recovery</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>geometry_msgs</run_depend>
-  <run_depend>message_generation</run_depend>
   <run_depend>message_runtime</run_depend>
   <run_depend>nav_core</run_depend>
   <run_depend>nav_msgs</run_depend>

@@ -27,8 +27,8 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 ## Import ros dependencies.
 set(squirrel_navigation_catkin_DEPENDENCIES
   actionlib costmap_2d base_local_planner clear_costmap_recovery dynamic_reconfigure 
-  geometry_msgs message_generation message_runtime move_base_msgs nav_core nav_msgs navfn 
-  pluginlib roscpp squirrel_navigation_msgs std_msgs std_srvs tf visualization_msgs)
+  geometry_msgs message_runtime  nav_core nav_msgs navfn pluginlib roscpp 
+  squirrel_navigation_msgs std_msgs tf visualization_msgs)
 find_package(catkin REQUIRED COMPONENTS ${squirrel_navigation_catkin_DEPENDENCIES})
 include_directories(${catkin_INCLUDE_DIRS})
 
@@ -50,7 +50,8 @@ add_library(squirrel_navigation_safety
   src/safety/scan_observer.cpp src/safety/arm_skin_observer.cpp)
 target_link_libraries(squirrel_navigation_safety
   ${catkin_LIBRARIES} squirrel_navigation_utils)
-add_dependencies(squirrel_navigation_safety squirrel_navigation_gencfg)
+add_dependencies(squirrel_navigation_safety 
+  squirrel_navigation_gencfg squirrel_navigation_msgs_generate_messages_cpp)
 
 add_library(squirrel_navigation_planners 
   src/local_planner.cpp src/linear_motion_planner.cpp src/controller_pid.cpp 
@@ -66,42 +67,42 @@ target_link_libraries(squirrel_navigation_costmap_layer ${catkin_LIBRARIES})
 add_dependencies(squirrel_navigation_costmap_layer squirrel_navigation_gencfg)
 
 ## Built libraries.
-# set(squirrel_navigation_LIBRARIES 
-#   squirrel_navigation_utils squirrel_navigation_safety 
-#   squirrel_navigation_planners squirrel_navigation_costmap_layer)
+set(squirrel_navigation_LIBRARIES 
+  squirrel_navigation_utils squirrel_navigation_safety 
+  squirrel_navigation_planners squirrel_navigation_costmap_layer)
 
 ## Catkin package exports.
-# catkin_package(
-#   INCLUDE_DIRS include
-#   LIBRARIES ${squirrel_navigation_LIBRARIES}
-#   CATKIN_DEPENDS ${squirrel_navigation_catkin_DEPENDENCIES}
-#   DEPENDS OMPL Eigen3)
+catkin_package(
+  INCLUDE_DIRS include
+  LIBRARIES ${squirrel_navigation_LIBRARIES}
+  CATKIN_DEPENDS ${squirrel_navigation_catkin_DEPENDENCIES}
+  DEPENDS OMPL Eigen3)
 
 ## Install.
-# install(
-#   TARGETS ${squirrel_navigation_PLANNERS} ${squirrel_navigation_COSTMAP_LAYERS}
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+install(
+  TARGETS ${squirrel_navigation_PLANNERS} ${squirrel_navigation_COSTMAP_LAYERS}
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-# install(
-#   DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".git" EXCLUDE)
+install(
+  DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".git" EXCLUDE)
 
-# install(
-#   DIRECTORY launch/
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-#   PATTERN ".git" EXCLUDE)
+install(
+  DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+  PATTERN ".git" EXCLUDE)
 
-# install(
-#   DIRECTORY config/robotino
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
+install(
+  DIRECTORY config/robotino
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
 
-# install(
-#   FILES squirrel_navigation_costmap_layers.xml squirrel_navigation_planners.xml 
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+install(
+  FILES squirrel_navigation_costmap_layers.xml squirrel_navigation_planners.xml 
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 ## Testing.
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_alufr_navigation.cpp)

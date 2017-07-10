@@ -23,6 +23,7 @@
 #ifndef SQUIRREL_NAVIGATION_LOCAL_PLANNER_H_
 #define SQUIRREL_NAVIGATION_LOCAL_PLANNER_H_
 
+#include "squirrel_navigation/LocalPlannerConfig.h"
 #include "squirrel_navigation/controller_pid.h"
 #include "squirrel_navigation/linear_motion_planner.h"
 #include "squirrel_navigation/safety/scan_observer.h"
@@ -38,7 +39,6 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <nav_msgs/Odometry.h>
-#include <squirrel_navigation/LocalPlannerConfig.h>
 
 #include <dynamic_reconfigure/server.h>
 
@@ -131,7 +131,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   ros::Subscriber odom_sub_;
 
   bool init_;
-  
+
   mutable std::mutex state_mtx_;
 };
 

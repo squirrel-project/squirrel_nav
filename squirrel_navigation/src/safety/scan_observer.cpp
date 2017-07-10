@@ -24,6 +24,7 @@
 
 #include <ros/init.h>
 
+#include <squirrel_navigation_msgs/ScanSafetyObservation.h>
 #include <visualization_msgs/MarkerArray.h>
 
 #include <tf/tf.h>
@@ -50,6 +51,9 @@ void ScanObserver::initialize(const std::string& name) {
       params_.scan_topic, 1, &ScanObserver::laserScanCallback, this);
   rangevels_pub_ =
       pnh.advertise<visualization_msgs::MarkerArray>("ranges_velocities", 1);
+  safety_log_pub_ =
+      pnh.advertise<squirrel_navigation_msgs::ScanSafetyObservation>(
+          "scan_safety_log", 1);
   // Initialization successful.
   init_ = true;
   ROS_INFO_STREAM(
@@ -112,6 +116,7 @@ void ScanObserver::updateState(
     rangevelocities_[i] = state(1, i);
   }
   publishMarkers(stamp);
+  publishMessage(stamp);
 }
 
 geometry_msgs::Pose ScanObserver::computeMarkerPose(int i) const {
@@ -149,6 +154,23 @@ void ScanObserver::publishMarkers(const ros::Time& stamp) const {
     marker_array.markers.emplace_back(marker);
   }
   rangevels_pub_.publish(marker_array);
+}
+
+void ScanObserver::publishMessage(const ros::Time& stamp) const {
+  squirrel_navigation_msgs::ScanSafetyObservation safety_log;
+  safety_log.header.stamp    = stamp;
+  safety_log.header.frame_id = params_.scan_frame_id;
+  safety_log.is_safe         = true;
+  safety_log.safe_readings.resize(ranges_.size());
+  for (int i = 0; i < (int)ranges_.size(); ++i) {
+    safety_log.safe_readings[i] = safeCheck(i);
+    if (!safety_log.safe_readings[i])
+      safety_log.is_safe = false;
+  }
+  safety_log.range_velocities          = rangevelocities_;
+  safety_log.max_safety_range_velocity = params_.max_safety_rangevel;
+  safety_log.unsafe_range              = params_.unsafe_range;
+  safety_log_pub_.publish(safety_log);
 }
 
 ScanObserver::Params ScanObserver::Params::defaultParams() {

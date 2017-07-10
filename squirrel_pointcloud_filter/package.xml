@@ -2,7 +2,7 @@
 <package>
   <name>squirrel_pointcloud_filter</name>
   <version>1.0.0</version>
-  <description>The squirrel_pointcloud_filter package</description>
+  <description>Lighter asus pointcloud for quick obstacle detection.</description>
 
   <maintainer email="boniardi@cs.uni-freiburg.de"/>
 

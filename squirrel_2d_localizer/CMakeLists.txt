@@ -53,25 +53,29 @@ add_executable(squirrel_2d_localizer_node
 target_link_libraries(squirrel_2d_localizer_node ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 ## Mark executables and/or libraries for installation
-install(TARGETS squirrel_2d_localizer_node
+install(
+  TARGETS squirrel_2d_localizer_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ## Mark cpp header files for installation
-install(DIRECTORY include/${PROJECT_NAME}/
+install(
+  DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".git" EXCLUDE)
 
 ## Mark launch files for installation
-install(DIRECTORY launch/
+install(
+  DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}/launch
   FILES_MATCHING PATTERN "*.launch"
   PATTERN ".git" EXCLUDE)
 
 ## Mark launch files for installation
-install(FILES config/robotino_localization.yaml
+install(
+  FILES config/robotino_localization.yaml
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}/config)
 
 #############

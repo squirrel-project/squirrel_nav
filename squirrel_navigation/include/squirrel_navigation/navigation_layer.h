@@ -23,14 +23,11 @@
 #ifndef SQUIRREL_NAVIGATION_NAVIGATION_LAYER_H_
 #define SQUIRREL_NAVIGATION_NAVIGATION_LAYER_H_
 
-#include <ros/ros.h>
+#include "squirrel_navigation/NavigationLayerConfig.h"
 
 #include <dynamic_reconfigure/server.h>
 
 #include <costmap_2d/costmap_layer.h>
-
-#include <squirrel_navigation/NavigationLayerConfig.h>
-#include <std_msgs/Bool.h>
 
 #include <costmap_2d_strip/obstacle_layer.h>
 #include <costmap_2d_strip/static_layer.h>
