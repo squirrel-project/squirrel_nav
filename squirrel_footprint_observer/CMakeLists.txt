@@ -74,7 +74,6 @@ install(
   FILES config/robotino_footprint.yaml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
-
 ## Testing.
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_squirrel_footprint_observer.cpp)
 # if(TARGET ${PROJECT_NAME}-test)

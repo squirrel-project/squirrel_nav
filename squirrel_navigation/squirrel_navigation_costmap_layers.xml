@@ -21,8 +21,8 @@
 <!-- SOFTWARE. -->
 
 <class_libraries>
-  <library path="lib/libsquirrel_costmap_navigation_layer">
-    <class type="squirrel_navigation::NavigationLayer" base_class_type="costmap_2d::CostmapLayer">
+  <library path="lib/libsquirrel_navigation_costmap_layer">
+    <class type="squirrel_navigation::NavigationLayer" base_class_type="costmap_2d::Layer">
       <description>
 	Costmap layer for kinect+laser sensors. It downprojects the obstacles on the costmap without
 	adding the inflation.

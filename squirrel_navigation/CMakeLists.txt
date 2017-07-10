@@ -24,6 +24,10 @@ endif()
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
+## Import OMPL.
+find_package(OMPL REQUIRED)
+include_directories(${OMPL_INCLUDE_DIRES})
+
 ## Import ros dependencies.
 set(squirrel_navigation_catkin_DEPENDENCIES
   actionlib costmap_2d base_local_planner clear_costmap_recovery dynamic_reconfigure 

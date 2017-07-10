@@ -28,10 +28,10 @@
 	Path planner for retracted or extended arm. 
       </description>
     </class>
-    <class name="squirrel_navigation/FootprintPlanner" type="squirrel_navigation::FoortprintPlanner" 
-	   base_class_type="nav_core::BaseGlobalPlanner">
-      <description> 
-	Path planner with RRT*. 
+    <class name="squirrel_navigation/FootprintPlanner" type="squirrel_navigation::FootprintPlanner"
+    	   base_class_type="nav_core::BaseGlobalPlanner">
+      <description>
+    	Path planner with RRT*.
       </description>
     </class>
     <class name="squirrel_navigation/LocalPlanner" type="squirrel_navigation::LocalPlanner" 

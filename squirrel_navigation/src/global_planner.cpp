@@ -45,8 +45,8 @@ void GlobalPlanner::initialize(
   // Initialize the path planners.
   dijkstra_planner_.reset(new navfn::NavfnROS);
   dijkstra_planner_->initialize(name + "/Dijkstra", costmap_ros);
-  footprint_planner_.reset(new FootprintPlanner);
-  footprint_planner_->initialize(name + "/RRTstar", costmap_ros);
+  // footprint_planner_.reset(new FootprintPlanner);
+  // footprint_planner_->initialize(name + "/RRTstar", costmap_ros);
   // Initialization successful.
   init_ = true;
   ROS_INFO_STREAM(
@@ -58,9 +58,10 @@ bool GlobalPlanner::makePlan(
     const geometry_msgs::PoseStamped& goal,
     std::vector<geometry_msgs::PoseStamped>& waypoints) {
   // Compute a collision free path.
-  if (params_.plan_with_footprint) {
-    return footprint_planner_->makePlan(start, goal, waypoints);
-  } else if (dijkstra_planner_->makePlan(start, goal, waypoints)) {
+  // if (params_.plan_with_footprint) {
+  //   return footprint_planner_->makePlan(start, goal, waypoints);
+  // } else
+  if (dijkstra_planner_->makePlan(start, goal, waypoints)) {
     for (int i = 1; i < (int)waypoints.size() - 1; ++i) {
       if (params_.plan_with_constant_heading) {
         waypoints[i].pose.orientation =

@@ -2,7 +2,7 @@
   <arg name="rviz" default="false" />
   <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
   <arg name="robot_id" default="alufr-robotino" />
-  <arg name="3d_mapping" default="true" />
+  <arg name="3d_mapping" default="false" />
   <arg name="use_last_pose" default="true"/>
   <arg name="twist_mux" default="true"/>
   <arg name="plan_with_arm" default="false"/>
