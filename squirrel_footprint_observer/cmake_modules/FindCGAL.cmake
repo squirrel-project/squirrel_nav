@@ -1,7 +1,8 @@
+### Courtesy of https://github.com/pgRouting/pgrouting. GPLv3.
 #
 # The following module is based on FindVTK.cmake
 #
-
+#
 # - Find a CGAL installation or binary tree.
 # The following variables are set if CGAL is found.  If CGAL is not
 # found, CGAL_FOUND is set to false.

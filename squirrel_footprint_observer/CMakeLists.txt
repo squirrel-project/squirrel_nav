@@ -6,19 +6,6 @@ set(ROS_BUILD_TYPE Release)
 ## Import cmake modules.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
 
-## Enable C++11 support.
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-std=c++11" COMPILER_SUPPORTS_CXX11)
-check_cxx_compiler_flag("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-if(COMPILER_SUPPORTS_CXX11)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-elseif(COMPILER_SUPPORTS_CXX0X)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-else()
-  message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 " 
-                      "support. Please use a different C++ compiler.")
-endif()
-
 ## Set ROS dependencies.
 set(squirrel_footprint_observer_DEPENDENCIES
   dynamic_reconfigure geometry_msgs message_runtime message_generation 
@@ -32,6 +19,19 @@ include_directories(${catkin_INCLUDE_DIRS})
 find_package(CGAL REQUIRED)
 include(${CGAL_USE_FILE})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frounding-math")
+
+## Enable C++11 support (after CGAL!).
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-std=c++11" COMPILER_SUPPORTS_CXX11)
+check_cxx_compiler_flag("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+if(COMPILER_SUPPORTS_CXX11)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+elseif(COMPILER_SUPPORTS_CXX0X)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+else()
+  message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 " 
+                      "support. Please use a different C++ compiler.")
+endif()
 
 ## Import yaml-cpp
 find_package(YamlCpp REQUIRED)
