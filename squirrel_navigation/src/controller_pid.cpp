@@ -26,7 +26,7 @@
 #include <ros/console.h>
 #include <ros/node_handle.h>
 
-#include <angles>
+#include <angles/angles.h>
 
 #include <string>
 
@@ -90,9 +90,9 @@ void ControllerPID::reconfigureCallback(
 
 ControllerPID::Params ControllerPID::Params::defaultParams() {
   Params params;
-  params.kP_lin = params.kP_ang = 3.;
-  params.kI_lin = params.kI_ang = 0.01;
-  params.kD_lin = params.kD_ang = 0.01;
+  params.kP_lin = params.kP_ang = 3.0;
+  params.kI_lin = params.kI_ang = 0.0001;
+  params.kD_lin = params.kD_ang = 0.0001;
   return params;
 }
 

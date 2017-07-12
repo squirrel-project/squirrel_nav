@@ -103,9 +103,6 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
   motion_planner_->computeReference(stamp, &ref_pose, &ref_twist);
   publishReference(ref_pose, stamp);
   robot_pose_pub_.publish(robot_pose_);
-
-  std::cout << math::linearDistance2D(robot_pose_.pose, ref_pose) << std::endl;
-  
   if (math::linearDistance2D(robot_pose_.pose, ref_pose) >
           params_.max_safe_lin_displacement ||
       math::angularDistanceYaw(robot_pose_.pose, ref_pose) >
@@ -231,7 +228,7 @@ void LocalPlanner::robotToGlobalFrame(
     geometry_msgs::Twist* map_twist) const {
   const double robot_yaw = tf::getYaw(robot_pose_.pose.orientation);
   // Transform the twist.
-  const double c = std::cos(robot_yaw), s = std::sin(robot_yaw);
+  const double c = std::cos(-robot_yaw), s = std::sin(-robot_yaw);
   map_twist->linear.x  = c * robot_twist.linear.x - s * robot_twist.linear.y;
   map_twist->linear.y  = s * robot_twist.linear.x + s * robot_twist.linear.y;
   map_twist->angular.z = robot_twist.angular.z;
@@ -242,7 +239,7 @@ void LocalPlanner::globalToRobotFrame(
     geometry_msgs::Twist* robot_twist) const {
   const double robot_yaw = tf::getYaw(robot_pose_.pose.orientation);
   // Transform the twist.
-  const double c = std::cos(-robot_yaw), s = std::sin(-robot_yaw);
+  const double c = std::cos(robot_yaw), s = std::sin(robot_yaw);
   robot_twist->linear.x  = c * map_twist.linear.x - s * map_twist.linear.y;
   robot_twist->linear.y  = s * map_twist.linear.y + c * map_twist.linear.y;
   robot_twist->angular.z = map_twist.angular.z;

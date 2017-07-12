@@ -174,7 +174,7 @@ std::vector<geometry_msgs::PoseStamped>::const_iterator
     LinearMotionPlanner::computeHeadingWaypoint(const ros::Time& stamp) const {
   geometry_msgs::PoseStamped query_pose;
   query_pose.header.stamp   = stamp;
-  auto heading_waypoint_ptr = std::upper_bound(
+  const auto heading_waypoint_ptr = std::upper_bound(
       waypoints_.begin(), waypoints_.end(), query_pose,
       [](const geometry_msgs::PoseStamped& lhs,
          const geometry_msgs::PoseStamped& rhs) {
@@ -198,8 +198,8 @@ void LinearMotionPlanner::smoothTrajectory(
     return;
   const int nwaypoints = waypoints.size();
   smooth_waypoints->reserve(nwaypoints);
-  smooth_waypoints->emplace_back(waypoints[0]);
-  for (int i = 1; i < nwaypoints; ++i) {
+  smooth_waypoints->emplace_back(waypoints.front());
+  for (int i = 1; i < nwaypoints - 1; ++i) {
     geometry_msgs::PoseStamped waypoint;
     waypoint.pose.position = math::linearInterpolation2D(
         smooth_waypoints->at(i - 1), waypoints[i], params_.linear_smoother);
@@ -207,6 +207,7 @@ void LinearMotionPlanner::smoothTrajectory(
         smooth_waypoints->at(i - 1), waypoints[i], params_.angular_smoother);
     smooth_waypoints->emplace_back(waypoint);
   }
+  smooth_waypoints->emplace_back(waypoints.back());
 }
 
 LinearMotionPlanner::Params LinearMotionPlanner::Params::defaultParams() {

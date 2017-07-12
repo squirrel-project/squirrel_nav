@@ -3,8 +3,8 @@ LocalPlanner:
   odom_topic: "/odom"
   goal_lin_tolerance: 0.05
   goal_ang_tolerance: 0.05
-  max_safe_lin_velocity: 0.7
-  max_safe_ang_velocity: 0.9
+  max_safe_lin_velocity: 10.7
+  max_safe_ang_velocity: 10.9
   max_safe_lin_displacement: 1.0
   max_safe_ang_displacement: 1.0
   safety_observers: ["SafetyScanObserver", "ArmSkinObserver"]

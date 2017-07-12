@@ -135,10 +135,9 @@ inline double angularDistanceYaw(
 inline geometry_msgs::Point linearInterpolation2D(
     const geometry_msgs::Point& p1, const geometry_msgs::Point& p2,
     double alpha) {
-  const double dx = p2.x - p1.x, dy = p2.y - p1.y;
   geometry_msgs::Point out;
-  out.x = p1.x + alpha * dx;
-  out.y = p1.y + alpha * dy;
+  out.x = p1.x + alpha * (p2.x - p1.x);
+  out.y = p1.y + alpha * (p2.y - p1.y);
   return out;
 }
 
