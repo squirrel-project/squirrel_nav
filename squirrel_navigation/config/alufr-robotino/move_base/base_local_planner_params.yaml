@@ -10,13 +10,13 @@ LocalPlanner:
   safety_observers: ["SafetyScanObserver", "ArmSkinObserver"]
 
   MotionPlanner:
-    max_linear_velocity: 1.0
-    max_angular_velocity: 1.5
+    max_linear_velocity: 0.8
+    max_angular_velocity: 1.0
     linear_smoother: 0.75
     angular_smoother: 0.75
     time_scaler: 1.25
-    waypoints_heading_lookahead: 10
-    lookahead: 0.15
+    waypoints_heading_lookahead: 15
+    lookahead: 0.0
 
   ControllerPID:
     kP_lin: 3.0

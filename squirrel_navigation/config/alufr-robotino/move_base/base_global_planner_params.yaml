@@ -1,8 +1,8 @@
 GlobalPlanner: 
+  verbose: false
   plan_with_footprint: false
   plan_with_constant_heading: false
   heading: 0.0
-  verbose: true
 
   Dijkstra: 
     use_dijkstra: true
