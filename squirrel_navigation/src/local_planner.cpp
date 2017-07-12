@@ -103,14 +103,13 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
   motion_planner_->computeReference(stamp, &ref_pose, &ref_twist);
   publishReference(ref_pose, stamp);
   robot_pose_pub_.publish(robot_pose_);
+
+  std::cout << math::linearDistance2D(robot_pose_.pose, ref_pose) << std::endl;
+  
   if (math::linearDistance2D(robot_pose_.pose, ref_pose) >
           params_.max_safe_lin_displacement ||
       math::angularDistanceYaw(robot_pose_.pose, ref_pose) >
           params_.max_safe_ang_displacement) {
-
-    std::cout << robot_pose_.pose << std::endl;
-    std::cout << ref_pose << std::endl;
-
     ROS_WARN_STREAM(
         "squirrel_navigation::LocalPlanner: The robot is too far from the "
         "planned trajectory. Replanning requested.");
