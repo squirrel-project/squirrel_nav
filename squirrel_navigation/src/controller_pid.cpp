@@ -26,8 +26,15 @@
 #include <ros/console.h>
 #include <ros/node_handle.h>
 
+#include <std_msgs/Header.h>
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
+
+#include <tf/tf.h>
+
 #include <angles/angles.h>
 
+#include <cmath>
 #include <string>
 
 namespace squirrel_navigation {
@@ -40,6 +47,8 @@ void ControllerPID::initialize(const std::string& name) {
   dsrv_.reset(new dynamic_reconfigure::Server<ControllerPIDConfig>(pnh));
   dsrv_->setCallback(
       boost::bind(&ControllerPID::reconfigureCallback, this, _1, _2));
+  // Publish the linear twist.
+  cmd_pub_ = pnh.advertise<visualization_msgs::MarkerArray>("cmd", 1);
   // Initialization successful.
   init_ = true;
   ROS_INFO_STREAM(
@@ -66,7 +75,7 @@ void ControllerPID::computeCommand(
   // Update the integral term.
   errIx_ += dx * dt;
   errIy_ += dy * dt;
-  errIa_ = angles::normalize_angle(errIa_ * da * dt);
+  errIa_ = angles::normalize_angle(errIa_ + da * dt);
   // Compute the command.
   twist->linear.x =
       params_.kP_lin * dx + params_.kI_lin * errIx_ + params_.kD_lin * dvx;
@@ -76,20 +85,77 @@ void ControllerPID::computeCommand(
       params_.kP_ang * da + params_.kI_ang * errIa_ + params_.kD_ang * dva;
   // Update last stamp.
   *last_stamp_ = stamp;
+  // Visualize the twist.
+  publishTwist(pose, *twist, stamp);
 }
 
 void ControllerPID::reconfigureCallback(
     ControllerPIDConfig& config, uint32_t level) {
-  params_.kP_lin = config.kP_lin;
-  params_.kI_lin = config.kI_lin;
-  params_.kD_lin = config.kD_lin;
-  params_.kP_ang = config.kP_ang;
-  params_.kI_ang = config.kI_ang;
-  params_.kD_ang = config.kD_ang;
+  params_.global_frame_id = config.global_frame_id;
+  params_.kP_lin          = config.kP_lin;
+  params_.kI_lin          = config.kI_lin;
+  params_.kD_lin          = config.kD_lin;
+  params_.kP_ang          = config.kP_ang;
+  params_.kI_ang          = config.kI_ang;
+  params_.kD_ang          = config.kD_ang;
+}
+
+void ControllerPID::publishTwist(
+    const geometry_msgs::Pose& actuation_pose, const geometry_msgs::Twist& cmd,
+    const ros::Time& stamp) const {
+  // Common header.
+  std_msgs::Header header;
+  header.frame_id = params_.global_frame_id;
+  header.stamp    = stamp;
+  // Actuation pose quantities.
+  const geometry_msgs::Point& actuation_point = actuation_pose.position;
+  const double yaw = tf::getYaw(actuation_pose.orientation);
+  // Twist quantities.
+  const double dir    = std::atan2(cmd.linear.y, cmd.linear.x);
+  const double length = std::hypot(cmd.linear.x, cmd.linear.y);
+  const double angle  = yaw + M_PI / 2;
+  // Marker for linear command.
+  visualization_msgs::Marker marker_lin_cmd;
+  marker_lin_cmd.id               = 0;
+  marker_lin_cmd.header           = header;
+  marker_lin_cmd.ns               = "cmd";
+  marker_lin_cmd.type             = visualization_msgs::Marker::ARROW;
+  marker_lin_cmd.action           = visualization_msgs::Marker::MODIFY;
+  marker_lin_cmd.pose.position    = actuation_point;
+  marker_lin_cmd.pose.orientation = tf::createQuaternionMsgFromYaw(dir);
+  marker_lin_cmd.scale.x          = length;
+  marker_lin_cmd.scale.y          = 0.035;
+  marker_lin_cmd.scale.z          = 0.05;
+  marker_lin_cmd.color.r          = 1.0;
+  marker_lin_cmd.color.g          = 0.0;
+  marker_lin_cmd.color.b          = 0.0;
+  marker_lin_cmd.color.a          = 0.5;
+  // Marker for angular command.
+  visualization_msgs::Marker marker_ang_cmd;
+  marker_ang_cmd.id               = 1;
+  marker_ang_cmd.header           = header;
+  marker_ang_cmd.ns               = "cmd";
+  marker_ang_cmd.type             = visualization_msgs::Marker::ARROW;
+  marker_ang_cmd.action           = visualization_msgs::Marker::MODIFY;
+  marker_ang_cmd.pose.position.x  = actuation_point.x + 0.22 * std::cos(yaw);
+  marker_ang_cmd.pose.position.y  = actuation_point.y + 0.22 * std::sin(yaw);
+  marker_ang_cmd.pose.orientation = tf::createQuaternionMsgFromYaw(angle);
+  marker_ang_cmd.scale.x          = cmd.angular.z;
+  marker_ang_cmd.scale.y          = 0.035;
+  marker_ang_cmd.scale.z          = 0.05;
+  marker_ang_cmd.color.r          = 1.0;
+  marker_ang_cmd.color.g          = 0.0;
+  marker_ang_cmd.color.b          = 0.0;
+  marker_ang_cmd.color.a          = 0.5;
+  // Publish the message.
+  visualization_msgs::MarkerArray marker_cmd;
+  marker_cmd.markers = {marker_lin_cmd, marker_ang_cmd};
+  cmd_pub_.publish(marker_cmd);
 }
 
 ControllerPID::Params ControllerPID::Params::defaultParams() {
   Params params;
+  params.global_frame_id = "/map";
   params.kP_lin = params.kP_ang = 3.0;
   params.kI_lin = params.kI_ang = 0.0001;
   params.kD_lin = params.kD_ang = 0.0001;

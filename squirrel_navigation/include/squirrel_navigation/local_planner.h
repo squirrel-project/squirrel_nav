@@ -101,10 +101,10 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
       const geometry_msgs::Pose& ref_pose, const ros::Time& stamp) const;
 
   // Twist tranformation utilities.
-  void robotToGlobalFrame(
+  void twistToGlobalFrame(
       const geometry_msgs::Twist& robot_twist,
       geometry_msgs::Twist* map_twist) const;
-  void globalToRobotFrame(
+  void twistToRobotFrame(
       const geometry_msgs::Twist& map_twist,
       geometry_msgs::Twist* robot_twist) const;
   void safeVelocityCommands(
@@ -113,7 +113,12 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
 
   // Check if a new goal is input.
   bool newGoal(const geometry_msgs::Pose& pose) const;
-  
+
+  // Publish the control.
+  void publishTwist(
+      const geometry_msgs::PoseStamped& actuation_pose,
+      const geometry_msgs::Twist& cmd) const;
+
  private:
   Params params_;
   std::unique_ptr<dynamic_reconfigure::Server<LocalPlannerConfig>> dsrv_;
@@ -131,7 +136,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   std::shared_ptr<tf::TransformListener> tfl_;
   std::shared_ptr<costmap_2d::Costmap2DROS> costmap_ros_;
 
-  ros::Publisher ref_pub_, traj_pub_, robot_pose_pub_;
+  ros::Publisher ref_pub_, traj_pub_, cmd_pub_;
   ros::Subscriber odom_sub_;
 
   bool init_;

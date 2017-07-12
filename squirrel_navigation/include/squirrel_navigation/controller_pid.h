@@ -23,13 +23,16 @@
 #ifndef SQUIRREL_NAVIGATION_CONTROLLER_PID_H_
 #define SQUIRREL_NAVIGATION_CONTROLLER_PID_H_
 
-#include "squirrel_navigation/utils/controller.h"
 #include "squirrel_navigation/ControllerPIDConfig.h"
+#include "squirrel_navigation/utils/controller.h"
 
 #include <ros/time.h>
 
 #include <dynamic_reconfigure/server.h>
 
+#include <ros/publisher.h>
+
+#include <geometry_msgs/Point.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
 
@@ -44,6 +47,7 @@ class ControllerPID : public utils::Controller {
    public:
     static Params defaultParams();
 
+    std::string global_frame_id;
     double kP_lin, kI_lin, kD_lin;
     double kP_ang, kI_ang, kD_ang;
   };
@@ -70,7 +74,13 @@ class ControllerPID : public utils::Controller {
   inline Params& params() { return params_; }
 
  private:
+  // Reconfigure the parameters.
   void reconfigureCallback(ControllerPIDConfig& config, uint32_t level);
+
+  // Visualize command.
+  void publishTwist(
+      const geometry_msgs::Pose& actuation_pose,
+      const geometry_msgs::Twist& cmd, const ros::Time& stamp) const;
 
  private:
   Params params_;
@@ -78,6 +88,8 @@ class ControllerPID : public utils::Controller {
 
   double errIx_, errIy_, errIa_;
   std::unique_ptr<ros::Time> last_stamp_;
+
+  ros::Publisher cmd_pub_;
 };
 
 }  // namespace squirrel_navigation

@@ -29,6 +29,7 @@
 
 #include <geometry_msgs/PoseArray.h>
 #include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include <thread>
 
@@ -75,7 +76,8 @@ void LocalPlanner::initialize(
     }
   }
   // Initialize publishers.
-  robot_pose_pub_ = pnh.advertise<geometry_msgs::PoseStamped>("debug", 1);
+  cmd_pub_ =
+      pnh.advertise<visualization_msgs::MarkerArray>("cmd_navigation", 1);
   ref_pub_  = pnh.advertise<visualization_msgs::Marker>("reference_pose", 1);
   traj_pub_ = pnh.advertise<geometry_msgs::PoseArray>("trajectory", 1);
   odom_sub_ =
@@ -102,7 +104,6 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
   geometry_msgs::Twist ref_twist;
   motion_planner_->computeReference(stamp, &ref_pose, &ref_twist);
   publishReference(ref_pose, stamp);
-  robot_pose_pub_.publish(robot_pose_);
   if (math::linearDistance2D(robot_pose_.pose, ref_pose) >
           params_.max_safe_lin_displacement ||
       math::angularDistanceYaw(robot_pose_.pose, ref_pose) >
@@ -110,6 +111,14 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
     ROS_WARN_STREAM(
         "squirrel_navigation::LocalPlanner: The robot is too far from the "
         "planned trajectory. Replanning requested.");
+
+    std::cout << robot_pose_.pose << std::endl;
+    std::cout << ref_pose << std::endl;
+    std::cout << static_cast<const LinearMotionPlanner*>(motion_planner_.get())
+                     ->goal()
+                     .pose
+              << std::endl;
+
     current_goal_.reset(nullptr);
     return false;
   }
@@ -120,9 +129,11 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
       &map_cmd);
   // Transform the commands in robot frame.
   geometry_msgs::Twist robot_cmd;
-  globalToRobotFrame(map_cmd, &robot_cmd);
+  twistToRobotFrame(map_cmd, &robot_cmd);
   // Threshold the twist according to safety parameters.
   safeVelocityCommands(robot_cmd, &cmd);
+  // Publish the command.
+  publishTwist(robot_pose_, cmd);
   return true;
 }
 
@@ -171,7 +182,7 @@ void LocalPlanner::odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
         map_frame_id, odom->header.frame_id, odom->header.stamp,
         ros::Duration(0.1));
     tfl_->transformPose(map_frame_id, odom_robot_pose, robot_pose_);
-    robotToGlobalFrame(odom->twist.twist, &robot_twist_.twist);
+    twistToGlobalFrame(odom->twist.twist, &robot_twist_.twist);
   } catch (const tf::TransformException& ex) {
     ROS_ERROR_STREAM("squirrel_navigation::LocalPlanner: " << ex.what());
   }
@@ -223,25 +234,25 @@ void LocalPlanner::publishTrajectory(const ros::Time& stamp) const {
   traj_pub_.publish(trajectory);
 }
 
-void LocalPlanner::robotToGlobalFrame(
+void LocalPlanner::twistToGlobalFrame(
     const geometry_msgs::Twist& robot_twist,
     geometry_msgs::Twist* map_twist) const {
   const double robot_yaw = tf::getYaw(robot_pose_.pose.orientation);
   // Transform the twist.
-  const double c = std::cos(-robot_yaw), s = std::sin(-robot_yaw);
+  const double c = std::cos(robot_yaw), s = std::sin(robot_yaw);
   map_twist->linear.x  = c * robot_twist.linear.x - s * robot_twist.linear.y;
   map_twist->linear.y  = s * robot_twist.linear.x + s * robot_twist.linear.y;
   map_twist->angular.z = robot_twist.angular.z;
 }
 
-void LocalPlanner::globalToRobotFrame(
+void LocalPlanner::twistToRobotFrame(
     const geometry_msgs::Twist& map_twist,
     geometry_msgs::Twist* robot_twist) const {
   const double robot_yaw = tf::getYaw(robot_pose_.pose.orientation);
   // Transform the twist.
-  const double c = std::cos(robot_yaw), s = std::sin(robot_yaw);
+  const double c = std::cos(-robot_yaw), s = std::sin(-robot_yaw);
   robot_twist->linear.x  = c * map_twist.linear.x - s * map_twist.linear.y;
-  robot_twist->linear.y  = s * map_twist.linear.y + c * map_twist.linear.y;
+  robot_twist->linear.y  = s * map_twist.linear.x + c * map_twist.linear.y;
   robot_twist->angular.z = map_twist.angular.z;
 }
 
@@ -259,7 +270,8 @@ void LocalPlanner::safeVelocityCommands(
   // Rescaling the angular twist.
   const double twist_ang_magnitude = std::abs(twist.angular.z);
   if (twist_ang_magnitude > params_.max_safe_ang_velocity)
-    safe_twist->angular.z = params_.max_safe_ang_velocity;
+    safe_twist->angular.z =
+        std::copysign(params_.max_safe_ang_velocity, twist.angular.z);
 }
 
 bool LocalPlanner::newGoal(const geometry_msgs::Pose& pose) const {
@@ -268,6 +280,55 @@ bool LocalPlanner::newGoal(const geometry_msgs::Pose& pose) const {
   bool new_position    = math::linearDistance2D(*current_goal_, pose) > 1e-8;
   bool new_orientation = math::angularDistanceYaw(*current_goal_, pose) > 1e-8;
   return new_position || new_orientation;
+}
+
+void LocalPlanner::publishTwist(
+    const geometry_msgs::PoseStamped& actuation_pose,
+    const geometry_msgs::Twist& cmd) const {
+  // Actuation pose quantities.
+  const geometry_msgs::Point& actuation_point = actuation_pose.pose.position;
+  const double yaw = tf::getYaw(actuation_pose.pose.orientation);
+  // Twist quantities.
+  const double dir    = yaw + std::atan2(cmd.linear.y, cmd.linear.x);
+  const double length = std::hypot(cmd.linear.x, cmd.linear.y);
+  const double angle  = yaw + M_PI / 2;
+  // Marker for linear command.
+  visualization_msgs::Marker marker_lin_cmd;
+  marker_lin_cmd.id               = 0;
+  marker_lin_cmd.header           = actuation_pose.header;
+  marker_lin_cmd.ns               = "cmd_navigation";
+  marker_lin_cmd.type             = visualization_msgs::Marker::ARROW;
+  marker_lin_cmd.action           = visualization_msgs::Marker::MODIFY;
+  marker_lin_cmd.pose.position    = actuation_point;
+  marker_lin_cmd.pose.orientation = tf::createQuaternionMsgFromYaw(dir);
+  marker_lin_cmd.scale.x          = length;
+  marker_lin_cmd.scale.y          = 0.035;
+  marker_lin_cmd.scale.z          = 0.05;
+  marker_lin_cmd.color.r          = 0.0;
+  marker_lin_cmd.color.g          = 0.0;
+  marker_lin_cmd.color.b          = 1.0;
+  marker_lin_cmd.color.a          = 0.5;
+  // Marker for angular command.
+  visualization_msgs::Marker marker_ang_cmd;
+  marker_ang_cmd.id               = 1;
+  marker_ang_cmd.header           = actuation_pose.header;
+  marker_ang_cmd.ns               = "cmd_navigation";
+  marker_ang_cmd.type             = visualization_msgs::Marker::ARROW;
+  marker_ang_cmd.action           = visualization_msgs::Marker::MODIFY;
+  marker_ang_cmd.pose.position.x  = actuation_point.x + 0.22 * std::cos(yaw);
+  marker_ang_cmd.pose.position.y  = actuation_point.y + 0.22 * std::sin(yaw);
+  marker_ang_cmd.pose.orientation = tf::createQuaternionMsgFromYaw(angle);
+  marker_ang_cmd.scale.x          = cmd.angular.z;
+  marker_ang_cmd.scale.y          = 0.035;
+  marker_ang_cmd.scale.z          = 0.05;
+  marker_ang_cmd.color.r          = 0.0;
+  marker_ang_cmd.color.g          = 0.0;
+  marker_ang_cmd.color.b          = 1.0;
+  marker_ang_cmd.color.a          = 0.5;
+  // Publish the message.
+  visualization_msgs::MarkerArray marker_cmd;
+  marker_cmd.markers = {marker_lin_cmd, marker_ang_cmd};
+  cmd_pub_.publish(marker_cmd);
 }
 
 LocalPlanner::Params LocalPlanner::Params::defaultParams() {

@@ -67,9 +67,6 @@ void LinearMotionPlanner::reset(
 void LinearMotionPlanner::update(
     const std::vector<geometry_msgs::PoseStamped>& waypoints,
     const ros::Time& stamp) {
-
-  std::cout << params_.waypoints_heading_lookahead << std::endl;
-
   std::unique_lock<std::mutex> lock(update_mtx_);
   std::vector<geometry_msgs::PoseStamped> new_waypoints;
   smoothTrajectory(waypoints, &new_waypoints);
