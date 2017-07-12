@@ -82,8 +82,7 @@ void LinearMotionPlanner::update(
   waypoints_.insert(
       waypoints_.end(), waypoints.begin() + params_.waypoints_heading_lookahead,
       waypoints.end());
-  smoothTrajectoryInPlace(
-      waypoints_, head_waypoint_index, waypoints_.size(), &waypoints_);
+  smoothTrajectoryInPlace(head_waypoint_index, waypoints_.size(), &waypoints_);
   // Recompute the velocity profiles.
   for (unsigned int i = head_waypoint_index; i < waypoints_.size(); ++i) {
     const double dl = math::linearDistance2D(waypoints_[i], waypoints_[i - 1]);
@@ -185,14 +184,14 @@ int LinearMotionPlanner::computeHeadingWaypointIndex(
 }
 
 void LinearMotionPlanner::smoothTrajectory(
-    const std::vector<geometry_msgs::PoseStamped>& waypoints, int start,
+    const std::vector<geometry_msgs::PoseStamped>& waypoints, int begin,
     int end, std::vector<geometry_msgs::PoseStamped>* smooth_waypoints) const {
   smooth_waypoints->clear();
   if (waypoints.empty())
     return;
-  smooth_waypoints->reserve(end - start);
+  smooth_waypoints->reserve(end - begin);
   smooth_waypoints->emplace_back(waypoints.front());
-  for (int i = start + 1; i < end - 1; ++i) {
+  for (int i = begin + 1; i < end - 1; ++i) {
     geometry_msgs::PoseStamped waypoint;
     waypoint.pose.position = math::linearInterpolation2D(
         smooth_waypoints->at(i - 1), waypoints[i], params_.linear_smoother);
@@ -204,18 +203,14 @@ void LinearMotionPlanner::smoothTrajectory(
 }
 
 void LinearMotionPlanner::smoothTrajectoryInPlace(
-    const std::vector<geometry_msgs::PoseStamped>& waypoints, int start,
-    int end, std::vector<geometry_msgs::PoseStamped>* smooth_waypoints) const {
-  // Copy safe.
-  for (int i = start + 1; i < end - 1; ++i) {
+    int begin, int end, std::vector<geometry_msgs::PoseStamped>* waypoints) {  
+  for (int i = begin + 1; i < end - 1; ++i) {
     geometry_msgs::PoseStamped waypoint;
     waypoint.pose.position = math::linearInterpolation2D(
-        smooth_waypoints->at(i - 1), smooth_waypoints->at(i),
-        params_.linear_smoother);
+        waypoints->at(i - 1), waypoints->at(i), params_.linear_smoother);
     waypoint.pose.orientation = math::slerpYaw(
-        smooth_waypoints->at(i - 1), smooth_waypoints->at(i),
-        params_.angular_smoother);
-    smooth_waypoints->at(i) = waypoint;
+        waypoints->at(i - 1), waypoints->at(i), params_.angular_smoother);
+    waypoints->at(i) = waypoint;
   }
 }
 

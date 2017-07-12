@@ -99,6 +99,9 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   void publishTrajectory(const ros::Time& stamp) const;
   void publishReference(
       const geometry_msgs::Pose& ref_pose, const ros::Time& stamp) const;
+  void publishTwist(
+      const geometry_msgs::PoseStamped& actuation_pose,
+      const geometry_msgs::Twist& cmd) const;
 
   // Twist tranformation utilities.
   void twistToGlobalFrame(
@@ -113,11 +116,6 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
 
   // Check if a new goal is input.
   bool newGoal(const geometry_msgs::Pose& pose) const;
-
-  // Publish the control.
-  void publishTwist(
-      const geometry_msgs::PoseStamped& actuation_pose,
-      const geometry_msgs::Twist& cmd) const;
 
  private:
   Params params_;

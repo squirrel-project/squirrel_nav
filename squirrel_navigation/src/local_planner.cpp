@@ -226,54 +226,6 @@ void LocalPlanner::publishTrajectory(const ros::Time& stamp) const {
   traj_pub_.publish(trajectory);
 }
 
-void LocalPlanner::twistToGlobalFrame(
-    const geometry_msgs::Twist& robot_twist,
-    geometry_msgs::Twist* map_twist) const {
-  const double robot_yaw = tf::getYaw(robot_pose_.pose.orientation);
-  // Transform the twist.
-  const double c = std::cos(robot_yaw), s = std::sin(robot_yaw);
-  map_twist->linear.x  = c * robot_twist.linear.x - s * robot_twist.linear.y;
-  map_twist->linear.y  = s * robot_twist.linear.x + s * robot_twist.linear.y;
-  map_twist->angular.z = robot_twist.angular.z;
-}
-
-void LocalPlanner::twistToRobotFrame(
-    const geometry_msgs::Twist& map_twist,
-    geometry_msgs::Twist* robot_twist) const {
-  const double robot_yaw = tf::getYaw(robot_pose_.pose.orientation);
-  // Transform the twist.
-  const double c = std::cos(-robot_yaw), s = std::sin(-robot_yaw);
-  robot_twist->linear.x  = c * map_twist.linear.x - s * map_twist.linear.y;
-  robot_twist->linear.y  = s * map_twist.linear.x + c * map_twist.linear.y;
-  robot_twist->angular.z = map_twist.angular.z;
-}
-
-void LocalPlanner::safeVelocityCommands(
-    const geometry_msgs::Twist& twist, geometry_msgs::Twist* safe_twist) const {
-  *safe_twist = twist;
-  // Rescaling the linear twist.
-  const double twist_lin_magnitude = std::hypot(twist.linear.x, twist.linear.y);
-  if (twist_lin_magnitude > params_.max_safe_lin_velocity) {
-    safe_twist->linear.x =
-        params_.max_safe_lin_velocity * twist.linear.x / twist_lin_magnitude;
-    safe_twist->linear.y =
-        params_.max_safe_lin_velocity * twist.linear.y / twist_lin_magnitude;
-  }
-  // Rescaling the angular twist.
-  const double twist_ang_magnitude = std::abs(twist.angular.z);
-  if (twist_ang_magnitude > params_.max_safe_ang_velocity)
-    safe_twist->angular.z =
-        std::copysign(params_.max_safe_ang_velocity, twist.angular.z);
-}
-
-bool LocalPlanner::newGoal(const geometry_msgs::Pose& pose) const {
-  if (!current_goal_)
-    return true;
-  bool new_position    = math::linearDistance2D(*current_goal_, pose) > 1e-8;
-  bool new_orientation = math::angularDistanceYaw(*current_goal_, pose) > 1e-8;
-  return new_position || new_orientation;
-}
-
 void LocalPlanner::publishTwist(
     const geometry_msgs::PoseStamped& actuation_pose,
     const geometry_msgs::Twist& cmd) const {
@@ -321,6 +273,54 @@ void LocalPlanner::publishTwist(
   visualization_msgs::MarkerArray marker_cmd;
   marker_cmd.markers = {marker_lin_cmd, marker_ang_cmd};
   cmd_pub_.publish(marker_cmd);
+}
+
+void LocalPlanner::twistToGlobalFrame(
+    const geometry_msgs::Twist& robot_twist,
+    geometry_msgs::Twist* map_twist) const {
+  const double robot_yaw = tf::getYaw(robot_pose_.pose.orientation);
+  // Transform the twist.
+  const double c = std::cos(robot_yaw), s = std::sin(robot_yaw);
+  map_twist->linear.x  = c * robot_twist.linear.x - s * robot_twist.linear.y;
+  map_twist->linear.y  = s * robot_twist.linear.x + s * robot_twist.linear.y;
+  map_twist->angular.z = robot_twist.angular.z;
+}
+
+void LocalPlanner::twistToRobotFrame(
+    const geometry_msgs::Twist& map_twist,
+    geometry_msgs::Twist* robot_twist) const {
+  const double robot_yaw = tf::getYaw(robot_pose_.pose.orientation);
+  // Transform the twist.
+  const double c = std::cos(-robot_yaw), s = std::sin(-robot_yaw);
+  robot_twist->linear.x  = c * map_twist.linear.x - s * map_twist.linear.y;
+  robot_twist->linear.y  = s * map_twist.linear.x + c * map_twist.linear.y;
+  robot_twist->angular.z = map_twist.angular.z;
+}
+
+void LocalPlanner::safeVelocityCommands(
+    const geometry_msgs::Twist& twist, geometry_msgs::Twist* safe_twist) const {
+  *safe_twist = twist;
+  // Rescaling the linear twist.
+  const double twist_lin_magnitude = std::hypot(twist.linear.x, twist.linear.y);
+  if (twist_lin_magnitude > params_.max_safe_lin_velocity) {
+    safe_twist->linear.x =
+        params_.max_safe_lin_velocity * twist.linear.x / twist_lin_magnitude;
+    safe_twist->linear.y =
+        params_.max_safe_lin_velocity * twist.linear.y / twist_lin_magnitude;
+  }
+  // Rescaling the angular twist.
+  const double twist_ang_magnitude = std::abs(twist.angular.z);
+  if (twist_ang_magnitude > params_.max_safe_ang_velocity)
+    safe_twist->angular.z =
+        std::copysign(params_.max_safe_ang_velocity, twist.angular.z);
+}
+
+bool LocalPlanner::newGoal(const geometry_msgs::Pose& pose) const {
+  if (!current_goal_)
+    return true;
+  bool new_position    = math::linearDistance2D(*current_goal_, pose) > 1e-8;
+  bool new_orientation = math::angularDistanceYaw(*current_goal_, pose) > 1e-8;
+  return new_position || new_orientation;
 }
 
 LocalPlanner::Params LocalPlanner::Params::defaultParams() {

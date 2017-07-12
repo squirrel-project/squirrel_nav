@@ -108,13 +108,13 @@ class LinearMotionPlanner : public utils::MotionPlanner {
 
   // Smooth up the planned trajectory.
   void smoothTrajectory(
-      const std::vector<geometry_msgs::PoseStamped>& waypoints, int start,
+      const std::vector<geometry_msgs::PoseStamped>& waypoints, int begin,
       int end, std::vector<geometry_msgs::PoseStamped>* smooth_waypoints) const;
   void smoothTrajectoryInPlace(
-    const std::vector<geometry_msgs::PoseStamped>& waypoints, int start,
-    int end, std::vector<geometry_msgs::PoseStamped>* smooth_waypoints) const;
+      int begin, int end,
+      std::vector<geometry_msgs::PoseStamped>* waypoints);
 
-    // Define the velocity profile.
+  // Define the velocity profile.
   double computeSafetyVelocity(double linear_delta, double angular_delta) const;
 
  private:
