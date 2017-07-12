@@ -43,13 +43,15 @@ class MotionPlanner {
   virtual void initialize(const std::string& name) = 0;
 
   virtual void reset(
-      const std::vector<geometry_msgs::PoseStamped>& waypoints) = 0;
+      const std::vector<geometry_msgs::PoseStamped>& waypoints,
+      const ros::Time& start) = 0;
   virtual void update(
-      const std::vector<geometry_msgs::PoseStamped>& waypoints) = 0;
+      const std::vector<geometry_msgs::PoseStamped>& waypoints,
+      const ros::Time& stamp) = 0;
 
   virtual void computeReference(
-    const ros::Time& ref_stamp, geometry_msgs::Pose* ref_pose,
-    geometry_msgs::Twist* ef_twist) = 0;
+      const ros::Time& ref_stamp, geometry_msgs::Pose* ref_pose,
+      geometry_msgs::Twist* ef_twist) = 0;
 
  protected:
   bool init_;

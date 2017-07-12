@@ -27,6 +27,7 @@
 #include <ros/node_handle.h>
 
 #include <algorithm>
+#include <cassert>
 #include <thread>
 
 namespace squirrel_navigation {
@@ -35,7 +36,7 @@ void LinearMotionPlanner::initialize(const std::string& name) {
   if (init_)
     return;
   // Initialize the parameter server.
-  ros::NodeHandle pnh(name + "/LinearMotionPlanner");
+  ros::NodeHandle pnh("~/" + name);
   dsrv_.reset(new dynamic_reconfigure::Server<LinearMotionPlannerConfig>(pnh));
   dsrv_->setCallback(
       boost::bind(&LinearMotionPlanner::reconfigureCallback, this, _1, _2));
@@ -46,46 +47,59 @@ void LinearMotionPlanner::initialize(const std::string& name) {
 }
 
 void LinearMotionPlanner::reset(
-    const std::vector<geometry_msgs::PoseStamped>& waypoints) {
-  if (!start_)
-    start_.reset(new ros::Time(ros::Time::now()));
+    const std::vector<geometry_msgs::PoseStamped>& waypoints,
+    const ros::Time& start) {
+  if (waypoints.size() < 2)
+    return;
+  // Create the velocity profile.
   smoothTrajectory(waypoints, &waypoints_);
+  waypoints_[0].header.stamp = start;
   for (unsigned int i = 1; i < waypoints_.size(); ++i) {
     const double dl = math::linearDistance2D(waypoints_[i], waypoints_[i - 1]);
     const double da =
         math::angularDistanceYaw(waypoints_[i], waypoints_[i - 1]);
-    const double dt            = computeSafetyVelocity(dl, da);
-    waypoints_[i].header.stamp = ros::Time(start_->toSec() + dt);
+    const double dt = computeSafetyVelocity(dl, da);
+    waypoints_[i].header.stamp =
+        waypoints_[i - 1].header.stamp + ros::Duration(dt);
   }
 }
 
 void LinearMotionPlanner::update(
-    const std::vector<geometry_msgs::PoseStamped>& waypoints) {
+    const std::vector<geometry_msgs::PoseStamped>& waypoints,
+    const ros::Time& stamp) {
+
+  std::cout << params_.waypoints_heading_lookahead << std::endl;
+
   std::unique_lock<std::mutex> lock(update_mtx_);
   std::vector<geometry_msgs::PoseStamped> new_waypoints;
   smoothTrajectory(waypoints, &new_waypoints);
   // Update the trajectory with new waypoints.
-  const ros::Time now           = ros::Time::now();
-  const int next_waypoint_index = computeHeadingWaypointIndex(now);
-  const size_t old_waypoints_lookahead =
-      next_waypoint_index + params_.waypoints_heading_lookahead;
-  const size_t new_waypoints_lookahead =
-      params_.waypoints_heading_lookahead + 1;
-  if (old_waypoints_lookahead >= waypoints_.size() ||
-      new_waypoints_lookahead >= new_waypoints.size())
+  const int head_waypoint_index = computeHeadingWaypointIndex(stamp);
+  if (head_waypoint_index + params_.waypoints_heading_lookahead ==
+      (int)waypoints_.size() - 1)
+    return;
+  if ((int)waypoints.size() - 1 < 2 + params_.waypoints_heading_lookahead)
     return;
   // Merge the new trajectory in to the new one.
+  const int last_waypoint_index = std::max(0, head_waypoint_index - 1);
   waypoints_.erase(
-      waypoints_.begin() + old_waypoints_lookahead, waypoints_.end());
+      waypoints_.begin() + last_waypoint_index +
+          params_.waypoints_heading_lookahead,
+      waypoints_.end());
   waypoints_.insert(
-      waypoints_.end(), new_waypoints.begin(), new_waypoints.end());
+      waypoints_.end(),
+      new_waypoints.begin() + 2 + params_.waypoints_heading_lookahead,
+      new_waypoints.end());
   // Recompute the velocity profiles.
-  for (unsigned int i = old_waypoints_lookahead; i < waypoints_.size(); ++i) {
+  for (unsigned int i =
+           head_waypoint_index + params_.waypoints_heading_lookahead + 1;
+       i < waypoints_.size(); ++i) {
     const double dl = math::linearDistance2D(waypoints_[i], waypoints_[i - 1]);
     const double da =
         math::angularDistanceYaw(waypoints_[i], waypoints_[i - 1]);
-    const double dt            = computeSafetyVelocity(dl, da);
-    waypoints_[i].header.stamp = ros::Time(start_->toSec() + dt);
+    const double dt = computeSafetyVelocity(dl, da);
+    waypoints_[i].header.stamp =
+        waypoints_[i - 1].header.stamp + ros::Duration(dt);
   }
 }
 
@@ -99,15 +113,24 @@ void LinearMotionPlanner::computeReference(
   const geometry_msgs::Pose& head_pose = next_waypoint->pose;
   const ros::Time& last_stamp          = last_waypoint->header.stamp;
   const ros::Time& head_stamp          = next_waypoint->header.stamp;
-  // Interpolate waypoints for the reference pose.
-  const double alpha = ref_stamp.toSec() - last_stamp.toSec();
-  ref_pose->position = math::linearInterpolation2D(last_pose, head_pose, alpha);
-  ref_pose->orientation = math::slerpYaw(last_pose, head_pose, alpha);
   // Constant linear profile for velocity.
   const double delta_stamp = head_stamp.toSec() - last_stamp.toSec();
   ref_twist->linear.x      = math::delta<0>(last_pose, head_pose) / delta_stamp;
   ref_twist->linear.y      = math::delta<1>(last_pose, head_pose) / delta_stamp;
   ref_twist->angular.z     = math::delta<2>(last_pose, head_pose) / delta_stamp;
+  // Interpolate waypoints for the reference pose.
+  const double alpha = (ref_stamp.toSec() - last_stamp.toSec()) / delta_stamp;
+  const double inter = std::min(alpha, 1.);
+  ref_pose->position = math::linearInterpolation2D(last_pose, head_pose, inter);
+  ref_pose->orientation = math::slerpYaw(last_pose, head_pose, inter);
+}
+
+const geometry_msgs::PoseStamped& LinearMotionPlanner::start() const {
+  return waypoints_.front();
+}
+
+const geometry_msgs::PoseStamped& LinearMotionPlanner::goal() const {
+  return waypoints_.back();
 }
 
 const std::vector<geometry_msgs::PoseStamped>& LinearMotionPlanner::waypoints()
@@ -116,10 +139,17 @@ const std::vector<geometry_msgs::PoseStamped>& LinearMotionPlanner::waypoints()
 }
 
 const geometry_msgs::PoseStamped& LinearMotionPlanner::operator()(int i) const {
+  assert(i >= 0 && i < (int)waypoints_.size());
   return waypoints_[i];
 }
 
 const geometry_msgs::PoseStamped& LinearMotionPlanner::operator[](int i) const {
+  assert(i >= 0 && i < (int)waypoints_.size());
+  return waypoints_[i];
+}
+
+const geometry_msgs::PoseStamped& LinearMotionPlanner::at(int i) const {
+  assert(i >= 0 && i < (int)waypoints_.size());
   return waypoints_[i];
 }
 
@@ -150,7 +180,9 @@ std::vector<geometry_msgs::PoseStamped>::const_iterator
          const geometry_msgs::PoseStamped& rhs) {
         return lhs.header.stamp.toSec() < rhs.header.stamp.toSec();
       });
-  return heading_waypoint_ptr;
+  return heading_waypoint_ptr != waypoints_.end()
+             ? heading_waypoint_ptr
+             : std::prev(heading_waypoint_ptr);
 }
 
 int LinearMotionPlanner::computeHeadingWaypointIndex(
@@ -167,7 +199,7 @@ void LinearMotionPlanner::smoothTrajectory(
   const int nwaypoints = waypoints.size();
   smooth_waypoints->reserve(nwaypoints);
   smooth_waypoints->emplace_back(waypoints[0]);
-  for (int i = 0; i < nwaypoints; ++i) {
+  for (int i = 1; i < nwaypoints; ++i) {
     geometry_msgs::PoseStamped waypoint;
     waypoint.pose.position = math::linearInterpolation2D(
         smooth_waypoints->at(i - 1), waypoints[i], params_.linear_smoother);

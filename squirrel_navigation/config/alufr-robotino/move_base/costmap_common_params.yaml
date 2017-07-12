@@ -16,6 +16,7 @@ ObstaclesLayer:
     publish_voxel_map: false
     obtacle_range: 5.0
     raytrace_range: 10.0
+    collision_radius: 0.3
     observation_sources: laser_scan
     laser_scan: 
       sensor_frame: "/hokuyo_link" 
@@ -25,12 +26,13 @@ ObstaclesLayer:
       clearing: true
 
   KinectLayer:
-    enabled: true
+    enabled: false
     publish_voxel_map: false
     robot_height: 0.9
     floor_threshold: 0.05
     obstacle_range: 3.0
     raytrace_range: 10.0
+    collision_radius: 0.3
     observation_sources: kinect_cloud
     kinect_cloud: 
       sensor_frame: "/kinect_depth_optical_frame" 
@@ -42,7 +44,7 @@ ObstaclesLayer:
   StaticLayer:
     enabled: true
 
-## Parameters for squirrel_navigation::InflationLayer
+## Parameters for costmap_2d::InflationLayer
 InflationLayer:
   inscribed_radius: 0.22
   inflation_radius: 0.6

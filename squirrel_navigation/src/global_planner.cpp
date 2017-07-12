@@ -61,6 +61,7 @@ bool GlobalPlanner::makePlan(
   if (params_.plan_with_footprint) {
     return footprint_planner_->makePlan(start, goal, waypoints);
   } else if (dijkstra_planner_->makePlan(start, goal, waypoints)) {
+    waypoints.front() = start;
     for (int i = 1; i < (int)waypoints.size() - 1; ++i) {
       if (params_.plan_with_constant_heading) {
         waypoints[i].pose.orientation =
@@ -74,6 +75,12 @@ bool GlobalPlanner::makePlan(
             tf::createQuaternionMsgFromYaw(std::atan2(dy, dx));
       }
     }
+    waypoints.back() = goal;
+    // Print info.
+    if (params_.verbose)
+      ROS_INFO_STREAM(
+          "squirrel_navigation::GlobalPlanner: Found a collision free path ("
+          << waypoints.size() << " waypoints).");
     return true;
   }
   return false;

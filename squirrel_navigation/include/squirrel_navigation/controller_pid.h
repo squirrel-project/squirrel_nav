@@ -55,7 +55,7 @@ class ControllerPID : public utils::Controller {
 
   // Reset the controller.
   void initialize(const std::string& name) override;
-  void reset() override;
+  void reset(const ros::Time& start) override;
 
   // Compute the command according to PID control law.
   void computeCommand(

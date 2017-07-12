@@ -66,26 +66,30 @@ class LinearMotionPlanner : public utils::MotionPlanner {
 
   // Create/update a new motion trajectory.
   void initialize(const std::string& name) override;
-  void reset(const std::vector<geometry_msgs::PoseStamped>& waypoints) override;
+  void reset(
+      const std::vector<geometry_msgs::PoseStamped>& waypoints,
+      const ros::Time& start) override;
   void update(
-      const std::vector<geometry_msgs::PoseStamped>& waypoints) override;
+      const std::vector<geometry_msgs::PoseStamped>& waypoints,
+      const ros::Time& stamp) override;
 
   // Get reference for motion control.
   void computeReference(
       const ros::Time& stamp, geometry_msgs::Pose* pose,
       geometry_msgs::Twist* twist) override;
 
+  // Get start/goal.
+  const geometry_msgs::PoseStamped& start() const;
+  const geometry_msgs::PoseStamped& goal() const;
+
   // Waypoint(s) getters.
   const std::vector<geometry_msgs::PoseStamped>& waypoints() const;
   const geometry_msgs::PoseStamped& operator()(int i) const;
   const geometry_msgs::PoseStamped& operator[](int i) const;
-
+  const geometry_msgs::PoseStamped& at(int i) const;
+  
   // Mutex getter.
   inline std::mutex& mutex() const { return update_mtx_; }
-
-  // Set initial start time.
-  inline const ros::Time* start() const { return start_.get(); }
-  inline void setStart(const ros::Time& t) { start_.reset(new ros::Time(t)); }
 
   // Parameters read/write.
   inline const Params& params() const { return params_; }
@@ -114,7 +118,6 @@ class LinearMotionPlanner : public utils::MotionPlanner {
   std::unique_ptr<dynamic_reconfigure::Server<LinearMotionPlannerConfig>> dsrv_;
 
   std::vector<geometry_msgs::PoseStamped> waypoints_;
-  std::unique_ptr<ros::Time> start_;
 
   mutable std::mutex update_mtx_;
 };

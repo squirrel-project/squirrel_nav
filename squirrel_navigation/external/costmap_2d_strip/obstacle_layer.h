@@ -174,6 +174,8 @@ protected:
 
   int combination_method_;
 
+  double sq_robot_radius_;
+  
 private:
   void reconfigureCB(costmap_2d::ObstaclePluginConfig &config, uint32_t level);
 };

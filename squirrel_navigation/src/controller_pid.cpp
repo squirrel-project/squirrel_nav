@@ -26,6 +26,8 @@
 #include <ros/console.h>
 #include <ros/node_handle.h>
 
+#include <angles>
+
 #include <string>
 
 namespace squirrel_navigation {
@@ -34,19 +36,18 @@ void ControllerPID::initialize(const std::string& name) {
   if (init_)
     return;
   // Initialize the parameter server.
-  ros::NodeHandle pnh(name + "/ControllerPID");
+  ros::NodeHandle pnh("~/" + name);
   dsrv_.reset(new dynamic_reconfigure::Server<ControllerPIDConfig>(pnh));
   dsrv_->setCallback(
       boost::bind(&ControllerPID::reconfigureCallback, this, _1, _2));
   // Initialization successful.
   init_ = true;
   ROS_INFO_STREAM(
-      "squirrel_navigation::ControllerPID: initialization succesful.");
+      "squirrel_navigation::ControllerPID: initialization successful.");
 }
 
-void ControllerPID::reset() {
-  const ros::Time& now = ros::Time::now();
-  last_stamp_.reset(new ros::Time(now));
+void ControllerPID::reset(const ros::Time& start) {
+  last_stamp_.reset(new ros::Time(start));
   errIx_ = errIy_ = errIa_ = 0.;
 }
 
@@ -62,10 +63,10 @@ void ControllerPID::computeCommand(
   const double dvx = math::delta<0>(vel, ref_vel);
   const double dvy = math::delta<1>(vel, ref_vel);
   const double dva = math::delta<2>(vel, ref_vel);
-  // Update the intergral term.
+  // Update the integral term.
   errIx_ += dx * dt;
   errIy_ += dy * dt;
-  errIa_ += da * dt;
+  errIa_ = angles::normalize_angle(errIa_ * da * dt);
   // Compute the command.
   twist->linear.x =
       params_.kP_lin * dx + params_.kI_lin * errIx_ + params_.kD_lin * dvx;
@@ -74,7 +75,7 @@ void ControllerPID::computeCommand(
   twist->angular.z =
       params_.kP_ang * da + params_.kI_ang * errIa_ + params_.kD_ang * dva;
   // Update last stamp.
-  last_stamp_.reset(new ros::Time(stamp));
+  *last_stamp_ = stamp;
 }
 
 void ControllerPID::reconfigureCallback(
@@ -91,7 +92,7 @@ ControllerPID::Params ControllerPID::Params::defaultParams() {
   Params params;
   params.kP_lin = params.kP_ang = 3.;
   params.kI_lin = params.kI_ang = 0.01;
-  params.kD_lin = params.kP_ang = 0.01;
+  params.kD_lin = params.kD_ang = 0.01;
   return params;
 }
 

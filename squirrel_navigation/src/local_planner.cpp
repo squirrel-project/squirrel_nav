@@ -50,9 +50,9 @@ void LocalPlanner::initialize(
       boost::bind(&LocalPlanner::reconfigureCallback, this, _1, _2));
   // Initlialize controller and motion planner, by now only PID and linear.
   controller_.reset(new ControllerPID);
-  controller_->initialize("~/" + name);
+  controller_->initialize(name + "/ControllerPID");
   motion_planner_.reset(new LinearMotionPlanner);
-  motion_planner_->initialize("~/" + name);
+  motion_planner_->initialize(name + "/MotionPlanner");
   // Initialize/reset internal observers.
   tfl_.reset(tfl);
   costmap_ros_.reset(costmap_ros);
@@ -75,6 +75,7 @@ void LocalPlanner::initialize(
     }
   }
   // Initialize publishers.
+  robot_pose_pub_ = pnh.advertise<geometry_msgs::PoseStamped>("debug", 1);
   ref_pub_  = pnh.advertise<visualization_msgs::Marker>("reference_pose", 1);
   traj_pub_ = pnh.advertise<geometry_msgs::PoseArray>("trajectory", 1);
   odom_sub_ =
@@ -96,24 +97,31 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
       return true;
     }
   // Compute the reference pose and perform safety check.
+  const ros::Time& stamp = robot_pose_.header.stamp;
   geometry_msgs::Pose ref_pose;
   geometry_msgs::Twist ref_twist;
-  motion_planner_->computeReference(
-      robot_pose_.header.stamp, &ref_pose, &ref_twist);
+  motion_planner_->computeReference(stamp, &ref_pose, &ref_twist);
+  publishReference(ref_pose, stamp);
+  robot_pose_pub_.publish(robot_pose_);
   if (math::linearDistance2D(robot_pose_.pose, ref_pose) >
           params_.max_safe_lin_displacement ||
       math::angularDistanceYaw(robot_pose_.pose, ref_pose) >
           params_.max_safe_ang_displacement) {
+
+    std::cout << robot_pose_.pose << std::endl;
+    std::cout << ref_pose << std::endl;
+
     ROS_WARN_STREAM(
         "squirrel_navigation::LocalPlanner: The robot is too far from the "
         "planned trajectory. Replanning requested.");
+    current_goal_.reset(nullptr);
     return false;
   }
   // Compute the commands via PID controller in map frame.
   geometry_msgs::Twist map_cmd;
   controller_->computeCommand(
-      robot_pose_.header.stamp, robot_pose_.pose, ref_pose, robot_twist_.twist,
-      ref_twist, &map_cmd);
+      stamp, robot_pose_.pose, ref_pose, robot_twist_.twist, ref_twist,
+      &map_cmd);
   // Transform the commands in robot frame.
   geometry_msgs::Twist robot_cmd;
   globalToRobotFrame(map_cmd, &robot_cmd);
@@ -141,14 +149,15 @@ bool LocalPlanner::setPlan(
     const std::vector<geometry_msgs::PoseStamped>& waypoints) {
   if (waypoints.empty())
     return false;
-  if (!current_goal_) {
+  const ros::Time& stamp = robot_pose_.header.stamp;
+  if (newGoal(waypoints.back().pose)) {
     current_goal_.reset(new geometry_msgs::Pose(waypoints.back().pose));
-    controller_->reset();
-    motion_planner_->reset(waypoints);
+    controller_->reset(stamp);
+    motion_planner_->reset(waypoints, stamp);
   } else {
-    motion_planner_->update(waypoints);
+    motion_planner_->update(waypoints, stamp);
   }
-  publishTrajectory(ros::Time::now());
+  publishTrajectory(stamp);
   return true;
 }
 
@@ -190,18 +199,18 @@ void LocalPlanner::publishReference(
   marker.id              = 0;
   marker.header.stamp    = stamp;
   marker.header.frame_id = costmap_ros_->getGlobalFrameID();
-  marker.ns              = "trajectory_reference";
+  marker.ns              = "reference";
   marker.type            = visualization_msgs::Marker::ARROW;
   marker.action          = visualization_msgs::Marker::MODIFY;
   marker.pose            = ref_pose;
   marker.scale.x         = 0.22;
   marker.scale.y         = 0.035;
-  marker.scale.z         = 0.0;
+  marker.scale.z         = 0.05;
   marker.color.r         = 0.0;
   marker.color.g         = 1.0;
   marker.color.b         = 0.0;
   marker.color.a         = 0.5;
-  traj_pub_.publish(marker);
+  ref_pub_.publish(marker);
 }
 
 void LocalPlanner::publishTrajectory(const ros::Time& stamp) const {
@@ -255,6 +264,14 @@ void LocalPlanner::safeVelocityCommands(
   const double twist_ang_magnitude = std::abs(twist.angular.z);
   if (twist_ang_magnitude > params_.max_safe_ang_velocity)
     safe_twist->angular.z = params_.max_safe_ang_velocity;
+}
+
+bool LocalPlanner::newGoal(const geometry_msgs::Pose& pose) const {
+  if (!current_goal_)
+    return true;
+  bool new_position    = math::linearDistance2D(*current_goal_, pose) > 1e-8;
+  bool new_orientation = math::angularDistanceYaw(*current_goal_, pose) > 1e-8;
+  return new_position || new_orientation;
 }
 
 LocalPlanner::Params LocalPlanner::Params::defaultParams() {

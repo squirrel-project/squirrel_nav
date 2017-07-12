@@ -70,6 +70,10 @@ void ObstacleLayer::onInitialize()
   double transform_tolerance;
   nh.param("transform_tolerance", transform_tolerance, 0.2);
 
+  double robot_radius;
+  nh.param("collision_radius", robot_radius, 0.25);
+  sq_robot_radius_ = robot_radius * robot_radius;
+  
   std::string topics_string;
   // get the topics that we'll subscribe to from the parameter server
   nh.param("observation_sources", topics_string, std::string(""));
@@ -395,6 +399,14 @@ void ObstacleLayer::updateBounds(double robot_x, double robot_y, double robot_ya
         continue;
       }
 
+      // if the points is inside the robot chassis... we won't consider it
+      double sq_dist_robot = std::pow(px - robot_x, 2) + std::pow(py - robot_y, 2);
+      if (sq_dist_robot <= sq_robot_radius_)
+      {
+        ROS_DEBUG("The point comes from the robot.");
+        continue;
+      }
+      
       // now we need to compute the map coordinates for the observation
       unsigned int mx, my;
       if (!worldToMap(px, py, mx, my))

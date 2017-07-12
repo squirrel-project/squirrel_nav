@@ -39,7 +39,7 @@ class Controller {
   virtual ~Controller() {}
 
   virtual void initialize(const std::string& name) = 0;
-  virtual void reset() = 0;
+  virtual void reset(const ros::Time& start) = 0;
 
   virtual void computeCommand(
       const ros::Time& stamp, const geometry_msgs::Pose& pose,

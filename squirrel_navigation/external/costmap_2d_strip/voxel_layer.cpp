@@ -172,6 +172,11 @@ void VoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, 
       if (sq_dist >= sq_obstacle_range)
         continue;
 
+      // compute the squared 2d distance from the hitpoint to the robot base;
+      double sq_dist_robot = std::pow(cloud.points[i].x - robot_x, 2) + std::pow(cloud.points[i].y - robot_y, 2);
+      if (sq_dist_robot <= sq_robot_radius_)
+        continue;
+      
       // now we need to compute the map coordinates for the observation
       unsigned int mx, my, mz;
       if (cloud.points[i].z < origin_z_)
