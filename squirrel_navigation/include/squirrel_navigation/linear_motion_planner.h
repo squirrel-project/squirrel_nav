@@ -56,6 +56,7 @@ class LinearMotionPlanner : public utils::MotionPlanner {
     double max_linear_velocity, max_angular_velocity;
     double linear_smoother, angular_smoother;
     double time_scaler;
+    double lookahead;
     int waypoints_heading_lookahead;
   };
 
@@ -87,7 +88,7 @@ class LinearMotionPlanner : public utils::MotionPlanner {
   const geometry_msgs::PoseStamped& operator()(int i) const;
   const geometry_msgs::PoseStamped& operator[](int i) const;
   const geometry_msgs::PoseStamped& at(int i) const;
-  
+
   // Mutex getter.
   inline std::mutex& mutex() const { return update_mtx_; }
 
@@ -107,10 +108,13 @@ class LinearMotionPlanner : public utils::MotionPlanner {
 
   // Smooth up the planned trajectory.
   void smoothTrajectory(
-      const std::vector<geometry_msgs::PoseStamped>& waypoints,
-      std::vector<geometry_msgs::PoseStamped>* smooth_waypoints) const;
+      const std::vector<geometry_msgs::PoseStamped>& waypoints, int start,
+      int end, std::vector<geometry_msgs::PoseStamped>* smooth_waypoints) const;
+  void smoothTrajectoryInPlace(
+    const std::vector<geometry_msgs::PoseStamped>& waypoints, int start,
+    int end, std::vector<geometry_msgs::PoseStamped>* smooth_waypoints) const;
 
-  // Define the velocity profile.
+    // Define the velocity profile.
   double computeSafetyVelocity(double linear_delta, double angular_delta) const;
 
  private:

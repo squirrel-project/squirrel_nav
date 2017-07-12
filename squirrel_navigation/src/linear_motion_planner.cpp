@@ -52,7 +52,7 @@ void LinearMotionPlanner::reset(
   if (waypoints.size() < 2)
     return;
   // Create the velocity profile.
-  smoothTrajectory(waypoints, &waypoints_);
+  smoothTrajectory(waypoints, 0, waypoints.size(), &waypoints_);
   waypoints_[0].header.stamp = start;
   for (unsigned int i = 1; i < waypoints_.size(); ++i) {
     const double dl = math::linearDistance2D(waypoints_[i], waypoints_[i - 1]);
@@ -68,29 +68,24 @@ void LinearMotionPlanner::update(
     const std::vector<geometry_msgs::PoseStamped>& waypoints,
     const ros::Time& stamp) {
   std::unique_lock<std::mutex> lock(update_mtx_);
-  std::vector<geometry_msgs::PoseStamped> new_waypoints;
-  smoothTrajectory(waypoints, &new_waypoints);
   // Update the trajectory with new waypoints.
   const int head_waypoint_index = computeHeadingWaypointIndex(stamp);
   if (head_waypoint_index + params_.waypoints_heading_lookahead ==
       (int)waypoints_.size() - 1)
     return;
-  if ((int)waypoints.size() - 1 < 2 + params_.waypoints_heading_lookahead)
+  if ((int)waypoints.size() - 1 < params_.waypoints_heading_lookahead)
     return;
   // Merge the new trajectory in to the new one.
   const int last_waypoint_index = std::max(0, head_waypoint_index - 1);
   waypoints_.erase(
-      waypoints_.begin() + last_waypoint_index +
-          params_.waypoints_heading_lookahead,
-      waypoints_.end());
+      waypoints_.begin() + head_waypoint_index + 1, waypoints_.end());
   waypoints_.insert(
-      waypoints_.end(),
-      new_waypoints.begin() + 2 + params_.waypoints_heading_lookahead,
-      new_waypoints.end());
+      waypoints_.end(), waypoints.begin() + params_.waypoints_heading_lookahead,
+      waypoints.end());
+  smoothTrajectoryInPlace(
+      waypoints_, head_waypoint_index, waypoints_.size(), &waypoints_);
   // Recompute the velocity profiles.
-  for (unsigned int i =
-           head_waypoint_index + params_.waypoints_heading_lookahead + 1;
-       i < waypoints_.size(); ++i) {
+  for (unsigned int i = head_waypoint_index; i < waypoints_.size(); ++i) {
     const double dl = math::linearDistance2D(waypoints_[i], waypoints_[i - 1]);
     const double da =
         math::angularDistanceYaw(waypoints_[i], waypoints_[i - 1]);
@@ -104,8 +99,9 @@ void LinearMotionPlanner::computeReference(
     const ros::Time& ref_stamp, geometry_msgs::Pose* ref_pose,
     geometry_msgs::Twist* ref_twist) {
   std::unique_lock<std::mutex> lock(update_mtx_);
-  const auto next_waypoint             = computeHeadingWaypoint(ref_stamp);
-  const auto last_waypoint             = std::prev(next_waypoint);
+  const ros::Time& stamp   = ref_stamp + ros::Duration(params_.lookahead);
+  const auto next_waypoint = computeHeadingWaypoint(stamp);
+  const auto last_waypoint = std::prev(next_waypoint);
   const geometry_msgs::Pose& last_pose = last_waypoint->pose;
   const geometry_msgs::Pose& head_pose = next_waypoint->pose;
   const ros::Time& last_stamp          = last_waypoint->header.stamp;
@@ -116,7 +112,7 @@ void LinearMotionPlanner::computeReference(
   ref_twist->linear.y      = math::delta<1>(last_pose, head_pose) / delta_stamp;
   ref_twist->angular.z     = math::delta<2>(last_pose, head_pose) / delta_stamp;
   // Interpolate waypoints for the reference pose.
-  const double alpha = (ref_stamp.toSec() - last_stamp.toSec()) / delta_stamp;
+  const double alpha = (stamp.toSec() - last_stamp.toSec()) / delta_stamp;
   const double inter = std::min(alpha, 1.);
   ref_pose->position = math::linearInterpolation2D(last_pose, head_pose, inter);
   ref_pose->orientation = math::slerpYaw(last_pose, head_pose, inter);
@@ -157,6 +153,7 @@ void LinearMotionPlanner::reconfigureCallback(
   params_.linear_smoother             = config.linear_smoother;
   params_.angular_smoother            = config.angular_smoother;
   params_.time_scaler                 = config.time_scaler;
+  params_.lookahead                   = config.lookahead;
   params_.waypoints_heading_lookahead = config.waypoints_heading_lookahead;
 }
 
@@ -170,7 +167,7 @@ double LinearMotionPlanner::computeSafetyVelocity(
 std::vector<geometry_msgs::PoseStamped>::const_iterator
     LinearMotionPlanner::computeHeadingWaypoint(const ros::Time& stamp) const {
   geometry_msgs::PoseStamped query_pose;
-  query_pose.header.stamp   = stamp;
+  query_pose.header.stamp         = stamp;
   const auto heading_waypoint_ptr = std::upper_bound(
       waypoints_.begin(), waypoints_.end(), query_pose,
       [](const geometry_msgs::PoseStamped& lhs,
@@ -188,15 +185,14 @@ int LinearMotionPlanner::computeHeadingWaypointIndex(
 }
 
 void LinearMotionPlanner::smoothTrajectory(
-    const std::vector<geometry_msgs::PoseStamped>& waypoints,
-    std::vector<geometry_msgs::PoseStamped>* smooth_waypoints) const {
+    const std::vector<geometry_msgs::PoseStamped>& waypoints, int start,
+    int end, std::vector<geometry_msgs::PoseStamped>* smooth_waypoints) const {
   smooth_waypoints->clear();
   if (waypoints.empty())
     return;
-  const int nwaypoints = waypoints.size();
-  smooth_waypoints->reserve(nwaypoints);
+  smooth_waypoints->reserve(end - start);
   smooth_waypoints->emplace_back(waypoints.front());
-  for (int i = 1; i < nwaypoints - 1; ++i) {
+  for (int i = start + 1; i < end - 1; ++i) {
     geometry_msgs::PoseStamped waypoint;
     waypoint.pose.position = math::linearInterpolation2D(
         smooth_waypoints->at(i - 1), waypoints[i], params_.linear_smoother);
@@ -207,6 +203,22 @@ void LinearMotionPlanner::smoothTrajectory(
   smooth_waypoints->emplace_back(waypoints.back());
 }
 
+void LinearMotionPlanner::smoothTrajectoryInPlace(
+    const std::vector<geometry_msgs::PoseStamped>& waypoints, int start,
+    int end, std::vector<geometry_msgs::PoseStamped>* smooth_waypoints) const {
+  // Copy safe.
+  for (int i = start + 1; i < end - 1; ++i) {
+    geometry_msgs::PoseStamped waypoint;
+    waypoint.pose.position = math::linearInterpolation2D(
+        smooth_waypoints->at(i - 1), smooth_waypoints->at(i),
+        params_.linear_smoother);
+    waypoint.pose.orientation = math::slerpYaw(
+        smooth_waypoints->at(i - 1), smooth_waypoints->at(i),
+        params_.angular_smoother);
+    smooth_waypoints->at(i) = waypoint;
+  }
+}
+
 LinearMotionPlanner::Params LinearMotionPlanner::Params::defaultParams() {
   Params params;
   params.max_linear_velocity         = 0.5;
@@ -215,6 +227,7 @@ LinearMotionPlanner::Params LinearMotionPlanner::Params::defaultParams() {
   params.angular_smoother            = 0.95;
   params.time_scaler                 = 0.75;
   params.waypoints_heading_lookahead = 10;
+  params.lookahead                   = 0.5;
   return params;
 }
 

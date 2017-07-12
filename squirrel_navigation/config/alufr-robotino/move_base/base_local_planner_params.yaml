@@ -3,20 +3,21 @@ LocalPlanner:
   odom_topic: "/odom"
   goal_lin_tolerance: 0.05
   goal_ang_tolerance: 0.05
-  max_safe_lin_velocity: 10.7
-  max_safe_ang_velocity: 10.9
-  max_safe_lin_displacement: 1.0
+  max_safe_lin_velocity: 0.7
+  max_safe_ang_velocity: 0.9
+  max_safe_lin_displacement: 0.5
   max_safe_ang_displacement: 1.0
   safety_observers: ["SafetyScanObserver", "ArmSkinObserver"]
 
   MotionPlanner:
-    max_linear_velocity: 0.5
-    max_angular_velocity: 0.7
+    max_linear_velocity: 1.0
+    max_angular_velocity: 1.5
     linear_smoother: 0.75
     angular_smoother: 0.75
     time_scaler: 1.25
     waypoints_heading_lookahead: 10
-  
+    lookahead: 0.15
+
   ControllerPID:
     kP_lin: 3.0
     kP_ang: 3.0

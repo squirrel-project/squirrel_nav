@@ -111,14 +111,6 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
     ROS_WARN_STREAM(
         "squirrel_navigation::LocalPlanner: The robot is too far from the "
         "planned trajectory. Replanning requested.");
-
-    std::cout << robot_pose_.pose << std::endl;
-    std::cout << ref_pose << std::endl;
-    std::cout << static_cast<const LinearMotionPlanner*>(motion_planner_.get())
-                     ->goal()
-                     .pose
-              << std::endl;
-
     current_goal_.reset(nullptr);
     return false;
   }
