@@ -88,6 +88,7 @@ squirrel_dynamic_filter/external/g2o/build/*
 squirrel_dynamic_filter/external/g2o/lib/*
 squirrel_dynamic_filter/external/g2o/bin/*
 squirrel_2d_localizer/CATKIN_IGNORE
+squirrel_2d_localizer/config/last_pose.yaml
 squirrel_3d_localizer/CATKIN_IGNORE
 squirrel_3d_mapping/CATKIN_IGNORE
 squirrel_navigation/CATKIN_IGNORE
