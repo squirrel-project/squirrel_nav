@@ -25,6 +25,8 @@
 
 #include "squirrel_navigation/NavigationLayerConfig.h"
 
+#include <ros/service.h>
+
 #include <dynamic_reconfigure/server.h>
 
 #include <costmap_2d/costmap_layer.h>
@@ -33,7 +35,12 @@
 #include <costmap_2d_strip/static_layer.h>
 #include <costmap_2d_strip/voxel_layer.h>
 
+#include <squirrel_navigation_msgs/ClearCostmapRegion.h>
+#include <squirrel_navigation_msgs/GetObstaclesMap.h>
+#include <squirrel_navigation_msgs/GetPathClearance.h>
+
 #include <memory>
+#include <mutex>
 
 namespace squirrel_navigation {
 
@@ -66,12 +73,12 @@ class NavigationLayer : public costmap_2d::CostmapLayer {
   void activate();
   void deactivate();
   void reset();
-  
-  // Match the size of the costmap.
-  void matchSize() override;
 
   // Whether the map is discrete or not.
-  bool isDiscretized() { return true; }
+  inline bool isDiscretized() { return true; }
+
+  // Update guard.
+  inline std::mutex& mutex() const { return update_mtx_; }
 
   // Parameters read/write.
   inline const Params& params() const { return params_; }
@@ -79,10 +86,24 @@ class NavigationLayer : public costmap_2d::CostmapLayer {
   inline Params& params() { return params_; }
 
  private:
-  // Update the parameters.
+  // Update the parameters and service callbacks
   void reconfigureCallback(NavigationLayerConfig& config, uint32_t level);
+  bool clearCostmapRegionCallback(
+      squirrel_navigation_msgs::ClearCostmapRegion::Request& req,
+      squirrel_navigation_msgs::ClearCostmapRegion::Response& res);
+  bool getObstaclesMapCallback(
+      squirrel_navigation_msgs::GetObstaclesMap::Request& req,
+      squirrel_navigation_msgs::GetObstaclesMap::Response& res);
+  bool getPathClearanceCallback(
+      squirrel_navigation_msgs::GetPathClearance::Request& req,
+      squirrel_navigation_msgs::GetPathClearance::Response& res);
 
-  // Costs update.
+  // Compute the obstacle map.
+  size_t getObstaclesMap(
+      std::vector<bool>* obstacles_indicator,
+      std::vector<geometry_msgs::Point32>* obstacles_positions) const;
+
+  // Costs update and utilities.
   void resetMasterCostmapLocally(
       costmap_2d::Costmap2D& master_grid, unsigned int stride, int min_i,
       int min_j, int max_i, int max_j);
@@ -98,6 +119,11 @@ class NavigationLayer : public costmap_2d::CostmapLayer {
   squirrel_navigation::ObstacleLayer laser_layer_;
   squirrel_navigation::VoxelLayer kinect_layer_;
   squirrel_navigation::StaticLayer static_layer_;
+
+  ros::ServiceServer clear_costmap_srv_, obstacles_map_srv_,
+      path_clearance_srv_;
+
+  mutable std::mutex update_mtx_;
 };
 
 }  // namespace squirrel_navigation

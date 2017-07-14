@@ -21,3 +21,22 @@ Contains `squirrel_navigation::GlobalPlanner`,
 
 Contains `squirrel_navigation::NavigationLayer` which merges obstacles
 detected with depth camera and the safety laser rangefinder.
+
+### Parameters
+- `~/use_kinect` whether to use or not the kinect.
+- `~/use_laser` whether to use or not the laser scan.
+- `~/LaserLayer/*` parameters of `costmap_2d::ObstacleLayer`.
+- `~/KinectLayer/*` parameters of `costmap_2d::VoxelLayer`.
+- `~/StaticLayer/*` parameters of `costmap_2d::StaticLayer`.
+
+### Services.
+- `~/clearCostmapRegion`
+  (`squirrel_navigation_msgs::ClearCostmapRegion`) clears the costmap
+  with the region specified by a polygon.
+- `~/getObstaclesMap` (`squirrel_navigation_msgs::GetObstacleMap`)
+  returns the position of all the obstacles in the map as well as an
+  occupied/free boolean for every pixel in the map.
+- `/getPathClearance` (`squirrel_navigation_msgs::GetPathClereance`)
+  returns the clearance of a path as well as the proximity map of
+  every waypoint of the path.
+ 

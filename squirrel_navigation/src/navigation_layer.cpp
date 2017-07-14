@@ -42,6 +42,13 @@ void NavigationLayer::onInitialize() {
   // Align size of kinect and laser layer.
   static_layer_.matchSize<ObstacleLayer>(&laser_layer_);
   static_layer_.matchSize<VoxelLayer>(&kinect_layer_);
+  // Initialize services.
+  clear_costmap_srv_ = pnh.advertiseService(
+      "clearCostmapRegion", &NavigationLayer::clearCostmapRegionCallback, this);
+  obstacles_map_srv_ = pnh.advertiseService(
+      "getObstaclesMap", &NavigationLayer::getObstaclesMapCallback, this);
+  path_clearance_srv_ = pnh.advertiseService(
+      "getPathClearance", &NavigationLayer::getPathClearanceCallback, this);
   // Finalize intialization.
   current_ = true;
   enabled_ = true;
@@ -108,17 +115,121 @@ void NavigationLayer::reset() {
   current_ = true;
 }
 
-void NavigationLayer::matchSize() {
-  costmap_2d::Costmap2D* master = layered_costmap_->getCostmap();
-  resizeMap(
-      static_layer_.getSizeInCellsX(), static_layer_.getSizeInCellsY(),
-      static_layer_.getResolution(), static_layer_.getOriginX(), static_layer_.getOriginY());
-}
-
 void NavigationLayer::reconfigureCallback(
     NavigationLayerConfig& config, uint32_t level) {
   kinect_layer_.enabled() = config.use_kinect;
   laser_layer_.enabled()  = config.use_laser_scan;
+}
+
+bool NavigationLayer::clearCostmapRegionCallback(
+    squirrel_navigation_msgs::ClearCostmapRegion::Request& req,
+    squirrel_navigation_msgs::ClearCostmapRegion::Response& res) {
+  // Wait for costmap to be disabled.
+  req.sleep.sleep();
+  if (kinect_layer_.enabled() || laser_layer_.enabled())
+    return false;
+  // Getting clearing bounding box.
+  const int inf = std::numeric_limits<double>::max();
+  int min_i = inf, min_j = inf, max_i = -inf, max_j = -inf;
+  for (const auto& point : req.object.points) {
+    int p_i, p_j;
+    worldToMapEnforceBounds(point.x, point.y, p_i, p_j);
+    min_i = std::min(min_i, p_i);
+    min_j = std::min(min_j, p_j);
+    max_i = std::max(max_i, p_i);
+    max_j = std::max(max_j, p_j);
+  }
+  // Clear the master grid.
+  costmap_2d::Costmap2D* master_costmap = layered_costmap_->getCostmap();
+  for (int i = min_i; i < max_i; ++i)
+    for (int j = min_j; j < max_j; ++j)
+      master_costmap->setCost(i, j, costmap_2d::FREE_SPACE);
+  return true;
+}
+
+bool NavigationLayer::getObstaclesMapCallback(
+    squirrel_navigation_msgs::GetObstaclesMap::Request& req,
+    squirrel_navigation_msgs::GetObstaclesMap::Response& res) {
+  std::vector<bool> obstacles_indicator;
+  std::vector<geometry_msgs::Point32> obstacles_positions;
+  const int nobstacles =
+      getObstaclesMap(&obstacles_indicator, &obstacles_positions);
+  res.obstacles_indicator.resize(nobstacles);
+  res.obstacles_positions.resize(nobstacles);
+  for (int i = 0; i < nobstacles; ++i) {
+    res.obstacles_indicator[i] = obstacles_indicator[i];
+    res.obstacles_positions[i] = obstacles_positions[i];
+  }
+  // Set the map origin.
+  const costmap_2d::Costmap2D* master_costmap = layered_costmap_->getCostmap();
+  res.map_origin.x                            = master_costmap->getOriginX();
+  res.map_origin.y                            = master_costmap->getOriginY();
+  res.map_origin.theta                        = 0.;
+  return true;
+}
+
+bool NavigationLayer::getPathClearanceCallback(
+    squirrel_navigation_msgs::GetPathClearance::Request& req,
+    squirrel_navigation_msgs::GetPathClearance::Response& res) {
+  std::vector<bool> obstacles_indicator;
+  std::vector<geometry_msgs::Point32> obstacles_positions;
+  getObstaclesMap(&obstacles_indicator, &obstacles_positions);
+  // Resize the storage.
+  const int nwaypoints = req.plan.poses.size();
+  res.proximity_map.reserve(nwaypoints);
+  res.proximities.resize(nwaypoints);
+  geometry_msgs::Point32 closest_obstacle;
+  // Get the proximity informations.
+  res.clearance = std::numeric_limits<double>::max();
+  for (int i = 0; i < nwaypoints; ++i) {
+    const auto& waypoint = req.plan.poses[i];
+    // Get the clearance of the waypoint.
+    res.proximities[i] = std::numeric_limits<double>::max();
+    for (int o = 0; o < obstacles_positions.size(); ++o) {
+      const double dist = std::hypot(
+          waypoint.pose.position.x - obstacles_positions[o].x,
+          waypoint.pose.position.y - obstacles_positions[o].y);
+      if (dist < res.proximities[i]) {
+        res.proximities[i]   = dist;
+        res.proximity_map[i] = obstacles_positions[o];
+      }
+    }
+    // Update the proximity map.
+    if (res.proximities[i] < res.clearance) {
+      res.clearance          = res.proximities[i];
+      res.clearance_waypoint = i;
+    }
+  }
+  return true;
+}
+
+size_t NavigationLayer::getObstaclesMap(
+    std::vector<bool>* obstacles_indicator,
+    std::vector<geometry_msgs::Point32>* obstacles_positions) const {
+  std::unique_lock<std::mutex> lock(update_mtx_);
+  // Costmap size.
+  const costmap_2d::Costmap2D* master_costmap = layered_costmap_->getCostmap();
+  const size_t size_x = master_costmap->getSizeInCellsX();
+  const size_t size_y = master_costmap->getSizeInCellsY();
+  // Storage.
+  obstacles_indicator->resize(size_x * size_y);
+  obstacles_positions->reserve(size_x * size_y);
+  geometry_msgs::Point32 point;
+  // Check for obstacles.
+  size_t nobstacles = 0;
+  double px, py;
+  for (size_t x = 0; x < size_x; ++x)
+    for (size_t y = 0; y < size_y; ++y) {
+      const unsigned int index       = master_costmap->getIndex(x, y);
+      obstacles_indicator->at(index) = false;
+      if (master_costmap->getCost(x, y) == costmap_2d::FREE_SPACE) {
+        obstacles_indicator->at(index) = true;
+        master_costmap->mapToWorld(x, y, px, py);
+        obstacles_positions->emplace_back(point);
+        nobstacles++;
+      }
+    }
+  return nobstacles;
 }
 
 void NavigationLayer::resetMasterCostmapLocally(

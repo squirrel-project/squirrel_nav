@@ -68,7 +68,8 @@ add_library(squirrel_navigation_costmap_layer
   src/navigation_layer.cpp external/costmap_2d_strip/obstacle_layer.cpp
   external/costmap_2d_strip/static_layer.cpp external/costmap_2d_strip/voxel_layer.cpp)
 target_link_libraries(squirrel_navigation_costmap_layer ${catkin_LIBRARIES})
-add_dependencies(squirrel_navigation_costmap_layer squirrel_navigation_gencfg)
+add_dependencies(squirrel_navigation_costmap_layer
+ squirrel_navigation_msgs_genereate_messages_cpp squirrel_navigation_gencfg)
 
 ## Built libraries.
 set(squirrel_navigation_LIBRARIES 
