@@ -24,9 +24,13 @@
 #ifndef SQUIRREL_POINTCLOUD_FILTER_POINTCLOUD_FILTER_H_
 #define SQUIRREL_POINTCLOUD_FILTER_POINTCLOUD_FILTER_H_
 
+#include "squirrel_pointcloud_filter/PointCloudFilterConfig.h"
+
 #include <ros/ros.h>
 
 #include <sensor_msgs/PointCloud2.h>
+
+#include <dynamic_reconfigure/server.h>
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/filters/filter.h>
@@ -35,28 +39,44 @@
 #include <pcl_ros/transforms.h>
 
 #include <memory>
-#include <vector>
+#include <array>
 
 namespace squirrel_pointcloud_filter {
 
 class PointCloudFilter {
  public:
-  PointCloudFilter();
+  class Params {
+   public:
+    static Params defaultParams();
+
+    bool nanfree;
+    double update_rate;
+    std::array<double, 3> resolutions_xyz;
+  };
+
+ public:
+  PointCloudFilter() : params_(Params::defaultParams()) { initialize(); }
+  PointCloudFilter(const Params& params) : params_(params) { initialize(); }
   virtual ~PointCloudFilter() {}
 
+  // Spinner.
   void spin();
 
  private:
-  void pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg_in);
+  // Initialize.
+  void initialize();
 
+  // Callbacks.
+  void reconfigureCallback(PointCloudFilterConfig& config, uint32_t level);
+  void pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg_in);
+  
  private:
+  Params params_;
+  std::unique_ptr<dynamic_reconfigure::Server<PointCloudFilterConfig>> dsrv_;
+
   ros::Publisher pcl_pub_;
   ros::Subscriber pcl_sub_;
-
-  bool nanfree_;
-  double update_rate_;
-  std::vector<double> resolutions_xyz_;
-
+  
   std::unique_ptr<pcl::VoxelGrid<pcl::PointXYZ>> voxel_filter_;
 };
 

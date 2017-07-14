@@ -48,7 +48,7 @@ Contains `squirrel_navigation::GlobalPlanner`,
 - `~/reference_pose` (`visualization_msgs::Marker`) the reference pose
   currently tracked.
 - `~/trajectory` (`geometry_msgs::PoseArray`) the planned trajectory.
-- `~/ControllerPID/cmd` (`visualization_msgs::MarkerArray`) the raw
+- `~/ControllerPID/cmd_raw` (`visualization_msgs::MarkerArray`) the raw
   control output by the controller.
 
 #### Subscriptions

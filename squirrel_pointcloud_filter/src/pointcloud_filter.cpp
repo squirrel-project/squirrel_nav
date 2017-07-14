@@ -25,30 +25,12 @@
 
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace squirrel_pointcloud_filter {
 
-PointCloudFilter::PointCloudFilter() : voxel_filter_(nullptr) {
-  ros::NodeHandle pnh("~"), gnh;
-  pnh.param<bool>("nan_free", nanfree_, false);
-  pnh.param<double>("update_rate_hz", update_rate_, 40.);
-  pnh.param<std::vector<double>>(
-      "resolutions_xyz", resolutions_xyz_, {0.05, 0.05, 0.05});
-  if (resolutions_xyz_.size() != 3) {
-    const std::string& node_name = ros::this_node::getName();
-    ROS_WARN_STREAM(
-        node_name << ": Please specify 3 parametrs for voxel filtering "
-                     "resolution. Reset to default [0.05, 0.05, 0.05]");
-    resolutions_xyz_ = {0.05, 0.05, 0.05};
-  }
-  // Initialize publisher and subscribers.
-  pcl_pub_ = gnh.advertise<sensor_msgs::PointCloud2>("/cloud_out", 1);
-  pcl_sub_ = gnh.subscribe(
-      "/cloud_in", 1, &PointCloudFilter::pointCloudCallback, this);
-}
-
 void PointCloudFilter::spin() {
-  ros::Rate lr(update_rate_);
+  ros::Rate lr(params_.update_rate);
   while (ros::ok())
     try {
       ros::spinOnce();
@@ -59,6 +41,27 @@ void PointCloudFilter::spin() {
     }
 }
 
+void PointCloudFilter::initialize() {
+  ros::NodeHandle pnh("~"), gnh;
+  // Initialize the parameter server.
+  dsrv_.reset(new dynamic_reconfigure::Server<PointCloudFilterConfig>(pnh));
+  dsrv_->setCallback(
+      boost::bind(&PointCloudFilter::reconfigureCallback, this, _1, _2));
+  // Initialize publisher and subscribers.
+  pcl_pub_ = gnh.advertise<sensor_msgs::PointCloud2>("/cloud_out", 1);
+  pcl_sub_ = gnh.subscribe(
+      "/cloud_in", 1, &PointCloudFilter::pointCloudCallback, this);
+}
+
+void PointCloudFilter::reconfigureCallback(
+    PointCloudFilterConfig& config, uint32_t level) {
+  params_.nanfree            = config.nanfree;
+  params_.update_rate        = config.update_rate_hz;
+  params_.resolutions_xyz[0] = config.resolution_x;
+  params_.resolutions_xyz[1] = config.resolution_y;
+  params_.resolutions_xyz[2] = config.resolution_z;
+}
+
 void PointCloudFilter::pointCloudCallback(
     const sensor_msgs::PointCloud2::ConstPtr& msg_in) {
   typedef pcl::PointCloud<pcl::PointXYZ> PCLPointCloud;
@@ -66,7 +69,7 @@ void PointCloudFilter::pointCloudCallback(
   PCLPointCloud::Ptr pointcloud_raw(new PCLPointCloud);
   pcl::fromROSMsg(*msg_in, *pointcloud_raw);
   // Filter NaN if needed.
-  if (!nanfree_) {
+  if (!params_.nanfree) {
     std::vector<int> nan_filter;
     pcl::removeNaNFromPointCloud(*pointcloud_raw, *pointcloud_raw, nan_filter);
   }
@@ -75,7 +78,8 @@ void PointCloudFilter::pointCloudCallback(
   voxel_filter_.reset(new pcl::VoxelGrid<pcl::PointXYZ>);
   voxel_filter_->setInputCloud(pointcloud_raw);
   voxel_filter_->setLeafSize(
-      resolutions_xyz_[0], resolutions_xyz_[0], resolutions_xyz_[0]);
+      params_.resolutions_xyz[0], params_.resolutions_xyz[1],
+      params_.resolutions_xyz[2]);
   voxel_filter_->filter(*pointcloud_filtered);
   // Publish the filtered pointcloud.
   sensor_msgs::PointCloud2 msg_out;
@@ -85,6 +89,14 @@ void PointCloudFilter::pointCloudCallback(
   // Info.
   ROS_INFO_STREAM_ONCE(
       ros::this_node::getName() << ": Subscribing to the pointcloud.");
+}
+
+PointCloudFilter::Params PointCloudFilter::Params::defaultParams() {
+  Params params;
+  params.nanfree         = true;
+  params.update_rate     = 10.0;
+  params.resolutions_xyz = {0.05, 0.05, 0.05};
+  return params;
 }
 
 }  // namespace squirrel_pointcloud_filter

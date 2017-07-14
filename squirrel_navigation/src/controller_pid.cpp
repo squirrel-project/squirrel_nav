@@ -48,7 +48,7 @@ void ControllerPID::initialize(const std::string& name) {
   dsrv_->setCallback(
       boost::bind(&ControllerPID::reconfigureCallback, this, _1, _2));
   // Publish the linear twist.
-  cmd_pub_ = pnh.advertise<visualization_msgs::MarkerArray>("cmd", 1);
+  cmd_pub_ = pnh.advertise<visualization_msgs::MarkerArray>("cmd_raw", 1);
   // Initialization successful.
   init_ = true;
   ROS_INFO_STREAM(
