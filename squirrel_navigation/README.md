@@ -109,6 +109,7 @@ detected with depth camera and the safety laser rangefinder.
 - `~/StaticLayer/*` parameters of [`costmap_2d::StaticLayer`](http://docs.ros.org/jade/api/costmap_2d/html/classcostmap__2d_1_1StaticLayer.html).
 
 ### Advertised Services
+Uses messages provided by [squirrel_navigation_msgs](https://github.com/squirrel-project/squirrel_common/tree/indigo_dev/squirrel_navigation_msgs).
 - `~/clearCostmapRegion`
   (`squirrel_navigation_msgs::ClearCostmapRegion`) clears the costmap
   with the region specified by a polygon.
