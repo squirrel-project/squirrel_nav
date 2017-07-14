@@ -58,7 +58,7 @@ Paramters of `squirrel_navigation::GlobalPlanner`:
   yaw. Usable only if `plan_with_footprint` is not enabled.
 - `~/heading` the constant heading to use if
   `plan_with_constant_heading` is enabled.
-- `~/Dijstra/*` parameters of [`nav_core::NavFnROS`][http://wiki.ros.org/navfn].
+- `~/Dijstra/*` parameters of [`nav_core::NavFnROS`](http://wiki.ros.org/navfn).
 - `~/RRTstar/*` parameters of
   `squirrel_navigation::FootprintPlanner`.
   
