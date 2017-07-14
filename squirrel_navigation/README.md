@@ -17,8 +17,9 @@ Contains `squirrel_navigation::GlobalPlanner`,
 `squirrel_navigation::FootprintPlanner` and
 `squirrel_navigation::LocalPlanner` used for 2D navigation.
 
-### Parameters
-Parameters of `squirrel_navigation::LocalPlanner`:
+### Local Planner (`squirrel_navigation::LocalPlanner`)
+
+#### Parameters
 - `~/verbose` set verbosity.
 - `~/odom_topic` the odometry topic.
 - `~/goal_{lin/ang}_tolerance` distance (xy-coordinate) from goal to be
@@ -41,8 +42,24 @@ Parameters of `squirrel_navigation::LocalPlanner`:
 - `~/ControllerPID/k{P/I/D}_{ang/lin}` Controller gains for the linear
   and rotational velocity.
 
-Parameters of `squirrel_navigation::FootprintPlanner` (wrapper around
-`ompl::geometric::RRTstart`, see [OMPL library](http://ompl.kavrakilab.org/)):
+#### Advertised Topics
+- `~/cmd_navigation` (`visualization_msgs::MarkerArray`) the control
+  output by the local planner.
+- `~/reference_pose` (`visualization_msgs::Marker`) the reference pose
+  currently tracked.
+- `~/trajectory` (`geometry_msgs::PoseArray`) the planned trajectory.
+- `~/ControllerPID/cmd` (`visualization_msgs::MarkerArray`) the raw
+  control output by the controller.
+
+#### Subscriptions
+- `/odom` the odometry topic (reconfigurable).
+
+### Footprint Planner (`squirrel_navigation::FootprintPlanner`)
+
+#### Parameters 
+
+This planner is wrapper around `ompl::geometric::RRTstart`, see
+[OMPL library](http://ompl.kavrakilab.org/)):
 - `~/FootprintPlanner/verbose` set verbosity.
 - `~/FootprintPlanner/footprint_topic` the footprint of the robot.
 - `~/FootprintPlanner/collision_check_resolution`  see OMPL.
@@ -51,7 +68,21 @@ Parameters of `squirrel_navigation::FootprintPlanner` (wrapper around
 - `~/FootprintPlanner/map_resolution` see OMPL doc.
 - `~/FootprintPlanner/range` see OMPL doc.
 
-Paramters of `squirrel_navigation::GlobalPlanner`:
+#### Advertised Topics
+- `~/plan` (`nav_msgs::Path`) the computed plan.
+- `~/waypoints` (`geometry_msgs::PoseArray`) the computed waypoints.
+- `~/footprints` (`geometry_msgs::MarkerArray`) the sequence of
+  footprints of the robot on the path's waypoints.
+
+### Subscriptions
+- `/footprint_observer/footprint` the footprint of the robot
+  (reconfigurable).
+
+### Global Planner (`squirrel_navigation::GlobalPlanner`)
+
+#### Parameters 
+
+Parameters of `squirrel_navigation::GlobalPlanner`:
 - `~/verbose` set verbosity.
 - `~/plan_with_footprint` whether to plan with dijkstra or RRT*.
 - `~/plan_with_constant_heading` the resulting path has constant
@@ -59,10 +90,8 @@ Paramters of `squirrel_navigation::GlobalPlanner`:
 - `~/heading` the constant heading to use if
   `plan_with_constant_heading` is enabled.
 - `~/Dijstra/*` parameters of [`nav_core::NavFnROS`](http://wiki.ros.org/navfn).
-- `~/RRTstar/*` parameters of
-  `squirrel_navigation::FootprintPlanner`.
+- `~/RRTstar/*` parameters of `squirrel_navigation::FootprintPlanner`.
   
-
 ## SQUIRREL Costmap layers
 
 Contains `squirrel_navigation::NavigationLayer` which merges obstacles
