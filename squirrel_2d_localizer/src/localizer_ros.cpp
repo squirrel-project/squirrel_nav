@@ -34,6 +34,7 @@
 #include <angles/angles.h>
 
 #include <fstream>
+#include <random>
 #include <stdexcept>
 #include <string>
 
@@ -74,20 +75,20 @@ LocalizerROS::LocalizerROS()
   mm_nh.param<double>("noise_ya", motion_param.noise_ya, 0.);
   mm_nh.param<double>("noise_aa", motion_param.noise_aa, 1.);
   mm_nh.param<double>("noise_magnitude", motion_param.noise_magnitude, 0.5);
-  MotionModel::Ptr motion_model(new MotionModel(motion_param));
+  std::unique_ptr<MotionModel> motion_model(new MotionModel(motion_param));
   // likelihood fields paramters.
   ros::NodeHandle lf_nh("~/latent_model_likelihood_field");
   LatentModelLikelihoodField::Params lmlf_param;
   lf_nh.param<double>("uniform_hit", lmlf_param.uniform_hit, 0.1);
   lf_nh.param<double>("observation_sigma", lmlf_param.observation_sigma, 1.);
-  LatentModelLikelihoodField::Ptr likelihood_field(
+  std::unique_ptr<LatentModelLikelihoodField> likelihood_field(
       new LatentModelLikelihoodField(lmlf_param));
   // laser model params.
   ros::NodeHandle lm_nh("~/laser_model");
   LaserModel::Params lm_param;
   lm_nh.param<double>(
       "beam_min_distance", lm_param.endpoints_min_distance, 0.1);
-  LaserModel::Ptr laser_model(new LaserModel(lm_param));
+  std::unique_ptr<LaserModel> laser_model(new LaserModel(lm_param));
   // init grid map
   GridMap::Params map_params;
   nav_msgs::GetMap get_map;
@@ -114,7 +115,7 @@ LocalizerROS::LocalizerROS()
   // Wait for annoying ROS crap to start up. Apparently no better solution.
   ros::Duration(1.0).sleep();
   // Initialize grid map and likelihood fields.
-  GridMap::Ptr grid_map(new GridMap(map_params));
+  std::unique_ptr<GridMap> grid_map(new GridMap(map_params));
   grid_map->initialize(get_map.response.map.data);
   likelihood_field->initialize(*grid_map);
   ROS_INFO_STREAM(node_name_ << ": Initialized LikelihoodField.");
@@ -196,7 +197,7 @@ void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
     return;
   }
   // update filter.
-  std::unique_lock<std::mutex> lock(update_mtx);
+  std::unique_lock<std::mutex> lock(update_mtx_);
   tf::StampedTransform tf_o2r_new;
   if (!lookupOdometry(scan_time, ros::Duration(0.05), &tf_o2r_new))
     return;
@@ -222,6 +223,43 @@ void LocalizerROS::initialPoseCallback(
   publishPoseWithCovariance(now);
 }
 
+bool LocalizerROS::globalLocalizationCallback(
+    squirrel_2d_localizer_msgs::GlobalLocalization::Request& req,
+    squirrel_2d_localizer_msgs::GlobalLocalization::Response& res) {
+  // Get the gridmap size.
+  const auto gridmap = localizer_->gridMap();
+  double min_x, max_x, min_y, max_y;
+  gridmap->boundingBox(&min_x, &max_x, &min_y, &max_y);
+  // Create the sampler.
+  std::mt19937 rnd(std::rand());
+  std::uniform_real_distribution<double> rand_x(min_x, max_x),
+      rand_y(min_x, min_y), rand_a(0, 2 * M_PI);
+  // Sample new particles.
+  const size_t nparticles = localizer_->params().num_particles;
+  std::vector<Particle> new_particles;
+  new_particles.reserve(nparticles);
+  const ros::Time start = ros::Time::now();
+  for (int i, j; new_particles.size() < nparticles;) {
+    if (ros::Time::now() - start > req.timeout) {
+      res.sampling_time = req.timeout;
+      res.num_sampled_particles = new_particles.size();
+      // Resampling timed out.
+      return false;
+    }
+    const Pose2d particle_pose(rand_x(rnd), rand_y(rnd), rand_a(rnd));
+    const double particle_weight = 1. / nparticles;
+    gridmap->pointToIndices(particle_pose.translation(), &i, &j);
+    if (gridmap->inside(i, j) && gridmap->at(i, j) <= 0.25)
+      new_particles.emplace_back(particle_pose, particle_weight);
+  }
+  res.sampling_time = ros::Time::now() - start;
+  res.num_sampled_particles = nparticles;
+  // Reinitialize the localizer.
+  localizer_->resetParticles(new_particles);
+  // Resampling was successful.
+  return true;
+}
+
 bool LocalizerROS::lookupOdometry(
     const ros::Time& stamp, const ros::Duration& timeout,
     tf::StampedTransform* tf_o2r) {
@@ -236,7 +274,7 @@ bool LocalizerROS::lookupOdometry(
 }
 
 void LocalizerROS::publishTransform(const ros::Time& stamp) {
-  std::unique_lock<std::mutex> lock(update_mtx);
+  std::unique_lock<std::mutex> lock(update_mtx_);
   tf::Transform tf_m2o,
       tf_m2r = ros_conversions::toTFMsgFrom<Pose2d>(localizer_->pose());
   tf_m2o     = tf_m2r * tf_o2r_.inverse();

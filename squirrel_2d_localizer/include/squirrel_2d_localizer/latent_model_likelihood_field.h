@@ -26,16 +26,14 @@
 #include "squirrel_2d_localizer/grid_map.h"
 #include "squirrel_2d_localizer/se2_types.h"
 
-#include <memory>
-
 namespace squirrel_2d_localizer {
 
 class LatentModelLikelihoodField {
  public:
-  typedef std::unique_ptr<LatentModelLikelihoodField> Ptr;
-  typedef std::unique_ptr<LatentModelLikelihoodField const> ConstPtr;
-
-  struct Params {
+  class Params {
+   public:
+    static Params defaultParams();
+    
     double uniform_hit;
     double observation_sigma;
   };
@@ -43,33 +41,29 @@ class LatentModelLikelihoodField {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   
  public:
-  LatentModelLikelihoodField();
-  LatentModelLikelihoodField(const Params& params) : lmlf_params_(params) {};
+  LatentModelLikelihoodField() : params_(Params::defaultParams()) {}
+  LatentModelLikelihoodField(const Params& params) : params_(params) {};
   virtual ~LatentModelLikelihoodField() {}
 
+  // Initialize the likelihood fields.
   void initialize(const GridMap& occupancy_gridmap);
 
+  // Compute the likelihood value.
   double likelihood(int i, int j) const;
 
-  inline const Params& parmas() const { return lmlf_params_; }
-  inline Params& params() { return lmlf_params_; }
+  // Paramters read/write utilites.
+  inline const Params& params() const { return params_; }
+  inline void setParams(const Params& params) { params_ = params; }
+  inline Params& params() { return params_; }
   
  private:
-  inline bool inside(int i, int j) const {
-    return i >= 0 && i < likelihood_cache_.rows() && j >= 0 &&
-           j < likelihood_cache_.cols();
-  }
-
-  inline void setDefaultParams() {
-    lmlf_params_.uniform_hit       = 0.1;
-    lmlf_params_.observation_sigma = 1.0;
-  }
+  bool inside(int i, int j) const;
 
  private:
+  Params params_;
+
   Eigen::MatrixXd likelihood_cache_;
   int likelihood_cache_rows_, likelihood_cache_cols_;
-
-  Params lmlf_params_;
 };
 
 }  // namespace squirrel_2d_localizer

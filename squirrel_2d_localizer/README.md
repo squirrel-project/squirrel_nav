@@ -36,16 +36,22 @@ to retrieve the map.
   parameter of the gaussian kernels.
 - `~/laser_model/beam_min_distance` (default `0.1`) downsampling
   factor for the laser readings.
- 	  
-### Subscribed topics
+
+### Advertised Services
+Uses messages provided by [squirrel_2d_localization_msgs](https://github.com/federico-b/squirrel_common/tree/indigo_dev/squirrel_2d_localizer_msgs)
+- `~/globalLocalization`
+  (`squirrel_2d_localizer_msgs::GlobalLocalization`) distribute
+  particles all over the free space of the map.
+
+### Advertised Topics
+- `/tf`: transform from `map_frame` to `odom_frame`.
+- `~/pose` (*geometry_msgs/PoseWithCovarianceStamped*): the robot pose
+  in `map_frame`.
+- `~/particles` (*geometry_msgs/PoseArray): the particle set in `map_frame`.
+
+### Subscriptions
 - `/scan`, (*sensor_msgs/Scan*) the laser scan.
 - `/tf`, transformation from the `robot_frame` and the `odom_frame` as well
   as from `robot_frame` to the sensor link.
 - `/initialpose` (*geometry_msgs/PoseWithCovarianceStamped*) initial
   guess.
-  
-### Published topics
-- `/tf`: transform from `map_frame` to `odom_frame`.
-- `~/pose` (*geometry_msgs/PoseWithCovarianceStamped*): the robot pose
-  in `map_frame`.
-- `~/particles` (*geometry_msgs/PoseArray): the particle set in `map_frame`.

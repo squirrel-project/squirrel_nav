@@ -31,6 +31,7 @@ namespace squirrel_2d_localizer {
 
 namespace resampling {
 
+// Importance sampling via roulette sampling (courtesy of Rainer Kuemmerle).
 void importanceSampling(std::vector<Particle>* particles);
 
 namespace internal {

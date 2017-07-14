@@ -29,22 +29,34 @@
 namespace squirrel_2d_localizer {
 
 void LatentModelLikelihoodField::initialize(const GridMap& occupancy_gridmap) {
-  const size_t h    = occupancy_gridmap.height();
-  const size_t w    = occupancy_gridmap.width();
-  const double res  = occupancy_gridmap.resolution();
+  const size_t h    = occupancy_gridmap.params().height;
+  const size_t w    = occupancy_gridmap.params().width;
+  const double res  = occupancy_gridmap.params().resolution;
   likelihood_cache_ = Eigen::MatrixXd::Zero(h, w);
   // Compute Gaussian convolution on the map.
   convolution::computeGaussianConvolution2d(
-      lmlf_params_.observation_sigma, res, occupancy_gridmap,
-      &likelihood_cache_);
+      params_.observation_sigma, res, occupancy_gridmap, &likelihood_cache_);
   // Add the uniform distribution.
-  likelihood_cache_ += lmlf_params_.uniform_hit * Eigen::MatrixXd::Ones(h, w);
+  likelihood_cache_ += params_.uniform_hit * Eigen::MatrixXd::Ones(h, w);
 }
 
 double LatentModelLikelihoodField::likelihood(int i, int j) const {
   if (inside(i, j))
     return likelihood_cache_(i, j);
-  return lmlf_params_.uniform_hit;
+  return params_.uniform_hit;
+}
+
+bool LatentModelLikelihoodField::inside(int i, int j) const {
+  return i >= 0 && i < likelihood_cache_.rows() && j >= 0 &&
+         j < likelihood_cache_.cols();
+}
+
+LatentModelLikelihoodField::Params
+    LatentModelLikelihoodField::Params::defaultParams() {
+  Params params;
+  params.uniform_hit       = 0.1;
+  params.observation_sigma = 1.0;
+  return params;
 }
 
 }  // namespace squirrel_2d_localizer

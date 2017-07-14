@@ -66,12 +66,14 @@ typedef Pose2d Transform2d;
 
 namespace ros_conversions {
 
+// Convert to SE2 a ros message
 template <typename TypeSE2>
 TypeSE2 fromROSMsgTo(const geometry_msgs::Pose& p) {
   TypeSE2 output(p.position.x, p.position.y, tf::getYaw(p.orientation));
   return output;
 }
 
+// Convert to SE2 to TF pose.
 template <typename TypeSE2>
 TypeSE2 fromTFMsgTo(const tf::Transform& tf) {
   TypeSE2 output(
@@ -80,6 +82,7 @@ TypeSE2 fromTFMsgTo(const tf::Transform& tf) {
   return output;
 }
 
+// Convert to ROS msg an SE2.
 template <typename TypeSE2>
 geometry_msgs::Pose toROSMsgFrom(const TypeSE2& p) {
   geometry_msgs::Pose output;
@@ -89,6 +92,7 @@ geometry_msgs::Pose toROSMsgFrom(const TypeSE2& p) {
   return output;
 }
 
+// Convert to TF Msg an SE2.
 template <typename TypeSE2>
 tf::Transform toTFMsgFrom(const TypeSE2& p) {
   tf::Vector3 translation(p[0], p[1], 0.);

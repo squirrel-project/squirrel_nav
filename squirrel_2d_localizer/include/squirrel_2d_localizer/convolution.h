@@ -29,12 +29,14 @@ namespace squirrel_2d_localizer {
 
 namespace convolution {
 
+// Compute image convultion using a Gaussian kernel in 2D.
 void computeGaussianConvolution2d(
     double sigma, double resolution, const Eigen::MatrixXd& matrix,
     Eigen::MatrixXd* output);
 
 namespace internal {
 
+// Compute image convultion using a Gaussian kernel in 1D.
 void computeGaussianConvolution1d(
     double sigma, double resolution, const Eigen::VectorXd& vector,
     Eigen::VectorXd* output);

@@ -132,7 +132,7 @@ bool NavigationLayer::clearCostmapRegionCallback(
   // Getting clearing bounding box.
   const int inf = std::numeric_limits<double>::max();
   int min_i = inf, min_j = inf, max_i = -inf, max_j = -inf;
-  for (const auto& point : req.object.points) {
+  for (const auto& point : req.region.points) {
     int p_i, p_j;
     worldToMapEnforceBounds(point.x, point.y, p_i, p_j);
     min_i = std::min(min_i, p_i);
