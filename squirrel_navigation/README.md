@@ -41,10 +41,11 @@ Parameters of `squirrel_navigation::LocalPlanner`:
 - `~/ControllerPID/k{P/I/D}_{ang/lin}` Controller gains for the linear
   and rotational velocity.
 
-Parameters of `squirrel_navigation::FootprintPlanner` (RRT* planner):
+Parameters of `squirrel_navigation::FootprintPlanner` (wrapper around
+`ompl::geometric::RRTstart`, see [OMPL library](http://ompl.kavrakilab.org/)):
 - `~/FootprintPlanner/verbose` set verbosity.
 - `~/FootprintPlanner/footprint_topic` the footprint of the robot.
-- `~/FootprintPlanner/collision_check_resolution` check OMPL doc.
+- `~/FootprintPlanner/collision_check_resolution`  see OMPL.
 - `~/FootprintPlanner/max_planning_time` see OMPL doc.
 - `~/FootprintPlanner/max_simplification_time` see OMPL doc.
 - `~/FootprintPlanner/map_resolution` see OMPL doc.
@@ -57,7 +58,7 @@ Paramters of `squirrel_navigation::GlobalPlanner`:
   yaw. Usable only if `plan_with_footprint` is not enabled.
 - `~/heading` the constant heading to use if
   `plan_with_constant_heading` is enabled.
-- `~/Dijstra/*` parameters of `nav_core::NavFnROS`.
+- `~/Dijstra/*` parameters of [`nav_core::NavFnROS`][http://wiki.ros.org/navfn].
 - `~/RRTstar/*` parameters of
   `squirrel_navigation::FootprintPlanner`.
   
