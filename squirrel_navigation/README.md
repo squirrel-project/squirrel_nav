@@ -71,9 +71,9 @@ detected with depth camera and the safety laser rangefinder.
 ### Parameters
 - `~/use_kinect` whether to use or not the kinect.
 - `~/use_laser` whether to use or not the laser scan.
-- `~/LaserLayer/*` parameters of `costmap_2d::ObstacleLayer`.
-- `~/KinectLayer/*` parameters of `costmap_2d::VoxelLayer`.
-- `~/StaticLayer/*` parameters of `costmap_2d::StaticLayer`.
+- `~/LaserLayer/*` parameters of [`costmap_2d::ObstacleLayer`](http://docs.ros.org/jade/api/costmap_2d/html/classcostmap__2d_1_1ObstacleLayer.html).
+- `~/KinectLayer/*` parameters of [`costmap_2d::VoxelLayer`](http://docs.ros.org/jade/api/costmap_2d/html/classcostmap__2d_1_1VoxelLayer.html).
+- `~/StaticLayer/*` parameters of [`costmap_2d::StaticLayer`](http://docs.ros.org/jade/api/costmap_2d/html/classcostmap__2d_1_1StaticLayer.html).
 
 ### Services.
 - `~/clearCostmapRegion`
