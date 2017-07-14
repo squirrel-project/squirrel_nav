@@ -23,6 +23,7 @@
 
 #include <pluginlib/class_list_macros.h>
 
+#include <thread>
 #include <vector>
 
 PLUGINLIB_EXPORT_CLASS(squirrel_navigation::NavigationLayer, costmap_2d::Layer);
