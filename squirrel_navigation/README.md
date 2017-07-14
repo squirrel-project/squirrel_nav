@@ -29,9 +29,9 @@ Contains `squirrel_navigation::GlobalPlanner`,
   reference position (pid controller) to ask for replanning.
 - `~/safety_observers` (`SafetyScanObserver`, `ArmSkinObserver`) robot
   state observers (**not stable yet**).
-- `~/MotionPlanner/max_<linear/angular>_velocity` maximum velocities used
+- `~/MotionPlanner/max_{linear|angular}_velocity` maximum velocities used
   during the velocity planning phase.
-- `~/MotionPlanner/{linear/angular}_smoother` smoothing parameter for the path
+- `~/MotionPlanner/{linear|angular}_smoother` smoothing parameter for the path
 - `~/MotionPlanner/time_scaler` global velocity rescaler for the
   velocity planning phase.
 - `~/MotionPlanner/waypoints_heading_lookahead` Used when
@@ -39,7 +39,7 @@ Contains `squirrel_navigation::GlobalPlanner`,
   for the new planned path.
 - `~/MotionPlanner/lookahead` temporal lookahead for the reference
   pose (pid controlller).
-- `~/ControllerPID/k{P/I/D}_{ang/lin}` Controller gains for the linear
+- `~/ControllerPID/k{P|I|D}_{ang|lin}` Controller gains for the linear
   and rotational velocity.
 
 #### Advertised Topics
@@ -89,8 +89,12 @@ Parameters of `squirrel_navigation::GlobalPlanner`:
   yaw. Usable only if `plan_with_footprint` is not enabled.
 - `~/heading` the constant heading to use if
   `plan_with_constant_heading` is enabled.
-- `~/Dijstra/*` parameters of [`nav_core::NavFnROS`](http://wiki.ros.org/navfn).
+- `~/Dijkstra/*` parameters of [`nav_core::NavFnROS`](http://wiki.ros.org/navfn).
 - `~/RRTstar/*` parameters of `squirrel_navigation::FootprintPlanner`.
+  
+### Advertised Topics  
+- `~/Dijkstra/*` topics advertised by `nav_core::NavFnROS`.
+- `~/RRTstart/*` topics advertised by `squirrel_navigation::FootprintPlanner`.
   
 ## SQUIRREL Costmap layers
 
