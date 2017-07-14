@@ -108,7 +108,7 @@ detected with depth camera and the safety laser rangefinder.
 - `~/KinectLayer/*` parameters of [`costmap_2d::VoxelLayer`](http://docs.ros.org/jade/api/costmap_2d/html/classcostmap__2d_1_1VoxelLayer.html).
 - `~/StaticLayer/*` parameters of [`costmap_2d::StaticLayer`](http://docs.ros.org/jade/api/costmap_2d/html/classcostmap__2d_1_1StaticLayer.html).
 
-### Services.
+### Advertised Services
 - `~/clearCostmapRegion`
   (`squirrel_navigation_msgs::ClearCostmapRegion`) clears the costmap
   with the region specified by a polygon.
