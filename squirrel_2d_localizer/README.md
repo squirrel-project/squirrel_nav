@@ -3,7 +3,7 @@ squirrel_2d_localizer
 
 Standard 2d Monte Carlo Localization for SQUIRREL
 
-### Nodes
+## Nodes
 
 The package provide a single node
 
@@ -11,6 +11,8 @@ The package provide a single node
 
 It requires the service `/static_map` published by `map_server` node
 to retrieve the map.
+
+## `squirrel_2d_localizer_node`
 
 ### Parameters
 - `~/map_frame` (defualt `/map`): the world fixed frame

@@ -38,8 +38,11 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
 
-#include <memory>
+#include <tf/transform_listener.h>
+
 #include <array>
+#include <memory>
+#include <string>
 
 namespace squirrel_pointcloud_filter {
 
@@ -49,9 +52,12 @@ class PointCloudFilter {
    public:
     static Params defaultParams();
 
-    bool nanfree;
+    std::string global_frame_id;
+    bool nanfree, do_ground_segmentation, do_voxel_filter;
+    bool ground_filter_voxelized;
     double update_rate;
     std::array<double, 3> resolutions_xyz;
+    double ground_threshold;
   };
 
  public:
@@ -69,13 +75,21 @@ class PointCloudFilter {
   // Callbacks.
   void reconfigureCallback(PointCloudFilterConfig& config, uint32_t level);
   void pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg_in);
-  
+
+  // Filter the ground.
+  void segmentGround(
+      const pcl::PointCloud<pcl::PointXYZ>& cloud,
+      pcl::PointCloud<pcl::PointXYZ>* ground,
+      pcl::PointCloud<pcl::PointXYZ>* nonground) const;
+
  private:
   Params params_;
   std::unique_ptr<dynamic_reconfigure::Server<PointCloudFilterConfig>> dsrv_;
 
-  ros::Publisher pcl_pub_;
+  ros::Publisher voxel_pcl_pub_, ground_pcl_pub_, nonground_pcl_pub_;
   ros::Subscriber pcl_sub_;
+
+  tf::TransformListener tfl_;
   
   std::unique_ptr<pcl::VoxelGrid<pcl::PointXYZ>> voxel_filter_;
 };
