@@ -64,6 +64,7 @@ void PointCloudFilter::reconfigureCallback(
   params_.nanfree                = config.nanfree;
   params_.update_rate            = config.update_rate_hz;
   params_.do_voxel_filter        = config.do_voxel_filter;
+  params_.ground_pcls_voxelized  = config.ground_pcls_voxelized;
   params_.do_ground_segmentation = config.do_ground_segmentation;
   params_.resolutions_xyz[0]     = config.resolution_x;
   params_.resolutions_xyz[1]     = config.resolution_y;
