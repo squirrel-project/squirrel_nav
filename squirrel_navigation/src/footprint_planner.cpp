@@ -57,7 +57,7 @@ void FootprintPlanner::initialize(
   const auto costmap = costmap_ros->getCostmap();
   costmap_ros_.reset(costmap_ros);
   costmap_model_.reset(new base_local_planner::CostmapModel(*costmap));
-  // Publishers and subscribers.
+  // Initialize publishers and subscribers.
   plan_pub_      = pnh.advertise<nav_msgs::Path>("plan", 1);
   waypoints_pub_ = pnh.advertise<geometry_msgs::PoseArray>("waypoints", 1);
   footprints_pub_ =

@@ -75,7 +75,7 @@ void LocalPlanner::initialize(
       }
     }
   }
-  // Initialize publishers.
+  // Initialize publishers and subscribers.
   cmd_pub_ =
       pnh.advertise<visualization_msgs::MarkerArray>("cmd_navigation", 1);
   ref_pub_  = pnh.advertise<visualization_msgs::Marker>("reference_pose", 1);

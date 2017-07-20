@@ -14,7 +14,7 @@ GlobalPlanner:
     visualize_potential: false
 
   RRTstar:
-    footpint_topic: "/squirrel_footprint_observer/footprint"
+    footprint_topic: "/squirrel_footprint_observer/footprint"
     collision_check_resolution: 0.05
     max_planning_time: 0.5
     max_simplification_time: 0.5

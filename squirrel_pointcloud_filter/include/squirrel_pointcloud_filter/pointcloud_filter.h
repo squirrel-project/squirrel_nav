@@ -54,7 +54,7 @@ class PointCloudFilter {
 
     std::string global_frame_id;
     bool nanfree, do_ground_segmentation, do_voxel_filter;
-    bool ground_filter_voxelized;
+    bool ground_filter_voxelized, ground_pcls_voxelized;
     double update_rate;
     std::array<double, 3> resolutions_xyz;
     double ground_threshold;

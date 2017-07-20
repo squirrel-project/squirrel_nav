@@ -118,7 +118,7 @@ void ControllerPID::publishTwist(
   visualization_msgs::Marker marker_lin_cmd;
   marker_lin_cmd.id               = 0;
   marker_lin_cmd.header           = header;
-  marker_lin_cmd.ns               = "cmd";
+  marker_lin_cmd.ns               = "cmd_raw";
   marker_lin_cmd.type             = visualization_msgs::Marker::ARROW;
   marker_lin_cmd.action           = visualization_msgs::Marker::MODIFY;
   marker_lin_cmd.pose.position    = actuation_point;
@@ -134,7 +134,7 @@ void ControllerPID::publishTwist(
   visualization_msgs::Marker marker_ang_cmd;
   marker_ang_cmd.id               = 1;
   marker_ang_cmd.header           = header;
-  marker_ang_cmd.ns               = "cmd";
+  marker_ang_cmd.ns               = "cmd_raw";
   marker_ang_cmd.type             = visualization_msgs::Marker::ARROW;
   marker_ang_cmd.action           = visualization_msgs::Marker::MODIFY;
   marker_ang_cmd.pose.position.x  = actuation_point.x + 0.22 * std::cos(yaw);
