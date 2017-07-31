@@ -26,7 +26,6 @@
 #include "squirrel_2d_localizer/math_types.h"
 
 namespace squirrel_2d_localizer {
-
 namespace convolution {
 
 // Compute image convultion using a Gaussian kernel in 2D.
@@ -42,9 +41,7 @@ void computeGaussianConvolution1d(
     Eigen::VectorXd* output);
 
 }  // namespace internal
-
 }  // namespace convolution
-
 }  // namespace squirrel_2d_localizer
 
 #endif /* SQUIRREL_2D_LOCALIZER_CONVOLUTION_H_ */

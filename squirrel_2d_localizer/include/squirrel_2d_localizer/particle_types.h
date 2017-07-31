@@ -107,7 +107,6 @@ inline void computeMeanAndCovariance(
 }
 
 }  // namespace particles
-
 }  // namespace squirrel_2d_localizer
 
 #endif /* SQUIRREL_2D_LOCALIZER_PARTICLE_TYPES_H_ */

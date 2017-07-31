@@ -102,7 +102,6 @@ tf::Transform toTFMsgFrom(const TypeSE2& p) {
 }
 
 }  // namespace ros_conversions
-
 }  // namespace squirrel_2d_localizer
 
 #endif /* SQUIRREL_2D_LOCALIZER_SE2_TYPES_H_ */

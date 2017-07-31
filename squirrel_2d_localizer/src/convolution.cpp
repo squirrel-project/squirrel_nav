@@ -26,7 +26,6 @@
 #include <iostream>
 
 namespace squirrel_2d_localizer {
-
 namespace convolution {
 
 void computeGaussianConvolution2d(
@@ -70,7 +69,5 @@ void computeGaussianConvolution1d(
 }
 
 }  // namespace internal
-
 }  // namespace convolution
-
 }  // namespace squirrel_2d_localizer

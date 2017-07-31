@@ -33,7 +33,6 @@
 #include <thread>
 
 namespace squirrel_navigation {
-
 namespace safety {
 
 void ScanObserver::initialize(const std::string& name) {
@@ -184,5 +183,4 @@ ScanObserver::Params ScanObserver::Params::defaultParams() {
 }
 
 }  // namespace safety
-
 }  // namespace squirrel_navigation

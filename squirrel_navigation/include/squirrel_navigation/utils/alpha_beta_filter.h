@@ -35,7 +35,6 @@
 #include <utility>
 
 namespace squirrel_navigation {
-
 namespace utils {
 
 class AlphaBetaFilter {
@@ -95,7 +94,6 @@ class AlphaBetaFilter {
 };
 
 }  // namespace utils
-
 }  // namespace squirrel_navigation
 
 #endif /* SQUIRREL_NAVIGATION_UTILS_ALPHA_BETA_FILTER_H_ */

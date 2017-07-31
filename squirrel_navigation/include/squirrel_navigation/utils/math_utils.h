@@ -37,7 +37,6 @@
 #include <cmath>
 
 namespace squirrel_navigation {
-
 namespace math {
 
 // SE2 transforms.
@@ -176,7 +175,6 @@ inline geometry_msgs::Quaternion slerpYaw(
 }
 
 }  // namespace math
-
 }  // namespace squirrel_navigation
 
 #endif /* SQUIRREL_NAVIGATION_UTILS_MATH_UTILS_H_ */

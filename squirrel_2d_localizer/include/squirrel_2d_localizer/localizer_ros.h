@@ -77,8 +77,8 @@ class LocalizerROS {
 
   tf::StampedTransform tf_m2r_, tf_o2r_;
   tf::TransformListener tfl_;
-  tf::TransformBroadcaster tfb_;
-
+  tf::TransformBroadcaster tfb_, extra_tfb_;
+  
   ros::ServiceServer gloc_srv_;
   ros::Publisher pose_pub_, particles_pub_;
   ros::Subscriber scan_sub_, initpose_sub_;
@@ -89,7 +89,10 @@ class LocalizerROS {
   bool use_twist_correction_;
   std::unique_ptr<TwistCorrectionROS> twist_correction_;
 
+  bool publish_extra_tf_;
+  
   std::string map_frame_id_, odom_frame_id_, robot_frame_id_;
+  std::string extra_parent_frame_id_, extra_child_frame_id_;
   std::string node_name_;
 
   bool update_laser_params_;

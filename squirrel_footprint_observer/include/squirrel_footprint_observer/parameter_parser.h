@@ -24,7 +24,6 @@
 #include <vector>
 
 namespace squirrel_footprint_observer {
-
 namespace parameter_parser {
 
 inline bool parseFootprintParameter(
@@ -45,7 +44,6 @@ inline bool parseFootprintParameter(
 }
 
 }  // namespace parameter_observer
-
 }  // namespace squirrel_footprint_parser
 
 #endif /* SQUIRREL_FLOORPLAN_LOCALIZER_PARAMETER_PARSER_H_ */

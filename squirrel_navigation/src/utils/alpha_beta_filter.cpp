@@ -26,7 +26,6 @@
 #include <cmath>
 
 namespace squirrel_navigation {
-
 namespace utils {
 
 AlphaBetaFilter::AlphaBetaFilter()
@@ -90,5 +89,4 @@ AlphaBetaFilter::State::State(
     : x(x0), v(v0), t(t0) {}
 
 }  // namespace utils
-
 }  // namespace squirrel_navigation

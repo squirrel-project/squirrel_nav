@@ -27,7 +27,6 @@
 #include <thread>
 
 namespace squirrel_navigation {
-
 namespace safety {
 
 ArmSkinObserver::ArmSkinObserver()
@@ -86,5 +85,4 @@ ArmSkinObserver::Params ArmSkinObserver::Params::defaultParams() {
 }
 
 }  // namespace safety
-
 }  // namespace squirrel_navigation

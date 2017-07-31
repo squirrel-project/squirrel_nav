@@ -37,7 +37,6 @@
 #include <mutex>
 
 namespace squirrel_navigation {
-
 namespace safety {
 
 class ArmSkinObserver : public Observer {
@@ -84,7 +83,6 @@ class ArmSkinObserver : public Observer {
 };
 
 }  // namespace safety
-
 }  // namespace squirrel_navigation
 
 #endif /* SQUIRREL_NAVIGATION_SAFETY_ARM_SKIN_OBSERVER_H_ */

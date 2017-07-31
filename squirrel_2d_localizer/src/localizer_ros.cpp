@@ -44,9 +44,13 @@ LocalizerROS::LocalizerROS()
     : node_name_(ros::this_node::getName()), update_laser_params_(true) {
   ros::NodeHandle nh("~"), gnh;
   // frames.
-  nh.param<std::string>("map_frame", map_frame_id_, "/map");
-  nh.param<std::string>("odom_frame", odom_frame_id_, "/odom");
-  nh.param<std::string>("robot_frame", robot_frame_id_, "/base_link");
+  nh.param<std::string>("map_frame", map_frame_id_, "map");
+  nh.param<std::string>("odom_frame", odom_frame_id_, "odom");
+  nh.param<std::string>("robot_frame", robot_frame_id_, "base_link");
+  // Publish extra frames.
+  nh.param<bool>("publish_extra_tf", publish_extra_tf_, false);
+  nh.param<std::string>("extra_parent_frame_id", extra_parent_frame_id_, "map");
+  nh.param<std::string>("extra_child_frame_id", extra_child_frame_id_, "orig");
   // initialization
   nh.param<bool>("use_last_pose", use_last_pose_, false);
   nh.param<double>("init_pose_x", init_x_, 0.);
@@ -241,7 +245,7 @@ bool LocalizerROS::globalLocalizationCallback(
   const ros::Time start = ros::Time::now();
   for (int i, j; new_particles.size() < nparticles;) {
     if (ros::Time::now() - start > req.timeout) {
-      res.sampling_time = req.timeout;
+      res.sampling_time         = req.timeout;
       res.num_sampled_particles = new_particles.size();
       // Resampling timed out.
       return false;
@@ -252,7 +256,7 @@ bool LocalizerROS::globalLocalizationCallback(
     if (gridmap->inside(i, j) && gridmap->at(i, j) <= 0.25)
       new_particles.emplace_back(particle_pose, particle_weight);
   }
-  res.sampling_time = ros::Time::now() - start;
+  res.sampling_time         = ros::Time::now() - start;
   res.num_sampled_particles = nparticles;
   // Reinitialize the localizer.
   localizer_->resetParticles(new_particles);
@@ -280,6 +284,9 @@ void LocalizerROS::publishTransform(const ros::Time& stamp) {
   tf_m2o     = tf_m2r * tf_o2r_.inverse();
   tfb_.sendTransform(
       tf::StampedTransform(tf_m2o, stamp, map_frame_id_, odom_frame_id_));
+  if (publish_extra_frame_)
+    extra_tfb_.sendTransform(tf::StampedTransform(
+        tf_m2o, stamp, extra_parent_frame_id_, extra_child_frame_id_));
 }
 
 void LocalizerROS::publishParticles(const ros::Time& stamp) {

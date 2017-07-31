@@ -31,7 +31,6 @@
 #include <string>
 
 namespace squirrel_navigation {
-
 namespace utils {
 
 class Controller {
@@ -51,7 +50,6 @@ class Controller {
 };
 
 }  // namespace utils
-
 }  // namespace squirrel_navigation
 
 #endif /* SQUIRREL_NAVIGATION_UTILS_CONTROLLER_H_ */

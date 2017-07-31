@@ -28,7 +28,6 @@
 #include <mutex>
 
 namespace squirrel_2d_localizer {
-
 namespace resampling {
 
 // Importance sampling via roulette sampling (courtesy of Rainer Kuemmerle).
@@ -39,9 +38,7 @@ namespace internal {
 static std::mutex resampling_mtx_;
 
 }  // namespace internal
-
 }  // namespace resampling
-
 }  // namespace squirrel_2d_localizer
 
 #endif /* SQUIRREL_2D_LOCALIZER_RESAMPLING_H_ */

@@ -44,7 +44,6 @@
 #include <string>
 
 namespace squirrel_navigation {
-
 namespace safety {
 
 class ScanObserver : public Observer {
@@ -111,7 +110,6 @@ class ScanObserver : public Observer {
 };
 
 }  // namespace safety
-
 }  // namespace squirrel_navigation
 
 #endif /* SQUIRREL_NAVIGATION_SAFETY_SCAN_OBSERVER_H_ */

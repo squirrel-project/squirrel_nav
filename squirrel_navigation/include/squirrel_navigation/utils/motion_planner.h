@@ -33,7 +33,6 @@
 #include <vector>
 
 namespace squirrel_navigation {
-
 namespace utils {
 
 class MotionPlanner {
@@ -58,7 +57,6 @@ class MotionPlanner {
 };
 
 }  // namespace utils
-
 }  // namespace squirrel_navigation
 
 #endif /* SQUIRREL_NAVIGATION_UTILS_MOTION_PLANNER_H_ */

@@ -37,8 +37,6 @@ void approximatedCircle(double radius, std::vector<Point2D>* polygon) {
   }
 }
 
-
-
 }  // namespace squirrel_footprint_observer
 
 #endif /* SQUIRREL_FOOTPRINT_OBSERVER_FOOTPRINT_UTILS_H_ */

@@ -24,7 +24,6 @@
 #define SQUIRREL_NAVIGATION_SAFETY_OBSERVER_H_
 
 namespace squirrel_navigation {
-
 namespace safety {
 
 class Observer {
@@ -37,7 +36,6 @@ class Observer {
 };
 
 }  // namespace safety
-
 }  // namespace squirrel_navigation
 
 #endif /* SQUIRREL_NAVIGATION_SAFETY_OBSERVER_H_ */
