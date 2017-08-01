@@ -40,7 +40,6 @@ catkin_package(
  LIBRARIES squirrel_pointcloud_filter_node
  CATKIN_DEPENDS ${squirrel_pointcloud_filter_DEPENDENCIES})
 
-
 ## Install
 install(
   TARGETS squirrel_pointcloud_filter_node
