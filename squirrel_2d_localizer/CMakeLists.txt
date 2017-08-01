@@ -30,7 +30,8 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 ## Set ROS dependencies
 set(squirrel_2d_localizer_DEPENDENCIES
-  geometry_msgs message_filters nav_msgs roscpp roslib sensor_msgs tf)
+  geometry_msgs message_filters nav_msgs roscpp roslib sensor_msgs
+  squirrel_2d_localizer_msgs tf)
 
 ## Import ROS dependencies
 find_package(catkin REQUIRED COMPONENTS ${squirrel_2d_localizer_DEPENDENCIES})
