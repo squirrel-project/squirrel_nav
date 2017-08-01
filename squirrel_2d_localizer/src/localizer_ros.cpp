@@ -284,7 +284,7 @@ void LocalizerROS::publishTransform(const ros::Time& stamp) {
   tf_m2o     = tf_m2r * tf_o2r_.inverse();
   tfb_.sendTransform(
       tf::StampedTransform(tf_m2o, stamp, map_frame_id_, odom_frame_id_));
-  if (publish_extra_frame_)
+  if (publish_extra_tf_)
     extra_tfb_.sendTransform(tf::StampedTransform(
         tf_m2o, stamp, extra_parent_frame_id_, extra_child_frame_id_));
 }
