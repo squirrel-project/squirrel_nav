@@ -294,9 +294,10 @@ void LocalizerROS::publishParticles(const ros::Time& stamp) {
   geometry_msgs::PoseArray msg;
   msg.header.frame_id = map_frame_id_;
   msg.header.stamp    = stamp;
-  msg.poses.resize(particles.size());
-  for (size_t i  = 0; i < particles.size(); ++i)
-    msg.poses[i] = ros_conversions::toROSMsgFrom<Pose2d>(particles[i].pose);
+  msg.poses.reserve(particles.size());
+  for (size_t i = 0; i < particles.size(); ++i)
+    msg.poses.emplace_back(
+        ros_conversions::toROSMsgFrom<Pose2d>(particles[i].pose));
   particles_pub_.publish(msg);
 }
 
