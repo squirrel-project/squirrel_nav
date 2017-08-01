@@ -7,7 +7,7 @@ LocalPlanner:
   max_safe_ang_velocity: 0.9
   max_safe_lin_displacement: 0.5
   max_safe_ang_displacement: 1.0
-  safety_observers: ["SafetyScanObserver", "ArmSkinObserver"]
+  safety_observers: ["arm_skin_observer"]
 
   MotionPlanner:
     max_linear_velocity: 0.8
@@ -26,7 +26,7 @@ LocalPlanner:
     kD_lin: 0.0001
     kD_ang: 0.0001
   
-  SafetyScanObserver:
+  scan_safety_observer:
     verbose: false
     scan_topic: "/scan"
     max_safety_rangevel: 0.5
@@ -34,7 +34,7 @@ LocalPlanner:
     ab_filter: {alpha: 0.1, beta: 0.005}
     enabled: false
 
-  ArmSkinObserver:
+  arm_skin_observer:
     verbose: false
     topic_name: "/arm_skin"
     enabled: false

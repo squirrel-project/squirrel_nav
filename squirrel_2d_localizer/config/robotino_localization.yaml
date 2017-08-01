@@ -23,7 +23,7 @@ twist_correction:
 
 ## localizer parameters
 localizer:
-  num_particles: 500
+  num_particles: 250
   min_lin_update: 0.0
   min_ang_update: 0.0
   init_stddev_x: 0.3
@@ -47,4 +47,4 @@ latent_model_likelihood_field:
 
 ## laser beams model
 laser_model:
-  beam_min_distance: 0.15
+  beam_min_distance: 0.25

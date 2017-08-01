@@ -1,18 +1,11 @@
 <launch>
-
   <arg name="rviz" default="false" />
   <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
   <arg name="robot_id" default="alufr-robotino" />
   <arg name="3d_mapping" default="false" />
   <arg name="use_last_pose" default="true"/>
   <arg name="twist_mux" default="true"/>
-  <arg name="plan_with_arm" default="false"/>
 
-  <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/robot_6dof_base_params.yaml" 
-            command="load" if="$(arg plan_with_arm)"/>
-  <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/robot_base_params.yaml" 
-            command="load" unless="$(arg plan_with_arm)"/>
-    
   <!-- Run Monte Carlo Localization (many parameters in squirrel_localizer.launch) -->
   <include file="$(find squirrel_2d_localizer)/launch/squirrel_2d_localizer.launch">
     <arg name="map_file" value="$(arg map_file)"/>
@@ -26,7 +19,9 @@
   </include>
 
   <!-- Run the footprint observer -->
-  <include file="$(find squirrel_footprint_observer)/launch/footprint_observer.launch" />
+  <include file="$(find squirrel_footprint_observer)/launch/footprint_observer.launch">
+    <arg name="config_file" value="$(find squirrel_footprint_observer)/config/robotino_6dof_footprint.yaml"/>
+  </include>
 
   <!-- Run move_base -->
   <rosparam command="delete" ns="move_base"/> <!-- Fix move_base bug -->

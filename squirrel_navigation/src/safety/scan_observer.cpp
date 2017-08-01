@@ -1,24 +1,30 @@
-// The MIT License (MIT)
-//
-// Copyright (c) 2017 Federico Boniardi and Wolfram Burgard
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
+// Copyright (c) 2017, Federico Boniardi and Wolfram Burgard
+// All rights reserved.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// 
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+// 
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+// 
+// * Neither the name of the University of Freiburg nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "squirrel_navigation/safety/scan_observer.h"
 
@@ -34,6 +40,8 @@
 
 namespace squirrel_navigation {
 namespace safety {
+
+const std::string ScanObserver::tag = "scan_safety_observer";
 
 void ScanObserver::initialize(const std::string& name) {
   if (init_)
@@ -65,16 +73,17 @@ bool ScanObserver::safe() const {
     if (!safeCheck(i)) {
       if (params_.verbose)
         ROS_WARN_STREAM(
-            "squirrel_navigation::safety::ScanObserver: Unsafe scan.");
+            "squirrel_navigation::safety::ScanObserver: Unsafe scan,"
+            "someone's approaching the robot?.");
       return false || !params_.enabled;
     }
   return true || !params_.enabled;
 }
 
 bool ScanObserver::safeCheck(int i) const {
-  if (ranges_[i] > params_.unsafe_range ||
-      (std::abs(rangevelocities_[i]) <= params_.max_safety_rangevel &&
-       rangevelocities_[i] < 0.))
+  if ((ranges_[i] > params_.unsafe_range) ||
+      (std::abs(rangevelocities_[i]) <= params_.max_safety_rangevel) &&
+      (rangevelocities_[i] < 0.))
     return true;
   return false;
 }
@@ -111,8 +120,8 @@ void ScanObserver::updateState(
   ranges_.resize(nranges);
   rangevelocities_.resize(nranges);
   for (int i = 0; i < nranges; ++i) {
-    ranges_[i]          = ranges[i];
-    rangevelocities_[i] = state(1, i);
+    ranges_[i]          = state(i, 0);
+    rangevelocities_[i] = state(i, 1);
   }
   publishMarkers(stamp);
   publishMessage(stamp);
@@ -131,6 +140,11 @@ geometry_msgs::Pose ScanObserver::computeMarkerPose(int i) const {
   return marker_pose;
 }
 
+double ScanObserver::computeMarkerArrowLength(int i) const {
+  const double length = 0.5 * std::abs(rangevelocities_[i]);
+  return std::max(length, 1e-3);
+}
+
 void ScanObserver::publishMarkers(const ros::Time& stamp) const {
   visualization_msgs::MarkerArray marker_array;
   marker_array.markers.reserve(ab_filter_.stateDimension());
@@ -143,9 +157,9 @@ void ScanObserver::publishMarkers(const ros::Time& stamp) const {
     marker.type            = visualization_msgs::Marker::ARROW;
     marker.action          = visualization_msgs::Marker::MODIFY;
     marker.pose            = computeMarkerPose(i);
-    marker.scale.x         = std::abs(rangevelocities_[i]);
+    marker.scale.x         = computeMarkerArrowLength(i);
     marker.scale.y         = 0.1;
-    marker.scale.z         = 0.0;
+    marker.scale.z         = 0.1;
     marker.color.r         = safeCheck(i);
     marker.color.g         = !safeCheck(i);
     marker.color.b         = 0.0;

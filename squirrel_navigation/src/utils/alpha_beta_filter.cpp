@@ -35,10 +35,13 @@ AlphaBetaFilter::AlphaBetaFilter(const Params& params)
     : params_(params), state_(nullptr), init_(false) {}
 
 void AlphaBetaFilter::initialize(const std::string& name) {
+  if (init_)
+    return;
   ros::NodeHandle pnh("~/" + name);
   dsrv_.reset(new dynamic_reconfigure::Server<AlphaBetaFilterConfig>(pnh));
   dsrv_->setCallback(
       boost::bind(&AlphaBetaFilter::reconfigureCallback, this, _1, _2));
+  init_ = true;
 }
 
 Eigen::MatrixXf AlphaBetaFilter::operator()(
@@ -73,7 +76,7 @@ Eigen::VectorXf AlphaBetaFilter::stdVectorToEigenVector(
   const int n = x.size();
   Eigen::VectorXf out(n);
   for (int i = 0; i < n; ++i)
-    out(i)   = x[i];
+    out(i)   = std::isfinite(x[i]) ? x[i] : 0.0;
   return out;
 }
 
