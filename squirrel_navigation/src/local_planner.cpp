@@ -63,7 +63,7 @@ void LocalPlanner::initialize(
   controller_.reset(new ControllerPID);
   controller_->initialize(name + "/ControllerPID");
   motion_planner_.reset(new LinearMotionPlanner);
-  motion_planner_->initialize(name + "/MotionPlanner");
+  motion_planner_->initialize(name + "/LinearMotionPlanner");
   // Initialize/reset internal observers.
   tfl_.reset(tfl);
   costmap_ros_.reset(costmap_ros);

@@ -9,7 +9,7 @@ LocalPlanner:
   max_safe_ang_displacement: 1.0
   safety_observers: ["ScanSafetyObserver", "ArmSkinObserver"]
 
-  MotionPlanner:
+  LinearMotionPlanner:
     max_linear_velocity: 0.8
     max_angular_velocity: 1.0
     linear_smoother: 0.75
@@ -19,8 +19,8 @@ LocalPlanner:
     lookahead: 0.0
 
   ControllerPID:
-    kP_lin: 3.0
-    kP_ang: 3.0
+    kP_lin: 1.5
+    kP_ang: 1.5
     kI_lin: 0.0001
     kI_ang: 0.0001
     kD_lin: 0.0001
