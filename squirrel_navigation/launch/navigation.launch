@@ -14,7 +14,7 @@
   <!-- Run pointcloud_filter_node: filter the PointCloud to speed up planning -->
   <include file="$(find squirrel_pointcloud_filter)/launch/pointcloud_filter.launch">
     <arg name="cloud_in" value="/kinect/depth/points"/>
-    <arg name="voxelized_cloud_out" value="/rgbdscan"/>
+    <arg name="voxelized_cloud_out" value="/kinect_voxelized_points"/>
   </include>
 
   <!-- Run the footprint observer -->
