@@ -108,6 +108,8 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
       cmd.angular.z = 0.0;
       return true;
     }
+  // Getting the replanning guard.
+  ReplanningGuard* replanning_guard = ReplanningGuardInstance::get();
   // Compute the reference pose and perform safety check.
   const ros::Time& stamp = robot_pose_.header.stamp;
   geometry_msgs::Pose ref_pose;
@@ -122,6 +124,8 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
         "squirrel_navigation::LocalPlanner: The robot is too far from the "
         "planned trajectory. Replanning requested.");
     current_goal_.reset(nullptr);
+    if (replanning_guard->enabled())
+      replanning_guard->clear();
     return false;
   }
   // Compute the commands via PID controller in map frame.
@@ -147,6 +151,7 @@ bool LocalPlanner::isGoalReached() {
       math::angularDistanceYaw(robot_pose_.pose, *current_goal_) <=
           params_.goal_ang_tolerance) {
     current_goal_.reset(nullptr);
+    ReplanningGuardInstance::get()->clear();
     if (params_.verbose)
       ROS_INFO_STREAM("squirrel_navigation::LocalPlanner: Goal reached.");
     return true;
@@ -158,6 +163,8 @@ bool LocalPlanner::setPlan(
     const std::vector<geometry_msgs::PoseStamped>& waypoints) {
   if (waypoints.empty())
     return false;
+  if (!ReplanningGuardInstance::get()->replanningFlag())
+    return true;
   const ros::Time& stamp = robot_pose_.header.stamp;
   if (newGoal(waypoints.back().pose)) {
     current_goal_.reset(new geometry_msgs::Pose(waypoints.back().pose));

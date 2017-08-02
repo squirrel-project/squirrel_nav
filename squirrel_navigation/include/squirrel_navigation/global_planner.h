@@ -35,6 +35,8 @@
 
 #include "squirrel_navigation/GlobalPlannerConfig.h"
 #include "squirrel_navigation/footprint_planner.h"
+#include "squirrel_navigation/replanning_guard.h"
+#include "squirrel_navigation/utils/single_instance.h"
 
 #include <ros/subscriber.h>
 
@@ -47,6 +49,7 @@
 #include <tf/transform_listener.h>
 
 #include <geometry_msgs/Polygon.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Path.h>
 
 #include <memory>
@@ -62,6 +65,8 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
     static Params defaultParams();
 
     std::string footprint_topic;
+    bool collision_based_replanning;
+    double collision_based_replanning_lookahead;
     bool plan_with_footprint;
     bool plan_with_constant_heading;
     double heading;
@@ -87,6 +92,10 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
   inline const Params& params() const { return params_; }
   inline void setParams(const Params& params) { params_ = params; }
   inline Params& params() { return params_; }
+
+ private:
+  // Shared memory between planners.
+  typedef utils::SingleInstance<ReplanningGuard> ReplanningGuardInstance;
 
  private:
   // Reconfigure the callback.

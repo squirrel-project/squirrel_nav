@@ -115,6 +115,15 @@ void LinearMotionPlanner::computeReference(
   const geometry_msgs::Pose& head_pose = next_waypoint->pose;
   const ros::Time& last_stamp          = last_waypoint->header.stamp;
   const ros::Time& head_stamp          = next_waypoint->header.stamp;
+  // Update the replanning guard.
+  ReplanningGuard* replanning_guard = ReplanningGuardInstance::get();
+  if (replanning_guard->enabled()) {
+    std::vector<geometry_msgs::PoseStamped> forward_waypoints;
+    forward_waypoints.reserve(waypoints_.size());
+    for (auto it = next_waypoint; it != waypoints_.begin(); ++it)
+      forward_waypoints.emplace_back(*it);
+    replanning_guard->setWaypoints(forward_waypoints);
+  }
   // Constant linear profile for velocity.
   const double delta_stamp = head_stamp.toSec() - last_stamp.toSec();
   ref_twist->linear.x      = math::delta<0>(last_pose, head_pose) / delta_stamp;

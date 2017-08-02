@@ -36,6 +36,7 @@
 #include <ros/node_handle.h>
 
 #include <costmap_2d/cost_values.h>
+#include <costmap_2d/footprint.h>
 
 #include <pluginlib/class_list_macros.h>
 
@@ -53,6 +54,18 @@ PLUGINLIB_DECLARE_CLASS(
     squirrel_navigation::FootprintPlanner, nav_core::BaseGlobalPlanner);
 
 namespace squirrel_navigation {
+
+FootprintPlanner::FootprintPlanner()
+    : params_(Params::defaultParams()),
+      init_(false),
+      inscribed_radius_(0.),
+      circumscribed_radius_(0.) {}
+
+FootprintPlanner::FootprintPlanner(const Params& params)
+    : params_(params),
+      init_(false),
+      inscribed_radius_(0.),
+      circumscribed_radius_(0.) {}
 
 void FootprintPlanner::initialize(
     std::string name, costmap_2d::Costmap2DROS* costmap_ros) {
@@ -114,25 +127,13 @@ bool FootprintPlanner::makePlan(
   }
   ompl_simple_setup_->setup();
   if (ompl_simple_setup_->solve(params_.max_planning_time)) {
+    auto& solution_path = ompl_simple_setup_->getSolutionPath();
     if (params_.verbose)
       ROS_INFO_STREAM(
-          "squirrel_navigation::FootprintPlanner: Path successfully found with "
-          "RRT*.");
+          "squirrel_navigation::FootprintPlanner: RRT* successfully found a "
+          "path with << "
+          << solution_path.getStates().size() << ".");
     ompl_simple_setup_->simplifySolution(params_.max_simplification_time);
-    auto& solution_path = ompl_simple_setup_->getSolutionPath();
-    // Check for validity and repair if possible.
-    const std::pair<bool, bool>& path_validity =
-        solution_path.checkAndRepair(ompl::magic::MAX_VALID_SAMPLE_ATTEMPTS);
-    if (!path_validity.second) {
-      ROS_WARN_STREAM(
-          "squirrel_navigation::FootprintPlanner: Path may slightly touch an "
-          "invalid region of space. Replanning.");
-      return false;
-    } else if (!path_validity.first) {
-      ROS_INFO_STREAM(
-          "squirrel_navigation::FootprintPlanner: Path was slightly touching "
-          "an invalid region. Now Fixed.");
-    }
     // Upsample path.
     if (params_.waypoints_resolution > 0.) {
       const int min_num_states =
@@ -150,6 +151,16 @@ bool FootprintPlanner::makePlan(
           "path.");
     return false;
   }
+}
+
+const std::vector<geometry_msgs::Point>& FootprintPlanner::footprint() const {
+  return footprint_;
+}
+
+void FootprintPlanner::footprintRadii(
+    double* inscribed_radius, double* circumscribed_radius) const {
+  *inscribed_radius     = inscribed_radius_;
+  *circumscribed_radius = circumscribed_radius_;
 }
 
 void FootprintPlanner::reconfigureCallback(
@@ -197,6 +208,9 @@ void FootprintPlanner::footprintCallback(
     point.y = point32.y;
     footprint_.emplace_back(point);
   }
+  costmap_2d::calculateMinAndMaxDistances(
+      footprint_, inscribed_radius_, circumscribed_radius_);
+  // Update the marker.
   footprint_marker_.points = footprint_;
 }
 
@@ -224,18 +238,23 @@ bool FootprintPlanner::checkValidState(
   const double x = state_se2->getX();
   const double y = state_se2->getY();
   const double a = state_se2->getYaw();
-  // Compute wheter footprint is colliding or not.
-  return costmap_model_->footprintCost(x, y, a, footprint_) >= 0.;
+  // Check footprint cost.
+  const double footprint_cost = costmap_model_->footprintCost(
+      x, y, a, footprint_, inscribed_radius_, circumscribed_radius_);
+  if (footprint_cost < 0. ||
+      footprint_cost >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1)
+    return false;
+  return true;
 }
 
 void FootprintPlanner::initializeFootprintMarker() {
   footprint_marker_.type    = visualization_msgs::Marker::LINE_STRIP;
   footprint_marker_.action  = visualization_msgs::Marker::ADD;
-  footprint_marker_.color.r = 0.75;
-  footprint_marker_.color.g = 0.75;
-  footprint_marker_.color.b = 0.75;
+  footprint_marker_.color.r = 0.35;
+  footprint_marker_.color.g = 0.35;
+  footprint_marker_.color.b = 0.35;
   footprint_marker_.color.a = 1.0;
-  footprint_marker_.scale.x = 0.1;
+  footprint_marker_.scale.x = 0.0025;
 }
 
 void FootprintPlanner::publishPath(
@@ -291,7 +310,7 @@ void FootprintPlanner::convertOMPLStatesToWayPoints(
 FootprintPlanner::Params FootprintPlanner::Params::defaultParams() {
   Params params;
   params.footprint_topic            = "/footprint_observer/footprint";
-  params.collision_check_resolution = 0.05;
+  params.collision_check_resolution = 0.01;
   params.waypoints_resolution       = 0.05;
   params.max_planning_time          = 0.5;
   params.max_simplification_time    = 0.5;

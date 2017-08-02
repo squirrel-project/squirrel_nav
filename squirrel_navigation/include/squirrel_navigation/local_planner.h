@@ -36,12 +36,15 @@
 #include "squirrel_navigation/LocalPlannerConfig.h"
 #include "squirrel_navigation/controller_pid.h"
 #include "squirrel_navigation/linear_motion_planner.h"
+#include "squirrel_navigation/replanning_guard.h"
 #include "squirrel_navigation/safety/scan_observer.h"
+#include "squirrel_navigation/utils/single_instance.h"
 
 #include <ros/console.h>
 #include <ros/publisher.h>
 #include <ros/subscriber.h>
 
+#include <costmap_2d/costmap_2d_ros.h>
 #include <nav_core/base_local_planner.h>
 
 #include <pluginlib/class_list_macros.h>
@@ -99,6 +102,10 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   inline const Params& params() const { return params_; }
   inline void setParams(const Params& params) { params_ = params; }
   inline Params& params() { return params_; }
+
+ private:
+  // Shared memory between planners.
+  typedef utils::SingleInstance<ReplanningGuard> ReplanningGuardInstance;
 
  private:
   // Callbacks.

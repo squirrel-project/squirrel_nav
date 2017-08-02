@@ -59,7 +59,7 @@ add_dependencies(squirrel_navigation_safety
 
 add_library(squirrel_navigation_planners 
   src/local_planner.cpp src/linear_motion_planner.cpp src/controller_pid.cpp 
-  src/global_planner.cpp src/footprint_planner.cpp)
+  src/global_planner.cpp src/footprint_planner.cpp src/replanning_guard.cpp)
 target_link_libraries(squirrel_navigation_planners 
   ${catkin_LIBRARIES} ${OMPL_LIBRARIES} squirrel_navigation_safety)
 add_dependencies(squirrel_navigation_planners squirrel_navigation_gencfg)

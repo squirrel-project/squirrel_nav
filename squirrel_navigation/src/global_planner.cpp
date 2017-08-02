@@ -2,7 +2,8 @@
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
+// modification, are permitted provided that the following conditions
+// are met:
 //
 // * Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
@@ -52,6 +53,9 @@ void GlobalPlanner::initialize(
       boost::bind(&GlobalPlanner::reconfigureCallback, this, _1, _2));
   // Initialize internal observers.
   costmap_ros_.reset(costmap_ros);
+  // Initialize the replanning guard.
+  costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
+  ReplanningGuardInstance::get()->initialize(*costmap);
   // Initialize the path planners.
   dijkstra_planner_.reset(new navfn::NavfnROS);
   dijkstra_planner_->initialize(name + "/Dijkstra", costmap_ros);
@@ -67,6 +71,22 @@ bool GlobalPlanner::makePlan(
     const geometry_msgs::PoseStamped& start,
     const geometry_msgs::PoseStamped& goal,
     std::vector<geometry_msgs::PoseStamped>& waypoints) {
+  if (params_.collision_based_replanning) {
+    ReplanningGuard* replanning_guard = ReplanningGuardInstance::get();
+    double inscribed_radius, circumscribed_radius;
+    footprint_planner_->footprintRadii(
+        &inscribed_radius, &circumscribed_radius);
+    if (params_.plan_with_footprint) {
+      replanning_guard->checkCollisionsWithRadius(
+          circumscribed_radius, params_.collision_based_replanning_lookahead);
+    } else {
+      replanning_guard->checkCollisionsWithFootprint(
+          footprint_planner_->footprint(), inscribed_radius,
+          circumscribed_radius, params_.collision_based_replanning_lookahead);
+    }
+    if (replanning_guard->replanningFlag())
+      return true;
+  }
   // Compute a collision free path.
   if (params_.plan_with_footprint) {
     return footprint_planner_->makePlan(start, goal, waypoints);
@@ -102,14 +122,22 @@ void GlobalPlanner::reconfigureCallback(
   params_.plan_with_constant_heading = config.plan_with_constant_heading;
   params_.heading                    = config.heading;
   params_.verbose                    = config.verbose;
+  // Collision based replanning.
+  params_.collision_based_replanning = config.collision_based_replanning;
+  params_.collision_based_replanning_lookahead =
+      config.collision_based_replanning_lookahead;
+  ReplanningGuardInstance::get()->setEnabled(
+      params_.collision_based_replanning_lookahead);
 }
 
 GlobalPlanner::Params GlobalPlanner::Params::defaultParams() {
   Params params;
-  params.plan_with_footprint        = false;
-  params.plan_with_constant_heading = false;
-  params.heading                    = 0.0;
-  params.verbose                    = false;
+  params.collision_based_replanning           = false;
+  params.collision_based_replanning_lookahead = 1.0;
+  params.plan_with_footprint                  = false;
+  params.plan_with_constant_heading           = false;
+  params.heading                              = 0.0;
+  params.verbose                              = false;
   return params;
 }
 

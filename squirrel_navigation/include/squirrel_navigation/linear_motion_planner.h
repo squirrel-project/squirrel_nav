@@ -34,7 +34,9 @@
 #define SQUIRREL_NAVIGATION_MOTION_PLANNER_H_
 
 #include "squirrel_navigation/LinearMotionPlannerConfig.h"
+#include "squirrel_navigation/replanning_guard.h"
 #include "squirrel_navigation/utils/motion_planner.h"
+#include "squirrel_navigation/utils/single_instance.h"
 
 #include <ros/publisher.h>
 #include <ros/subscriber.h>
@@ -108,6 +110,9 @@ class LinearMotionPlanner : public utils::MotionPlanner {
   inline Params& params() { return params_; }
 
  private:
+  typedef utils::SingleInstance<ReplanningGuard> ReplanningGuardInstance;
+
+ private:
   // Reconfigure the parameters.
   void reconfigureCallback(LinearMotionPlannerConfig& config, uint32_t level);
 
@@ -121,8 +126,7 @@ class LinearMotionPlanner : public utils::MotionPlanner {
       const std::vector<geometry_msgs::PoseStamped>& waypoints, int begin,
       int end, std::vector<geometry_msgs::PoseStamped>* smooth_waypoints) const;
   void smoothTrajectoryInPlace(
-      int begin, int end,
-      std::vector<geometry_msgs::PoseStamped>* waypoints);
+      int begin, int end, std::vector<geometry_msgs::PoseStamped>* waypoints);
 
   // Define the velocity profile.
   double computeSafetyVelocity(double linear_delta, double angular_delta) const;

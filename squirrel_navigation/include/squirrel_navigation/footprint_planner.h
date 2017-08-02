@@ -83,8 +83,8 @@ class FootprintPlanner : public nav_core::BaseGlobalPlanner {
   };
 
  public:
-  FootprintPlanner() : params_(Params::defaultParams()), init_(false) {}
-  FootprintPlanner(const Params& params) : params_(params), init_(false) {}
+  FootprintPlanner();
+  FootprintPlanner(const Params& params);
   virtual ~FootprintPlanner() {}
 
   // Initialize the internal observers.
@@ -96,6 +96,11 @@ class FootprintPlanner : public nav_core::BaseGlobalPlanner {
       const geometry_msgs::PoseStamped& start,
       const geometry_msgs::PoseStamped& goal,
       std::vector<geometry_msgs::PoseStamped>& waypoints) override;
+
+  // Get footprint used for planning.
+  const std::vector<geometry_msgs::Point>& footprint() const;
+  void footprintRadii(
+      double* inscribed_radius, double* circumscribed_radius) const;
 
   // Mutex getter.
   inline std::mutex& mutex() const { return footprint_mtx_; }
@@ -132,6 +137,7 @@ class FootprintPlanner : public nav_core::BaseGlobalPlanner {
 
   visualization_msgs::Marker footprint_marker_;
   std::vector<geometry_msgs::Point> footprint_;
+  double inscribed_radius_, circumscribed_radius_;
   std::unique_ptr<base_local_planner::CostmapModel> costmap_model_;
   std::shared_ptr<costmap_2d::Costmap2DROS> costmap_ros_;
 

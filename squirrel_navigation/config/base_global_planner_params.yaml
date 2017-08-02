@@ -3,6 +3,8 @@ GlobalPlanner:
   plan_with_footprint: false
   plan_with_constant_heading: false
   heading: 0.0
+  collision_based_replanning: false
+  collision_based_replanning_lookahead: 1.0
 
   Dijkstra: 
     use_dijkstra: true
@@ -15,9 +17,9 @@ GlobalPlanner:
 
   RRTstar:
     footprint_topic: "/squirrel_footprint_observer/footprint"
-    collision_check_resolution: 0.05
-    max_planning_time: 0.5
-    max_simplification_time: 0.5
+    collision_check_resolution: 0.01
+    max_planning_time: 0.1
+    max_simplification_time: 0.05
     map_resolution: 0.05
     range: 1.0    
     verbose: false
