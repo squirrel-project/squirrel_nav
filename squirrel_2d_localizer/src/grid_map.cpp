@@ -30,6 +30,7 @@ GridMap::GridMap(const Params& params) : params_(params) {
   const size_t h = params_.height;
   const size_t w = params_.width;
   occupancy_map_.resize(h, w);
+  unknown_space_.resize(h, w);
 }
 
 void GridMap::initialize(const std::vector<signed char>& data) {
@@ -41,6 +42,7 @@ void GridMap::initialize(const std::vector<signed char>& data) {
     const size_t j        = px % params_.width;
     const int pixel_value = static_cast<int>(data[px]);
     occupancy_map_(i, j) = pixel_value >= 0 ? pixel_value * normalizer : 0.;
+    unknown_space_(i, j) = pixel_value >= 0 ? 0 : 1;
   }
 }
 

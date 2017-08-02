@@ -56,11 +56,14 @@ class GridMap {
   bool inside(int i, int j) const;
   void boundingBox(
       double* min_x, double* max_x, double* min_y, double* max_y) const;
-  
+
   // Access the gridmap.
   double operator()(int i, int j) const { return occupancy_map_(i, j); };
   double at(int i, int j) const { return occupancy_map_(i, j); }
   operator const Eigen::MatrixXd&() const { return occupancy_map_; }
+
+  // Query uknown free space (for resampling).
+  bool unknown(int i, int j) const { return !!unknown_space_(i, j); }
 
   // Parameters read/write utilities.
   inline const Params& params() const { return params_; }
@@ -73,6 +76,7 @@ class GridMap {
   Params params_;
 
   Eigen::MatrixXd occupancy_map_;
+  Eigen::MatrixXi unknown_space_;
 };
 
 }  // namespace squirrel_2d_localizer

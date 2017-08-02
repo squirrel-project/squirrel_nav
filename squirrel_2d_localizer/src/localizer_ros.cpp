@@ -135,13 +135,15 @@ LocalizerROS::LocalizerROS()
     lp_nh.param<double>("a", init_a_, 0.);
   }
   localizer_->resetPose(Pose2d(init_x_, init_y_, init_a_));
-  // attach publisher and subscribers.
+  // Advertise publishers, subscribers and services.
   scan_sub_     = gnh.subscribe("/scan", 1, &LocalizerROS::laserCallback, this);
   initpose_sub_ = gnh.subscribe(
       "/initialpose", 1, &LocalizerROS::initialPoseCallback, this);
   pose_pub_ = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose", 1);
   particles_pub_ = nh.advertise<geometry_msgs::PoseArray>("particles", 1);
-  // broadcast initial state.
+  gloc_srv_      = nh.advertiseService(
+      "globalLocalization", &LocalizerROS::globalLocalizationCallback, this);
+  // Broadcast initial state.
   const ros::Time now = ros::Time::now();
   publishTransform(now);
   publishParticles(now);
@@ -237,7 +239,7 @@ bool LocalizerROS::globalLocalizationCallback(
   // Create the sampler.
   std::mt19937 rnd(std::rand());
   std::uniform_real_distribution<double> rand_x(min_x, max_x),
-      rand_y(min_x, min_y), rand_a(0, 2 * M_PI);
+      rand_y(min_x, max_y), rand_a(-M_PI, M_PI);
   // Sample new particles.
   const size_t nparticles = localizer_->params().num_particles;
   std::vector<Particle> new_particles;
@@ -253,13 +255,16 @@ bool LocalizerROS::globalLocalizationCallback(
     const Pose2d particle_pose(rand_x(rnd), rand_y(rnd), rand_a(rnd));
     const double particle_weight = 1. / nparticles;
     gridmap->pointToIndices(particle_pose.translation(), &i, &j);
-    if (gridmap->inside(i, j) && gridmap->at(i, j) <= 0.25)
+    if (gridmap->inside(i, j) && !gridmap->unknown(i, j) &&
+        gridmap->at(i, j) <= 0.25)
       new_particles.emplace_back(particle_pose, particle_weight);
   }
-  res.sampling_time         = ros::Time::now() - start;
+  const ros::Time& now      = ros::Time::now();
+  res.sampling_time         = now - start;
   res.num_sampled_particles = nparticles;
   // Reinitialize the localizer.
   localizer_->resetParticles(new_particles);
+  publishParticles(now);
   // Resampling was successful.
   return true;
 }
