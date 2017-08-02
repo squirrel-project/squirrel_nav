@@ -38,6 +38,10 @@ to retrieve the map.
   parameter of the gaussian kernels.
 - `~/laser_model/beam_min_distance` (default `0.1`) downsampling
   factor for the laser readings.
+- `~/publish_extra_tf` relay the transformation between
+  `~/map_frame_id` to `~/odom_frame_id` to extra frames.
+- `~/extra_parent_frame_id` frame ID of the extra transformation.
+- `~/extra_child_frame_id` frame ID of the extra transformation.
 
 ### Advertised Services
 Uses messages provided by [squirrel_2d_localization_msgs](https://github.com/federico-b/squirrel_common/tree/indigo_dev/squirrel_2d_localizer_msgs)

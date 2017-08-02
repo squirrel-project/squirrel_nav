@@ -54,6 +54,10 @@ install(
   PATTERN ".git" EXCLUDE)
 
 install(
+  DIRECTORY rviz
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rviz)
+
+install(
   FILES config/asus_filter.yaml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 

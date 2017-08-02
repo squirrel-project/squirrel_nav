@@ -102,8 +102,12 @@ install(
   PATTERN ".git" EXCLUDE)
 
 install(
-  DIRECTORY config/robotino
+  DIRECTORY config/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
+
+install(
+  DIRECTORY rviz
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rviz)
 
 install(
   FILES squirrel_navigation_costmap_layers.xml squirrel_navigation_planners.xml 

@@ -37,14 +37,14 @@ set(squirrel_2d_localizer_DEPENDENCIES
 find_package(catkin REQUIRED COMPONENTS ${squirrel_2d_localizer_DEPENDENCIES})
 include_directories(${catkin_INCLUDE_DIRS})
 
-## Catkin package
+## Catkin package.
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES squirrel_2d_localizer
  CATKIN_DEPENDS ${squirrel_2d_localizer_DEPENDENCIES}
  DEPENDS Eigen3)
 
-## Building the localizer
+## Building the localizer.
 set(ROS_BUILD_TYPE Release)
 include_directories(include)
 add_executable(squirrel_2d_localizer_node  
@@ -54,31 +54,32 @@ add_executable(squirrel_2d_localizer_node
 target_link_libraries(squirrel_2d_localizer_node ${catkin_LIBRARIES})
 add_dependencies(squirrel_2d_localizer_node squirrel_2d_localizer_msgs_generate_messages_cpp)
 
-## Mark executables and/or libraries for installation
+## Installation.
 install(
   TARGETS squirrel_2d_localizer_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-## Mark cpp header files for installation
 install(
   DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".git" EXCLUDE)
 
-## Mark launch files for installation
 install(
   DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}/launch
   FILES_MATCHING PATTERN "*.launch"
   PATTERN ".git" EXCLUDE)
 
-## Mark launch files for installation
 install(
   FILES config/robotino_localization.yaml
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}/config)
+
+install(
+  DIRECTORY rviz
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rviz)
 
 #############
 ## Testing ##
