@@ -137,8 +137,8 @@ class FootprintPlanner : public nav_core::BaseGlobalPlanner {
 
   std::unique_ptr<ompl::geometric::SimpleSetup> ompl_simple_setup_;
   std::unique_ptr<ompl::base::RealVectorBounds> ompl_bounds_;
-  ompl::base::PlannerPtr ompl_planner_;        
-  ompl::base::StateSpacePtr ompl_state_space_; 
+  ompl::base::PlannerPtr ompl_planner_;
+  ompl::base::StateSpacePtr ompl_state_space_;
 
   ros::Subscriber footprint_sub_;
   ros::Publisher plan_pub_, waypoints_pub_, footprints_pub_;

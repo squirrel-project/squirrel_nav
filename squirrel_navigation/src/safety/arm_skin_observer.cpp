@@ -39,7 +39,7 @@
 namespace squirrel_navigation {
 namespace safety {
 
-const std::string ArmSkinObserver::tag = "arm_skin_observer";
+const std::string ArmSkinObserver::tag = "ArmSkinObserver";
 
 ArmSkinObserver::ArmSkinObserver()
     : params_(Params::defaultParams()), hit_(false) {

@@ -213,7 +213,7 @@ void LinearMotionPlanner::smoothTrajectory(
 }
 
 void LinearMotionPlanner::smoothTrajectoryInPlace(
-    int begin, int end, std::vector<geometry_msgs::PoseStamped>* waypoints) {  
+    int begin, int end, std::vector<geometry_msgs::PoseStamped>* waypoints) {
   for (int i = begin + 1; i < end - 1; ++i) {
     geometry_msgs::PoseStamped waypoint;
     waypoint.pose.position = math::linearInterpolation2D(

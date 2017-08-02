@@ -342,8 +342,8 @@ LocalPlanner::Params LocalPlanner::Params::defaultParams() {
   params.max_safe_ang_velocity     = 0.7;
   params.max_safe_lin_displacement = 0.5;
   params.max_safe_ang_displacement = 1.0;
-  params.safety_observers          = {"SafetyScanObserver"};
-  params.verbose                   = false;
+  params.safety_observers = {"scan_safety_observer", "arm_skin_observer"};
+  params.verbose          = false;
   return params;
 }
 

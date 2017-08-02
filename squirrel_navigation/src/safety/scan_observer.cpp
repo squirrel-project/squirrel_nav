@@ -45,7 +45,7 @@
 namespace squirrel_navigation {
 namespace safety {
 
-const std::string ScanObserver::tag = "scan_safety_observer";
+const std::string ScanObserver::tag = "ScanSafetyObserver";
 
 void ScanObserver::initialize(const std::string& name) {
   if (init_)
