@@ -30,43 +30,45 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef SQUIRREL_NAVIGATION_UTILS_MOTION_PLANNER_H_
-#define SQUIRREL_NAVIGATION_UTILS_MOTION_PLANNER_H_
+#ifndef SQUIRREL_NAVIGATION_UTILS_SINGLE_INSTANCE_H_
+#define SQUIRREL_NAVIGATION_UTILS_SINGLE_INSTANCE_H_
 
-#include <ros/time.h>
-
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Twist.h>
-
-#include <string>
-#include <vector>
+#include <memory>
+#include <mutex>
 
 namespace squirrel_navigation {
 namespace utils {
 
-class MotionPlanner {
+template <typename InstanceType>
+class SingleInstance {
  public:
-  virtual ~MotionPlanner() {}
+  SingleInstance() = default;
 
-  virtual void initialize(const std::string& name) = 0;
+  // Initialize if needed and get the instance.
+  static InstanceType* get() {
+    std::call_once(SingleInstance::once_flag_, []() {
+      instance_.reset(new InstanceType());
+    });
+    return instance_.get();
+  }
 
-  virtual void reset(
-      const std::vector<geometry_msgs::PoseStamped>& waypoints,
-      const ros::Time& start) = 0;
-  virtual void update(
-      const std::vector<geometry_msgs::PoseStamped>& waypoints,
-      const ros::Time& stamp) = 0;
+ private:
+  // Disable default constructor and assignment operator.
+  SingleInstance(const SingleInstance& other) = delete;
+  SingleInstance operator=(const SingleInstance& other) = delete;
 
-  virtual void computeReference(
-      const ros::Time& ref_stamp, geometry_msgs::Pose* ref_pose,
-      geometry_msgs::Twist* ef_twist) = 0;
-
- protected:
-  bool init_;
+ private:
+  static std::unique_ptr<InstanceType> instance_;
+  static std::once_flag once_flag_;
 };
+
+template <typename InstanceType>
+std::unique_ptr<InstanceType> SingleInstance<InstanceType>::instance_;
+
+template <typename InstanceType>
+std::once_flag SingleInstance<InstanceType>::once_flag_;
 
 }  // namespace utils
 }  // namespace squirrel_navigation
 
-#endif /* SQUIRREL_NAVIGATION_UTILS_MOTION_PLANNER_H_ */
+#endif /* SQUIRREL_NAVIGATION_UTILS_SINGLE_INSTANCE_H_ */
