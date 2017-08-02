@@ -1,10 +1,9 @@
 <launch>
-  <arg name="rviz" default="false" />
   <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
-  <arg name="robot_id" default="alufr-robotino" />
   <arg name="3d_mapping" default="false" />
   <arg name="use_last_pose" default="true"/>
   <arg name="twist_mux" default="true"/>
+  <arg name="rviz" value="false"/>
 
   <!-- Run Monte Carlo Localization (many parameters in squirrel_localizer.launch) -->
   <include file="$(find squirrel_2d_localizer)/launch/squirrel_2d_localizer.launch">
@@ -26,22 +25,21 @@
   <!-- Run move_base -->
   <rosparam command="delete" ns="move_base"/> <!-- Fix move_base bug -->
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/costmap_common_params.yaml" command="load" ns="global_costmap" />
-    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/costmap_common_params.yaml" command="load" ns="local_costmap" />
-    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/local_costmap_params.yaml" command="load" />
-    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/global_costmap_params.yaml" command="load" />
-    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/base_local_planner_params.yaml" command="load" />
-    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/base_global_planner_params.yaml" command="load" />
-    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/move_base_params.yaml" command="load" />
+    <rosparam file="$(find squirrel_navigation)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find squirrel_navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find squirrel_navigation)/config/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find squirrel_navigation)/config/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find squirrel_navigation)/config/base_local_planner_params.yaml" command="load" />
+    <rosparam file="$(find squirrel_navigation)/config/base_global_planner_params.yaml" command="load" />
+    <rosparam file="$(find squirrel_navigation)/config/move_base_params.yaml" command="load" />
     <remap from="/cmd_vel" to="/cmd_navigation" if="$(arg twist_mux)"/>
   </node>
   
   <!-- Run the octomap server and the 3d collision check -->
   <include file="$(find squirrel_3d_mapping)/launch/3d_mapping.launch" if="$(arg 3d_mapping)"/>
 
-  <!-- Run rviz -->
-  <include file="$(find squirrel_navigation)/launch/rviz.launch" if="$(arg rviz)">
-    <arg name="mapping" value="false"/>
-    <arg name="robot" value="$(arg robot_id)"/>
-  </include>
+  <!-- RViz -->
+  <node pkg="rviz" type="rviz" name="squirrel_navigation_rviz" 
+	args="-d $(find squirrel_navigation)/rviz/squirrel_navigation.rviz" if="$(arg rviz)"/>
+
 </launch>

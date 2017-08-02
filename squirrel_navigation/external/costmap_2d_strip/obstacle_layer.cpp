@@ -636,5 +636,4 @@ void ObstacleLayer::resize(unsigned int size_x, unsigned int size_y, double reso
   resizeMap(size_x, size_y, resolution, origin_x, origin_y);
 }
 
-
 }  // namespace squirrel_navigation
