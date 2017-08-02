@@ -22,10 +22,10 @@ Contains `squirrel_navigation::GlobalPlanner`,
 #### Parameters
 - `~/verbose` set verbosity.
 - `~/odom_topic` the odometry topic.
-- `~/goal_{lin/ang}_tolerance` distance from goal to be considered
+- `~/goal_{lin, ang}_tolerance` distance from goal to be considered
   reached.
-- `~/max_safe_{lin/ang}_velocity` maximum linear velocity to be actuated.
-- `~/max_safe_{lin/ang}_displacement` maximum displacement from the
+- `~/max_safe_{lin, ang}_velocity` maximum linear velocity to be actuated.
+- `~/max_safe_{lin, ang}_displacement` maximum displacement from the
   reference position (pid controller) to ask for replanning.
 - `~/safety_observers` (`SafetyScanObserver`, `ArmSkinObserver`) robot
   state observers (**not stable yet**).
