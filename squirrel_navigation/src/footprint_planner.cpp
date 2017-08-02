@@ -161,6 +161,11 @@ void FootprintPlanner::reconfigureCallback(
   params_.waypoints_resolution       = config.waypoints_resolution;
   params_.range                      = config.range;
   params_.verbose                    = config.verbose;
+  // Set verbosity of OMPL.
+  if (params_.verbose)
+    ompl::msg::setLogLevel(ompl::msg::LOG_INFO);
+  else
+    ompl::msg::setLogLevel(ompl::msg::LOG_NONE);
 }
 
 void FootprintPlanner::footprintCallback(
