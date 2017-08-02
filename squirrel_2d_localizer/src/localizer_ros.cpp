@@ -212,7 +212,8 @@ void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
   const Pose2d& correction = use_twist_correction_
                                  ? twist_correction_->correction(scan_time)
                                  : Pose2d(0., 0., 0.);
-  if (localizer_->updateFilter(motion, msg->ranges, correction)) {
+  const bool force_update = initial_localization_counter_++ < 5;
+  if (localizer_->updateFilter(motion, msg->ranges, correction, force_update)) {
     tf_o2r_ = tf_o2r_new;
     publishParticles(scan_time);
     publishPoseWithCovariance(scan_time);

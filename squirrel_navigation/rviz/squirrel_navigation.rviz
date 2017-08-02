@@ -254,7 +254,7 @@ Visualization Manager:
       Color: 85; 170; 255
       Enabled: true
       Name: Particles
-      Topic: /particlecloud
+      Topic: /squirrel_2d_localizer/particles
       Unreliable: false
       Value: true
     - Alpha: 1

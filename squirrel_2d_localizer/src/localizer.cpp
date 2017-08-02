@@ -79,12 +79,12 @@ void Localizer::resetParticles(const std::vector<Particle>& particles) {
 
 bool Localizer::updateFilter(
     const Transform2d& motion, const std::vector<float>& scan,
-    const Transform2d& extra_correction) {
+    const Transform2d& extra_correction, bool force_update) {
   std::unique_lock<std::mutex> lock(init_mtx_);
   cum_lin_motion_ += motion.translation().norm();
   cum_ang_motion_ += std::abs(angles::normalize_angle(motion[2]));
   if (cum_lin_motion_ < params_.min_lin_update &&
-      cum_ang_motion_ < params_.min_ang_update)
+      cum_ang_motion_ < params_.min_ang_update && !force_update)
     return false;
   motion_model_->sampleProposal(motion, &particles_);
   laser_model_->computeParticlesLikelihood(

@@ -95,6 +95,7 @@ class LocalizerROS {
   std::string extra_parent_frame_id_, extra_child_frame_id_;
   std::string node_name_;
 
+  int initial_localization_counter_;
   bool update_laser_params_;
 
   mutable std::mutex update_mtx_;

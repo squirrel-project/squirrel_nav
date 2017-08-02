@@ -60,7 +60,8 @@ class Localizer {
   void resetParticles(const std::vector<Particle>& particles);
   bool updateFilter(
       const Transform2d& motion, const std::vector<float>& scan,
-      const Transform2d& extra_correction = Pose2d(0., 0., 0.));
+      const Transform2d& extra_correction = Pose2d(0., 0., 0.),
+      bool force_update = false);
 
   // Get Particle filter's stuff.
   const std::vector<Particle>& particles() const { return particles_; }
@@ -69,12 +70,12 @@ class Localizer {
 
   // Get the update guard.
   std::mutex& mutex() const { return init_mtx_; }
-  
+
   // Get the localizer's objects.
   inline GridMap* gridMap() { return map_.get(); }
   inline LaserModel* laserModel() { return laser_model_.get(); }
   inline MotionModel* motionModel() { return motion_model_.get(); }
-  
+
   // Parameters read/write utilities.
   inline const Params& params() const { params_; }
   inline void setParams(const Params& params) { params_ = params; }
@@ -83,6 +84,8 @@ class Localizer {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
  private:
+  Params params_;
+
   std::unique_ptr<GridMap> map_;
   std::unique_ptr<LatentModelLikelihoodField> likelihood_field_;
   std::unique_ptr<LaserModel> laser_model_;
@@ -91,8 +94,6 @@ class Localizer {
   std::vector<Particle> particles_;
   Pose2d pose_;
   Eigen::Matrix3d covariance_;
-
-  Params params_;
 
   double cum_lin_motion_, cum_ang_motion_;
 
