@@ -250,11 +250,11 @@ bool FootprintPlanner::checkValidState(
 void FootprintPlanner::initializeFootprintMarker() {
   footprint_marker_.type    = visualization_msgs::Marker::LINE_STRIP;
   footprint_marker_.action  = visualization_msgs::Marker::ADD;
+  footprint_marker_.scale.x = 0.0025;
   footprint_marker_.color.r = 0.35;
   footprint_marker_.color.g = 0.35;
   footprint_marker_.color.b = 0.35;
   footprint_marker_.color.a = 1.0;
-  footprint_marker_.scale.x = 0.0025;
 }
 
 void FootprintPlanner::publishPath(

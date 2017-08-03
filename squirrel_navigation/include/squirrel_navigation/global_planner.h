@@ -38,7 +38,7 @@
 #include "squirrel_navigation/replanning_guard.h"
 #include "squirrel_navigation/utils/single_instance.h"
 
-#include <ros/subscriber.h>
+#include <ros/publisher.h>
 
 #include <nav_core/base_global_planner.h>
 #include <navfn/navfn_ros.h>
@@ -101,12 +101,29 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
   // Reconfigure the callback.
   void reconfigureCallback(GlobalPlannerConfig& config, uint32_t level);
 
+  // Publishing utilities.
+  void publishPlan(
+      const std::vector<geometry_msgs::PoseStamped>& waypoints,
+      const ros::Time& stamp) const;
+  void publishWaypoints(
+      const std::vector<geometry_msgs::PoseStamped>& waypoints,
+      const ros::Time& stamp) const;
+  void publishFootprints(
+      const std::vector<geometry_msgs::PoseStamped>& waypoints,
+      const ros::Time& stamp) const;
+
+  // Utility to close up a polygon.
+  std::vector<geometry_msgs::Point> closedPolygon(
+      const std::vector<geometry_msgs::Point>& open_polygon) const;
+
  private:
   Params params_;
   std::unique_ptr<dynamic_reconfigure::Server<GlobalPlannerConfig>> dsrv_;
 
   std::unique_ptr<navfn::NavfnROS> dijkstra_planner_;
   std::unique_ptr<FootprintPlanner> footprint_planner_;
+
+  ros::Publisher plan_pub_, waypoints_pub_, footprints_pub_;
 
   bool init_;
 

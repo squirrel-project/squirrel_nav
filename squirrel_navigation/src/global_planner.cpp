@@ -34,6 +34,10 @@
 #include "squirrel_navigation/global_planner.h"
 #include "squirrel_navigation/utils/math_utils.h"
 
+#include <geometry_msgs/PoseArray.h>
+#include <nav_msgs/Path.h>
+#include <visualization_msgs/MarkerArray.h>
+
 #include <pluginlib/class_list_macros.h>
 
 PLUGINLIB_DECLARE_CLASS(
@@ -61,6 +65,11 @@ void GlobalPlanner::initialize(
   dijkstra_planner_->initialize(name + "/Dijkstra", costmap_ros);
   footprint_planner_.reset(new FootprintPlanner);
   footprint_planner_->initialize(name + "/RRTstar", costmap_ros);
+  // Initialize the publishers.
+  plan_pub_      = pnh.advertise<nav_msgs::Path>("plan", 1);
+  waypoints_pub_ = pnh.advertise<geometry_msgs::PoseArray>("poses", 1);
+  footprints_pub_ =
+      pnh.advertise<visualization_msgs::MarkerArray>("footprints", 1);
   // Initialization successful.
   init_ = true;
   ROS_INFO_STREAM(
@@ -111,6 +120,11 @@ bool GlobalPlanner::makePlan(
       ROS_INFO_STREAM(
           "squirrel_navigation::GlobalPlanner: Found a collision free path ("
           << waypoints.size() << " waypoints).");
+    // Publish topics.
+    const ros::Time& now = ros::Time::now();
+    publishPlan(waypoints, now);
+    publishWaypoints(waypoints, now);
+    publishFootprints(waypoints, now);
     return true;
   }
   return false;
@@ -128,6 +142,66 @@ void GlobalPlanner::reconfigureCallback(
       config.collision_based_replanning_lookahead;
   ReplanningGuardInstance::get()->setEnabled(
       params_.collision_based_replanning_lookahead);
+}
+
+void GlobalPlanner::publishPlan(
+    const std::vector<geometry_msgs::PoseStamped>& waypoints,
+    const ros::Time& stamp) const {
+  nav_msgs::Path plan_msg;
+  plan_msg.header.stamp    = stamp;
+  plan_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
+  plan_msg.poses          = waypoints;
+  plan_pub_.publish(plan_msg);
+}
+
+void GlobalPlanner::publishWaypoints(
+    const std::vector<geometry_msgs::PoseStamped>& waypoints,
+    const ros::Time& stamp) const {
+  geometry_msgs::PoseArray pose_array_msg;
+  pose_array_msg.header.stamp    = stamp;
+  pose_array_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
+  pose_array_msg.poses.reserve(waypoints.size());
+  for (const auto& waypoint : waypoints)
+    pose_array_msg.poses.emplace_back(waypoint.pose);
+  waypoints_pub_.publish(pose_array_msg);
+}
+
+void GlobalPlanner::publishFootprints(
+    const std::vector<geometry_msgs::PoseStamped>& waypoints,
+    const ros::Time& stamp) const {
+  // Number of waypoints and footprint marker.
+  const int nwaypoints  = waypoints.size();
+  const auto& footprint = closedPolygon(footprint_planner_->footprint());
+  // Create the visualization marker.
+  visualization_msgs::MarkerArray marker_array_msg;
+  marker_array_msg.markers.reserve(nwaypoints);
+  for (size_t i = 0; i < nwaypoints; ++i) {
+    visualization_msgs::Marker marker;
+    marker.header.stamp    = stamp;
+    marker.header.frame_id = costmap_ros_->getGlobalFrameID();
+    marker.ns              = ros::this_node::getNamespace();
+    marker.id              = i;
+    marker.type            = visualization_msgs::Marker::LINE_STRIP;
+    marker.action          = visualization_msgs::Marker::MODIFY;
+    marker.pose            = waypoints[i].pose;
+    marker.scale.x         = 0.0025;
+    marker.color.r         = 0.0;
+    marker.color.g         = 0.0;
+    marker.color.b         = 0.0;
+    marker.color.a         = 0.7;
+    marker.points          = footprint;
+    marker_array_msg.markers.emplace_back(marker);
+  }
+  footprints_pub_.publish(marker_array_msg);
+}
+
+std::vector<geometry_msgs::Point> GlobalPlanner::closedPolygon(
+    const std::vector<geometry_msgs::Point>& open_polygon) const {
+  if (open_polygon.size() <= 1)
+    return open_polygon;
+  std::vector<geometry_msgs::Point> output = open_polygon;
+  output.insert(output.end(), open_polygon.back()); /* maybe not so efficient */
+  return output;
 }
 
 GlobalPlanner::Params GlobalPlanner::Params::defaultParams() {

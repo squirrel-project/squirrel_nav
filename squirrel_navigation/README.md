@@ -95,7 +95,11 @@ Parameters of `squirrel_navigation::GlobalPlanner`:
 ### Advertised Topics  
 - `~/Dijkstra/*` topics advertised by `nav_core::NavFnROS`.
 - `~/RRTstart/*` topics advertised by `squirrel_navigation::FootprintPlanner`.
-  
+- `~/plan` (`nav_msgs::Path`) the path computed by the planner.
+- `~/waypoints` (`geometry_msgs::PoseArray`) the waypoints computed by the planner.
+- `~/footprints` (`geometry_msgs::MarkerArray`) the sequence of
+  footprints of the robot on the waypoints.
+
 ## SQUIRREL Costmap layers
 
 Contains `squirrel_navigation::NavigationLayer` which merges obstacles
