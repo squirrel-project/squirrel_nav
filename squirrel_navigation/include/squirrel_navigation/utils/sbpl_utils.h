@@ -41,12 +41,12 @@
 namespace squirrel_navigation {
 namespace sbpl {
 
-typedef NavigationEnvironment EnvironmentXYTHETALAT;
+typedef EnvironmentNAVXYTHETALAT NavigationEnvironment;
 
 typedef SBPLPlanner Planner;
 typedef ARAPlanner ARAstar;
 
-typedef sbpl_2D_pt_t Point;
+typedef sbpl_2Dpt_t Point;
 
 typedef SBPL_Exception Exception;
 
@@ -55,14 +55,14 @@ typedef EnvNAVXYTHETALAT3Dpt_t Pose;
 inline std::vector<Point> footprint(
     const std::vector<geometry_msgs::Point>& ros_footprint) {
   std::vector<Point> sbpl_footprint;
-  sbpl_footprint.reserve(footprint.size());
+  sbpl_footprint.reserve(ros_footprint.size());
   for (const auto& point32 : ros_footprint) {
     Point point;
     point.x = point32.x;
     point.y = point32.y;
     sbpl_footprint.emplace_back(point);
   }
-  return point;
+  return sbpl_footprint;
 }
 
 }  // namespace sbpl

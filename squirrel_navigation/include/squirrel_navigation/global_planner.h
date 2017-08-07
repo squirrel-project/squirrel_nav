@@ -64,7 +64,6 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
    public:
     static Params defaultParams();
 
-    std::string footprint_topic, trajectory_topic, current_index_topic;
     bool plan_with_footprint;
     bool plan_with_constant_heading;
     double heading;

@@ -33,9 +33,11 @@
 #include "squirrel_navigation/footprint_planner.h"
 #include "squirrel_navigation/utils/math_utils.h"
 
+#include <ros/init.h>
 #include <ros/node_handle.h>
 
 #include <costmap_2d/cost_values.h>
+#include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/footprint.h>
 
 #include <pluginlib/class_list_macros.h>
@@ -57,12 +59,16 @@ namespace squirrel_navigation {
 FootprintPlanner::FootprintPlanner()
     : params_(Params::defaultParams()),
       init_(false),
+      inflation_layer_(nullptr),
+      last_nwaypoints_(-1),
       inscribed_radius_(0.),
       circumscribed_radius_(0.) {}
 
 FootprintPlanner::FootprintPlanner(const Params& params)
     : params_(params),
       init_(false),
+      inflation_layer_(nullptr),
+      last_nwaypoints_(-1),
       inscribed_radius_(0.),
       circumscribed_radius_(0.) {}
 
@@ -78,7 +84,8 @@ void FootprintPlanner::initialize(
   pnh.param<std::string>(
       "motion_primitives", motion_primitives_url_, "motion_primitives.mprim");
   // Initialize the state observers.
-  costmap_ros_ = costmap_ros;
+  costmap_ros_     = costmap_ros;
+  inflation_layer_ = getInflationLayer(costmap_ros_);
   // Initialize publishers and subscribers.
   plan_pub_      = pnh.advertise<nav_msgs::Path>("plan", 1);
   waypoints_pub_ = pnh.advertise<geometry_msgs::PoseArray>("waypoints", 1);
@@ -103,7 +110,7 @@ bool FootprintPlanner::makePlan(
   if (sbpl_need_reinitialization_)
     initializeSBPLPlanner();
   // Update the costmap.
-  costmap_2d::Costmap* costmap = costmap_ros_->getCostmap();
+  costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
   updateSBPLCostmap(*costmap);
   // Set starting pose.
   try {
@@ -111,7 +118,7 @@ bool FootprintPlanner::makePlan(
     const double start_y = start.pose.position.y - costmap->getOriginY();
     const double start_a = tf::getYaw(start.pose.orientation);
     // Set the starting state.
-    const int ret = env_->SetStart(start_x, start_y, start_a);
+    const int ret = sbpl_env_->SetStart(start_x, start_y, start_a);
     if (ret <= 0 || sbpl_planner_->set_start(ret) == 0) {
       ROS_ERROR_STREAM(
           "squirrel_navigation::FootprintPlanner: Unable to set the start.");
@@ -126,11 +133,11 @@ bool FootprintPlanner::makePlan(
   }
   // Set goal pose.
   try {
-    const double goal_x = start.pose.position.x - costmap->getOriginX();
-    const double goal_y = start.pose.position.y - costmap->getOriginY();
-    const double goal_a = tf::getYaw(start.pose.orientation);
+    const double goal_x = goal.pose.position.x - costmap->getOriginX();
+    const double goal_y = goal.pose.position.y - costmap->getOriginY();
+    const double goal_a = tf::getYaw(goal.pose.orientation);
     // Set the starting state.
-    const int ret = env_->SetGoal(goal_x, goal_y, goal_a);
+    const int ret = sbpl_env_->SetGoal(goal_x, goal_y, goal_a);
     if (ret <= 0 || sbpl_planner_->set_goal(ret) == 0) {
       ROS_ERROR_STREAM(
           "squirrel_navigation::FootprintPlanner: Unable to set the goal.");
@@ -148,10 +155,10 @@ bool FootprintPlanner::makePlan(
   std::vector<int> solution_states_ids;
   std::vector<sbpl::Pose> sbpl_waypoints;
   try {
-    sbpl_planner_->set_initial_solution_eps(params_.initial_epsilon);
-    ret = planner_->replan(
+    sbpl_planner_->set_initialsolution_eps(params_.initial_epsilon);
+    ret = sbpl_planner_->replan(
         params_.max_planning_time, &solution_states_ids, &solution_cost);
-    env_->ConvertStateIDPathintoXYThetaPath(
+    sbpl_env_->ConvertStateIDPathintoXYThetaPath(
         &solution_states_ids, &sbpl_waypoints);
   } catch (const sbpl::Exception& ex) {
     ROS_ERROR_STREAM(
@@ -186,13 +193,14 @@ void FootprintPlanner::reconfigureCallback(
   params_.initial_epsilon   = config.initial_epsilon;
   params_.verbose           = config.verbose;
   if (params_.forward_search != config.forward_search) {
-    params_.forward_serach      = config.forward_search;
+    params_.forward_search      = config.forward_search;
     sbpl_need_reinitialization_ = true;
   }
 }
 
-void FootprintPlanner::footprintCallback(
-    const geometry_msgs::PolygonStamped::ConstPtr& footprint) {}
+const std::vector<geometry_msgs::Point>& FootprintPlanner::footprint() const {
+  return footprint_;
+}
 
 void FootprintPlanner::footprintCallback(
     const geometry_msgs::PolygonStamped::ConstPtr& footprint) {
@@ -222,8 +230,8 @@ void FootprintPlanner::footprintCallback(
   footprint_marker_.points = footprint_;
 }
 
-void initializeSBPLPlanner() {
-  sbpl_env_.reset(new EnvironmentXYTHETALAT);
+void FootprintPlanner::initializeSBPLPlanner() {
+  sbpl_env_.reset(new sbpl::NavigationEnvironment);
   // The global costmap;
   costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
   // Set inscribed radius cost parameter.
@@ -236,29 +244,31 @@ void initializeSBPLPlanner() {
     ros::shutdown();
   }
   // Set circumscibed radius cost parameter.
-  if (!sbpl_env_->SetEnvParameter(
+  if (inflation_layer_ &&
+      !sbpl_env_->SetEnvParameter(
           "cost_possibly_circumscribed_thresh",
-          costmap->computeCost(
+          inflation_layer_->computeCost(
               circumscribed_radius_ / costmap->getResolution()))) {
     ROS_ERROR_STREAM(
         "squirrel_navigation::FootprintPlanner: Unable to set "
-        "'cost_possibly_circumscribed_threshold' parameter'");
+        "'cost_possibly_circumscribed_threshold' parameter'. Is "
+        "costmap_2d::InflationLayer initialized?");
     ros::shutdown();
   }
   // Initialize the environment.
   bool initialization_status = false;
   try {
     initialization_status = sbpl_env_->InitializeEnv(
-        costmap->getSizeInCellsX(), costmap_->getSizeInCellsY(), nullptr, 0.,
-        0., 0., 0., 0., 0., 0., 0., 0., sbpl::footprint(footprint_),
+        costmap->getSizeInCellsX(), costmap->getSizeInCellsY(), nullptr, 0., 0.,
+        0., 0., 0., 0., 0., 0., 0., sbpl::footprint(footprint_),
         costmap_ros_->getCostmap()->getResolution(), 1.0, 1.0,
-        params_.motion_primitives_url_.c_str());
+        costmap_2d::LETHAL_OBSTACLE, motion_primitives_url_.c_str());
   } catch (const sbpl::Exception& ex) {
     ROS_ERROR_STREAM(
         "squirrel_navigation::FootprintPlanner: Something went wrong during "
         "initialization of spbl::NavigationEnvironment. "
         << ex.what());
-    std::shutdown();
+    ros::shutdown();
   }
   // If initialization fails, throw everything away.
   if (!initialization_status) {
@@ -270,15 +280,24 @@ void initializeSBPLPlanner() {
   sbpl_planner_.reset(
       new sbpl::ARAstar(sbpl_env_.get(), params_.forward_search));
   sbpl_planner_->set_search_mode(false);
-
   // Initialization guard.
   sbpl_need_reinitialization_ = false;
 }
 
 void FootprintPlanner::updateSBPLCostmap(const costmap_2d::Costmap2D& costmap) {
-  for (unsigned int i = 0; i < costmap_.getSizeInCellsX(); ++i)
-    for (unsigned int j = 0; j < costmap_.getSizeInCellsY(); ++j)
-      env_->UpdateCost(i, j, costmap.getCost(i, j));
+  for (unsigned int i = 0; i < costmap.getSizeInCellsX(); ++i)
+    for (unsigned int j = 0; j < costmap.getSizeInCellsY(); ++j)
+      sbpl_env_->UpdateCost(i, j, costmap.getCost(i, j));
+}
+
+boost::shared_ptr<costmap_2d::InflationLayer>
+    FootprintPlanner::getInflationLayer(costmap_2d::Costmap2DROS* costmap_ros) {
+  const auto costmap_plugins = costmap_ros->getLayeredCostmap()->getPlugins();
+  for (const auto& layer : *costmap_plugins)
+    if (auto inflation_layer =
+            boost::dynamic_pointer_cast<costmap_2d::InflationLayer>(layer))
+      return inflation_layer;
+  return nullptr;
 }
 
 void FootprintPlanner::initializeFootprintMarker() {
@@ -342,12 +361,21 @@ void FootprintPlanner::convertSBPLStatesToWayPoints(
   for (const auto& sbpl_state : sbpl_states) {
     geometry_msgs::PoseStamped pose;
     pose.header.frame_id  = costmap_ros_->getGlobalFrameID();
-    pose.pose.position.x  = sbpl_pose + costmap->getOriginX();
-    pose.pose.position.y  = sbpl_pose + costamp->getOriginY();
-    pose.pose.orientation = tf::creatQuaternionMsgFromYaw(sbpl_pose.theta);
-    waypoints->emplace_back(sbpl_pose);
+    pose.pose.position.x  = sbpl_state.x + costmap->getOriginX();
+    pose.pose.position.y  = sbpl_state.y + costmap->getOriginY();
+    pose.pose.orientation = tf::createQuaternionMsgFromYaw(sbpl_state.theta);
+    waypoints->emplace_back(pose);
   }
-  x
+}
+
+FootprintPlanner::Params FootprintPlanner::Params::defaultParams() {
+  Params params;
+  params.footprint_topic   = "/squirrel_footprint_observer/footprint";
+  params.forward_search    = true;
+  params.max_planning_time = 0.2;
+  params.initial_epsilon   = 0.05;
+  params.verbose           = false;
+  return params;
 }
 
 }  // namespace squirrel_navigation

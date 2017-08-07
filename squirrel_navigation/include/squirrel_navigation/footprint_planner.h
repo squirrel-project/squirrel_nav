@@ -41,7 +41,10 @@
 #include <ros/subscriber.h>
 #include <ros/time.h>
 
+#include <nav_core/base_global_planner.h>
+
 #include <costmap_2d/costmap_2d_ros.h>
+#include <costmap_2d/inflation_layer.h>
 
 #include <dynamic_reconfigure/server.h>
 
@@ -60,9 +63,10 @@
 
 namespace squirrel_navigation {
 
-class FootprintPlanner {
+class FootprintPlanner : public nav_core::BaseGlobalPlanner {
  public:
   class Params {
+   public:
     static Params defaultParams();
 
     std::string footprint_topic;
@@ -87,6 +91,9 @@ class FootprintPlanner {
       const geometry_msgs::PoseStamped& goal,
       std::vector<geometry_msgs::PoseStamped>& waypoints) override;
 
+  // Footprint getter.
+  const std::vector<geometry_msgs::Point>& footprint() const;
+
   // Mutex getter.
   inline std::mutex& mutex() const { return footprint_mtx_; }
 
@@ -105,6 +112,10 @@ class FootprintPlanner {
   void initializeSBPLPlanner();
   void updateSBPLCostmap(const costmap_2d::Costmap2D& costmap);
 
+  // Get inflation layer from costmap.
+  boost::shared_ptr<costmap_2d::InflationLayer> getInflationLayer(
+      costmap_2d::Costmap2DROS* costmap_ros);
+
   // Utilities.
   void initializeFootprintMarker();
   void publishPath(
@@ -122,6 +133,7 @@ class FootprintPlanner {
   std::vector<geometry_msgs::Point> footprint_;
   double inscribed_radius_, circumscribed_radius_;
   costmap_2d::Costmap2DROS* costmap_ros_;
+  boost::shared_ptr<costmap_2d::InflationLayer> inflation_layer_;
 
   // sbpl stuff.
   std::unique_ptr<sbpl::NavigationEnvironment> sbpl_env_;
@@ -130,17 +142,15 @@ class FootprintPlanner {
   ros::Subscriber footprint_sub_;
   ros::Publisher plan_pub_, waypoints_pub_, footprints_pub_;
 
+  int last_nwaypoints_;
+
   std::string motion_primitives_url_;
-  
+
   bool init_;
   bool sbpl_need_reinitialization_;
 
   mutable std::mutex footprint_mtx_;
 };
-
-// Rescale footprint.
-std::vector<geometry_msgs::Point>& operator*=(
-    std::vector<geometry_msgs::Point>& footprint, double scale);
 
 }  // namespace squirrel_navigation
 
