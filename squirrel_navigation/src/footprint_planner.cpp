@@ -44,8 +44,10 @@
 #include <nav_msgs/Path.h>
 #include <std_msgs/Header.h>
 
+#include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/tools/config/MagicConstants.h>
 
+#include <cmath>
 #include <sstream>
 #include <thread>
 
@@ -59,13 +61,15 @@ FootprintPlanner::FootprintPlanner()
     : params_(Params::defaultParams()),
       init_(false),
       inscribed_radius_(0.),
-      circumscribed_radius_(0.) {}
+      circumscribed_radius_(0.),
+      last_nwaypoints_(-1) {}
 
 FootprintPlanner::FootprintPlanner(const Params& params)
     : params_(params),
       init_(false),
       inscribed_radius_(0.),
-      circumscribed_radius_(0.) {}
+      circumscribed_radius_(0.),
+      last_nwaypoints_(-1) {}
 
 void FootprintPlanner::initialize(
     std::string name, costmap_2d::Costmap2DROS* costmap_ros) {
@@ -117,9 +121,10 @@ bool FootprintPlanner::makePlan(
                                  tf::getYaw(start.pose.orientation)};
   ss_goal = std::vector<double>{goal.pose.position.x, goal.pose.position.y,
                                 tf::getYaw(goal.pose.orientation)};
+  ompl_simple_setup_->clear();
   ompl_simple_setup_->setStartAndGoalStates(ss_start, ss_goal);
   // Compute plan.
-  ompl_planner_->as<ompl::geometric::RRTstar>()->setRange(params_.range);
+  ompl_planner_->as<ompl::geometric::RRTConnect>()->setRange(params_.range);
   if (params_.verbose) {
     std::stringstream output;
     ompl_simple_setup_->getPlanner()->printSettings(output);
@@ -130,8 +135,8 @@ bool FootprintPlanner::makePlan(
     auto& solution_path = ompl_simple_setup_->getSolutionPath();
     if (params_.verbose)
       ROS_INFO_STREAM(
-          "squirrel_navigation::FootprintPlanner: RRT* successfully found a "
-          "path with << "
+          "squirrel_navigation::FootprintPlanner: RRT-connect successfully "
+          "found a path with"
           << solution_path.getStates().size() << ".");
     ompl_simple_setup_->simplifySolution(params_.max_simplification_time);
     // Upsample path.
@@ -172,6 +177,16 @@ void FootprintPlanner::reconfigureCallback(
   params_.waypoints_resolution       = config.waypoints_resolution;
   params_.range                      = config.range;
   params_.verbose                    = config.verbose;
+  if (params_.bold_factor != config.bold_factor) {
+    const double factor = (1 - config.bold_factor) / (1 - params_.bold_factor);
+    rescaleFootprint(factor);
+    params_.bold_factor = config.bold_factor;
+  }
+  // Do not allow backward motion.
+  if (params_.allow_backward_motion != config.allow_backward_motion) {
+    ompl_need_reinitialization_   = true;
+    params_.allow_backward_motion = config.allow_backward_motion;
+  }
   // Set verbosity of OMPL.
   if (params_.verbose)
     ompl::msg::setLogLevel(ompl::msg::LOG_INFO);
@@ -200,31 +215,34 @@ void FootprintPlanner::footprintCallback(
       return;
   }
   // Footprint has changed.
-  footprint_.clear();
-  footprint_.reserve(footprint->polygon.points.size());
-  for (const auto& point32 : footprint->polygon.points) {
-    geometry_msgs::Point point;
-    point.x = point32.x;
-    point.y = point32.y;
-    footprint_.emplace_back(point);
-  }
+  footprint_ = costmap_2d::toPointVector(footprint->polygon);
   costmap_2d::calculateMinAndMaxDistances(
       footprint_, inscribed_radius_, circumscribed_radius_);
   // Update the marker.
   footprint_marker_.points = footprint_;
+  // Apply boldness.
+  rescaleFootprint(1 - params_.bold_factor);
 }
 
 void FootprintPlanner::initializeOMPLPlanner() {
-  ompl_state_space_->as<ompl::base::SE2StateSpace>()->setBounds(*ompl_bounds_);
   ompl_simple_setup_.reset(new ompl::geometric::SimpleSetup(ompl_state_space_));
+  ompl_state_space_->as<ompl::base::SE2StateSpace>()->setBounds(*ompl_bounds_);
+  auto& ompl_space_information = ompl_simple_setup_->getSpaceInformation();
+  // Set the state validity checker.
   ompl_simple_setup_->setStateValidityChecker(boost::bind(
-      &FootprintPlanner::checkValidState, this,
-      ompl_simple_setup_->getSpaceInformation().get(), _1));
-  ompl_simple_setup_->getSpaceInformation()->setStateValidityCheckingResolution(
+      &FootprintPlanner::checkValidState, this, ompl_space_information.get(),
+      _1));
+  ompl_space_information->setStateValidityCheckingResolution(
       params_.collision_check_resolution);
-  ompl_planner_.reset(
-      new ompl::geometric::RRTstar(ompl_simple_setup_->getSpaceInformation()));
+  // Enforce forward motion in case.
+  if (!params_.allow_backward_motion)
+    ompl_space_information->setMotionValidator(
+        boost::make_shared<ForwardDiscreteMotionValidator>(
+            ompl_space_information));
+  // Set the planner.
+  ompl_planner_.reset(new ompl::geometric::PRMstart(ompl_space_information));
   ompl_simple_setup_->setPlanner(ompl_planner_);
+  // Initialization flag.
   ompl_need_reinitialization_ = false;
 }
 
@@ -241,15 +259,21 @@ bool FootprintPlanner::checkValidState(
   // Check footprint cost.
   const double footprint_cost = costmap_model_->footprintCost(
       x, y, a, footprint_, inscribed_radius_, circumscribed_radius_);
-  if (footprint_cost < 0. ||
-      footprint_cost >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1)
+  if (footprint_cost < 0. || footprint_cost >= costmap_2d::LETHAL_OBSTACLE)
     return false;
   return true;
 }
 
+void FootprintPlanner::rescaleFootprint(double factor) {
+  footprint_ *= factor;
+  inscribed_radius_ *= factor;
+  circumscribed_radius_ *= factor;
+}
+
 void FootprintPlanner::initializeFootprintMarker() {
-  footprint_marker_.type    = visualization_msgs::Marker::LINE_STRIP;
-  footprint_marker_.action  = visualization_msgs::Marker::ADD;
+  footprint_marker_.ns   = ros::this_node::getNamespace() + "/FootprintPlanner";
+  footprint_marker_.type = visualization_msgs::Marker::LINE_STRIP;
+  footprint_marker_.action  = visualization_msgs::Marker::MODIFY;
   footprint_marker_.scale.x = 0.0025;
   footprint_marker_.color.r = 0.35;
   footprint_marker_.color.g = 0.35;
@@ -278,13 +302,22 @@ void FootprintPlanner::publishPath(
   waypoints_pub_.publish(pose_array);
   // Publish the footprints.
   visualization_msgs::MarkerArray footprints_array;
-  footprints_array.markers.reserve(nwaypoints);
+  footprints_array.markers.reserve(std::max(nwaypoints, last_nwaypoints_));
   for (int i = 0; i < nwaypoints; ++i) {
     footprint_marker_.header = header;
     footprint_marker_.id     = i;
     footprint_marker_.pose   = waypoints[i].pose;
     footprints_array.markers.emplace_back(footprint_marker_);
   }
+  // Clear last waypoints.
+  for (int i = nwaypoints; i < last_nwaypoints_; ++i) {
+    visualization_msgs::Marker delete_marker;
+    delete_marker.ns     = ros::this_node::getNamespace() + "/FootprintPlanner";
+    delete_marker.id     = i;
+    delete_marker.action = visualization_msgs::Marker::DELETE;
+    footprints_array.markers.emplace_back(delete_marker);
+  }
+  last_nwaypoints_ = nwaypoints;
   footprints_pub_.publish(footprints_array);
 }
 
@@ -315,8 +348,65 @@ FootprintPlanner::Params FootprintPlanner::Params::defaultParams() {
   params.max_planning_time          = 0.5;
   params.max_simplification_time    = 0.5;
   params.range                      = 1.0;
+  params.allow_backward_motion      = false;
   params.verbose                    = true;
   return params;
+}
+
+FootprintPlanner::ForwardDiscreteMotionValidator::
+    ForwardDiscreteMotionValidator(ompl::base::SpaceInformation* si)
+    : ompl::base::MotionValidator(si), discrete_motion_validator_(si) {}
+
+FootprintPlanner::ForwardDiscreteMotionValidator::
+    ForwardDiscreteMotionValidator(const ompl::base::SpaceInformationPtr& si)
+    : ompl::base::MotionValidator(si), discrete_motion_validator_(si) {}
+
+bool FootprintPlanner::ForwardDiscreteMotionValidator::checkMotion(
+    const ompl::base::State* state1, const ompl::base::State* state2) const {
+  return isForward(state1, state2) &&
+         discrete_motion_validator_.checkMotion(state1, state2);
+}
+
+bool FootprintPlanner::ForwardDiscreteMotionValidator::checkMotion(
+    const ompl::base::State* state1, const ompl::base::State* state2,
+    std::pair<ompl::base::State*, double>& last_valid_state) const {
+  return isForward(state1, state2) &&
+         discrete_motion_validator_.checkMotion(
+             state1, state2, last_valid_state);
+}
+
+void FootprintPlanner::ForwardDiscreteMotionValidator::ominus(
+    const ompl::base::SE2StateSpace::StateType& state2,
+    const ompl::base::SE2StateSpace::StateType& state1, double* x, double* y,
+    double* a) const {
+  const double dx = state2.getX() - state1.getX();
+  const double dy = state2.getY() - state1.getY();
+  const double c1 = std::cos(-state1.getYaw());
+  const double s1 = std::sin(-state1.getYaw());
+  // The output.
+  *x = c1 * dx - s1 * dy;
+  *y = s1 * dx + c1 * dy;
+  *a = state2.getYaw() - state1.getYaw();
+}
+
+bool FootprintPlanner::ForwardDiscreteMotionValidator::isForward(
+    const ompl::base::State* state1, const ompl::base::State* state2) const {
+  // First state.
+  auto s1 = state1->as<ompl::base::SE2StateSpace::StateType>();
+  auto s2 = state2->as<ompl::base::SE2StateSpace::StateType>();
+  // Vectors.
+  double ux, uy, ua;
+  ominus(*s2, *s1, &ux, &uy, &ua);
+  return ux > 0.;
+}
+
+std::vector<geometry_msgs::Point>& operator*=(
+    std::vector<geometry_msgs::Point>& footprint, double scale) {
+  for (auto& point : footprint) {
+    point.x *= scale;
+    point.y *= scale;
+  }
+  return footprint;
 }
 
 }  // namespace squirrel_navigation

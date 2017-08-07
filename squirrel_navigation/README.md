@@ -27,6 +27,11 @@ Contains `squirrel_navigation::GlobalPlanner`,
 - `~/max_safe_{lin, ang}_velocity` maximum linear velocity to be actuated.
 - `~/max_safe_{lin, ang}_displacement` maximum displacement from the
   reference position (pid controller) to ask for replanning.
+- `~/collision_based_replanning` whether to trigger replanning based
+  on collisions of the forward trajectory instead of time based.
+- `~/replanning_{lin, ang}_lookahead` lookahead for the replanning
+  trigger.
+- `~/replanning_freq_check` frequency of the forward collision check.
 - `~/safety_observers` (`SafetyScanObserver`, `ArmSkinObserver`) robot
   state observers (**not stable yet**).
 - `~/MotionPlanner/max_{linear, angular}_velocity` maximum velocities used
@@ -58,7 +63,7 @@ Contains `squirrel_navigation::GlobalPlanner`,
 
 #### Parameters 
 
-This planner is wrapper around `ompl::geometric::RRTstart`, see
+This planner is wrapper around `ompl::geometric::RRTConnect`, see
 [OMPL library](http://ompl.kavrakilab.org/)):
 - `~/FootprintPlanner/verbose` set verbosity.
 - `~/FootprintPlanner/footprint_topic` the footprint of the robot.
@@ -90,11 +95,11 @@ Parameters of `squirrel_navigation::GlobalPlanner`:
 - `~/heading` the constant heading to use if
   `plan_with_constant_heading` is enabled.
 - `~/Dijkstra/*` parameters of [`nav_core::NavFnROS`](http://wiki.ros.org/navfn).
-- `~/RRTstar/*` parameters of `squirrel_navigation::FootprintPlanner`.
+- `~/RRTConnect/*` parameters of `squirrel_navigation::FootprintPlanner`.
   
 ### Advertised Topics  
 - `~/Dijkstra/*` topics advertised by `nav_core::NavFnROS`.
-- `~/RRTstart/*` topics advertised by `squirrel_navigation::FootprintPlanner`.
+- `~/RRTConnect/*` topics advertised by `squirrel_navigation::FootprintPlanner`.
 - `~/plan` (`nav_msgs::Path`) the path computed by the planner.
 - `~/waypoints` (`geometry_msgs::PoseArray`) the waypoints computed by the planner.
 - `~/footprints` (`geometry_msgs::MarkerArray`) the sequence of

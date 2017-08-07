@@ -62,6 +62,8 @@ class MotionPlanner {
       const ros::Time& ref_stamp, geometry_msgs::Pose* ref_pose,
       geometry_msgs::Twist* ef_twist) = 0;
 
+  virtual std::vector<geometry_msgs::PoseStamped> trajectory() const = 0;
+
  protected:
   bool init_;
 };

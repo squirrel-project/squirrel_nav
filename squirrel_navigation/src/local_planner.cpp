@@ -37,9 +37,15 @@
 
 #include <pluginlib/class_list_macros.h>
 
+#include <costmap_2d/cost_values.h>
+#include <costmap_2d/footprint.h>
+
 #include <geometry_msgs/PoseArray.h>
+#include <std_msgs/Bool.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+
+#include <tf/tf.h>
 
 #include <thread>
 
@@ -55,7 +61,7 @@ void LocalPlanner::initialize(
   if (init_)
     return;
   // Initialize the parameter server.
-  ros::NodeHandle pnh("~/" + name), nh;
+  ros::NodeHandle pnh("~/" + name), mbnh("~"), nh;
   dsrv_.reset(new dynamic_reconfigure::Server<LocalPlannerConfig>(pnh));
   dsrv_->setCallback(
       boost::bind(&LocalPlanner::reconfigureCallback, this, _1, _2));
@@ -85,6 +91,10 @@ void LocalPlanner::initialize(
       }
     }
   }
+  // Initialize the collision detector and replanning stamp.
+  costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
+  costmap_model_.reset(new base_local_planner::CostmapModel(*costmap));
+  replanning_guard_stamp_.reset(nullptr);
   // Initialize publishers and subscribers.
   cmd_pub_ =
       pnh.advertise<visualization_msgs::MarkerArray>("cmd_navigation", 1);
@@ -92,6 +102,8 @@ void LocalPlanner::initialize(
   traj_pub_ = pnh.advertise<geometry_msgs::PoseArray>("trajectory", 1);
   odom_sub_ =
       nh.subscribe(params_.odom_topic, 1, &LocalPlanner::odomCallback, this);
+  footprint_sub_ = nh.subscribe(
+      params_.footprint_topic, 1, &LocalPlanner::footprintCallback, this);
   // Initialization successful.
   init_ = true;
   ROS_INFO_STREAM(
@@ -108,12 +120,11 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
       cmd.angular.z = 0.0;
       return true;
     }
-  // Getting the replanning guard.
-  ReplanningGuard* replanning_guard = ReplanningGuardInstance::get();
   // Compute the reference pose and perform safety check.
   const ros::Time& stamp = robot_pose_.header.stamp;
   geometry_msgs::Pose ref_pose;
   geometry_msgs::Twist ref_twist;
+  std::vector<geometry_msgs::PoseStamped> trajectory;
   motion_planner_->computeReference(stamp, &ref_pose, &ref_twist);
   publishReference(ref_pose, stamp);
   if (math::linearDistance2D(robot_pose_.pose, ref_pose) >
@@ -124,8 +135,6 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
         "squirrel_navigation::LocalPlanner: The robot is too far from the "
         "planned trajectory. Replanning requested.");
     current_goal_.reset(nullptr);
-    if (replanning_guard->enabled())
-      replanning_guard->clear();
     return false;
   }
   // Compute the commands via PID controller in map frame.
@@ -140,6 +149,15 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
   safeVelocityCommands(robot_cmd, &cmd);
   // Publish the command.
   publishTwist(robot_pose_, cmd);
+  // The replanning guard.
+  const ros::Time& now    = ros::Time::now();
+  const ros::Duration& dt = now - *replanning_guard_stamp_;
+  if (dt.toSec() > 1 / params_.replanning_check_freq &&
+      params_.collision_based_replanning &&
+      !isTrajectorySafe(motion_planner_->trajectory())) {
+    replanning_guard_stamp_.reset(new ros::Time(now));
+    return false;
+  }
   return true;
 }
 
@@ -151,7 +169,6 @@ bool LocalPlanner::isGoalReached() {
       math::angularDistanceYaw(robot_pose_.pose, *current_goal_) <=
           params_.goal_ang_tolerance) {
     current_goal_.reset(nullptr);
-    ReplanningGuardInstance::get()->clear();
     if (params_.verbose)
       ROS_INFO_STREAM("squirrel_navigation::LocalPlanner: Goal reached.");
     return true;
@@ -163,8 +180,6 @@ bool LocalPlanner::setPlan(
     const std::vector<geometry_msgs::PoseStamped>& waypoints) {
   if (waypoints.empty())
     return false;
-  if (!ReplanningGuardInstance::get()->replanningFlag())
-    return true;
   const ros::Time& stamp = robot_pose_.header.stamp;
   if (newGoal(waypoints.back().pose)) {
     current_goal_.reset(new geometry_msgs::Pose(waypoints.back().pose));
@@ -173,8 +188,20 @@ bool LocalPlanner::setPlan(
   } else {
     motion_planner_->update(waypoints, stamp);
   }
+  replanning_guard_stamp_.reset(new ros::Time(stamp));
   publishTrajectory(stamp);
   return true;
+}
+
+void LocalPlanner::footprintCallback(
+    const geometry_msgs::PolygonStamped::ConstPtr& msg) {
+  ROS_INFO_STREAM_ONCE(
+      "squirrel_navigation::LocalPlanner: Subscribed to the footprint.");
+  if (footprint_.size() == msg->polygon.points.size())
+    return;
+  footprint_ = costmap_2d::toPointVector(msg->polygon);
+  costmap_2d::calculateMinAndMaxDistances(
+      footprint_, inscribed_radius_, circumscribed_radius_);
 }
 
 void LocalPlanner::odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
@@ -199,14 +226,19 @@ void LocalPlanner::odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
 
 void LocalPlanner::reconfigureCallback(
     LocalPlannerConfig& config, uint32_t level) {
-  params_.odom_topic                = config.odom_topic;
-  params_.goal_lin_tolerance        = config.goal_lin_tolerance;
-  params_.goal_ang_tolerance        = config.goal_ang_tolerance;
-  params_.max_safe_lin_velocity     = config.max_safe_lin_velocity;
-  params_.max_safe_ang_velocity     = config.max_safe_ang_velocity;
-  params_.max_safe_lin_displacement = config.max_safe_lin_displacement;
-  params_.max_safe_ang_displacement = config.max_safe_ang_displacement;
-  params_.verbose                   = config.verbose;
+  params_.odom_topic                 = config.odom_topic;
+  params_.footprint_topic            = config.footprint_topic;
+  params_.collision_based_replanning = config.collision_based_replanning;
+  params_.replanning_lin_lookahead   = config.replanning_lin_lookahead;
+  params_.replanning_ang_lookahead   = config.replanning_ang_lookahead;
+  params_.replanning_check_freq      = config.replanning_check_freq;
+  params_.goal_lin_tolerance         = config.goal_lin_tolerance;
+  params_.goal_ang_tolerance         = config.goal_ang_tolerance;
+  params_.max_safe_lin_velocity      = config.max_safe_lin_velocity;
+  params_.max_safe_ang_velocity      = config.max_safe_ang_velocity;
+  params_.max_safe_lin_displacement  = config.max_safe_lin_displacement;
+  params_.max_safe_ang_displacement  = config.max_safe_ang_displacement;
+  params_.verbose                    = config.verbose;
 }
 
 void LocalPlanner::publishReference(
@@ -332,6 +364,29 @@ void LocalPlanner::safeVelocityCommands(
         std::copysign(params_.max_safe_ang_velocity, twist.angular.z);
 }
 
+bool LocalPlanner::isTrajectorySafe(
+    const std::vector<geometry_msgs::PoseStamped>& trajectory) const {
+  double cum_lin_lookahead = 0.0, cum_ang_lookahead = 0.0;
+  for (unsigned int i = 0; i < trajectory.size() - 1; ++i) {
+    const auto& curr_waypoint = trajectory[i].pose;
+    const auto& next_waypoint = trajectory[i + 1].pose;
+    // Compute the cost of the current waypoint.
+    const double x             = curr_waypoint.position.x;
+    const double y             = curr_waypoint.position.y;
+    const double a             = tf::getYaw(curr_waypoint.orientation);
+    const double waypoint_cost = costmap_model_->footprintCost(
+        x, y, a, footprint_, inscribed_radius_, circumscribed_radius_);
+    if (waypoint_cost < 0. || waypoint_cost >= costmap_2d::LETHAL_OBSTACLE)
+      return false;
+    // Update the lookahead.
+    const double dl = math::linearDistance2D(curr_waypoint, next_waypoint);
+    const double da = math::angularDistanceYaw(curr_waypoint, next_waypoint);
+    if ((cum_lin_lookahead += dl) >= params_.replanning_lin_lookahead ||
+        (cum_ang_lookahead += da) >= params_.replanning_ang_lookahead)
+      return true;
+  }
+}
+
 bool LocalPlanner::newGoal(const geometry_msgs::Pose& pose) const {
   if (!current_goal_)
     return true;
@@ -341,16 +396,23 @@ bool LocalPlanner::newGoal(const geometry_msgs::Pose& pose) const {
 }
 
 LocalPlanner::Params LocalPlanner::Params::defaultParams() {
+  using namespace safety;
+  // Set default parameters.
   Params params;
-  params.odom_topic                = "/odom";
-  params.goal_ang_tolerance        = 0.05;
-  params.goal_lin_tolerance        = 0.05;
-  params.max_safe_lin_velocity     = 0.5;
-  params.max_safe_ang_velocity     = 0.7;
-  params.max_safe_lin_displacement = 0.5;
-  params.max_safe_ang_displacement = 1.0;
-  params.safety_observers = {"scan_safety_observer", "arm_skin_observer"};
-  params.verbose          = false;
+  params.odom_topic                 = "/odom";
+  params.footprint_topic            = "/squirrel_footprint_observer/footprint";
+  params.collision_based_replanning = true;
+  params.replanning_lin_lookahead   = 1.0;
+  params.replanning_ang_lookahead   = 1.0;
+  params.replanning_check_freq      = 1.0;
+  params.goal_ang_tolerance         = 0.05;
+  params.goal_lin_tolerance         = 0.05;
+  params.max_safe_lin_velocity      = 0.5;
+  params.max_safe_ang_velocity      = 0.7;
+  params.max_safe_lin_displacement  = 0.5;
+  params.max_safe_ang_displacement  = 1.0;
+  params.safety_observers           = {ScanObserver::tag, ArmSkinObserver::tag};
+  params.verbose                    = false;
   return params;
 }
 

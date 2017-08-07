@@ -41,7 +41,9 @@
 namespace squirrel_2d_localizer {
 
 LocalizerROS::LocalizerROS()
-    : node_name_(ros::this_node::getName()), update_laser_params_(true) {
+    : node_name_(ros::this_node::getName()),
+      update_laser_params_(true),
+      initial_localization_counter_(0) {
   ros::NodeHandle nh("~"), gnh;
   // frames.
   nh.param<std::string>("map_frame", map_frame_id_, "map");
@@ -228,6 +230,7 @@ void LocalizerROS::initialPoseCallback(
   localizer_->resetPose(ros_conversions::fromROSMsgTo<Pose2d>(msg->pose.pose));
   publishParticles(now);
   publishPoseWithCovariance(now);
+  initial_localization_counter_ = 0;
 }
 
 bool LocalizerROS::globalLocalizationCallback(

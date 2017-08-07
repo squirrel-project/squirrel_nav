@@ -35,10 +35,9 @@
 
 #include "squirrel_navigation/GlobalPlannerConfig.h"
 #include "squirrel_navigation/footprint_planner.h"
-#include "squirrel_navigation/replanning_guard.h"
-#include "squirrel_navigation/utils/single_instance.h"
 
 #include <ros/publisher.h>
+#include <ros/subscriber.h>
 
 #include <nav_core/base_global_planner.h>
 #include <navfn/navfn_ros.h>
@@ -51,6 +50,7 @@
 #include <geometry_msgs/Polygon.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Path.h>
+#include <std_msgs/Bool.h>
 
 #include <memory>
 #include <string>
@@ -64,9 +64,7 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
    public:
     static Params defaultParams();
 
-    std::string footprint_topic;
-    bool collision_based_replanning;
-    double collision_based_replanning_lookahead;
+    std::string footprint_topic, trajectory_topic, current_index_topic;
     bool plan_with_footprint;
     bool plan_with_constant_heading;
     double heading;
@@ -74,8 +72,8 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
   };
 
  public:
-  GlobalPlanner() : params_(Params::defaultParams()), init_(false) {}
-  GlobalPlanner(const Params& params) : params_(params), init_(false) {}
+  GlobalPlanner();
+  GlobalPlanner(const Params& params);
   virtual ~GlobalPlanner() {}
 
   // Initialize the state observers.
@@ -94,13 +92,9 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
   inline Params& params() { return params_; }
 
  private:
-  // Shared memory between planners.
-  typedef utils::SingleInstance<ReplanningGuard> ReplanningGuardInstance;
-
- private:
-  // Reconfigure the callback.
+  // Callbacks.
   void reconfigureCallback(GlobalPlannerConfig& config, uint32_t level);
-
+  
   // Publishing utilities.
   void publishPlan(
       const std::vector<geometry_msgs::PoseStamped>& waypoints,
@@ -110,9 +104,9 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
       const ros::Time& stamp) const;
   void publishFootprints(
       const std::vector<geometry_msgs::PoseStamped>& waypoints,
-      const ros::Time& stamp) const;
+      const ros::Time& stamp);
 
-  // Utility to close up a polygon.
+  // Utility to close up an open polygon.
   std::vector<geometry_msgs::Point> closedPolygon(
       const std::vector<geometry_msgs::Point>& open_polygon) const;
 
@@ -124,8 +118,10 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
   std::unique_ptr<FootprintPlanner> footprint_planner_;
 
   ros::Publisher plan_pub_, waypoints_pub_, footprints_pub_;
-
+  
   bool init_;
+  
+  int last_nwaypoints_;
 
   std::shared_ptr<costmap_2d::Costmap2DROS> costmap_ros_;
 };

@@ -55,11 +55,11 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 
+#include <ompl/base/DiscreteMotionValidator.h>
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/spaces/SE2StateSpace.h>
 #include <ompl/geometric/PathSimplifier.h>
 #include <ompl/geometric/SimpleSetup.h>
-#include <ompl/geometric/planners/rrt/RRTstar.h>
 
 #include <memory>
 #include <mutex>
@@ -76,9 +76,11 @@ class FootprintPlanner : public nav_core::BaseGlobalPlanner {
 
     std::string footprint_topic;
     double collision_check_resolution;
+    double bold_factor;
     double max_planning_time, max_simplification_time;
     double waypoints_resolution;
     double range;
+    bool allow_backward_motion;
     bool verbose;
   };
 
@@ -111,6 +113,35 @@ class FootprintPlanner : public nav_core::BaseGlobalPlanner {
   inline Params& params() { return params_; }
 
  private:
+  class ForwardDiscreteMotionValidator : public ompl::base::MotionValidator {
+   public:
+    ForwardDiscreteMotionValidator(ompl::base::SpaceInformation* si);
+    ForwardDiscreteMotionValidator(const ompl::base::SpaceInformationPtr& si);
+    virtual ~ForwardDiscreteMotionValidator() override = default;
+
+    bool checkMotion(
+        const ompl::base::State* state1,
+        const ompl::base::State* state2) const override;
+    bool checkMotion(
+        const ompl::base::State* state1, const ompl::base::State* state2,
+        std::pair<ompl::base::State*, double>& last_valid_state) const override;
+    
+   private:
+    // Increment in SE2
+    void ominus(
+        const ompl::base::SE2StateSpace::StateType& s2,
+        const ompl::base::SE2StateSpace::StateType& s1, double* x, double* y,
+        double* a) const;
+
+    // Check whether the motion from state1 to state2 is forward directed.
+    bool isForward(
+        const ompl::base::State* state1, const ompl::base::State* state2) const;
+
+   private:
+    ompl::base::DiscreteMotionValidator discrete_motion_validator_;
+  };
+
+ private:
   // Callbacks.
   void reconfigureCallback(FootprintPlannerConfig& config, uint32_t level);
   void footprintCallback(
@@ -121,6 +152,9 @@ class FootprintPlanner : public nav_core::BaseGlobalPlanner {
   bool checkValidState(
       const ompl::base::SpaceInformation* ompl_simple_setup,
       const ompl::base::State* state);
+
+  // Apply bold factor.
+  void rescaleFootprint(double factor);
 
   // Utilities.
   void initializeFootprintMarker();
@@ -152,8 +186,14 @@ class FootprintPlanner : public nav_core::BaseGlobalPlanner {
   bool init_;
   bool ompl_need_reinitialization_;
 
+  int last_nwaypoints_;
+
   mutable std::mutex footprint_mtx_;
 };
+
+// Rescale footprint.
+std::vector<geometry_msgs::Point>& operator*=(
+    std::vector<geometry_msgs::Point>& footprint, double scale);
 
 }  // namespace squirrel_navigation
 

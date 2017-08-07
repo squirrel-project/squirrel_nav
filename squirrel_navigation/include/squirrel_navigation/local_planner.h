@@ -36,19 +36,20 @@
 #include "squirrel_navigation/LocalPlannerConfig.h"
 #include "squirrel_navigation/controller_pid.h"
 #include "squirrel_navigation/linear_motion_planner.h"
-#include "squirrel_navigation/replanning_guard.h"
 #include "squirrel_navigation/safety/scan_observer.h"
-#include "squirrel_navigation/utils/single_instance.h"
 
 #include <ros/console.h>
 #include <ros/publisher.h>
 #include <ros/subscriber.h>
 
+#include <base_local_planner/costmap_model.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <nav_core/base_local_planner.h>
 
 #include <pluginlib/class_list_macros.h>
 
+#include <geometry_msgs/Point.h>
+#include <geometry_msgs/PolygonStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <nav_msgs/Odometry.h>
@@ -70,11 +71,14 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
    public:
     static Params defaultParams();
 
-    std::string odom_topic;
+    std::string odom_topic, footprint_topic;
     double goal_ang_tolerance, goal_lin_tolerance;
     double max_safe_lin_velocity, max_safe_ang_velocity;
     double max_safe_lin_displacement, max_safe_ang_displacement;
     std::vector<std::string> safety_observers;
+    bool collision_based_replanning;
+    double replanning_lin_lookahead, replanning_ang_lookahead;
+    double replanning_check_freq;
     bool verbose;
   };
 
@@ -104,11 +108,8 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   inline Params& params() { return params_; }
 
  private:
-  // Shared memory between planners.
-  typedef utils::SingleInstance<ReplanningGuard> ReplanningGuardInstance;
-
- private:
   // Callbacks.
+  void footprintCallback(const geometry_msgs::PolygonStamped::ConstPtr& msg);
   void odomCallback(const nav_msgs::Odometry::ConstPtr& odom);
   void reconfigureCallback(LocalPlannerConfig& config, uint32_t level);
 
@@ -131,6 +132,10 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
       const geometry_msgs::Twist& twist,
       geometry_msgs::Twist* safe_twist) const;
 
+  // Check if path is collision free.
+  bool isTrajectorySafe(
+      const std::vector<geometry_msgs::PoseStamped>& trajectory) const;
+
   // Check if a new goal is input.
   bool newGoal(const geometry_msgs::Pose& pose) const;
 
@@ -152,7 +157,12 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   std::shared_ptr<costmap_2d::Costmap2DROS> costmap_ros_;
 
   ros::Publisher ref_pub_, traj_pub_, cmd_pub_;
-  ros::Subscriber odom_sub_;
+  ros::Subscriber odom_sub_, footprint_sub_;
+
+  std::vector<geometry_msgs::Point> footprint_;
+  double inscribed_radius_, circumscribed_radius_;
+  std::unique_ptr<base_local_planner::CostmapModel> costmap_model_;
+  std::unique_ptr<ros::Time> replanning_guard_stamp_;
 
   bool init_;
 

@@ -34,9 +34,7 @@
 #define SQUIRREL_NAVIGATION_MOTION_PLANNER_H_
 
 #include "squirrel_navigation/LinearMotionPlannerConfig.h"
-#include "squirrel_navigation/replanning_guard.h"
 #include "squirrel_navigation/utils/motion_planner.h"
-#include "squirrel_navigation/utils/single_instance.h"
 
 #include <ros/publisher.h>
 #include <ros/subscriber.h>
@@ -91,6 +89,9 @@ class LinearMotionPlanner : public utils::MotionPlanner {
       const ros::Time& stamp, geometry_msgs::Pose* pose,
       geometry_msgs::Twist* twist) override;
 
+  // Get the forward trajectory.
+  std::vector<geometry_msgs::PoseStamped> trajectory() const override;
+
   // Get start/goal.
   const geometry_msgs::PoseStamped& start() const;
   const geometry_msgs::PoseStamped& goal() const;
@@ -108,9 +109,6 @@ class LinearMotionPlanner : public utils::MotionPlanner {
   inline const Params& params() const { return params_; }
   inline void setParams(const Params& params) { params_ = params; }
   inline Params& params() { return params_; }
-
- private:
-  typedef utils::SingleInstance<ReplanningGuard> ReplanningGuardInstance;
 
  private:
   // Reconfigure the parameters.
@@ -135,6 +133,7 @@ class LinearMotionPlanner : public utils::MotionPlanner {
   Params params_;
   std::unique_ptr<dynamic_reconfigure::Server<LinearMotionPlannerConfig>> dsrv_;
 
+  std::vector<geometry_msgs::PoseStamped>::const_iterator heading_waypoint_;
   std::vector<geometry_msgs::PoseStamped> waypoints_;
 
   mutable std::mutex update_mtx_;

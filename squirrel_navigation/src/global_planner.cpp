@@ -46,26 +46,29 @@ PLUGINLIB_DECLARE_CLASS(
 
 namespace squirrel_navigation {
 
+GlobalPlanner::GlobalPlanner()
+    : params_(Params::defaultParams()), init_(false), last_nwaypoints_(-1) {}
+
+GlobalPlanner::GlobalPlanner(const Params& params)
+    : params_(params), init_(false), last_nwaypoints_(-1) {}
+
 void GlobalPlanner::initialize(
     std::string name, costmap_2d::Costmap2DROS* costmap_ros) {
   if (init_)
     return;
   // Initialize the parameter server.
-  ros::NodeHandle pnh("~/" + name), nh;
+  ros::NodeHandle pnh("~/" + name), mbnh("~/"), nh;
   dsrv_.reset(new dynamic_reconfigure::Server<GlobalPlannerConfig>(pnh));
   dsrv_->setCallback(
       boost::bind(&GlobalPlanner::reconfigureCallback, this, _1, _2));
   // Initialize internal observers.
   costmap_ros_.reset(costmap_ros);
-  // Initialize the replanning guard.
-  costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
-  ReplanningGuardInstance::get()->initialize(*costmap);
   // Initialize the path planners.
   dijkstra_planner_.reset(new navfn::NavfnROS);
   dijkstra_planner_->initialize(name + "/Dijkstra", costmap_ros);
   footprint_planner_.reset(new FootprintPlanner);
-  footprint_planner_->initialize(name + "/RRTstar", costmap_ros);
-  // Initialize the publishers.
+  footprint_planner_->initialize(name + "/RRTConnect", costmap_ros);
+  // Initialize publishers and subscribers.
   plan_pub_      = pnh.advertise<nav_msgs::Path>("plan", 1);
   waypoints_pub_ = pnh.advertise<geometry_msgs::PoseArray>("poses", 1);
   footprints_pub_ =
@@ -80,26 +83,12 @@ bool GlobalPlanner::makePlan(
     const geometry_msgs::PoseStamped& start,
     const geometry_msgs::PoseStamped& goal,
     std::vector<geometry_msgs::PoseStamped>& waypoints) {
-  if (params_.collision_based_replanning) {
-    ReplanningGuard* replanning_guard = ReplanningGuardInstance::get();
-    double inscribed_radius, circumscribed_radius;
-    footprint_planner_->footprintRadii(
-        &inscribed_radius, &circumscribed_radius);
-    if (params_.plan_with_footprint) {
-      replanning_guard->checkCollisionsWithRadius(
-          circumscribed_radius, params_.collision_based_replanning_lookahead);
-    } else {
-      replanning_guard->checkCollisionsWithFootprint(
-          footprint_planner_->footprint(), inscribed_radius,
-          circumscribed_radius, params_.collision_based_replanning_lookahead);
-    }
-    if (replanning_guard->replanningFlag())
-      return true;
-  }
   // Compute a collision free path.
+  bool plan_found = false;
   if (params_.plan_with_footprint) {
-    return footprint_planner_->makePlan(start, goal, waypoints);
-  } else if (dijkstra_planner_->makePlan(start, goal, waypoints)) {
+    plan_found = footprint_planner_->makePlan(start, goal, waypoints);
+  } else {
+    plan_found        = dijkstra_planner_->makePlan(start, goal, waypoints);
     waypoints.front() = start;
     for (int i = 1; i < (int)waypoints.size() - 1; ++i) {
       if (params_.plan_with_constant_heading) {
@@ -115,19 +104,24 @@ bool GlobalPlanner::makePlan(
       }
     }
     waypoints.back() = goal;
-    // Print info.
-    if (params_.verbose)
+  }
+  // Print info.
+  if (params_.verbose) {
+    if (plan_found)
       ROS_INFO_STREAM(
           "squirrel_navigation::GlobalPlanner: Found a collision free path ("
           << waypoints.size() << " waypoints).");
-    // Publish topics.
-    const ros::Time& now = ros::Time::now();
-    publishPlan(waypoints, now);
-    publishWaypoints(waypoints, now);
-    publishFootprints(waypoints, now);
-    return true;
+    else
+      ROS_WARN_STREAM(
+          "squirrel_navigation::GlobalPlanner: Could not find a collision free "
+          "path.");
   }
-  return false;
+  // Publish topics.
+  const ros::Time& now = ros::Time::now();
+  publishPlan(waypoints, now);
+  publishWaypoints(waypoints, now);
+  publishFootprints(waypoints, now);
+  return plan_found;
 }
 
 void GlobalPlanner::reconfigureCallback(
@@ -136,12 +130,6 @@ void GlobalPlanner::reconfigureCallback(
   params_.plan_with_constant_heading = config.plan_with_constant_heading;
   params_.heading                    = config.heading;
   params_.verbose                    = config.verbose;
-  // Collision based replanning.
-  params_.collision_based_replanning = config.collision_based_replanning;
-  params_.collision_based_replanning_lookahead =
-      config.collision_based_replanning_lookahead;
-  ReplanningGuardInstance::get()->setEnabled(
-      params_.collision_based_replanning_lookahead);
 }
 
 void GlobalPlanner::publishPlan(
@@ -150,7 +138,7 @@ void GlobalPlanner::publishPlan(
   nav_msgs::Path plan_msg;
   plan_msg.header.stamp    = stamp;
   plan_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
-  plan_msg.poses          = waypoints;
+  plan_msg.poses           = waypoints;
   plan_pub_.publish(plan_msg);
 }
 
@@ -168,18 +156,18 @@ void GlobalPlanner::publishWaypoints(
 
 void GlobalPlanner::publishFootprints(
     const std::vector<geometry_msgs::PoseStamped>& waypoints,
-    const ros::Time& stamp) const {
+    const ros::Time& stamp) {
   // Number of waypoints and footprint marker.
   const int nwaypoints  = waypoints.size();
   const auto& footprint = closedPolygon(footprint_planner_->footprint());
   // Create the visualization marker.
   visualization_msgs::MarkerArray marker_array_msg;
-  marker_array_msg.markers.reserve(nwaypoints);
+  marker_array_msg.markers.reserve(std::max(nwaypoints, last_nwaypoints_));
   for (size_t i = 0; i < nwaypoints; ++i) {
     visualization_msgs::Marker marker;
     marker.header.stamp    = stamp;
     marker.header.frame_id = costmap_ros_->getGlobalFrameID();
-    marker.ns              = ros::this_node::getNamespace();
+    marker.ns              = ros::this_node::getNamespace() + "/GlobalPlanner";
     marker.id              = i;
     marker.type            = visualization_msgs::Marker::LINE_STRIP;
     marker.action          = visualization_msgs::Marker::MODIFY;
@@ -192,26 +180,36 @@ void GlobalPlanner::publishFootprints(
     marker.points          = footprint;
     marker_array_msg.markers.emplace_back(marker);
   }
+  // Delete the old ones.
+  for (int i = nwaypoints; i < last_nwaypoints_; ++i) {
+    visualization_msgs::Marker delete_marker;
+    delete_marker.ns     = ros::this_node::getNamespace() + "/GlobalPlanner";
+    delete_marker.id     = i;
+    delete_marker.action = visualization_msgs::Marker::DELETE;
+    marker_array_msg.markers.emplace_back(delete_marker);
+  }
+  last_nwaypoints_ = nwaypoints;
   footprints_pub_.publish(marker_array_msg);
 }
 
 std::vector<geometry_msgs::Point> GlobalPlanner::closedPolygon(
     const std::vector<geometry_msgs::Point>& open_polygon) const {
-  if (open_polygon.size() <= 1)
+  const int npoints = open_polygon.size();
+  if (npoints <= 1)
     return open_polygon;
-  std::vector<geometry_msgs::Point> output = open_polygon;
-  output.insert(output.end(), open_polygon.back()); /* maybe not so efficient */
+  std::vector<geometry_msgs::Point> output;
+  output.reserve(npoints);
+  for (int i = 0; i <= npoints; ++i)
+    output.emplace_back(open_polygon[i % npoints]);
   return output;
 }
 
 GlobalPlanner::Params GlobalPlanner::Params::defaultParams() {
   Params params;
-  params.collision_based_replanning           = false;
-  params.collision_based_replanning_lookahead = 1.0;
-  params.plan_with_footprint                  = false;
-  params.plan_with_constant_heading           = false;
-  params.heading                              = 0.0;
-  params.verbose                              = false;
+  params.plan_with_footprint        = false;
+  params.plan_with_constant_heading = false;
+  params.heading                    = 0.0;
+  params.verbose                    = false;
   return params;
 }
 

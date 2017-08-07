@@ -3,7 +3,8 @@ Panels:
     Help Height: 78
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /Trajectory Waypoints1/Status1
       Splitter Ratio: 0.838889
     Tree Height: 778
   - Class: rviz/Selection
@@ -285,7 +286,7 @@ Visualization Manager:
       Color: 0; 170; 0
       Enabled: true
       Name: Trajectory Waypoints
-      Topic: /move_base/GlobalPlanner/waypoints
+      Topic: /move_base/GlobalPlanner/poses
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
@@ -293,7 +294,7 @@ Visualization Manager:
       Marker Topic: /move_base/GlobalPlanner/footprints
       Name: Footprint Planner
       Namespaces:
-        {}
+        /: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -336,22 +337,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 5.99695
+      Distance: 10
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
+        X: 0.758603
+        Y: 0.491684
+        Z: -0.884086
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.5698
+      Pitch: 0.785398
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.1204
+      Yaw: 0.785398
     Saved: ~
 Window Geometry:
   Displays:
