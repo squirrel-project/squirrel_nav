@@ -34,14 +34,12 @@
 #define SQUIRREL_NAVIGATION_FOOTPRINT_PLANNER_H_
 
 #include "squirrel_navigation/FootprintPlannerConfig.h"
+#include "squirrel_navigation/utils/sbpl_utils.h"
 
 #include <ros/console.h>
 #include <ros/publisher.h>
 #include <ros/subscriber.h>
 #include <ros/time.h>
-
-#include <base_local_planner/costmap_model.h>
-#include <nav_core/base_global_planner.h>
 
 #include <costmap_2d/costmap_2d_ros.h>
 
@@ -55,12 +53,6 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 
-#include <ompl/base/DiscreteMotionValidator.h>
-#include <ompl/base/SpaceInformation.h>
-#include <ompl/base/spaces/SE2StateSpace.h>
-#include <ompl/geometric/PathSimplifier.h>
-#include <ompl/geometric/SimpleSetup.h>
-
 #include <memory>
 #include <mutex>
 #include <string>
@@ -68,19 +60,15 @@
 
 namespace squirrel_navigation {
 
-class FootprintPlanner : public nav_core::BaseGlobalPlanner {
+class FootprintPlanner {
  public:
   class Params {
-   public:
     static Params defaultParams();
 
     std::string footprint_topic;
-    double collision_check_resolution;
-    double bold_factor;
-    double max_planning_time, max_simplification_time;
-    double waypoints_resolution;
-    double range;
-    bool allow_backward_motion;
+    bool forward_search;
+    double max_planning_time;
+    double initial_epsilon;
     bool verbose;
   };
 
@@ -99,11 +87,6 @@ class FootprintPlanner : public nav_core::BaseGlobalPlanner {
       const geometry_msgs::PoseStamped& goal,
       std::vector<geometry_msgs::PoseStamped>& waypoints) override;
 
-  // Get footprint used for planning.
-  const std::vector<geometry_msgs::Point>& footprint() const;
-  void footprintRadii(
-      double* inscribed_radius, double* circumscribed_radius) const;
-
   // Mutex getter.
   inline std::mutex& mutex() const { return footprint_mtx_; }
 
@@ -113,56 +96,22 @@ class FootprintPlanner : public nav_core::BaseGlobalPlanner {
   inline Params& params() { return params_; }
 
  private:
-  class ForwardDiscreteMotionValidator : public ompl::base::MotionValidator {
-   public:
-    ForwardDiscreteMotionValidator(ompl::base::SpaceInformation* si);
-    ForwardDiscreteMotionValidator(const ompl::base::SpaceInformationPtr& si);
-    virtual ~ForwardDiscreteMotionValidator() override = default;
-
-    bool checkMotion(
-        const ompl::base::State* state1,
-        const ompl::base::State* state2) const override;
-    bool checkMotion(
-        const ompl::base::State* state1, const ompl::base::State* state2,
-        std::pair<ompl::base::State*, double>& last_valid_state) const override;
-    
-   private:
-    // Increment in SE2
-    void ominus(
-        const ompl::base::SE2StateSpace::StateType& s2,
-        const ompl::base::SE2StateSpace::StateType& s1, double* x, double* y,
-        double* a) const;
-
-    // Check whether the motion from state1 to state2 is forward directed.
-    bool isForward(
-        const ompl::base::State* state1, const ompl::base::State* state2) const;
-
-   private:
-    ompl::base::DiscreteMotionValidator discrete_motion_validator_;
-  };
-
- private:
   // Callbacks.
   void reconfigureCallback(FootprintPlannerConfig& config, uint32_t level);
   void footprintCallback(
       const geometry_msgs::PolygonStamped::ConstPtr& footprint);
 
-  // OMPL related utilities.
-  void initializeOMPLPlanner();
-  bool checkValidState(
-      const ompl::base::SpaceInformation* ompl_simple_setup,
-      const ompl::base::State* state);
-
-  // Apply bold factor.
-  void rescaleFootprint(double factor);
+  // SBPL related stuff.
+  void initializeSBPLPlanner();
+  void updateSBPLCostmap(const costmap_2d::Costmap2D& costmap);
 
   // Utilities.
   void initializeFootprintMarker();
   void publishPath(
       const std::vector<geometry_msgs::PoseStamped>& waypoints,
       const ros::Time& stamp);
-  void convertOMPLStatesToWayPoints(
-      const std::vector<ompl::base::State*>& ompl_states,
+  void convertSBPLStatesToWayPoints(
+      const std::vector<sbpl::Pose>& sbpl_states,
       std::vector<geometry_msgs::PoseStamped>* waypoints);
 
  private:
@@ -172,21 +121,19 @@ class FootprintPlanner : public nav_core::BaseGlobalPlanner {
   visualization_msgs::Marker footprint_marker_;
   std::vector<geometry_msgs::Point> footprint_;
   double inscribed_radius_, circumscribed_radius_;
-  std::unique_ptr<base_local_planner::CostmapModel> costmap_model_;
-  std::shared_ptr<costmap_2d::Costmap2DROS> costmap_ros_;
+  costmap_2d::Costmap2DROS* costmap_ros_;
 
-  std::unique_ptr<ompl::geometric::SimpleSetup> ompl_simple_setup_;
-  std::unique_ptr<ompl::base::RealVectorBounds> ompl_bounds_;
-  ompl::base::PlannerPtr ompl_planner_;
-  ompl::base::StateSpacePtr ompl_state_space_;
+  // sbpl stuff.
+  std::unique_ptr<sbpl::NavigationEnvironment> sbpl_env_;
+  std::unique_ptr<sbpl::Planner> sbpl_planner_;
 
   ros::Subscriber footprint_sub_;
   ros::Publisher plan_pub_, waypoints_pub_, footprints_pub_;
 
+  std::string motion_primitives_url_;
+  
   bool init_;
-  bool ompl_need_reinitialization_;
-
-  int last_nwaypoints_;
+  bool sbpl_need_reinitialization_;
 
   mutable std::mutex footprint_mtx_;
 };
