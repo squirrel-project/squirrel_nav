@@ -32,7 +32,7 @@
     <rosparam file="$(find squirrel_navigation)/config/base_local_planner_params.yaml" command="load" />
     <rosparam file="$(find squirrel_navigation)/config/base_global_planner_params.yaml" command="load" />
     <rosparam file="$(find squirrel_navigation)/config/move_base_params.yaml" command="load" />
-    <param name="GlobalPlanner/FootprintPlanner/motion_pimitives_url" value="$(find squirrel_navigation)/config/motion_primitives.mprim"/>
+    <param name="GlobalPlanner/FootprintPlanner/motion_pimitives_url" value="$(find squirrel_navigation)/motion_primitives/motion_primitives.mprim"/>
     <remap from="/cmd_vel" to="/cmd_navigation" if="$(arg twist_mux)"/>
   </node>
   
