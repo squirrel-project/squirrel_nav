@@ -2,7 +2,8 @@
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
+// modification, are permitted provided that the following conditions
+// are met:
 //
 // * Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
@@ -45,6 +46,7 @@
 #include <angles/angles.h>
 
 #include <cmath>
+#include <vector>
 
 namespace squirrel_navigation {
 namespace math {
@@ -182,6 +184,28 @@ inline geometry_msgs::Quaternion slerpYaw(
     const geometry_msgs::PoseStamped& q1, const geometry_msgs::PoseStamped& q2,
     double alpha) {
   return slerpYaw(q1.pose, q2.pose, alpha);
+}
+
+inline double pathLength(const std::vector<geometry_msgs::Point>& waypoints) {
+  double length = 0.;
+  for (unsigned int i = 1; i < waypoints.size(); ++i)
+    length += linearDistance2D(waypoints[i - 1], waypoints[i]);
+  return length;
+}
+
+inline double pathLength(const std::vector<geometry_msgs::Pose>& waypoints) {
+  double length = 0.;
+  for (unsigned int i = 1; i < waypoints.size(); ++i)
+    length += linearDistance2D(waypoints[i - 1], waypoints[i]);
+  return length;
+}
+
+inline double pathLength(
+    const std::vector<geometry_msgs::PoseStamped>& waypoints) {
+  double length = 0.;
+  for (unsigned int i = 1; i < waypoints.size(); ++i)
+    length += linearDistance2D(waypoints[i - 1], waypoints[i]);
+  return length;
 }
 
 }  // namespace math

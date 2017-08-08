@@ -2,7 +2,8 @@
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
+// modification, are permitted provided that the following conditions
+// are met:
 //
 // * Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
@@ -92,15 +93,16 @@ class LinearMotionPlanner : public utils::MotionPlanner {
   // Get the forward trajectory.
   std::vector<geometry_msgs::PoseStamped> trajectory() const override;
 
+  // Waypoint(s) getters.
+  const std::vector<geometry_msgs::PoseStamped>& waypoints() const override;
+
   // Get start/goal.
   const geometry_msgs::PoseStamped& start() const;
   const geometry_msgs::PoseStamped& goal() const;
 
-  // Waypoint(s) getters.
-  const std::vector<geometry_msgs::PoseStamped>& waypoints() const;
-  const geometry_msgs::PoseStamped& operator()(int i) const;
-  const geometry_msgs::PoseStamped& operator[](int i) const;
-  const geometry_msgs::PoseStamped& at(int i) const;
+  // const geometry_msgs::PoseStamped& operator()(int i) const;
+  // const geometry_msgs::PoseStamped& operator[](int i) const;
+  // const geometry_msgs::PoseStamped& at(int i) const;
 
   // Mutex getter.
   inline std::mutex& mutex() const { return update_mtx_; }

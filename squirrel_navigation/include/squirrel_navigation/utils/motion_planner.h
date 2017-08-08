@@ -2,7 +2,8 @@
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
+// modification, are permitted provided that the following conditions
+// are met:
 //
 // * Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
@@ -61,6 +62,8 @@ class MotionPlanner {
   virtual void computeReference(
       const ros::Time& ref_stamp, geometry_msgs::Pose* ref_pose,
       geometry_msgs::Twist* ef_twist) = 0;
+
+  virtual const std::vector<geometry_msgs::PoseStamped>& waypoints() const = 0;
 
   virtual std::vector<geometry_msgs::PoseStamped> trajectory() const = 0;
 

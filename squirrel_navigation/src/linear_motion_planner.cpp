@@ -2,7 +2,8 @@
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
+// modification, are permitted provided that the following conditions
+// are met:
 //
 // * Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
@@ -129,6 +130,11 @@ void LinearMotionPlanner::computeReference(
   ref_pose->orientation = math::slerpYaw(last_pose, head_pose, inter);
 }
 
+const std::vector<geometry_msgs::PoseStamped>& LinearMotionPlanner::waypoints()
+    const {
+  return waypoints_;
+}
+
 std::vector<geometry_msgs::PoseStamped> LinearMotionPlanner::trajectory()
     const {
   std::vector<geometry_msgs::PoseStamped> trajectory;
@@ -144,26 +150,6 @@ const geometry_msgs::PoseStamped& LinearMotionPlanner::start() const {
 
 const geometry_msgs::PoseStamped& LinearMotionPlanner::goal() const {
   return waypoints_.back();
-}
-
-const std::vector<geometry_msgs::PoseStamped>& LinearMotionPlanner::waypoints()
-    const {
-  return waypoints_;
-}
-
-const geometry_msgs::PoseStamped& LinearMotionPlanner::operator()(int i) const {
-  assert(i >= 0 && i < (int)waypoints_.size());
-  return waypoints_[i];
-}
-
-const geometry_msgs::PoseStamped& LinearMotionPlanner::operator[](int i) const {
-  assert(i >= 0 && i < (int)waypoints_.size());
-  return waypoints_[i];
-}
-
-const geometry_msgs::PoseStamped& LinearMotionPlanner::at(int i) const {
-  assert(i >= 0 && i < (int)waypoints_.size());
-  return waypoints_[i];
 }
 
 void LinearMotionPlanner::reconfigureCallback(

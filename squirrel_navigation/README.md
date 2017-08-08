@@ -31,7 +31,8 @@ Contains `squirrel_navigation::GlobalPlanner`,
   on collisions of the forward trajectory instead of time based.
 - `~/replanning_{lin, ang}_lookahead` lookahead for the replanning
   trigger.
-- `~/replanning_freq_check` frequency of the forward collision check.
+- `~/replanning_path_length_ratio` Ratio of length between the old
+  path and the candidate replanned. If the new path is shorter accept.
 - `~/safety_observers` (`SafetyScanObserver`, `ArmSkinObserver`) robot
   state observers (**not stable yet**).
 - `~/MotionPlanner/max_{linear, angular}_velocity` maximum velocities used
@@ -63,15 +64,16 @@ Contains `squirrel_navigation::GlobalPlanner`,
 
 #### Parameters 
 
-This planner is wrapper around `ompl::geometric::RRTConnect`, see
+This planner is wrapper around [SBPL ARA* planner](http://www.sbpl.net/), see
 [OMPL library](http://ompl.kavrakilab.org/)):
 - `~/FootprintPlanner/verbose` set verbosity.
 - `~/FootprintPlanner/footprint_topic` the footprint of the robot.
-- `~/FootprintPlanner/collision_check_resolution`  see OMPL.
-- `~/FootprintPlanner/max_planning_time` see OMPL doc.
-- `~/FootprintPlanner/max_simplification_time` see OMPL doc.
-- `~/FootprintPlanner/map_resolution` see OMPL doc.
-- `~/FootprintPlanner/range` see OMPL doc.
+- `~/FootprintPlanner/forward_search` see SBPL documentation.
+- `~/FootprintPlanner/max_planning_time` Maximum time assigned for
+  searching a collision free path.
+- `~/FootprintPlanner/iintial_epsilon` see SBPL documentation.
+- `~/FootprintPlanner/motion_primitive_url` filename containing the
+  motion primitives. See SBPL documentation.
 
 #### Advertised Topics
 - `~/plan` (`nav_msgs::Path`) the computed plan.

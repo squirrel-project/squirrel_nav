@@ -2,7 +2,8 @@
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
+// modification, are permitted provided that the following conditions
+// are met:
 //
 // * Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
@@ -94,7 +95,6 @@ void LocalPlanner::initialize(
   // Initialize the collision detector and replanning stamp.
   costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
   costmap_model_.reset(new base_local_planner::CostmapModel(*costmap));
-  replanning_guard_stamp_.reset(nullptr);
   // Initialize publishers and subscribers.
   cmd_pub_ =
       pnh.advertise<visualization_msgs::MarkerArray>("cmd_navigation", 1);
@@ -149,15 +149,6 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
   safeVelocityCommands(robot_cmd, &cmd);
   // Publish the command.
   publishTwist(robot_pose_, cmd);
-  // The replanning guard.
-  const ros::Time& now    = ros::Time::now();
-  const ros::Duration& dt = now - *replanning_guard_stamp_;
-  if (dt.toSec() > 1 / params_.replanning_check_freq &&
-      params_.collision_based_replanning &&
-      !isTrajectorySafe(motion_planner_->trajectory())) {
-    replanning_guard_stamp_.reset(new ros::Time(now));
-    return false;
-  }
   return true;
 }
 
@@ -185,11 +176,13 @@ bool LocalPlanner::setPlan(
     current_goal_.reset(new geometry_msgs::Pose(waypoints.back().pose));
     controller_->reset(stamp);
     motion_planner_->reset(waypoints, stamp);
-  } else {
+    publishTrajectory(stamp);
+  } else if (
+      !params_.collision_based_replanning ||
+      needReplanning(motion_planner_->trajectory(), waypoints)) {
     motion_planner_->update(waypoints, stamp);
+    publishTrajectory(stamp);
   }
-  replanning_guard_stamp_.reset(new ros::Time(stamp));
-  publishTrajectory(stamp);
   return true;
 }
 
@@ -226,19 +219,19 @@ void LocalPlanner::odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
 
 void LocalPlanner::reconfigureCallback(
     LocalPlannerConfig& config, uint32_t level) {
-  params_.odom_topic                 = config.odom_topic;
-  params_.footprint_topic            = config.footprint_topic;
-  params_.collision_based_replanning = config.collision_based_replanning;
-  params_.replanning_lin_lookahead   = config.replanning_lin_lookahead;
-  params_.replanning_ang_lookahead   = config.replanning_ang_lookahead;
-  params_.replanning_check_freq      = config.replanning_check_freq;
-  params_.goal_lin_tolerance         = config.goal_lin_tolerance;
-  params_.goal_ang_tolerance         = config.goal_ang_tolerance;
-  params_.max_safe_lin_velocity      = config.max_safe_lin_velocity;
-  params_.max_safe_ang_velocity      = config.max_safe_ang_velocity;
-  params_.max_safe_lin_displacement  = config.max_safe_lin_displacement;
-  params_.max_safe_ang_displacement  = config.max_safe_ang_displacement;
-  params_.verbose                    = config.verbose;
+  params_.odom_topic                   = config.odom_topic;
+  params_.footprint_topic              = config.footprint_topic;
+  params_.collision_based_replanning   = config.collision_based_replanning;
+  params_.replanning_lin_lookahead     = config.replanning_lin_lookahead;
+  params_.replanning_ang_lookahead     = config.replanning_ang_lookahead;
+  params_.replanning_path_length_ratio = config.replanning_path_length_ratio;
+  params_.goal_lin_tolerance           = config.goal_lin_tolerance;
+  params_.goal_ang_tolerance           = config.goal_ang_tolerance;
+  params_.max_safe_lin_velocity        = config.max_safe_lin_velocity;
+  params_.max_safe_ang_velocity        = config.max_safe_ang_velocity;
+  params_.max_safe_lin_displacement    = config.max_safe_lin_displacement;
+  params_.max_safe_ang_displacement    = config.max_safe_ang_displacement;
+  params_.verbose                      = config.verbose;
 }
 
 void LocalPlanner::publishReference(
@@ -387,6 +380,15 @@ bool LocalPlanner::isTrajectorySafe(
   }
 }
 
+bool LocalPlanner::needReplanning(
+    const std::vector<geometry_msgs::PoseStamped>& old_waypoints,
+    const std::vector<geometry_msgs::PoseStamped>& new_waypoints) const {
+  const bool current_trajectory_suboptimal =
+      math::pathLength(new_waypoints) <=
+      params_.replanning_path_length_ratio * math::pathLength(new_waypoints);
+  return current_trajectory_suboptimal || !isTrajectorySafe(old_waypoints);
+}
+
 bool LocalPlanner::newGoal(const geometry_msgs::Pose& pose) const {
   if (!current_goal_)
     return true;
@@ -404,15 +406,15 @@ LocalPlanner::Params LocalPlanner::Params::defaultParams() {
   params.collision_based_replanning = true;
   params.replanning_lin_lookahead   = 1.0;
   params.replanning_ang_lookahead   = 1.0;
-  params.replanning_check_freq      = 1.0;
-  params.goal_ang_tolerance         = 0.05;
-  params.goal_lin_tolerance         = 0.05;
-  params.max_safe_lin_velocity      = 0.5;
-  params.max_safe_ang_velocity      = 0.7;
-  params.max_safe_lin_displacement  = 0.5;
-  params.max_safe_ang_displacement  = 1.0;
-  params.safety_observers           = {ScanObserver::tag, ArmSkinObserver::tag};
-  params.verbose                    = false;
+  params.replanning_path_length_ratio = 0.75;
+  params.goal_ang_tolerance           = 0.05;
+  params.goal_lin_tolerance           = 0.05;
+  params.max_safe_lin_velocity        = 0.5;
+  params.max_safe_ang_velocity        = 0.7;
+  params.max_safe_lin_displacement    = 0.5;
+  params.max_safe_ang_displacement    = 1.0;
+  params.safety_observers = {ScanObserver::tag, ArmSkinObserver::tag};
+  params.verbose          = false;
   return params;
 }
 

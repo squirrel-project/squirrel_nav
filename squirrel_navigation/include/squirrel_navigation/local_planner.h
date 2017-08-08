@@ -2,7 +2,8 @@
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
+// modification, are permitted provided that the following conditions
+// are met:
 //
 // * Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
@@ -78,7 +79,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
     std::vector<std::string> safety_observers;
     bool collision_based_replanning;
     double replanning_lin_lookahead, replanning_ang_lookahead;
-    double replanning_check_freq;
+    double replanning_path_length_ratio;
     bool verbose;
   };
 
@@ -134,7 +135,10 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
 
   // Check if path is collision free.
   bool isTrajectorySafe(
-      const std::vector<geometry_msgs::PoseStamped>& trajectory) const;
+      const std::vector<geometry_msgs::PoseStamped>& waypoints) const;
+  bool needReplanning(
+      const std::vector<geometry_msgs::PoseStamped>& old_waypoints,
+      const std::vector<geometry_msgs::PoseStamped>& new_waypoints) const;
 
   // Check if a new goal is input.
   bool newGoal(const geometry_msgs::Pose& pose) const;
@@ -162,7 +166,6 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   std::vector<geometry_msgs::Point> footprint_;
   double inscribed_radius_, circumscribed_radius_;
   std::unique_ptr<base_local_planner::CostmapModel> costmap_model_;
-  std::unique_ptr<ros::Time> replanning_guard_stamp_;
 
   bool init_;
 
