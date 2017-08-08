@@ -95,7 +95,7 @@ void LocalPlanner::initialize(
   // Initialize the collision detector and replanning stamp.
   costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
   costmap_model_.reset(new base_local_planner::CostmapModel(*costmap));
-  // Initialize publishers and subscribers.
+  // Initialize publishers, subscriber and services.
   cmd_pub_ =
       pnh.advertise<visualization_msgs::MarkerArray>("cmd_navigation", 1);
   ref_pub_  = pnh.advertise<visualization_msgs::Marker>("reference_pose", 1);
@@ -104,6 +104,10 @@ void LocalPlanner::initialize(
       nh.subscribe(params_.odom_topic, 1, &LocalPlanner::odomCallback, this);
   footprint_sub_ = nh.subscribe(
       params_.footprint_topic, 1, &LocalPlanner::footprintCallback, this);
+  brake_srv_ = pnh.advertiseService(
+      "brakeRobot", &LocalPlanner::brakeRobotCallback, this);
+  unbrake_srv_ = pnh.advertiseService(
+      "unbrakeRobot", &LocalPlanner::unbrakeRobotCallback, this);
   // Initialization successful.
   init_ = true;
   ROS_INFO_STREAM(
@@ -112,14 +116,13 @@ void LocalPlanner::initialize(
 
 bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
   std::unique_lock<std::mutex> lock(state_mtx_);
+  // Check if the robot is braked.
+  if (base_brake_.spin(&cmd))
+    return true;
   // Check the scan observer.
   for (const auto& safety_observer : safety_observers_)
-    if (!safety_observer->safe()) {
-      cmd.linear.x  = 0.0;
-      cmd.linear.y  = 0.0;
-      cmd.angular.z = 0.0;
+    if (!safety_observer->safe())
       return true;
-    }
   // Compute the reference pose and perform safety check.
   const ros::Time& stamp = robot_pose_.header.stamp;
   geometry_msgs::Pose ref_pose;
@@ -232,6 +235,19 @@ void LocalPlanner::reconfigureCallback(
   params_.max_safe_lin_displacement    = config.max_safe_lin_displacement;
   params_.max_safe_ang_displacement    = config.max_safe_ang_displacement;
   params_.verbose                      = config.verbose;
+}
+
+bool LocalPlanner::brakeRobotCallback(
+    squirrel_navigation_msgs::BrakeRobot::Request& req,
+    squirrel_navigation_msgs::BrakeRobot::Response& res) {
+  base_brake_.enable(req.seconds);
+  return true;
+}
+
+bool LocalPlanner::unbrakeRobotCallback(
+    std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
+  base_brake_.disable();
+  return true;
 }
 
 void LocalPlanner::publishReference(
@@ -402,6 +418,25 @@ bool LocalPlanner::newGoal(const geometry_msgs::Pose& pose) const {
   bool new_orientation = math::angularDistanceYaw(*current_goal_, pose) > 1e-8;
   return new_position || new_orientation;
 }
+
+bool LocalPlanner::BaseBrake::spin(geometry_msgs::Twist* cmd) {
+  cmd->linear.x = cmd->linear.y = cmd->angular.z = 0.0;
+  if (!enable_stamp_)
+    return false;
+  else if (ros::Time::now() - *enable_stamp_ >= enable_time_) {
+    disable();
+    return false;
+  } else {
+    return true;
+  }
+}
+
+void LocalPlanner::BaseBrake::enable(const ros::Duration& duration) {
+  enable_stamp_.reset(new ros::Time(ros::Time::now()));
+  enable_time_ = duration;
+}
+
+void LocalPlanner::BaseBrake::disable() { enable_stamp_.reset(nullptr); }
 
 LocalPlanner::Params LocalPlanner::Params::defaultParams() {
   using namespace safety;

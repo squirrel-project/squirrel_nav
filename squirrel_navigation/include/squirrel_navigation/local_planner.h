@@ -54,6 +54,8 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <nav_msgs/Odometry.h>
+#include <squirrel_navigation_msgs/BrakeRobot.h>
+#include <std_srvs/Empty.h>
 
 #include <dynamic_reconfigure/server.h>
 
@@ -110,10 +112,33 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   inline Params& params() { return params_; }
 
  private:
+  class BaseBrake {
+   public:
+    BaseBrake() : enable_stamp_(nullptr) {}
+    virtual ~BaseBrake() {}
+
+   public:
+    bool spin(geometry_msgs::Twist* cmd);
+
+    void enable(const ros::Duration& duration);
+    void disable();
+
+   private:
+    std::unique_ptr<ros::Time> enable_stamp_;
+    ros::Duration enable_time_;
+  };
+
+ private:
   // Callbacks.
   void footprintCallback(const geometry_msgs::PolygonStamped::ConstPtr& msg);
   void odomCallback(const nav_msgs::Odometry::ConstPtr& odom);
   void reconfigureCallback(LocalPlannerConfig& config, uint32_t level);
+
+  bool brakeRobotCallback(
+      squirrel_navigation_msgs::BrakeRobot::Request& req,
+      squirrel_navigation_msgs::BrakeRobot::Response& res);
+  bool unbrakeRobotCallback(
+      std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
 
   // Visualization utils.
   void publishTrajectory(const ros::Time& stamp) const;
@@ -163,6 +188,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
 
   ros::Publisher ref_pub_, traj_pub_, cmd_pub_;
   ros::Subscriber odom_sub_, footprint_sub_;
+  ros::ServiceServer brake_srv_, unbrake_srv_;
 
   std::vector<geometry_msgs::Point> footprint_;
   double inscribed_radius_, circumscribed_radius_;
@@ -170,6 +196,8 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
 
   bool init_;
 
+  BaseBrake base_brake_;
+  
   mutable std::mutex state_mtx_;
 };
 

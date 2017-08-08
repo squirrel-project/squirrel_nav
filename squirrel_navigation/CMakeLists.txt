@@ -28,7 +28,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 set(squirrel_navigation_catkin_DEPENDENCIES
   actionlib costmap_2d base_local_planner clear_costmap_recovery dynamic_reconfigure 
   geometry_msgs message_runtime  nav_core nav_msgs navfn pluginlib roscpp 
-  squirrel_navigation_msgs std_msgs tf visualization_msgs)
+  squirrel_navigation_msgs std_msgs std_srvs tf visualization_msgs)
 find_package(catkin REQUIRED COMPONENTS ${squirrel_navigation_catkin_DEPENDENCIES})
 include_directories(${catkin_INCLUDE_DIRS})
 
@@ -58,7 +58,8 @@ add_library(squirrel_navigation_planners
   src/global_planner.cpp src/footprint_planner.cpp)
 target_link_libraries(squirrel_navigation_planners 
   ${catkin_LIBRARIES} squirrel_navigation_safety)
-add_dependencies(squirrel_navigation_planners squirrel_navigation_gencfg)
+add_dependencies(squirrel_navigation_planners 
+  squirrel_navigation_gencfg squirrel_navigation_msgs_generate_messages_cpp)
 
 add_library(squirrel_navigation_costmap_layer
   src/navigation_layer.cpp external/costmap_2d_strip/obstacle_layer.cpp
