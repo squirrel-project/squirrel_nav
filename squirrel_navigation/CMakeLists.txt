@@ -24,10 +24,6 @@ endif()
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-## Import OMPL.
-find_package(OMPL REQUIRED)
-include_directories(${OMPL_INCLUDE_DIRES})
-
 ## Import ros dependencies.
 set(squirrel_navigation_catkin_DEPENDENCIES
   actionlib costmap_2d base_local_planner clear_costmap_recovery dynamic_reconfigure 
@@ -61,7 +57,7 @@ add_library(squirrel_navigation_planners
   src/local_planner.cpp src/linear_motion_planner.cpp src/controller_pid.cpp 
   src/global_planner.cpp src/footprint_planner.cpp)
 target_link_libraries(squirrel_navigation_planners 
-  ${catkin_LIBRARIES} ${OMPL_LIBRARIES} squirrel_navigation_safety)
+  ${catkin_LIBRARIES} squirrel_navigation_safety)
 add_dependencies(squirrel_navigation_planners squirrel_navigation_gencfg)
 
 add_library(squirrel_navigation_costmap_layer
@@ -81,7 +77,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${squirrel_navigation_LIBRARIES}
   CATKIN_DEPENDS ${squirrel_navigation_catkin_DEPENDENCIES}
-  DEPENDS OMPL Eigen3)
+  DEPENDS Eigen3)
 
 ## Install.
 install(

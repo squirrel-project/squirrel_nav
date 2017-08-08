@@ -1,5 +1,5 @@
 <launch>
-  <arg name="config_file" default="$(find squirrel_footprint_observer)/config/robotino_6dof_footprint.yaml"/>
+  <arg name="config_file" default="$(find squirrel_footprint_observer)/config/robotino_full.yaml"/>
   <arg name="rviz" default="false"/>
 
   <!-- The footprint observer -->

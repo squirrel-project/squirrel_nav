@@ -19,7 +19,7 @@
 
   <!-- Run the footprint observer -->
   <include file="$(find squirrel_footprint_observer)/launch/footprint_observer.launch">
-    <arg name="config_file" value="$(find squirrel_footprint_observer)/config/robotino_6dof_footprint.yaml"/>
+    <arg name="config_file" value="$(find squirrel_footprint_observer)/config/robotino_full.yaml"/>
   </include>
 
   <!-- Run move_base -->
