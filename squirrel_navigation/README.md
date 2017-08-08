@@ -60,7 +60,7 @@ Contains `squirrel_navigation::GlobalPlanner`,
 #### Subscriptions
 - `/odom` the odometry topic (reconfigurable).
 
-### Advertised Services
+#### Advertised Services
 Uses messages provided by [squirrel_navigation_msgs](https://github.com/squirrel-project/squirrel_common/tree/indigo_dev/squirrel_navigation_msgs).
 - `~/brakeRobot` (`squirrel_nav_msgs::BrakeRobot`) stop the robot for
   a certain time.
