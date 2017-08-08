@@ -67,7 +67,7 @@ void GlobalPlanner::initialize(
   dijkstra_planner_.reset(new navfn::NavfnROS);
   dijkstra_planner_->initialize(name + "/Dijkstra", costmap_ros);
   footprint_planner_.reset(new FootprintPlanner);
-  footprint_planner_->initialize(name + "/RRTConnect", costmap_ros);
+  footprint_planner_->initialize(name + "/ARAstar", costmap_ros);
   // Initialize publishers and subscribers.
   plan_pub_      = pnh.advertise<nav_msgs::Path>("plan", 1);
   waypoints_pub_ = pnh.advertise<geometry_msgs::PoseArray>("poses", 1);

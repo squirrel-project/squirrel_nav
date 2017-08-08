@@ -22,22 +22,31 @@ Contains `squirrel_navigation::GlobalPlanner`,
 #### Parameters
 - `~/verbose` set verbosity.
 - `~/odom_topic` the odometry topic.
-- `~/goal_{lin, ang}_tolerance` distance from goal to be considered
-  reached.
-- `~/max_safe_{lin, ang}_velocity` maximum linear velocity to be actuated.
-- `~/max_safe_{lin, ang}_displacement` maximum displacement from the
+- `~/goal_{
+  lin, ang
+}
+_tolerance` distance from goal to be considered reached.- `~ / max_safe_ {
+  lin, ang
+}
+_velocity` maximum linear velocity to be actuated.- `~ / max_safe_ { lin, ang }_displacement` maximum displacement from the
   reference position (pid controller) to ask for replanning.
 - `~/collision_based_replanning` whether to trigger replanning based
   on collisions of the forward trajectory instead of time based.
-- `~/replanning_{lin, ang}_lookahead` lookahead for the replanning
+- `~/replanning_{
+  lin, ang
+}_lookahead` lookahead for the replanning
   trigger.
 - `~/replanning_path_length_ratio` Ratio of length between the old
   path and the candidate replanned. If the new path is shorter accept.
 - `~/safety_observers` (`SafetyScanObserver`, `ArmSkinObserver`) robot
   state observers (**not stable yet**).
-- `~/MotionPlanner/max_{linear, angular}_velocity` maximum velocities used
-  during the velocity planning phase.
-- `~/MotionPlanner/{linear, angular}_smoother` smoothing parameter for the path
+- `~/MotionPlanner/max_{
+  linear, angular
+}
+_velocity` maximum velocities used during the velocity planning
+        phase.- `~ / MotionPlanner / {
+  linear, angular
+}_smoother` smoothing parameter for the path
 - `~/MotionPlanner/time_scaler` global velocity rescaler for the
   velocity planning phase.
 - `~/MotionPlanner/waypoints_heading_lookahead` Used when
@@ -45,7 +54,10 @@ Contains `squirrel_navigation::GlobalPlanner`,
   for the new planned path.
 - `~/MotionPlanner/lookahead` temporal lookahead for the reference
   pose (pid controlller).
-- `~/ControllerPID/k{P, I, D}_{ang, lin}` Controller gains for the linear
+- `~/ControllerPID/k{
+  P, I, D
+}
+_ { ang, lin }` Controller gains for the linear
   and rotational velocity.
 
 #### Advertised Topics
@@ -96,11 +108,11 @@ Parameters of `squirrel_navigation::GlobalPlanner`:
 - `~/heading` the constant heading to use if
   `plan_with_constant_heading` is enabled.
 - `~/Dijkstra/*` parameters of [`nav_core::NavFnROS`](http://wiki.ros.org/navfn).
-- `~/RRTConnect/*` parameters of `squirrel_navigation::FootprintPlanner`.
+- `~/ARAstar/*` parameters of `squirrel_navigation::FootprintPlanner`.
   
 ### Advertised Topics  
 - `~/Dijkstra/*` topics advertised by `nav_core::NavFnROS`.
-- `~/RRTConnect/*` topics advertised by `squirrel_navigation::FootprintPlanner`.
+- `~/ARAstar/*` topics advertised by `squirrel_navigation::FootprintPlanner`.
 - `~/plan` (`nav_msgs::Path`) the path computed by the planner.
 - `~/waypoints` (`geometry_msgs::PoseArray`) the waypoints computed by the planner.
 - `~/footprints` (`geometry_msgs::MarkerArray`) the sequence of
@@ -129,4 +141,3 @@ Uses messages provided by [squirrel_navigation_msgs](https://github.com/squirrel
 - `/getPathClearance` (`squirrel_navigation_msgs::GetPathClereance`)
   returns the clearance of a path as well as the proximity map of
   every waypoint of the path.
- 
