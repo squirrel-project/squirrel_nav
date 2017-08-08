@@ -64,8 +64,7 @@ Contains `squirrel_navigation::GlobalPlanner`,
 
 #### Parameters 
 
-This planner is wrapper around [SBPL ARA* planner](http://www.sbpl.net/), see
-[OMPL library](http://ompl.kavrakilab.org/)):
+This planner is wrapper around [SBPL ARA* planner](http://www.sbpl.net/):
 - `~/FootprintPlanner/verbose` set verbosity.
 - `~/FootprintPlanner/footprint_topic` the footprint of the robot.
 - `~/FootprintPlanner/forward_search` see SBPL documentation.
