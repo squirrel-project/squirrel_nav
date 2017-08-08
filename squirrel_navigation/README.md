@@ -20,41 +20,45 @@ Contains `squirrel_navigation::GlobalPlanner`,
 ### Local Planner (`squirrel_navigation::LocalPlanner`)
 
 #### Parameters
-- `~/verbose` set verbosity.
-- `~/odom_topic` the odometry topic.
-- `~/goal_{lin, ang}_tolerance` distance from goal to be considered reached.
-- `~/max_safe_{lin, ang}_velocity` maximum linear velocity to be
+
+- `~/LocalPlanner/verbose` set verbosity.
+- `~/LocalPlanner/visualize_topics` publish the visualization topics (defalut **true**)
+- `~/LocalPlanner/odom_topic` the odometry topic.
+- `~/LocalPlanner/goal_{lin, ang}_tolerance` distance from goal to be considered reached.
+- `~/LocalPlanner/max_safe_{lin, ang}_velocity` maximum linear velocity to be
   actuated.
-- `~/max_safe_{lin, ang}_displacement` maximum displacement from the
+- `~/LocalPlanner/max_safe_{lin, ang}_displacement` maximum displacement from the
   reference position (pid controller) to ask for replanning.
-- `~/collision_based_replanning` whether to trigger replanning based
+- `~/LocalPlanner/collision_based_replanning` whether to trigger replanning based
   on collisions of the forward trajectory instead of time based.
-- `~/replanning_{lin, ang}_lookahead` lookahead for the replanning
+- `~/LocalPlanner/replanning_{lin, ang}_lookahead` lookahead for the replanning
   trigger.
-- `~/replanning_path_length_ratio` Ratio of length between the old
+- `~/LocalPlanner/replanning_path_length_ratio` Ratio of length between the old
   path and the candidate replanned. If the new path is shorter accept.
-- `~/safety_observers` (`SafetyScanObserver`, `ArmSkinObserver`) robot
+- `~/LocalPlanner/safety_observers` (`SafetyScanObserver`, `ArmSkinObserver`) robot
   state observers (**not stable yet**).
-- `~/MotionPlanner/max_{linear, angular}_velocity` maximum velocities
+- `~/LocalPlanner/MotionPlanner/max_{linear, angular}_velocity` maximum velocities
   used during the velocity planning phase.
-- `~/MotionPlanner/{linear, angular}_smoother` smoothing parameter for the path
-- `~/MotionPlanner/time_scaler` global velocity rescaler for the
+- `~/LocalPlanner/MotionPlanner/{linear, angular}_smoother` smoothing parameter for the path
+- `~/LocalPlanner/MotionPlanner/time_scaler` global velocity rescaler for the
   velocity planning phase.
-- `~/MotionPlanner/waypoints_heading_lookahead` Used when
-  `~/move_base/planner_frequency` in not zero. Waypoints lookahead in
+- `~/LocalPlanner/MotionPlanner/waypoints_heading_lookahead` Used when
+  `~/LocalPlanner/move_base/planner_frequency` in not zero. Waypoints lookahead in
   for the new planned path.
-- `~/MotionPlanner/lookahead` temporal lookahead for the reference
+- `~/LocalPlanner/MotionPlanner/lookahead` temporal lookahead for the reference
   pose (pid controlller).
-- `~/ControllerPID/k{P, I, D}_{ang, lin}` Controller gains for the linear
+- `~/LocalPlanner/ControllerPID/k{P, I, D}_{ang, lin}` Controller gains for the linear
   and rotational velocity.
+- `~/LocalPlanner/ControllerPID/visualize_topics` Publish the
+  visualization messages (defualt **true**).
 
 #### Advertised Topics
-- `~/cmd_navigation` (`visualization_msgs::MarkerArray`) the control
+- `~/LocalPlanner/cmd_navigation` (`visualization_msgs::MarkerArray`) the control
   output by the local planner.
-- `~/reference_pose` (`visualization_msgs::Marker`) the reference pose
+- `~/LocalPlanner/reference_pose` (`visualization_msgs::Marker`) the reference pose
   currently tracked.
-- `~/trajectory` (`geometry_msgs::PoseArray`) the planned trajectory.
-- `~/ControllerPID/cmd_raw` (`visualization_msgs::MarkerArray`) the raw
+- `~/LocalPlanner/trajectory` (`geometry_msgs::PoseArray`) the planned trajectory.
+- `~/LocalPlanner/ControllerPID/cmd_raw` (`visualization_msgs::MarkerArray`) the raw
   control output by the controller.
 
 #### Subscriptions
@@ -62,9 +66,9 @@ Contains `squirrel_navigation::GlobalPlanner`,
 
 #### Advertised Services
 Uses messages provided by [squirrel_navigation_msgs](https://github.com/squirrel-project/squirrel_common/tree/indigo_dev/squirrel_navigation_msgs).
-- `~/brakeRobot` (`squirrel_nav_msgs::BrakeRobot`) stop the robot for
+- `~/LocalPlanner/brakeRobot` (`squirrel_nav_msgs::BrakeRobot`) stop the robot for
   a certain time.
-- `~/unbrakeRobot` (`std_srvs::Empty`) release the brake.
+- `~/LocalPlanner/unbrakeRobot` (`std_srvs::Empty`) release the brake.
 
 ### Footprint Planner (`squirrel_navigation::FootprintPlanner`)
 
@@ -72,6 +76,7 @@ Uses messages provided by [squirrel_navigation_msgs](https://github.com/squirrel
 
 This planner is wrapper around [SBPL ARA* planner](http://www.sbpl.net/):
 - `~/FootprintPlanner/verbose` set verbosity.
+- `~/FootprintPlanner/visualize_topics` publish the visualization topics (default **true**)
 - `~/FootprintPlanner/footprint_topic` the footprint of the robot.
 - `~/FootprintPlanner/forward_search` see SBPL documentation.
 - `~/FootprintPlanner/max_planning_time` Maximum time assigned for
@@ -86,29 +91,33 @@ This planner is wrapper around [SBPL ARA* planner](http://www.sbpl.net/):
 - `~/footprints` (`geometry_msgs::MarkerArray`) the sequence of
   footprints of the robot on the path's waypoints.
 
+
 #### Subscriptions
 - `/footprint_observer/footprint` the footprint of the robot
   (reconfigurable).
   
 ### Global Planner (`squirrel_navigation::GlobalPlanner`)
 
+
+
 #### Parameters 
 
 Parameters of `squirrel_navigation::GlobalPlanner`:
-- `~/verbose` set verbosity.
-- `~/plan_with_footprint` whether to plan with dijkstra or RRT*.
-- `~/plan_with_constant_heading` the resulting path has constant
+- `~/GlobalPlanner/verbose` set verbosity.
+- `~/GlobalPlanner/visualize_topics` publish the visualization topics (default **true**)
+- `~/GlobalPlanner/plan_with_footprint` whether to plan with dijkstra or RRT*.
+- `~/GlobalPlanner/plan_with_constant_heading` the resulting path has constant
   yaw. Usable only if `plan_with_footprint` is not enabled.
-- `~/heading` the constant heading to use if
+- `~/GlobalPlanner/heading` the constant heading to use if
   `plan_with_constant_heading` is enabled.
-- `~/Dijkstra/*` parameters of [`nav_core::NavFnROS`](http://wiki.ros.org/navfn).
-- `~/ARAstar/*` parameters of `squirrel_navigation::FootprintPlanner`.
+- `~/GlobalPlanner/Dijkstra/*` parameters of [`nav_core::NavFnROS`](http://wiki.ros.org/navfn).
+- `~/GlobalPlanner/ARAstar/*` parameters of `squirrel_navigation::FootprintPlanner`.
   
 ### Advertised Topics  
-- `~/Dijkstra/*` topics advertised by `nav_core::NavFnROS`.
-- `~/ARAstar/*` topics advertised by `squirrel_navigation::FootprintPlanner`.
-- `~/plan` (`nav_msgs::Path`) the path computed by the planner.
-- `~/waypoints` (`geometry_msgs::PoseArray`) the waypoints computed by the planner.
+- `~/GlobalPlanner/Dijkstra/*` topics advertised by `nav_core::NavFnROS`.
+- `~/GlobalPlanner/ARAstar/*` topics advertised by `squirrel_navigation::FootprintPlanner`.
+- `~/GlobalPlanner/plan` (`nav_msgs::Path`) the path computed by the planner.
+- `~/GlobalPlanner/waypoints` (`geometry_msgs::PoseArray`) the waypoints computed by the planner.
 - `~/footprints` (`geometry_msgs::MarkerArray`) the sequence of
   footprints of the robot on the waypoints.
 
@@ -118,6 +127,7 @@ Contains `squirrel_navigation::NavigationLayer` which merges obstacles
 detected with depth camera and the safety laser rangefinder.
 
 ### Parameters
+
 - `~/use_kinect` whether to use or not the kinect.
 - `~/use_laser` whether to use or not the laser scan.
 - `~/LaserLayer/*` parameters of [`costmap_2d::ObstacleLayer`](http://docs.ros.org/jade/api/costmap_2d/html/classcostmap__2d_1_1ObstacleLayer.html).
