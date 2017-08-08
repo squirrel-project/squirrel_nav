@@ -67,6 +67,7 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
 
     bool plan_with_footprint;
     bool plan_with_constant_heading;
+    bool visualize_topics;
     double heading;
     bool verbose;
   };

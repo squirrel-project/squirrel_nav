@@ -135,6 +135,8 @@ void GlobalPlanner::reconfigureCallback(
 void GlobalPlanner::publishPlan(
     const std::vector<geometry_msgs::PoseStamped>& waypoints,
     const ros::Time& stamp) const {
+  if (!params_.visualize_topics)
+    return;
   nav_msgs::Path plan_msg;
   plan_msg.header.stamp    = stamp;
   plan_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
@@ -145,6 +147,8 @@ void GlobalPlanner::publishPlan(
 void GlobalPlanner::publishWaypoints(
     const std::vector<geometry_msgs::PoseStamped>& waypoints,
     const ros::Time& stamp) const {
+  if (!params_.visualize_topics)
+    return;
   geometry_msgs::PoseArray pose_array_msg;
   pose_array_msg.header.stamp    = stamp;
   pose_array_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
@@ -157,6 +161,8 @@ void GlobalPlanner::publishWaypoints(
 void GlobalPlanner::publishFootprints(
     const std::vector<geometry_msgs::PoseStamped>& waypoints,
     const ros::Time& stamp) {
+  if (!params_.visualize_topics)
+    return;
   // Number of waypoints and footprint marker.
   const int nwaypoints  = waypoints.size();
   const auto& footprint = closedPolygon(footprint_planner_->footprint());
@@ -209,6 +215,7 @@ GlobalPlanner::Params GlobalPlanner::Params::defaultParams() {
   params.plan_with_footprint        = false;
   params.plan_with_constant_heading = false;
   params.heading                    = 0.0;
+  params.visualize_topics           = true;
   params.verbose                    = false;
   return params;
 }

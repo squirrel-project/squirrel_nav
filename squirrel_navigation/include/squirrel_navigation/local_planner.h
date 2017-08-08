@@ -80,6 +80,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
     bool collision_based_replanning;
     double replanning_lin_lookahead, replanning_ang_lookahead;
     double replanning_path_length_ratio;
+    bool visualize_topics;
     bool verbose;
   };
 

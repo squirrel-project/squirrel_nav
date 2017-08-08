@@ -74,6 +74,7 @@ class FootprintPlanner : public nav_core::BaseGlobalPlanner {
     bool forward_search;
     double max_planning_time;
     double initial_epsilon;
+    bool visualize_topics;
     bool verbose;
   };
 

@@ -114,6 +114,8 @@ void ControllerPID::reconfigureCallback(
 void ControllerPID::publishTwist(
     const geometry_msgs::Pose& actuation_pose, const geometry_msgs::Twist& cmd,
     const ros::Time& stamp) const {
+  if (!params_.visualize_topics)
+    return;
   // Common header.
   std_msgs::Header header;
   header.frame_id = params_.global_frame_id;
@@ -170,6 +172,7 @@ ControllerPID::Params ControllerPID::Params::defaultParams() {
   params.kP_lin = params.kP_ang = 3.0;
   params.kI_lin = params.kI_ang = 0.0001;
   params.kD_lin = params.kD_ang = 0.0001;
+  params.visualize_topics       = true;
   return params;
 }
 

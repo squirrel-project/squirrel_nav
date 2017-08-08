@@ -315,6 +315,8 @@ void FootprintPlanner::initializeFootprintMarker() {
 void FootprintPlanner::publishPath(
     const std::vector<geometry_msgs::PoseStamped>& waypoints,
     const ros::Time& stamp) {
+  if (!params_.visualize_topics)
+    return;
   const int nwaypoints = waypoints.size();
   // Initialize header.
   std_msgs::Header header;
@@ -375,6 +377,7 @@ FootprintPlanner::Params FootprintPlanner::Params::defaultParams() {
   params.forward_search    = true;
   params.max_planning_time = 0.2;
   params.initial_epsilon   = 0.05;
+  params.visualize_topics  = true;
   params.verbose           = false;
   return params;
 }

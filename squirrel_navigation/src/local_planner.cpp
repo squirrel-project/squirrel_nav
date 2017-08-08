@@ -236,6 +236,8 @@ void LocalPlanner::reconfigureCallback(
 
 void LocalPlanner::publishReference(
     const geometry_msgs::Pose& ref_pose, const ros::Time& stamp) const {
+  if (!params_.visualize_topics)
+    return;
   visualization_msgs::Marker marker;
   marker.id              = 0;
   marker.header.stamp    = stamp;
@@ -255,6 +257,8 @@ void LocalPlanner::publishReference(
 }
 
 void LocalPlanner::publishTrajectory(const ros::Time& stamp) const {
+  if (!params_.visualize_topics)
+    return;
   const auto& waypoints =
       static_cast<const LinearMotionPlanner*>(motion_planner_.get())
           ->waypoints();
@@ -271,6 +275,8 @@ void LocalPlanner::publishTrajectory(const ros::Time& stamp) const {
 void LocalPlanner::publishTwist(
     const geometry_msgs::PoseStamped& actuation_pose,
     const geometry_msgs::Twist& cmd) const {
+  if (!params_.visualize_topics)
+    return;
   // Actuation pose quantities.
   const geometry_msgs::Point& actuation_point = actuation_pose.pose.position;
   const double yaw = tf::getYaw(actuation_pose.pose.orientation);
@@ -414,6 +420,7 @@ LocalPlanner::Params LocalPlanner::Params::defaultParams() {
   params.max_safe_lin_displacement    = 0.5;
   params.max_safe_ang_displacement    = 1.0;
   params.safety_observers = {ScanObserver::tag, ArmSkinObserver::tag};
+  params.visualize_topics = true;
   params.verbose          = false;
   return params;
 }

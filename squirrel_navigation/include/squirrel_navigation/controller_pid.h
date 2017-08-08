@@ -61,6 +61,7 @@ class ControllerPID : public utils::Controller {
     std::string global_frame_id;
     double kP_lin, kI_lin, kD_lin;
     double kP_ang, kI_ang, kD_ang;
+    bool visualize_topics;
   };
 
  public:

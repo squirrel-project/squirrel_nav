@@ -100,10 +100,6 @@ class LinearMotionPlanner : public utils::MotionPlanner {
   const geometry_msgs::PoseStamped& start() const;
   const geometry_msgs::PoseStamped& goal() const;
 
-  // const geometry_msgs::PoseStamped& operator()(int i) const;
-  // const geometry_msgs::PoseStamped& operator[](int i) const;
-  // const geometry_msgs::PoseStamped& at(int i) const;
-
   // Mutex getter.
   inline std::mutex& mutex() const { return update_mtx_; }
 
