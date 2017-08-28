@@ -43,10 +43,10 @@ Contains `squirrel_navigation::GlobalPlanner`,
 - `~/LocalPlanner/MotionPlanner/time_scaler` global velocity rescaler for the
   velocity planning phase.
 - `~/LocalPlanner/MotionPlanner/waypoints_heading_lookahead` Used when
-  `~/LocalPlanner/move_base/planner_frequency` in not zero. Waypoints lookahead in
+  `~/LocalPlanner/move_base/planner_frequency` in not zero. Waypoints lookahead
   for the new planned path.
 - `~/LocalPlanner/MotionPlanner/lookahead` temporal lookahead for the reference
-  pose (pid controlller).
+  pose (controller).
 - `~/LocalPlanner/ControllerPID/k{P, I, D}_{ang, lin}` Controller gains for the linear
   and rotational velocity.
 - `~/LocalPlanner/ControllerPID/visualize_topics` Publish the
@@ -58,6 +58,8 @@ Contains `squirrel_navigation::GlobalPlanner`,
 - `~/LocalPlanner/reference_pose` (`visualization_msgs::Marker`) the reference pose
   currently tracked.
 - `~/LocalPlanner/trajectory` (`geometry_msgs::PoseArray`) the planned trajectory.
+- `~/LocalPlanner/footprints` (`visualization_msgs::MarkerArray`) the
+  robot footprint on the planned trajectory.
 - `~/LocalPlanner/ControllerPID/cmd_raw` (`visualization_msgs::MarkerArray`) the raw
   control output by the controller.
 
