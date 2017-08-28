@@ -142,6 +142,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
 
   // Visualization utils.
   void publishTrajectory(const ros::Time& stamp) const;
+  void publishFootprints(const ros::Time& stamp);
   void publishReference(
       const geometry_msgs::Pose& ref_pose, const ros::Time& stamp) const;
   void publishTwist(
@@ -158,7 +159,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   void safeVelocityCommands(
       const geometry_msgs::Twist& twist,
       geometry_msgs::Twist* safe_twist) const;
-
+  
   // Check if path is collision free.
   bool isTrajectorySafe(
       const std::vector<geometry_msgs::PoseStamped>& waypoints) const;
@@ -186,7 +187,7 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   std::shared_ptr<tf::TransformListener> tfl_;
   std::shared_ptr<costmap_2d::Costmap2DROS> costmap_ros_;
 
-  ros::Publisher ref_pub_, traj_pub_, cmd_pub_;
+  ros::Publisher ref_pub_, traj_pub_, footprints_pub_, cmd_pub_;
   ros::Subscriber odom_sub_, footprint_sub_;
   ros::ServiceServer brake_srv_, unbrake_srv_;
 
@@ -194,6 +195,8 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   double inscribed_radius_, circumscribed_radius_;
   std::unique_ptr<base_local_planner::CostmapModel> costmap_model_;
 
+  int last_nwaypoints_;
+  
   bool init_;
 
   BaseBrake base_brake_;

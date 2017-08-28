@@ -3,8 +3,7 @@ Panels:
     Help Height: 78
     Name: Displays
     Property Tree Widget:
-      Expanded:
-        - /Trajectory Waypoints1/Status1
+      Expanded: ~
       Splitter Ratio: 0.838889
     Tree Height: 778
   - Class: rviz/Selection
@@ -25,7 +24,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Hokuyo LaserScan
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -88,85 +87,6 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        arm_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        arm_link1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        arm_link2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        arm_link3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        arm_link4:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        arm_link5:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm_motor2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        base_body_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        base_linkx:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        base_linky:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        base_linkz:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        hokuyo_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        origin:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        wheel0_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        wheel1_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        wheel2_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -258,43 +178,20 @@ Visualization Manager:
       Topic: /squirrel_2d_localizer/particles
       Unreliable: false
       Value: true
-    - Alpha: 1
-      Buffer Length: 1
-      Class: rviz/Path
-      Color: 255; 85; 255
-      Enabled: true
-      Head Diameter: 0.3
-      Head Length: 0.2
-      Length: 0.3
-      Line Style: Lines
-      Line Width: 0.03
-      Name: Plan
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
-      Radius: 0.03
-      Shaft Diameter: 0.1
-      Shaft Length: 0.1
-      Topic: /move_base/GlobalPlanner/plan
-      Unreliable: false
-      Value: true
     - Arrow Length: 0.3
       Class: rviz/PoseArray
       Color: 0; 170; 0
       Enabled: true
       Name: Trajectory Waypoints
-      Topic: /move_base/GlobalPlanner/poses
+      Topic: /move_base/LocalPlanner/trajectory
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /move_base/GlobalPlanner/footprints
-      Name: Footprint Planner
+      Marker Topic: /move_base/LocalPlanner/footprints
+      Name: Trajectory Footprints
       Namespaces:
-        /: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker

@@ -47,6 +47,8 @@
 #include <nav_msgs/Path.h>
 #include <std_msgs/Header.h>
 
+#include <boost/filesystem.hpp>
+
 #include <cmath>
 #include <sstream>
 #include <thread>
@@ -61,6 +63,7 @@ FootprintPlanner::FootprintPlanner()
     : params_(Params::defaultParams()),
       init_(false),
       inflation_layer_(nullptr),
+      footprint_changed_(true),
       last_nwaypoints_(-1),
       inscribed_radius_(0.),
       circumscribed_radius_(0.) {}
@@ -69,6 +72,7 @@ FootprintPlanner::FootprintPlanner(const Params& params)
     : params_(params),
       init_(false),
       inflation_layer_(nullptr),
+      footprint_changed_(true),
       last_nwaypoints_(-1),
       inscribed_radius_(0.),
       circumscribed_radius_(0.) {}
@@ -83,7 +87,13 @@ void FootprintPlanner::initialize(
   dsrv_->setCallback(
       boost::bind(&FootprintPlanner::reconfigureCallback, this, _1, _2));
   pnh.param<std::string>(
-      "motion_primitives", motion_primitives_url_, "motion_primitives.mprim");
+      "motion_primitives_filename", motion_primitives_url_,
+      "motion_primitives.mprim");
+  if (!boost::filesystem::exists(motion_primitives_url_))
+    ROS_ERROR_STREAM(
+        "squirrel_navigation::FootprintPlanner: The file '"
+        << motion_primitives_url_
+        << "' does not exist. The footprint planner might not work.");
   // Initialize the state observers.
   costmap_ros_     = costmap_ros;
   inflation_layer_ = getInflationLayer(costmap_ros_);
@@ -100,7 +110,7 @@ void FootprintPlanner::initialize(
   sbpl_need_reinitialization_ = true;
   init_                       = true;
   ROS_INFO_STREAM(
-      "squirrel_localizer::FootprintPlanner: initialization successful.");
+      "squirrel_navigation::FootprintPlanner: initialization successful.");
 }
 
 bool FootprintPlanner::makePlan(
@@ -125,11 +135,11 @@ bool FootprintPlanner::makePlan(
           "squirrel_navigation::FootprintPlanner: Unable to set the start.");
       return false;
     }
-  } catch (const sbpl::Exception& ex) {
+  } catch (sbpl::Exception* ex) {
     ROS_ERROR_STREAM(
         "squirrel_navigation::FootprintPlanner: Something went wrong while "
         "setting the start. "
-        << ex.what());
+        << ex->what());
     return false;
   }
   // Set goal pose.
@@ -144,11 +154,11 @@ bool FootprintPlanner::makePlan(
           "squirrel_navigation::FootprintPlanner: Unable to set the goal.");
       return false;
     }
-  } catch (const sbpl::Exception& ex) {
+  } catch (sbpl::Exception* ex) {
     ROS_ERROR_STREAM(
         "squirrel_navigation::FootprintPlanner: Something went wrong while "
         "setting the goal. "
-        << ex.what());
+        << ex->what());
     return false;
   }
   // Compute the plan.
@@ -161,11 +171,11 @@ bool FootprintPlanner::makePlan(
         params_.max_planning_time, &solution_states_ids, &solution_cost);
     sbpl_env_->ConvertStateIDPathintoXYThetaPath(
         &solution_states_ids, &sbpl_waypoints);
-  } catch (const sbpl::Exception& ex) {
+  } catch (sbpl::Exception* ex) {
     ROS_ERROR_STREAM(
         "squirrel_navigation::FootprintPlanner: Something went wrong while "
         "planning. "
-        << ex.what());
+        << ex->what());
     return false;
   }
   if (!ret) {
@@ -194,8 +204,8 @@ void FootprintPlanner::reconfigureCallback(
   params_.initial_epsilon   = config.initial_epsilon;
   params_.verbose           = config.verbose;
   if (params_.forward_search != config.forward_search) {
-    params_.forward_search      = config.forward_search;
-    sbpl_need_reinitialization_ = true;
+    params_.forward_search = config.forward_search;
+    footprint_changed_     = true;
   }
 }
 
@@ -210,21 +220,23 @@ void FootprintPlanner::footprintCallback(
   // Update the footprint.
   std::unique_lock<std::mutex> lock(footprint_mtx_);
   if (footprint->polygon.points.size() != footprint_.size()) {
+    footprint_changed_          = true;
     sbpl_need_reinitialization_ = true;
   } else {
-    sbpl_need_reinitialization_ = false;
+    footprint_changed_ = false;
     for (unsigned int i = 0; i < footprint_.size(); ++i) {
       if (math::linearDistance2D(footprint_[i], footprint->polygon.points[i]) >
-          1e-8) {
-        sbpl_need_reinitialization_ = true;
+          0.01) {
+        footprint_changed_ = true;
         break;
       }
     }
-    if (!sbpl_need_reinitialization_)
+    if (!footprint_changed_)
       return;
   }
   // Footprint has changed.
-  footprint_ = costmap_2d::toPointVector(footprint->polygon);
+  sbpl_need_reinitialization_ = true;
+  footprint_                  = costmap_2d::toPointVector(footprint->polygon);
   costmap_2d::calculateMinAndMaxDistances(
       footprint_, inscribed_radius_, circumscribed_radius_);
   // Update the marker.
@@ -237,11 +249,10 @@ void FootprintPlanner::initializeSBPLPlanner() {
   costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
   // Set inscribed radius cost parameter.
   if (!sbpl_env_->SetEnvParameter(
-          "cost_inscribed_threshold",
-          costmap_2d::INSCRIBED_INFLATED_OBSTACLE)) {
+          "cost_inscribed_thresh", costmap_2d::INSCRIBED_INFLATED_OBSTACLE)) {
     ROS_ERROR_STREAM(
         "squirrel_navigation::FootprintPlanner: Unable to set "
-        "'cost_inscribed_threshold' parameter'");
+        "'cost_inscribed_thresh' parameter'");
     ros::shutdown();
   }
   // Set circumscibed radius cost parameter.
@@ -252,7 +263,7 @@ void FootprintPlanner::initializeSBPLPlanner() {
               circumscribed_radius_ / costmap->getResolution()))) {
     ROS_ERROR_STREAM(
         "squirrel_navigation::FootprintPlanner: Unable to set "
-        "'cost_possibly_circumscribed_threshold' parameter'. Is "
+        "'cost_possibly_circumscribed_thresh' parameter'. Is "
         "costmap_2d::InflationLayer initialized?");
     ros::shutdown();
   }
@@ -264,11 +275,12 @@ void FootprintPlanner::initializeSBPLPlanner() {
         0., 0., 0., 0., 0., 0., 0., sbpl::footprint(footprint_),
         costmap_ros_->getCostmap()->getResolution(), 1.0, 1.0,
         costmap_2d::LETHAL_OBSTACLE, motion_primitives_url_.c_str());
-  } catch (const sbpl::Exception& ex) {
+  } catch (sbpl::Exception* ex) {
     ROS_ERROR_STREAM(
         "squirrel_navigation::FootprintPlanner: Something went wrong during "
         "initialization of spbl::NavigationEnvironment. "
-        << ex.what());
+        << ex->what() << ". Does the resolution in the motion primitives file "
+                         "match the resolution of the map?");
     ros::shutdown();
   }
   // If initialization fails, throw everything away.

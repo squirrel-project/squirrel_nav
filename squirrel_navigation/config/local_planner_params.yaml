@@ -11,7 +11,7 @@ LocalPlanner:
   collision_based_replanning: true
   replanning_lin_lookahead: 1.0
   replanning_ang_lookahead: 1.0
-  replanning_check_freq: 1.0
+  replanning_path_length_ratio: 0.75
   safety_observers: ["ScanSafetyObserver", "ArmSkinObserver"]
 
   LinearMotionPlanner:
@@ -21,7 +21,7 @@ LocalPlanner:
     angular_smoother: 0.75
     time_scaler: 2.0
     waypoints_heading_lookahead: 15
-    lookahead: 0.0
+    lookahead: 0.25
 
   ControllerPID:
     kP_lin: 1.5

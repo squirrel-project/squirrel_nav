@@ -34,6 +34,7 @@
 #include "squirrel_navigation/local_planner.h"
 #include "squirrel_navigation/safety/arm_skin_observer.h"
 #include "squirrel_navigation/safety/scan_observer.h"
+#include "squirrel_navigation/utils/footprint_utils.h"
 #include "squirrel_navigation/utils/math_utils.h"
 
 #include <pluginlib/class_list_macros.h>
@@ -100,6 +101,8 @@ void LocalPlanner::initialize(
       pnh.advertise<visualization_msgs::MarkerArray>("cmd_navigation", 1);
   ref_pub_  = pnh.advertise<visualization_msgs::Marker>("reference_pose", 1);
   traj_pub_ = pnh.advertise<geometry_msgs::PoseArray>("trajectory", 1);
+  footprints_pub_ =
+      pnh.advertise<visualization_msgs::MarkerArray>("footprints", 1);
   odom_sub_ =
       nh.subscribe(params_.odom_topic, 1, &LocalPlanner::odomCallback, this);
   footprint_sub_ = nh.subscribe(
@@ -109,7 +112,8 @@ void LocalPlanner::initialize(
   unbrake_srv_ = pnh.advertiseService(
       "unbrakeRobot", &LocalPlanner::unbrakeRobotCallback, this);
   // Initialization successful.
-  init_ = true;
+  last_nwaypoints_ = -1;
+  init_            = true;
   ROS_INFO_STREAM(
       "squirrel_navigation::LocalPlanner: initialization successful.");
 }
@@ -180,11 +184,13 @@ bool LocalPlanner::setPlan(
     controller_->reset(stamp);
     motion_planner_->reset(waypoints, stamp);
     publishTrajectory(stamp);
+    publishFootprints(stamp);
   } else if (
       !params_.collision_based_replanning ||
       needReplanning(motion_planner_->trajectory(), waypoints)) {
     motion_planner_->update(waypoints, stamp);
     publishTrajectory(stamp);
+    publishFootprints(stamp);
   }
   return true;
 }
@@ -193,11 +199,23 @@ void LocalPlanner::footprintCallback(
     const geometry_msgs::PolygonStamped::ConstPtr& msg) {
   ROS_INFO_STREAM_ONCE(
       "squirrel_navigation::LocalPlanner: Subscribed to the footprint.");
-  if (footprint_.size() == msg->polygon.points.size())
-    return;
-  footprint_ = costmap_2d::toPointVector(msg->polygon);
-  costmap_2d::calculateMinAndMaxDistances(
-      footprint_, inscribed_radius_, circumscribed_radius_);
+  bool footprint_changed = false;
+  if (footprint_.size() == msg->polygon.points.size()) {
+    for (unsigned int i = 0; i < footprint_.size(); ++i)
+      if (math::linearDistance2D(footprint_[i], msg->polygon.points[i]) >
+          0.01) {
+        footprint_changed = true;
+        break;
+      }
+  } else {
+    footprint_changed = true;
+  }
+  // If footprint changed update the internal values.
+  if (footprint_changed) {
+    footprint_ = costmap_2d::toPointVector(msg->polygon);
+    costmap_2d::calculateMinAndMaxDistances(
+        footprint_, inscribed_radius_, circumscribed_radius_);
+  }
 }
 
 void LocalPlanner::odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
@@ -286,6 +304,45 @@ void LocalPlanner::publishTrajectory(const ros::Time& stamp) const {
   for (const auto& waypoint : waypoints)
     trajectory.poses.emplace_back(waypoint.pose);
   traj_pub_.publish(trajectory);
+}
+
+void LocalPlanner::publishFootprints(const ros::Time& stamp) {
+  if (!params_.visualize_topics)
+    return;
+  // Number of waypoints.
+  const auto& waypoints = motion_planner_->waypoints();
+  const int nwaypoints  = waypoints.size();
+  const auto& footprint = footprint::closedPolygon(footprint_);
+  // Create the visualization marker.
+  visualization_msgs::MarkerArray marker_array_msg;
+  marker_array_msg.markers.reserve(std::max(nwaypoints, last_nwaypoints_));
+  for (int i = 0; i < nwaypoints; ++i) {
+    visualization_msgs::Marker marker;
+    marker.header.stamp    = stamp;
+    marker.header.frame_id = costmap_ros_->getGlobalFrameID();
+    marker.ns              = ros::this_node::getNamespace() + "LocalPlanner";
+    marker.id              = i;
+    marker.type            = visualization_msgs::Marker::LINE_STRIP;
+    marker.action          = visualization_msgs::Marker::MODIFY;
+    marker.pose            = waypoints[i].pose;
+    marker.scale.x         = 0.0025;
+    marker.color.r         = 0.0;
+    marker.color.g         = 0.0;
+    marker.color.b         = 0.0;
+    marker.color.a         = 0.7;
+    marker.points          = footprint;
+    marker_array_msg.markers.emplace_back(marker);
+  }
+  // Delete the old ones.
+  for (int i = nwaypoints; i < last_nwaypoints_; ++i) {
+    visualization_msgs::Marker delete_marker;
+    delete_marker.ns     = ros::this_node::getNamespace() + "LocalPlanner";
+    delete_marker.id     = i;
+    delete_marker.action = visualization_msgs::Marker::DELETE;
+    marker_array_msg.markers.emplace_back(delete_marker);
+  }
+  last_nwaypoints_ = nwaypoints;
+  footprints_pub_.publish(marker_array_msg);
 }
 
 void LocalPlanner::publishTwist(
@@ -408,7 +465,13 @@ bool LocalPlanner::needReplanning(
   const bool current_trajectory_suboptimal =
       math::pathLength(new_waypoints) <=
       params_.replanning_path_length_ratio * math::pathLength(new_waypoints);
-  return current_trajectory_suboptimal || !isTrajectorySafe(old_waypoints);
+  const bool need_replanning =
+      current_trajectory_suboptimal || !isTrajectorySafe(old_waypoints);
+  if (params_.verbose && need_replanning)
+    ROS_INFO_STREAM(
+        "squirrel_navigation::LocalPlanner: Found a shorter trajectory or "
+        "trajectory not safe. Replanning requested.");
+  return need_replanning;
 }
 
 bool LocalPlanner::newGoal(const geometry_msgs::Pose& pose) const {

@@ -145,3 +145,9 @@ Uses messages provided by [squirrel_navigation_msgs](https://github.com/squirrel
 - `~/getPathClearance` (`squirrel_navigation_msgs::GetPathClereance`)
   returns the clearance of a path as well as the proximity map of
   every waypoint of the path.
+
+
+## Know Issues
+On shutdown, `ClassLoader` throws an error. It should only happens on
+exit and therefore not influence the navigation stack. We're working
+on it.

@@ -150,7 +150,8 @@ class FootprintPlanner : public nav_core::BaseGlobalPlanner {
 
   bool init_;
   bool sbpl_need_reinitialization_;
-
+  bool footprint_changed_;
+  
   mutable std::mutex footprint_mtx_;
 };
 

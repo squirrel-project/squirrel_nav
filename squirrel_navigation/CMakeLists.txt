@@ -20,9 +20,22 @@ else()
     "support. Please use a different C++ compiler.")
 endif()
 
-## Import Eigen
+## Import Boost filesystem.
+find_package(Boost REQUIRED COMPONENTS filesystem)
+include_directories(${Boost_INCLUDE_DIR})
+
+## Import Eigen.
 find_package(Eigen3 REQUIRED)
-include_directories(${EIGEN3_INCLUDE_DIR})
+include_directories(${EIGEN3_INCLUDE_DIRS})
+
+## Import SBPL.
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SBPL REQUIRED sbpl)
+find_library(SBPL_LIBRARY 
+  NAMES sbpl
+  PATHS ${SBPL_LIBRARY_DIRS}
+  NO_DEFAULT_PATH)
+include_directories(${SBPL_INCLUDE_DIRS})
 
 ## Import ros dependencies.
 set(squirrel_navigation_catkin_DEPENDENCIES
@@ -57,7 +70,7 @@ add_library(squirrel_navigation_planners
   src/local_planner.cpp src/linear_motion_planner.cpp src/controller_pid.cpp 
   src/global_planner.cpp src/footprint_planner.cpp)
 target_link_libraries(squirrel_navigation_planners 
-  ${catkin_LIBRARIES} squirrel_navigation_safety)
+  ${catkin_LIBRARIES} ${SBPL_LIBRARY} ${Boost_LIBRARIES} squirrel_navigation_safety)
 add_dependencies(squirrel_navigation_planners 
   squirrel_navigation_gencfg squirrel_navigation_msgs_generate_messages_cpp)
 
@@ -78,7 +91,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${squirrel_navigation_LIBRARIES}
   CATKIN_DEPENDS ${squirrel_navigation_catkin_DEPENDENCIES}
-  DEPENDS Eigen3)
+  DEPENDS Eigen3 Boost SBPL)
 
 ## Install.
 install(

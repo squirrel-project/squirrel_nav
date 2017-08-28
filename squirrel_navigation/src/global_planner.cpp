@@ -33,6 +33,7 @@
 
 #include "squirrel_navigation/global_planner.h"
 #include "squirrel_navigation/utils/math_utils.h"
+#include "squirrel_navigation/utils/footprint_utils.h"
 
 #include <geometry_msgs/PoseArray.h>
 #include <nav_msgs/Path.h>
@@ -70,13 +71,13 @@ void GlobalPlanner::initialize(
   footprint_planner_->initialize(name + "/ARAstar", costmap_ros);
   // Initialize publishers and subscribers.
   plan_pub_      = pnh.advertise<nav_msgs::Path>("plan", 1);
-  waypoints_pub_ = pnh.advertise<geometry_msgs::PoseArray>("poses", 1);
+  waypoints_pub_ = pnh.advertise<geometry_msgs::PoseArray>("waypoints", 1);
   footprints_pub_ =
       pnh.advertise<visualization_msgs::MarkerArray>("footprints", 1);
   // Initialization successful.
   init_ = true;
   ROS_INFO_STREAM(
-      "squirrel_localizer::GlobalPlanner: initialization successful.");
+      "squirrel_navigation::GlobalPlanner: initialization successful.");
 }
 
 bool GlobalPlanner::makePlan(
@@ -165,15 +166,15 @@ void GlobalPlanner::publishFootprints(
     return;
   // Number of waypoints and footprint marker.
   const int nwaypoints  = waypoints.size();
-  const auto& footprint = closedPolygon(footprint_planner_->footprint());
+  const auto& footprint = footprint::closedPolygon(footprint_planner_->footprint());
   // Create the visualization marker.
   visualization_msgs::MarkerArray marker_array_msg;
   marker_array_msg.markers.reserve(std::max(nwaypoints, last_nwaypoints_));
-  for (size_t i = 0; i < nwaypoints; ++i) {
+  for (int i = 0; i < nwaypoints; ++i) {
     visualization_msgs::Marker marker;
     marker.header.stamp    = stamp;
     marker.header.frame_id = costmap_ros_->getGlobalFrameID();
-    marker.ns              = ros::this_node::getNamespace() + "/GlobalPlanner";
+    marker.ns              = ros::this_node::getNamespace() + "GlobalPlanner";
     marker.id              = i;
     marker.type            = visualization_msgs::Marker::LINE_STRIP;
     marker.action          = visualization_msgs::Marker::MODIFY;
@@ -189,25 +190,13 @@ void GlobalPlanner::publishFootprints(
   // Delete the old ones.
   for (int i = nwaypoints; i < last_nwaypoints_; ++i) {
     visualization_msgs::Marker delete_marker;
-    delete_marker.ns     = ros::this_node::getNamespace() + "/GlobalPlanner";
+    delete_marker.ns     = ros::this_node::getNamespace() + "GlobalPlanner";
     delete_marker.id     = i;
     delete_marker.action = visualization_msgs::Marker::DELETE;
     marker_array_msg.markers.emplace_back(delete_marker);
   }
   last_nwaypoints_ = nwaypoints;
   footprints_pub_.publish(marker_array_msg);
-}
-
-std::vector<geometry_msgs::Point> GlobalPlanner::closedPolygon(
-    const std::vector<geometry_msgs::Point>& open_polygon) const {
-  const int npoints = open_polygon.size();
-  if (npoints <= 1)
-    return open_polygon;
-  std::vector<geometry_msgs::Point> output;
-  output.reserve(npoints);
-  for (int i = 0; i <= npoints; ++i)
-    output.emplace_back(open_polygon[i % npoints]);
-  return output;
 }
 
 GlobalPlanner::Params GlobalPlanner::Params::defaultParams() {

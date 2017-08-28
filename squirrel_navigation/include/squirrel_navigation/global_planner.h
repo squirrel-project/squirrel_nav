@@ -107,10 +107,6 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
       const std::vector<geometry_msgs::PoseStamped>& waypoints,
       const ros::Time& stamp);
 
-  // Utility to close up an open polygon.
-  std::vector<geometry_msgs::Point> closedPolygon(
-      const std::vector<geometry_msgs::Point>& open_polygon) const;
-
  private:
   Params params_;
   std::unique_ptr<dynamic_reconfigure::Server<GlobalPlannerConfig>> dsrv_;

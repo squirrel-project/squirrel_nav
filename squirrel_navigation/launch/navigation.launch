@@ -29,10 +29,10 @@
     <rosparam file="$(find squirrel_navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
     <rosparam file="$(find squirrel_navigation)/config/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find squirrel_navigation)/config/global_costmap_params.yaml" command="load" />
-    <rosparam file="$(find squirrel_navigation)/config/base_local_planner_params.yaml" command="load" />
-    <rosparam file="$(find squirrel_navigation)/config/base_global_planner_params.yaml" command="load" />
+    <rosparam file="$(find squirrel_navigation)/config/local_planner_params.yaml" command="load" />
+    <rosparam file="$(find squirrel_navigation)/config/global_planner_params.yaml" command="load" />
     <rosparam file="$(find squirrel_navigation)/config/move_base_params.yaml" command="load" />
-    <param name="GlobalPlanner/FootprintPlanner/motion_pimitives_url" value="$(find squirrel_navigation)/motion_primitives/motion_primitives.mprim"/>
+    <param name="GlobalPlanner/ARAstar/motion_primitives_filename" value="$(find squirrel_navigation)/motion_primitives/motion_primitives.mprim"/>
     <remap from="/cmd_vel" to="/cmd_navigation" if="$(arg twist_mux)"/>
   </node>
   
