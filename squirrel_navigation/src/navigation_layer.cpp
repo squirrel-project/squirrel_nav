@@ -51,7 +51,7 @@ void NavigationLayer::onInitialize() {
   // Initialize the static layer to fit the map.
   static_layer_.initialize(layered_costmap_, name_ + "/StaticLayer", tf_);
   laser_layer_.initialize(layered_costmap_, name_ + "/LaserLayer", tf_);
-  kinect_layer_.initialize(layered_costmap_, name_ + "/KinectLayer", tf_);
+  kinect_layer_.initialize(layered_costmap_, name_ + "/DepthCameraLayer", tf_);
   // Align size of kinect and laser layer.
   static_layer_.matchSize<ObstacleLayer>(&laser_layer_);
   static_layer_.matchSize<VoxelLayer>(&kinect_layer_);

@@ -19,13 +19,13 @@ ObstaclesLayer:
     collision_radius: 0.25
     observation_sources: laser_scan
     laser_scan: 
-      sensor_frame: "/hokuyo_link" 
-      data_type: "LaserScan"
-      topic: "/scan" 
+      sensor_frame: /hokuyo_link 
+      data_type: LaserScan
+      topic: /scan 
       marking: true 
       clearing: true
 
-  KinectLayer:
+  DepthCameraLayer:
     enabled: true
     publish_voxel_map: false
     robot_height: 0.9
@@ -35,9 +35,9 @@ ObstaclesLayer:
     collision_radius: 0.25
     observation_sources: kinect_cloud
     kinect_cloud: 
-      sensor_frame: "/kinect_depth_optical_frame"
-      data_type: "PointCloud2" 
-      topic: "/kinect_voxelized_points"
+      sensor_frame: /kinect_depth_optical_frame
+      data_type: PointCloud2
+      topic: /kinect_voxelized_points
       marking: true 
       clearing: true
 
