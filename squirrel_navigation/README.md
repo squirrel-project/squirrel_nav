@@ -129,7 +129,6 @@ Contains `squirrel_navigation::NavigationLayer` which merges obstacles
 detected with depth camera and the safety laser rangefinder.
 
 ### Parameters
-
 - `~/use_kinect` whether to use or not the kinect.
 - `~/use_laser` whether to use or not the laser scan.
 - `~/LaserLayer/*` parameters of [`costmap_2d::ObstacleLayer`](http://docs.ros.org/jade/api/costmap_2d/html/classcostmap__2d_1_1ObstacleLayer.html).
@@ -151,5 +150,4 @@ Uses messages provided by [squirrel_navigation_msgs](https://github.com/squirrel
 
 ## Know Issues
 On shutdown, `ClassLoader` throws an error. It should only happens on
-exit and therefore not influence the navigation stack. We're working
-on it.
+exit and therefore not influence the navigation stack. 
