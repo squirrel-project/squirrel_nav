@@ -115,7 +115,7 @@ void LocalPlanner::initialize(
   last_nwaypoints_ = -1;
   init_            = true;
   ROS_INFO_STREAM(
-      "squirrel_navigation::LocalPlanner: initialization successful.");
+      "squirrel_navigation/LocalPlanner: initialization successful.");
 }
 
 bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
@@ -139,7 +139,7 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
       math::angularDistanceYaw(robot_pose_.pose, ref_pose) >
           params_.max_safe_ang_displacement) {
     ROS_WARN_STREAM(
-        "squirrel_navigation::LocalPlanner: The robot is too far from the "
+        "squirrel_navigation/LocalPlanner: The robot is too far from the "
         "planned trajectory. Replanning requested.");
     current_goal_.reset(nullptr);
     return false;
@@ -168,7 +168,7 @@ bool LocalPlanner::isGoalReached() {
           params_.goal_ang_tolerance) {
     current_goal_.reset(nullptr);
     if (params_.verbose)
-      ROS_INFO_STREAM("squirrel_navigation::LocalPlanner: Goal reached.");
+      ROS_INFO_STREAM("squirrel_navigation/LocalPlanner: Goal reached.");
     return true;
   }
   return false;
@@ -198,7 +198,7 @@ bool LocalPlanner::setPlan(
 void LocalPlanner::footprintCallback(
     const geometry_msgs::PolygonStamped::ConstPtr& msg) {
   ROS_INFO_STREAM_ONCE(
-      "squirrel_navigation::LocalPlanner: Subscribed to the footprint.");
+      "squirrel_navigation/LocalPlanner: Subscribed to the footprint.");
   bool footprint_changed = false;
   if (footprint_.size() == msg->polygon.points.size()) {
     for (unsigned int i = 0; i < footprint_.size(); ++i)
@@ -220,7 +220,7 @@ void LocalPlanner::footprintCallback(
 
 void LocalPlanner::odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
   ROS_INFO_STREAM_ONCE(
-      "squirrel_localizer::LocalPlanner: Subscribed to odometry.");
+      "squirrel_localizer/LocalPlanner: Subscribed to odometry.");
   // Update the internal state.
   std::unique_lock<std::mutex> lock(state_mtx_);
   const std::string& map_frame_id = costmap_ros_->getGlobalFrameID();
@@ -234,7 +234,7 @@ void LocalPlanner::odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
     tfl_->transformPose(map_frame_id, odom_robot_pose, robot_pose_);
     twistToGlobalFrame(odom->twist.twist, &robot_twist_.twist);
   } catch (const tf::TransformException& ex) {
-    ROS_ERROR_STREAM("squirrel_navigation::LocalPlanner: " << ex.what());
+    ROS_ERROR_STREAM("squirrel_navigation/LocalPlanner: " << ex.what());
   }
 }
 
@@ -252,6 +252,7 @@ void LocalPlanner::reconfigureCallback(
   params_.max_safe_ang_velocity        = config.max_safe_ang_velocity;
   params_.max_safe_lin_displacement    = config.max_safe_lin_displacement;
   params_.max_safe_ang_displacement    = config.max_safe_ang_displacement;
+  params_.visualize_topics             = config.visualize_topics;
   params_.verbose                      = config.verbose;
 }
 

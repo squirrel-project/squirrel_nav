@@ -63,7 +63,7 @@ void ControllerPID::initialize(const std::string& name) {
   // Initialization successful.
   init_ = true;
   ROS_INFO_STREAM(
-      "squirrel_navigation::ControllerPID: initialization successful.");
+      "squirrel_navigation/ControllerPID: initialization successful.");
 }
 
 void ControllerPID::reset(const ros::Time& start) {
@@ -102,13 +102,14 @@ void ControllerPID::computeCommand(
 
 void ControllerPID::reconfigureCallback(
     ControllerPIDConfig& config, uint32_t level) {
-  params_.global_frame_id = config.global_frame_id;
-  params_.kP_lin          = config.kP_lin;
-  params_.kI_lin          = config.kI_lin;
-  params_.kD_lin          = config.kD_lin;
-  params_.kP_ang          = config.kP_ang;
-  params_.kI_ang          = config.kI_ang;
-  params_.kD_ang          = config.kD_ang;
+  params_.global_frame_id  = config.global_frame_id;
+  params_.kP_lin           = config.kP_lin;
+  params_.kI_lin           = config.kI_lin;
+  params_.kD_lin           = config.kD_lin;
+  params_.kP_ang           = config.kP_ang;
+  params_.kI_ang           = config.kI_ang;
+  params_.kD_ang           = config.kD_ang;
+  params_.visualize_topics = config.visualize_topics;
 }
 
 void ControllerPID::publishTwist(

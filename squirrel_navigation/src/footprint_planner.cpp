@@ -91,7 +91,7 @@ void FootprintPlanner::initialize(
       "motion_primitives.mprim");
   if (!boost::filesystem::exists(motion_primitives_url_))
     ROS_ERROR_STREAM(
-        "squirrel_navigation::FootprintPlanner: The file '"
+        "squirrel_navigation/FootprintPlanner: The file '"
         << motion_primitives_url_
         << "' does not exist. The footprint planner might not work.");
   // Initialize the state observers.
@@ -110,7 +110,7 @@ void FootprintPlanner::initialize(
   sbpl_need_reinitialization_ = true;
   init_                       = true;
   ROS_INFO_STREAM(
-      "squirrel_navigation::FootprintPlanner: initialization successful.");
+      "squirrel_navigation/FootprintPlanner: initialization successful.");
 }
 
 bool FootprintPlanner::makePlan(
@@ -132,12 +132,12 @@ bool FootprintPlanner::makePlan(
     const int ret = sbpl_env_->SetStart(start_x, start_y, start_a);
     if (ret <= 0 || sbpl_planner_->set_start(ret) == 0) {
       ROS_ERROR_STREAM(
-          "squirrel_navigation::FootprintPlanner: Unable to set the start.");
+          "squirrel_navigation/FootprintPlanner: Unable to set the start.");
       return false;
     }
   } catch (sbpl::Exception* ex) {
     ROS_ERROR_STREAM(
-        "squirrel_navigation::FootprintPlanner: Something went wrong while "
+        "squirrel_navigation/FootprintPlanner: Something went wrong while "
         "setting the start. "
         << ex->what());
     return false;
@@ -173,7 +173,7 @@ bool FootprintPlanner::makePlan(
         &solution_states_ids, &sbpl_waypoints);
   } catch (sbpl::Exception* ex) {
     ROS_ERROR_STREAM(
-        "squirrel_navigation::FootprintPlanner: Something went wrong while "
+        "squirrel_navigation/FootprintPlanner: Something went wrong while "
         "planning. "
         << ex->what());
     return false;
@@ -181,7 +181,7 @@ bool FootprintPlanner::makePlan(
   if (!ret) {
     if (params_.verbose)
       ROS_WARN_STREAM(
-          "squirrel_navigation::FootprintPlanner: Unable to find a collision "
+          "squirrel_navigation/FootprintPlanner: Unable to find a collision "
           "free path.");
     return false;
   } else {
@@ -189,7 +189,7 @@ bool FootprintPlanner::makePlan(
     publishPath(waypoints, ros::Time::now());
     if (params_.verbose)
       ROS_WARN_STREAM(
-          "squirrel_navigation::FootprintPlanner: Found a collision free path "
+          "squirrel_navigation/FootprintPlanner: Found a collision free path "
           "with "
           << waypoints.size() << " waypoints.");
     return true;
@@ -202,6 +202,7 @@ void FootprintPlanner::reconfigureCallback(
   params_.footprint_topic   = config.footprint_topic;
   params_.max_planning_time = config.max_planning_time;
   params_.initial_epsilon   = config.initial_epsilon;
+  params_.visualize_topics  = config.visualize_topics;
   params_.verbose           = config.verbose;
   if (params_.forward_search != config.forward_search) {
     params_.forward_search = config.forward_search;
@@ -216,7 +217,7 @@ const std::vector<geometry_msgs::Point>& FootprintPlanner::footprint() const {
 void FootprintPlanner::footprintCallback(
     const geometry_msgs::PolygonStamped::ConstPtr& footprint) {
   ROS_INFO_STREAM_ONCE(
-      "squirrel_navigation::FootprintPlanner: Subscribed to the footprint.");
+      "squirrel_navigation/FootprintPlanner: Subscribed to the footprint.");
   // Update the footprint.
   std::unique_lock<std::mutex> lock(footprint_mtx_);
   if (footprint->polygon.points.size() != footprint_.size()) {
@@ -251,7 +252,7 @@ void FootprintPlanner::initializeSBPLPlanner() {
   if (!sbpl_env_->SetEnvParameter(
           "cost_inscribed_thresh", costmap_2d::INSCRIBED_INFLATED_OBSTACLE)) {
     ROS_ERROR_STREAM(
-        "squirrel_navigation::FootprintPlanner: Unable to set "
+        "squirrel_navigation/FootprintPlanner: Unable to set "
         "'cost_inscribed_thresh' parameter'");
     ros::shutdown();
   }
@@ -262,7 +263,7 @@ void FootprintPlanner::initializeSBPLPlanner() {
           inflation_layer_->computeCost(
               circumscribed_radius_ / costmap->getResolution()))) {
     ROS_ERROR_STREAM(
-        "squirrel_navigation::FootprintPlanner: Unable to set "
+        "squirrel_navigation/FootprintPlanner: Unable to set "
         "'cost_possibly_circumscribed_thresh' parameter'. Is "
         "costmap_2d::InflationLayer initialized?");
     ros::shutdown();
@@ -277,7 +278,7 @@ void FootprintPlanner::initializeSBPLPlanner() {
         costmap_2d::LETHAL_OBSTACLE, motion_primitives_url_.c_str());
   } catch (sbpl::Exception* ex) {
     ROS_ERROR_STREAM(
-        "squirrel_navigation::FootprintPlanner: Something went wrong during "
+        "squirrel_navigation/FootprintPlanner: Something went wrong during "
         "initialization of spbl::NavigationEnvironment. "
         << ex->what() << ". Does the resolution in the motion primitives file "
                          "match the resolution of the map?");
@@ -286,7 +287,7 @@ void FootprintPlanner::initializeSBPLPlanner() {
   // If initialization fails, throw everything away.
   if (!initialization_status) {
     ROS_ERROR_STREAM(
-        "squirrel_navigation::FootprintPlanner: Initialization failed.");
+        "squirrel_navigation/FootprintPlanner: Initialization failed.");
     ros::shutdown();
   }
   // Initialize the planner.
@@ -314,7 +315,7 @@ boost::shared_ptr<costmap_2d::InflationLayer>
 }
 
 void FootprintPlanner::initializeFootprintMarker() {
-  footprint_marker_.ns   = ros::this_node::getNamespace() + "/FootprintPlanner";
+  footprint_marker_.ns   = ros::this_node::getNamespace() + "FootprintPlanner";
   footprint_marker_.type = visualization_msgs::Marker::LINE_STRIP;
   footprint_marker_.action  = visualization_msgs::Marker::MODIFY;
   footprint_marker_.scale.x = 0.0025;
@@ -357,7 +358,7 @@ void FootprintPlanner::publishPath(
   // Clear last waypoints.
   for (int i = nwaypoints; i < last_nwaypoints_; ++i) {
     visualization_msgs::Marker delete_marker;
-    delete_marker.ns     = ros::this_node::getNamespace() + "/FootprintPlanner";
+    delete_marker.ns     = ros::this_node::getNamespace() + "FootprintPlanner";
     delete_marker.id     = i;
     delete_marker.action = visualization_msgs::Marker::DELETE;
     footprints_array.markers.emplace_back(delete_marker);

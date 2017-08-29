@@ -77,7 +77,7 @@ void GlobalPlanner::initialize(
   // Initialization successful.
   init_ = true;
   ROS_INFO_STREAM(
-      "squirrel_navigation::GlobalPlanner: initialization successful.");
+      "squirrel_navigation/GlobalPlanner: initialization successful.");
 }
 
 bool GlobalPlanner::makePlan(
@@ -110,11 +110,11 @@ bool GlobalPlanner::makePlan(
   if (params_.verbose) {
     if (plan_found)
       ROS_INFO_STREAM(
-          "squirrel_navigation::GlobalPlanner: Found a collision free path ("
+          "squirrel_navigation/GlobalPlanner: Found a collision free path ("
           << waypoints.size() << " waypoints).");
     else
       ROS_WARN_STREAM(
-          "squirrel_navigation::GlobalPlanner: Could not find a collision free "
+          "squirrel_navigation/GlobalPlanner: Could not find a collision free "
           "path.");
   }
   // Publish topics.
@@ -131,6 +131,7 @@ void GlobalPlanner::reconfigureCallback(
   params_.plan_with_constant_heading = config.plan_with_constant_heading;
   params_.heading                    = config.heading;
   params_.verbose                    = config.verbose;
+  params_.visualize_topics           = config.visualize_topics;
 }
 
 void GlobalPlanner::publishPlan(

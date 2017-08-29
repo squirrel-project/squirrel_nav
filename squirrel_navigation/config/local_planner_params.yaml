@@ -1,5 +1,6 @@
 LocalPlanner: 
   verbose: true
+  visualize_topics: true
   odom_topic: "/odom"
   footprint_topic: "/squirrel_footprint_observer/footprint"
   goal_lin_tolerance: 0.05
@@ -24,6 +25,7 @@ LocalPlanner:
     lookahead: 0.25
 
   ControllerPID:
+    visualize_topics: false
     kP_lin: 1.5
     kP_ang: 1.5
     kI_lin: 0.0001

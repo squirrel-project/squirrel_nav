@@ -54,7 +54,7 @@ void LinearMotionPlanner::initialize(const std::string& name) {
   // Initialization successful.
   init_ = true;
   ROS_INFO_STREAM(
-      "squirrel_navigation::LinearMotionPlanner: initialization succesful.");
+      "squirrel_navigation/LinearMotionPlanner: initialization succesful.");
 }
 
 void LinearMotionPlanner::reset(

@@ -66,7 +66,7 @@ void NavigationLayer::onInitialize() {
   current_ = true;
   enabled_ = true;
   // Initialization Successful.
-  ROS_INFO("squirrel_navigation::NavigationLayer: Initializations successful.");
+  ROS_INFO("squirrel_navigation/NavigationLayer: Initializations successful.");
 }
 
 void NavigationLayer::updateBounds(
