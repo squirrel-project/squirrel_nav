@@ -33,6 +33,7 @@
   <author>Federico Boniardi</author>
   
   <buildtool_depend>catkin</buildtool_depend>
+
   <build_depend>geometry_msgs</build_depend>
   <build_depend>message_filters</build_depend>
   <build_depend>nav_msgs</build_depend>

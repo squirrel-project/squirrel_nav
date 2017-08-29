@@ -7,21 +7,21 @@ set(ROS_BUILD_TYPE Release)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
 
 ## Set ROS dependencies.
-set(squirrel_footprint_observer_DEPENDENCIES
+set(${PROJECT_NAME}_DEPENDENCIES
   dynamic_reconfigure 
   geometry_msgs 
-  message_runtime 
   message_generation 
+  message_runtime 
   roscpp 
-  tf 
   squirrel_footprint_observer_msgs 
-  std_msgs)
+  std_msgs
+  tf)
 
 ## Import ROS dependencies.
-find_package(catkin REQUIRED COMPONENTS ${squirrel_footprint_observer_DEPENDENCIES})
+find_package(catkin REQUIRED COMPONENTS ${${PROJECT_NAME}_DEPENDENCIES})
 include_directories(${catkin_INCLUDE_DIRS})
 
-## Import CGAL
+## Import CGAL.
 find_package(CGAL REQUIRED)
 include(${CGAL_USE_FILE})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frounding-math")
@@ -46,27 +46,26 @@ include_directories(${YAMLCPP_INCLUDE_DIR})
 ## Genereate reconfig files.
 generate_dynamic_reconfigure_options(cfg/footprint_observer.cfg)
 
-## Building the footprint observer
-include_directories(include)
-add_executable(squirrel_footprint_observer_node
-  src/footprint_observer_node.cpp 
-  src/footprint_observer.cpp)
-target_link_libraries(squirrel_footprint_observer_node 
-  ${catkin_LIBRARIES} ${YAMLCPP_LIBRARY})
-add_dependencies(squirrel_footprint_observer_node 
-  squirrel_footprint_observer_msgs_generate_messages_cpp
-  squirrel_footprint_observer_gencfg)
-
 ## Catkin package.
 catkin_package(
  INCLUDE_DIRS include
- LIBRARIES squirrel_footprint_observer_node
- CATKIN_DEPENDS ${squirrel_footprint_observer_DEPENDENCIES}
+ CATKIN_DEPENDS ${${PROJECT_NAME}_DEPENDENCIES}
  DEPENDS CGAL YamlCpp)
+
+## Building the footprint observer
+include_directories(include)
+add_executable(${PROJECT_NAME}_node
+  src/footprint_observer.cpp
+  src/footprint_observer_node.cpp)
+target_link_libraries(${PROJECT_NAME}_node 
+  ${catkin_LIBRARIES} ${YAMLCPP_LIBRARY})
+add_dependencies(${PROJECT_NAME}_node 
+  squirrel_footprint_observer_msgs_generate_messages_cpp
+  ${PROJECT_NAME}_gencfg)
 
 ## Install
 install(
-  TARGETS squirrel_footprint_observer_node
+  TARGETS ${PROJECT_NAME}_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
