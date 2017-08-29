@@ -141,6 +141,7 @@ std::vector<geometry_msgs::PoseStamped> LinearMotionPlanner::trajectory()
   trajectory.reserve(waypoints_.size());
   for (auto it = heading_waypoint_; it != waypoints_.end(); ++it)
     trajectory.emplace_back(*it);
+  trajectory.shrink_to_fit();
   return trajectory;
 }
 
