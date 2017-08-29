@@ -30,7 +30,7 @@ to retrieve the map.
   standard deviations of particles (Gaussian distributed).
 - `~/motion_model/noise_{xx, xy, xa, yy, ya, aa}` (default `{1.0, 0.0, 0.0, 1.0,
   0.0, 1.0}`), noise components of the odometry model.
-- `noise_magnitude` (default `1.0`): rescaling factor for the noise
+- `~/motion_model/noise_magnitude` (default `1.0`): rescaling factor for the noise
   parameters.
 - `~/latent_model_likelihood_field/saturation_distance` (default `0.5`): saturation distance of
   the Gaussian kernels.
