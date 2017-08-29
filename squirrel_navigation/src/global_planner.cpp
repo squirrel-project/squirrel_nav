@@ -32,8 +32,8 @@
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "squirrel_navigation/global_planner.h"
-#include "squirrel_navigation/utils/math_utils.h"
 #include "squirrel_navigation/utils/footprint_utils.h"
+#include "squirrel_navigation/utils/math_utils.h"
 
 #include <geometry_msgs/PoseArray.h>
 #include <nav_msgs/Path.h>
@@ -88,6 +88,11 @@ bool GlobalPlanner::makePlan(
   bool plan_found = false;
   if (params_.plan_with_footprint) {
     plan_found = footprint_planner_->makePlan(start, goal, waypoints);
+    if (params_.verbose && params_.plan_with_constant_heading)
+      ROS_WARN_STREAM(
+          "squirrel_navigation/GlobalPlanner: Planning with constant heading "
+          "is possible only for circular footprints. Disable "
+          "'plan_with_footprint' parameters.");
   } else {
     plan_found        = dijkstra_planner_->makePlan(start, goal, waypoints);
     waypoints.front() = start;
@@ -122,6 +127,7 @@ bool GlobalPlanner::makePlan(
   publishPlan(waypoints, now);
   publishWaypoints(waypoints, now);
   publishFootprints(waypoints, now);
+  // Feedback.
   return plan_found;
 }
 
@@ -166,8 +172,9 @@ void GlobalPlanner::publishFootprints(
   if (!params_.visualize_topics)
     return;
   // Number of waypoints and footprint marker.
-  const int nwaypoints  = waypoints.size();
-  const auto& footprint = footprint::closedPolygon(footprint_planner_->footprint());
+  const int nwaypoints = waypoints.size();
+  const auto& footprint =
+      footprint::closedPolygon(footprint_planner_->footprint());
   // Create the visualization marker.
   visualization_msgs::MarkerArray marker_array_msg;
   marker_array_msg.markers.reserve(std::max(nwaypoints, last_nwaypoints_));
