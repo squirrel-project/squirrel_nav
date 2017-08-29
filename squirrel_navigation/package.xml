@@ -5,7 +5,7 @@
   <version>2.1.0</version>
   
   <description>
-    squirrel_navigation, autonomous 2D navigation for the SQUIRREL robot.
+    Autonomous 2D navigation for the SQUIRREL robot.
   </description>
   
   <maintainer email="boniardi@cs.uni-freiburg.de">Federico Boniardi</maintainer>

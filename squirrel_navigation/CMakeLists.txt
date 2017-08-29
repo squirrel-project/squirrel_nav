@@ -37,11 +37,26 @@ find_library(SBPL_LIBRARY
   NO_DEFAULT_PATH)
 include_directories(${SBPL_INCLUDE_DIRS})
 
-## Import ros dependencies.
+## Set ROS dependencies.
 set(squirrel_navigation_catkin_DEPENDENCIES
-  actionlib costmap_2d base_local_planner clear_costmap_recovery dynamic_reconfigure 
-  geometry_msgs message_runtime  nav_core nav_msgs navfn pluginlib roscpp 
-  squirrel_navigation_msgs std_msgs std_srvs tf visualization_msgs)
+  actionlib 
+  costmap_2d 
+  base_local_planner 
+  clear_costmap_recovery 
+  dynamic_reconfigure 
+  geometry_msgs 
+  message_runtime  
+  nav_core nav_msgs 
+  navfn 
+  pluginlib 
+  roscpp 
+  squirrel_navigation_msgs 
+  std_msgs 
+  std_srvs 
+  tf 
+  visualization_msgs)
+
+## Import ROS dependencies.
 find_package(catkin REQUIRED COMPONENTS ${squirrel_navigation_catkin_DEPENDENCIES})
 include_directories(${catkin_INCLUDE_DIRS})
 
@@ -50,41 +65,66 @@ include_directories(include external)
 
 ## Generate reconfig files.
 generate_dynamic_reconfigure_options(
-  cfg/utils/alpha_beta_filter.cfg cfg/safety/scan_observer.cfg cfg/safety/arm_skin_observer.cfg 
-  cfg/controller_pid.cfg cfg/footprint_planner.cfg cfg/global_planner.cfg  
-  cfg/local_planner.cfg cfg/linear_motion_planner.cfg cfg/navigation_layer.cfg)
+  cfg/utils/alpha_beta_filter.cfg 
+  cfg/safety/scan_observer.cfg 
+  cfg/safety/arm_skin_observer.cfg 
+  cfg/controller_pid.cfg 
+  cfg/footprint_planner.cfg 
+  cfg/global_planner.cfg  
+  cfg/local_planner.cfg 
+  cfg/linear_motion_planner.cfg 
+  cfg/navigation_layer.cfg)
 
 ## Build libraries.
-add_library(squirrel_navigation_utils src/utils/alpha_beta_filter.cpp)
-target_link_libraries(squirrel_navigation_utils ${catkin_LIBRARIES})
-add_dependencies(squirrel_navigation_utils squirrel_navigation_gencfg)
+add_library(squirrel_navigation_utils 
+  src/utils/alpha_beta_filter.cpp)
+target_link_libraries(squirrel_navigation_utils 
+  ${catkin_LIBRARIES})
+add_dependencies(squirrel_navigation_utils 
+  squirrel_navigation_gencfg)
 
 add_library(squirrel_navigation_safety 
-  src/safety/scan_observer.cpp src/safety/arm_skin_observer.cpp)
+  src/safety/scan_observer.cpp 
+  src/safety/arm_skin_observer.cpp)
 target_link_libraries(squirrel_navigation_safety
-  ${catkin_LIBRARIES} squirrel_navigation_utils)
+  ${catkin_LIBRARIES} 
+  squirrel_navigation_utils)
 add_dependencies(squirrel_navigation_safety 
-  squirrel_navigation_gencfg squirrel_navigation_msgs_generate_messages_cpp)
+  squirrel_navigation_gencfg 
+  squirrel_navigation_msgs_generate_messages_cpp)
 
 add_library(squirrel_navigation_planners 
-  src/local_planner.cpp src/linear_motion_planner.cpp src/controller_pid.cpp 
-  src/global_planner.cpp src/footprint_planner.cpp)
+  src/local_planner.cpp 
+  src/linear_motion_planner.cpp 
+  src/controller_pid.cpp 
+  src/global_planner.cpp 
+  src/footprint_planner.cpp)
 target_link_libraries(squirrel_navigation_planners 
-  ${catkin_LIBRARIES} ${SBPL_LIBRARY} ${Boost_LIBRARIES} squirrel_navigation_safety)
+  ${catkin_LIBRARIES} 
+  ${SBPL_LIBRARY} 
+  ${Boost_LIBRARIES} 
+  squirrel_navigation_safety)
 add_dependencies(squirrel_navigation_planners 
-  squirrel_navigation_gencfg squirrel_navigation_msgs_generate_messages_cpp)
+  squirrel_navigation_gencfg 
+  squirrel_navigation_msgs_generate_messages_cpp)
 
 add_library(squirrel_navigation_costmap_layer
-  src/navigation_layer.cpp external/costmap_2d_strip/obstacle_layer.cpp
-  external/costmap_2d_strip/static_layer.cpp external/costmap_2d_strip/voxel_layer.cpp)
-target_link_libraries(squirrel_navigation_costmap_layer ${catkin_LIBRARIES})
+  src/navigation_layer.cpp 
+  external/costmap_2d_strip/obstacle_layer.cpp
+  external/costmap_2d_strip/static_layer.cpp 
+  external/costmap_2d_strip/voxel_layer.cpp)
+target_link_libraries(squirrel_navigation_costmap_layer 
+  ${catkin_LIBRARIES})
 add_dependencies(squirrel_navigation_costmap_layer
- squirrel_navigation_msgs_generate_messages_cpp squirrel_navigation_gencfg)
+ squirrel_navigation_msgs_generate_messages_cpp 
+ squirrel_navigation_gencfg)
 
 ## Built libraries.
 set(squirrel_navigation_LIBRARIES 
-  squirrel_navigation_utils squirrel_navigation_safety 
-  squirrel_navigation_planners squirrel_navigation_costmap_layer)
+  squirrel_navigation_utils 
+  squirrel_navigation_safety 
+  squirrel_navigation_planners 
+  squirrel_navigation_costmap_layer)
 
 ## Catkin package exports.
 catkin_package(

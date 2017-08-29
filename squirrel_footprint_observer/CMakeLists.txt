@@ -8,8 +8,14 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_mod
 
 ## Set ROS dependencies.
 set(squirrel_footprint_observer_DEPENDENCIES
-  dynamic_reconfigure geometry_msgs message_runtime message_generation 
-  roscpp tf squirrel_footprint_observer_msgs std_msgs)
+  dynamic_reconfigure 
+  geometry_msgs 
+  message_runtime 
+  message_generation 
+  roscpp 
+  tf 
+  squirrel_footprint_observer_msgs 
+  std_msgs)
 
 ## Import ROS dependencies.
 find_package(catkin REQUIRED COMPONENTS ${squirrel_footprint_observer_DEPENDENCIES})
@@ -43,7 +49,8 @@ generate_dynamic_reconfigure_options(cfg/footprint_observer.cfg)
 ## Building the footprint observer
 include_directories(include)
 add_executable(squirrel_footprint_observer_node
-  src/footprint_observer_node.cpp src/footprint_observer.cpp)
+  src/footprint_observer_node.cpp 
+  src/footprint_observer.cpp)
 target_link_libraries(squirrel_footprint_observer_node 
   ${catkin_LIBRARIES} ${YAMLCPP_LIBRARY})
 add_dependencies(squirrel_footprint_observer_node 

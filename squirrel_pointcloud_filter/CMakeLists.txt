@@ -18,7 +18,10 @@ endif()
 
 ## Set ROS dependencies
 set(squirrel_pointcloud_filter_DEPENDENCIES
-  dynamic_reconfigure pcl_conversions pcl_ros roscpp)
+  dynamic_reconfigure 
+  pcl_conversions 
+  pcl_ros 
+  roscpp)
 
 ## Import ROS dependencies
 find_package(catkin REQUIRED COMPONENTS ${squirrel_pointcloud_filter_DEPENDENCIES})
@@ -30,9 +33,12 @@ generate_dynamic_reconfigure_options(cfg/point_cloud_filter.cfg)
 ## Build the pointcloud filter.
 include_directories(include)
 add_executable(squirrel_pointcloud_filter_node 
-  src/pointcloud_filter_node.cpp src/pointcloud_filter.cpp)
-target_link_libraries(squirrel_pointcloud_filter_node ${catkin_LIBRARIES})
-add_dependencies(squirrel_pointcloud_filter_node squirrel_pointcloud_filter_gencfg) 
+  src/pointcloud_filter_node.cpp 
+  src/pointcloud_filter.cpp)
+target_link_libraries(squirrel_pointcloud_filter_node 
+  ${catkin_LIBRARIES})
+add_dependencies(squirrel_pointcloud_filter_node 
+  squirrel_pointcloud_filter_gencfg) 
 
 ## Catkin package
 catkin_package(

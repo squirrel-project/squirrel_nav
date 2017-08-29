@@ -30,8 +30,13 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 ## Set ROS dependencies
 set(squirrel_2d_localizer_DEPENDENCIES
-  geometry_msgs message_filters nav_msgs roscpp roslib sensor_msgs
-  squirrel_2d_localizer_msgs tf)
+  geometry_msgs message_filters 
+  nav_msgs 
+  roscpp 
+  roslib 
+  sensor_msgs
+  squirrel_2d_localizer_msgs 
+  tf)
 
 ## Import ROS dependencies
 find_package(catkin REQUIRED COMPONENTS ${squirrel_2d_localizer_DEPENDENCIES})
@@ -48,11 +53,22 @@ catkin_package(
 set(ROS_BUILD_TYPE Release)
 include_directories(include)
 add_executable(squirrel_2d_localizer_node  
-  src/convolution.cpp src/grid_map.cpp src/laser_model.cpp src/latent_model_likelihood_field.cpp
-  src/localizer.cpp src/localizer_ros.cpp src/localizer_ros_node.cpp src/motion_model.cpp
-  src/resampling.cpp src/se2_types.cpp src/extras/twist_correction.cpp src/extras/twist_correction_ros.cpp)
-target_link_libraries(squirrel_2d_localizer_node ${catkin_LIBRARIES})
-add_dependencies(squirrel_2d_localizer_node squirrel_2d_localizer_msgs_generate_messages_cpp)
+  src/convolution.cpp 
+  src/grid_map.cpp 
+  src/laser_model.cpp 
+  src/latent_model_likelihood_field.cpp
+  src/localizer.cpp 
+  src/localizer_ros.cpp 
+  src/localizer_ros_node.cpp 
+  src/motion_model.cpp
+  src/resampling.cpp 
+  src/se2_types.cpp 
+  src/extras/twist_correction.cpp 
+  src/extras/twist_correction_ros.cpp)
+target_link_libraries(squirrel_2d_localizer_node 
+  ${catkin_LIBRARIES})
+add_dependencies(squirrel_2d_localizer_node 
+  squirrel_2d_localizer_msgs_generate_messages_cpp)
 
 ## Installation.
 install(
