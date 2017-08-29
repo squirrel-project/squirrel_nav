@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Federico Boniardi and Wolfram Burgard
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,20 +34,20 @@ void computeGaussianConvolution2d(
 #pragma omp parallel for default(shared)
   for (size_t i = 0; i < matrix.rows(); ++i) {
     Eigen::VectorXd output_row = Eigen::VectorXd::Zero(output->row(i).size());
-    internal::computeGaussianConvolution1d(
+    __internal::computeGaussianConvolution1d(
         sigma, resolution, matrix.row(i), &output_row);
     output->row(i) = output_row;
   }
 #pragma omp parallel for default(shared)
   for (size_t j = 0; j < matrix.cols(); ++j) {
     Eigen::VectorXd output_col = Eigen::VectorXd::Zero(output->col(j).size());
-    internal::computeGaussianConvolution1d(
+    __internal::computeGaussianConvolution1d(
         sigma, resolution, output->col(j), &output_col);
     output->col(j) = output_col;
   }
 }
 
-namespace internal {
+namespace __internal {
 
 void computeGaussianConvolution1d(
     double sigma, double resolution, const Eigen::VectorXd& vector,
@@ -68,6 +68,6 @@ void computeGaussianConvolution1d(
   }
 }
 
-}  // namespace internal
+}  // namespace __internal
 }  // namespace convolution
 }  // namespace squirrel_2d_localizer

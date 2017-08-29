@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Federico Boniardi and Wolfram Burgard
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,14 +33,14 @@ void computeGaussianConvolution2d(
     double sigma, double resolution, const Eigen::MatrixXd& matrix,
     Eigen::MatrixXd* output);
 
-namespace internal {
+namespace __internal {
 
 // Compute image convultion using a Gaussian kernel in 1D.
 void computeGaussianConvolution1d(
     double sigma, double resolution, const Eigen::VectorXd& vector,
     Eigen::VectorXd* output);
 
-}  // namespace internal
+}  // namespace __internal
 }  // namespace convolution
 }  // namespace squirrel_2d_localizer
 

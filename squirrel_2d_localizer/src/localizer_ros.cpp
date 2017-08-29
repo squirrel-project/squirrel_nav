@@ -1,10 +1,6 @@
-// Copyright (c) 2016-2017, Federico Boniardi and Wolfram Burgard
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Federico Boniardi and Wolfram Burgard
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal

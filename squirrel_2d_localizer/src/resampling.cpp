@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 // 
-// Copyright (c) 2017 Federico Boniardi and Wolfram Burgard
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@ namespace squirrel_2d_localizer {
 namespace resampling {
 
 void importanceSampling(std::vector<Particle>* particles) {
-  std::unique_lock<std::mutex> lock(internal::resampling_mtx_);
+  std::unique_lock<std::mutex> lock(__internal::resampling_mtx_);
   std::mt19937 eng(std::rand());
   std::uniform_real_distribution<double> rand(0., 1.);
   const double tot_weights = particles::computeTotalWeight(*particles);
