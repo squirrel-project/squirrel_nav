@@ -100,8 +100,6 @@ This planner is wrapper around [SBPL ARA* planner](http://www.sbpl.net/):
   
 ### Global Planner (`squirrel_navigation::GlobalPlanner`)
 
-
-
 #### Parameters 
 
 Parameters of `squirrel_navigation::GlobalPlanner`:
@@ -115,7 +113,7 @@ Parameters of `squirrel_navigation::GlobalPlanner`:
 - `~/GlobalPlanner/Dijkstra/*` parameters of [`nav_core::NavFnROS`](http://wiki.ros.org/navfn).
 - `~/GlobalPlanner/ARAstar/*` parameters of `squirrel_navigation::FootprintPlanner`.
   
-### Advertised Topics  
+#### Advertised Topics  
 - `~/GlobalPlanner/Dijkstra/*` topics advertised by `nav_core::NavFnROS`.
 - `~/GlobalPlanner/ARAstar/*` topics advertised by `squirrel_navigation::FootprintPlanner`.
 - `~/GlobalPlanner/plan` (`nav_msgs::Path`) the path computed by the planner.
@@ -126,7 +124,7 @@ Parameters of `squirrel_navigation::GlobalPlanner`:
 ## SQUIRREL Costmap layers
 
 Contains `squirrel_navigation::NavigationLayer` which merges obstacles
-detected with depth camera and the safety laser rangefinder.
+detected with depth cameras and the safety laser rangefinders.
 
 ### Parameters
 - `~/use_kinect` whether to use or not the kinect.

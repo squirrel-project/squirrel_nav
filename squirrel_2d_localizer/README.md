@@ -44,7 +44,7 @@ to retrieve the map.
 - `~/extra_child_frame_id` frame ID of the extra transformation.
 
 ### Advertised Services
-Uses messages provided by [squirrel_2d_localization_msgs](https://github.com/federico-b/squirrel_common/tree/indigo_dev/squirrel_2d_localizer_msgs)
+Uses messages provided by [squirrel_2d_localization_msgs](https://github.com/squirrel-project/squirrel_common/tree/indigo_dev/squirrel_3d_localizer_msgs)
 - `~/globalLocalization`
   (`squirrel_2d_localizer_msgs::GlobalLocalization`) distribute
   particles all over the free space of the map.
