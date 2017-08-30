@@ -1,0 +1,24 @@
+GlobalPlanner: 
+  verbose: false
+  visualize_topics: false
+  plan_with_footprint: false
+  plan_with_constant_heading: false
+  heading: 0.0
+
+  Dijkstra: 
+    use_dijkstra: true
+    allow_unknown: false
+    default_tolerance: 0.0
+    old_navfn_behavior: false
+    use_quadratic: true
+    use_grid_path: false
+    visualize_potential: false
+
+  ARAstar:
+    footprint_topic: "/squirrel_footprint_observer/footprint"
+    max_planning_time: 0.2
+    forward_search: true
+    initial_epsilon: 0.05
+    visualize_topics: false
+    verbose: false
+    

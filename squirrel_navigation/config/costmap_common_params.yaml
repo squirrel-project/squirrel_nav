@@ -1,0 +1,51 @@
+## Robot radius.
+robot_radius: 0.22
+
+# costmap_2d plugins declaration.
+plugins:
+  - {name: ObstaclesLayer, type: "squirrel_navigation::NavigationLayer"}
+  - {name: InflationLayer, type: "costmap_2d::InflationLayer"}
+
+# Parameters for squirrel_navigation::NavigationLayer
+ObstaclesLayer:
+  use_kinect: true
+  use_laser_scan: true
+
+  LaserLayer: 
+    enabled: true
+    publish_voxel_map: false
+    obstacle_range: 5.0
+    raytrace_range: 10.0
+    collision_radius: 0.25
+    observation_sources: laser_scan
+    laser_scan: 
+      sensor_frame: /hokuyo_link 
+      data_type: LaserScan
+      topic: /scan 
+      marking: true 
+      clearing: true
+
+  DepthCameraLayer:
+    enabled: true
+    publish_voxel_map: false
+    robot_height: 0.9
+    floor_threshold: 0.03
+    obstacle_range: 3.0
+    raytrace_range: 10.0
+    collision_radius: 0.25
+    observation_sources: kinect_cloud
+    kinect_cloud: 
+      sensor_frame: /kinect_depth_optical_frame
+      data_type: PointCloud2
+      topic: /kinect_voxelized_points
+      marking: true 
+      clearing: true
+
+  StaticLayer:
+    enabled: true
+
+## Parameters for costmap_2d::InflationLayer
+InflationLayer:
+  inscribed_radius: 0.22
+  inflation_radius: 0.6
+  cost_scaling_factor: 10.0

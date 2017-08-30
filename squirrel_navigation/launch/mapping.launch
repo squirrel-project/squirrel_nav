@@ -1,0 +1,13 @@
+<launch>
+
+  <!-- Run SLAM GMapping -->
+  <node name="slam_gmapping" pkg="gmapping" type="slam_gmapping">
+    <param name="xmin" value="-10" />
+    <param name="xmax" value="10" />
+    <param name="ymin" value="-10" />
+    <param name="ymax" value="10" />
+    <param name="delta" value="0.05" />
+    <param name="particles" value="100"/>
+  </node>
+
+</launch>
