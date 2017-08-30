@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 Federico Boniardi
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@ namespace squirrel_2d_localizer {
 Pose2d::Pose2d(double x, double y, double a)
     : translation_({x, y}), rotation_(a) {}
 
-Pose2d::Pose2d(const Vector<2>& translation, double a)
+Pose2d::Pose2d(const Eigen::Vector2d& translation, double a)
     : translation_(translation), rotation_(a) {}
 
 double Pose2d::operator[](size_t i) const {
@@ -61,8 +61,7 @@ Pose2d& Pose2d::operator=(const Pose2d& rhs) {
 
 Pose2d Pose2d::operator*(const Pose2d& rhs) const {
   Pose2d output(
-      rotation_ * rhs.translation() + translation_,
-      rotation_.angle() + rhs[2]);
+      rotation_ * rhs.translation() + translation_, rotation_.angle() + rhs[2]);
   return output;
 }
 

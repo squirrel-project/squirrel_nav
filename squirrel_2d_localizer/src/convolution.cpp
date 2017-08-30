@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 Federico Boniardi
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,31 +26,32 @@
 #include <iostream>
 
 namespace squirrel_2d_localizer {
-
 namespace convolution {
 
 void computeGaussianConvolution2d(
-    double sigma, double resolution, const Matrix<>& matrix, Matrix<>* output) {
+    double sigma, double resolution, const Eigen::MatrixXd& matrix,
+    Eigen::MatrixXd* output) {
 #pragma omp parallel for default(shared)
   for (size_t i = 0; i < matrix.rows(); ++i) {
-    Vector<> output_row = Vector<>::Zero(output->row(i).size());
-    internal::computeGaussianConvolution1d(
+    Eigen::VectorXd output_row = Eigen::VectorXd::Zero(output->row(i).size());
+    __internal::computeGaussianConvolution1d(
         sigma, resolution, matrix.row(i), &output_row);
     output->row(i) = output_row;
   }
 #pragma omp parallel for default(shared)
   for (size_t j = 0; j < matrix.cols(); ++j) {
-    Vector<> output_col = Vector<>::Zero(output->col(j).size());
-    internal::computeGaussianConvolution1d(
+    Eigen::VectorXd output_col = Eigen::VectorXd::Zero(output->col(j).size());
+    __internal::computeGaussianConvolution1d(
         sigma, resolution, output->col(j), &output_col);
     output->col(j) = output_col;
   }
 }
 
-namespace internal {
+namespace __internal {
 
 void computeGaussianConvolution1d(
-    double sigma, double resolution, const Vector<>& vector, Vector<>* output) {
+    double sigma, double resolution, const Eigen::VectorXd& vector,
+    Eigen::VectorXd* output) {
   const int vsize = vector.size();
   if (vsize < 1)
     return;
@@ -67,8 +68,6 @@ void computeGaussianConvolution1d(
   }
 }
 
-}  // namespace internal
-
+}  // namespace __internal
 }  // namespace convolution
-
 }  // namespace squirrel_2d_localizer

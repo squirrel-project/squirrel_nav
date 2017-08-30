@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 Federico Boniardi
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -51,8 +51,8 @@ Pose2d TwistCorrectionROS::correction(const ros::Time& time) const {
     return Pose2d(0., 0., 0.);
   const geometry_msgs::Twist& tw0 = odom_before_time->twist.twist;
   const geometry_msgs::Twist& tw1 = odom_after_time->twist.twist;
-  const double t0 = odom_before_time->header.stamp.toSec();
-  const double t1 = odom_after_time->header.stamp.toSec();
+  const double t0                 = odom_before_time->header.stamp.toSec();
+  const double t1                 = odom_after_time->header.stamp.toSec();
   // interpolate the twist
   const double dt = t1 - t0;
   const double t  = time.toSec() - t0;
@@ -61,6 +61,11 @@ Pose2d TwistCorrectionROS::correction(const ros::Time& time) const {
       linearInterpolation(tw0.linear.y, tw1.linear.y, t, dt),
       linearInterpolation(tw0.angular.z, tw1.angular.z, t, dt));
   return twist_correction_->correction(twist);
+}
+
+double TwistCorrectionROS::linearInterpolation(
+    double x0, double x1, double dt, double t) const {
+  return (1 - t / dt) * x0 + (t / dt) * x1;
 }
 
 }  // namespace squirrel_2d_localizer

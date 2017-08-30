@@ -8,11 +8,12 @@ Repository for navigation related SQUIRREL packages.
 Install the package dependencies running
 ```bash
 rosdep install --from-path squirrel_nav -i -y
-sudo apt-get install ros-indigo-sbpl ros-indigo-csm
+sudo apt-get install ros-indigo-sbpl
 ```
 
-In order to properly generate the dynamic reconfiguration files, set
-execute permission to the files contained in `cfg` folder: run
+In order to properly generate the dynamic reconfiguration files,
+setting execute permission to the files contained in `cfg` folder
+might be needed: run
 ```bash
 chmod a+x cfg/*	
 ```

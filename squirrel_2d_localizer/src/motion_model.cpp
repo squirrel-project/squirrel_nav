@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 Federico Boniardi
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,30 +28,39 @@
 
 namespace squirrel_2d_localizer {
 
-MotionModel::MotionModel(const Params& motion_params)
-    : rnd_eng_(std::rand()), motion_params_(motion_params) {}
-
 void MotionModel::sampleProposal(
     const Transform2d& motion, std::vector<Particle>* particles) const {
   std::unique_lock<std::mutex> lock(mtx_);
   std::normal_distribution<double> randn(0., 1.);
   const double dx = motion[0], dy = motion[1],
                da = angles::normalize_angle(motion[2]);
-  const double mx = motion_params_.noise_magnitude * std::abs(dx),
-               my = motion_params_.noise_magnitude * std::abs(dy),
-               ma = motion_params_.noise_magnitude * std::abs(da);
-  const double sx = motion_params_.noise_xx * mx +
-                    motion_params_.noise_xy * my + motion_params_.noise_xa * ma;
-  const double sy = motion_params_.noise_xy * mx +
-                    motion_params_.noise_yy * my + motion_params_.noise_ya * ma;
-  const double sa = motion_params_.noise_xa * mx +
-                    motion_params_.noise_ya * my + motion_params_.noise_aa * ma;
+  const double mx = params_.noise_magnitude * std::abs(dx),
+               my = params_.noise_magnitude * std::abs(dy),
+               ma = params_.noise_magnitude * std::abs(da);
+  const double sx = params_.noise_xx * mx +
+                    params_.noise_xy * my + params_.noise_xa * ma;
+  const double sy = params_.noise_xy * mx +
+                    params_.noise_yy * my + params_.noise_ya * ma;
+  const double sa = params_.noise_xa * mx +
+                    params_.noise_ya * my + params_.noise_aa * ma;
   for (size_t i = 0; i < particles->size(); ++i) {
     const Pose2d e(
         dx + sx * randn(rnd_eng_), dy + sy * randn(rnd_eng_),
         da + sa * randn(rnd_eng_));
     particles->at(i).pose *= e;
   }
+}
+
+MotionModel::Params MotionModel::Params::defaultParams() {
+  Params params;
+  params.noise_xx        = 1.;
+  params.noise_xy        = 0.;
+  params.noise_xa        = 0.;
+  params.noise_yy        = 1.;
+  params.noise_ya         = 0.;
+  params.noise_aa        = 1.;
+  params.noise_magnitude = 0.5;
+  return params;
 }
 
 }  // namespace squirrel_2d_localizer

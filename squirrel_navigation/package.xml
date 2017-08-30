@@ -2,18 +2,45 @@
 <package>
   <name>squirrel_navigation</name>
   
-  <version>1.11.6</version>
+  <version>2.1.0</version>
   
   <description>
-    squirrel_navigation, autonomous navigation for SQUIRREL project
+    Autonomous 2D navigation for the SQUIRREL robot.
   </description>
-  
-  <author>Armin Hornung</author>
-  <author>Federico Boniardi</author>
   
   <maintainer email="boniardi@cs.uni-freiburg.de">Federico Boniardi</maintainer>
   
-  <license>BSD</license>
+  <license>
+    Copyright (c) 2017, Federico Boniardi and Wolfram Burgard
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice, this
+    list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+
+    * Neither the name of the University of Freiburg nor the names of its
+    contributors may be used to endorse or promote products derived from
+    this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  </license>
+
+  <author>Federico Boniardi</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 
@@ -21,50 +48,33 @@
   <build_depend>costmap_2d</build_depend>
   <build_depend>base_local_planner</build_depend>
   <build_depend>clear_costmap_recovery</build_depend>
-  <build_depend>cgal</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
-  <build_depend>dynamixel_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
-  <build_depend>message_generation</build_depend>
-  <build_depend>move_base_msgs</build_depend>
+  <build_depend>message_runtime</build_depend>
   <build_depend>nav_core</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>navfn</build_depend>
-  <build_depend>octomap_msgs</build_depend>
-  <build_depend>pcl_conversions</build_depend>
-  <build_depend>pcl_ros</build_depend>
   <build_depend>pluginlib</build_depend>
   <build_depend>roscpp</build_depend>
-  <build_depend>rotate_recovery</build_depend>
-  <build_depend>sbpl</build_depend>
   <build_depend>squirrel_navigation_msgs</build_depend>
+  <build_depend>sbpl</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>std_srvs</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>visualization_msgs</build_depend>
- 
+
   <run_depend>actionlib</run_depend>
+  <run_depend>costmap_2d</run_depend>
   <run_depend>base_local_planner</run_depend>
   <run_depend>clear_costmap_recovery</run_depend>
-  <run_depend>costmap_2d</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
-  <run_depend>dynamixel_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
-  <run_depend>map_server</run_depend>
   <run_depend>message_runtime</run_depend>
-  <run_depend>message_generation</run_depend>
-  <run_depend>move_base</run_depend>
-  <run_depend>move_base_msgs</run_depend>
   <run_depend>nav_core</run_depend>
   <run_depend>nav_msgs</run_depend>
   <run_depend>navfn</run_depend>
-  <run_depend>octomap_msgs</run_depend>
-  <run_depend>pcl_conversions</run_depend>
-  <run_depend>pcl_ros</run_depend>
   <run_depend>pluginlib</run_depend>
   <run_depend>roscpp</run_depend>
-  <run_depend>rospy</run_depend>
-  <run_depend>rotate_recovery</run_depend>
   <run_depend>sbpl</run_depend>
   <run_depend>squirrel_navigation_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
@@ -74,7 +84,7 @@
 
   <!-- Export the plugins -->
   <export>
-    <costmap_2d plugin="${prefix}/SquirrelCostmapLayers.xml"/>
-    <nav_core plugin="${prefix}/SquirrelPlanners.xml"/>
+    <costmap_2d plugin="${prefix}/squirrel_navigation_costmap_layers.xml"/>
+    <nav_core plugin="${prefix}/squirrel_navigation_planners.xml"/>
   </export>
 </package>

@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 Federico Boniardi
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -66,14 +66,13 @@ inline void setWeights(
 }
 
 inline void setWeight(double weight, std::vector<Particle>* particles) {
-#pragma omp parallel for default(shared)
   for (size_t i             = 0; i < particles->size(); ++i)
     particles->at(i).weight = weight;
 }
 
 inline void computeMeanAndCovariance(
     const std::vector<Particle>& particles, Pose2d* mean,
-    Matrix<3, 3>* covariance) {
+    Eigen::Matrix3d* covariance) {
   double mean_x = 0., mean_y = 0., mean_c = 0., mean_s = 0., sq_tot_w = 0.;
   for (size_t i = 0; i < particles.size(); ++i) {
     const double weight = particles[i].weight;
@@ -108,7 +107,6 @@ inline void computeMeanAndCovariance(
 }
 
 }  // namespace particles
-
 }  // namespace squirrel_2d_localizer
 
 #endif /* SQUIRREL_2D_LOCALIZER_PARTICLE_TYPES_H_ */

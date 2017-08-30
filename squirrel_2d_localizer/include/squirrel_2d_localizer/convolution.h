@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 Federico Boniardi
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,21 +26,22 @@
 #include "squirrel_2d_localizer/math_types.h"
 
 namespace squirrel_2d_localizer {
-
 namespace convolution {
 
+// Compute image convultion using a Gaussian kernel in 2D.
 void computeGaussianConvolution2d(
-    double sigma, double resolution, const Matrix<>& matrix, Matrix<>* output);
+    double sigma, double resolution, const Eigen::MatrixXd& matrix,
+    Eigen::MatrixXd* output);
 
-namespace internal {
+namespace __internal {
 
+// Compute image convultion using a Gaussian kernel in 1D.
 void computeGaussianConvolution1d(
-    double sigma, double resolution, const Vector<>& vector,  Vector<>* output);
+    double sigma, double resolution, const Eigen::VectorXd& vector,
+    Eigen::VectorXd* output);
 
-}  // namespace internal
-
+}  // namespace __internal
 }  // namespace convolution
-
 }  // namespace squirrel_2d_localizer
 
 #endif /* SQUIRREL_2D_LOCALIZER_CONVOLUTION_H_ */

@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 Federico Boniardi
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,16 +28,6 @@
 
 namespace squirrel_2d_localizer {
 
-TwistCorrection::TwistCorrection() : twist_(nullptr) {
-  setDefaultParams();
-  initialize();
-}
-
-TwistCorrection::TwistCorrection(const Params& params)
-    : twist_(nullptr), params_(params) {
-  initialize();
-}
-
 Pose2d TwistCorrection::correction(const Twist2d& twist) {
   if (!twist_) {
     twist_.reset(new Twist2d(twist));
@@ -45,9 +35,21 @@ Pose2d TwistCorrection::correction(const Twist2d& twist) {
   } else {
     applyAlphaFilter(twist);
   }
-  const Twist2d& sq_twist    = thresholdSquaredMagnitude(*twist_);
-  const Vector<3> correction = corr_ * sq_twist;
+  const Twist2d& sq_twist          = thresholdSquaredMagnitude(*twist_);
+  const Eigen::Vector3d correction = corr_ * sq_twist;
   return Pose2d(correction[0], correction[1], correction[2]);
+}
+
+void TwistCorrection::initialize() {
+  twist_.reset(nullptr);
+  corr_(0, 0) = params_.corr_xx;
+  corr_(0, 1) = corr_(1, 0) = params_.corr_xy;
+  corr_(0, 2) = corr_(2, 0) = params_.corr_xa;
+  corr_(1, 1) = params_.corr_xy;
+  corr_(1, 2) = corr_(2, 1) = params_.corr_ya;
+  corr_(2, 2) = params_.corr_aa;
+  corr_ *= params_.corr_magnitude;
+  a_ = params_.alpha;
 }
 
 void TwistCorrection::applyAlphaFilter(const Twist2d& twist) {
@@ -71,6 +73,19 @@ Twist2d TwistCorrection::thresholdSquaredMagnitude(const Twist2d& twist) const {
   output[1] = std::copysign(std::min(sq_max_lin_vel, sq_twist_y), twist[1]);
   output[2] = std::copysign(std::min(sq_max_ang_vel, sq_twist_a), twist[2]);
   return output;
+}
+
+TwistCorrection::Params TwistCorrection::Params::defaultParams() {
+  Params params;
+  params.corr_magnitude = 1.;
+  params.corr_xx        = 0.;
+  params.corr_xy        = 0.;
+  params.corr_xa        = 0.;
+  params.corr_yy        = 0.;
+  params.corr_ya        = 0.;
+  params.corr_aa        = 1.;
+  params.alpha          = 0.5;
+  return params;
 }
 
 }  // namespace squirrel_2d_localizer

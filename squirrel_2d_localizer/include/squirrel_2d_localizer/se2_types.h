@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 Federico Boniardi
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,19 +35,19 @@ class Pose2d {
  public:
   Pose2d() : translation_(0., 0.), rotation_(0.) {}
   Pose2d(double x, double y, double a);
-  Pose2d(const Vector<2>& translation, double a);
+  Pose2d(const Eigen::Vector2d& translation, double a);
   Pose2d(const Pose2d& model) = default;
   virtual ~Pose2d() {}
 
-  const Vector<2>& translation() const { return translation_; }
-  Vector<2>& translation() { return translation_; }
+  const Eigen::Vector2d& translation() const { return translation_; }
+  Eigen::Vector2d& translation() { return translation_; }
 
   const Rotation2d& rotation() const { return rotation_; }
   Rotation2d& rotation() { return rotation_; }
 
   double operator[](const size_t i) const;
   double& operator[](const size_t i);
-  
+
   Pose2d& operator=(const Pose2d& rhs);
 
   Pose2d operator*(const Pose2d& rhs) const;
@@ -56,9 +56,9 @@ class Pose2d {
   Pose2d inverse() const;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-  
+
  private:
-  Vector<2> translation_;
+  Eigen::Vector2d translation_;
   Rotation2d rotation_;
 };
 
@@ -66,12 +66,14 @@ typedef Pose2d Transform2d;
 
 namespace ros_conversions {
 
+// Convert to SE2 a ros message
 template <typename TypeSE2>
 TypeSE2 fromROSMsgTo(const geometry_msgs::Pose& p) {
   TypeSE2 output(p.position.x, p.position.y, tf::getYaw(p.orientation));
   return output;
 }
 
+// Convert to SE2 to TF pose.
 template <typename TypeSE2>
 TypeSE2 fromTFMsgTo(const tf::Transform& tf) {
   TypeSE2 output(
@@ -80,6 +82,7 @@ TypeSE2 fromTFMsgTo(const tf::Transform& tf) {
   return output;
 }
 
+// Convert to ROS msg an SE2.
 template <typename TypeSE2>
 geometry_msgs::Pose toROSMsgFrom(const TypeSE2& p) {
   geometry_msgs::Pose output;
@@ -89,6 +92,7 @@ geometry_msgs::Pose toROSMsgFrom(const TypeSE2& p) {
   return output;
 }
 
+// Convert to TF Msg an SE2.
 template <typename TypeSE2>
 tf::Transform toTFMsgFrom(const TypeSE2& p) {
   tf::Vector3 translation(p[0], p[1], 0.);
@@ -98,7 +102,6 @@ tf::Transform toTFMsgFrom(const TypeSE2& p) {
 }
 
 }  // namespace ros_conversions
-
 }  // namespace squirrel_2d_localizer
 
 #endif /* SQUIRREL_2D_LOCALIZER_SE2_TYPES_H_ */

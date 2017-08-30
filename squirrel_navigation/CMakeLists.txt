@@ -1,209 +1,169 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(squirrel_navigation)
 
+## Set Release as default build mode.
 set(ROS_BUILD_TYPE Release)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+## Import external modules.
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
 
-find_package(PCL REQUIRED)
-find_package(PkgConfig REQUIRED)
-find_package(CGAL REQUIRED)
-
-pkg_check_modules(SBPL REQUIRED sbpl)
-
-find_library(SBPL_LIBRARY 
-  NAMES sbpl 
-  PATHS ${SBPL_LIBRARY_DIRS} 
-  NO_DEFAULT_PATH
-)
-
-set(SBPL_LIBRARIES ${SBPL_LIBRARY})
-
-include(${CGAL_USE_FILE})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frounding-math")
-
+## Enable C++11 support.
 include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+check_cxx_compiler_flag("-std=c++11" COMPILER_SUPPORTS_CXX11)
+check_cxx_compiler_flag("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 if(COMPILER_SUPPORTS_CXX11)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 elseif(COMPILER_SUPPORTS_CXX0X)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 else()
-    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+  message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 " 
+    "support. Please use a different C++ compiler.")
 endif()
 
-############
-## catkin ##
-############
+## Import Boost filesystem.
+find_package(Boost REQUIRED COMPONENTS filesystem)
+include_directories(${Boost_INCLUDE_DIR})
 
-set(squirrel_navigation_DEPENDENCIES
-  actionlib
-  base_local_planner
-  clear_costmap_recovery
-  costmap_2d
-  dynamic_reconfigure
-  dynamixel_msgs
-  geometry_msgs
-  message_generation
-  move_base_msgs
-  nav_core
-  nav_msgs
-  navfn
-  octomap_msgs
-  pcl_conversions
-  pcl_ros
-  pluginlib
-  roscpp
-  rotate_recovery
-  squirrel_navigation_msgs
-  std_msgs
-  std_srvs
-  tf
-  visualization_msgs
-)
+## Import Eigen.
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIRS})
 
-find_package(catkin REQUIRED
-  COMPONENTS
-  ${squirrel_navigation_DEPENDENCIES}
-)
+## Import SBPL.
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SBPL REQUIRED sbpl)
+find_library(SBPL_LIBRARY 
+  NAMES sbpl
+  PATHS ${SBPL_LIBRARY_DIRS}
+  NO_DEFAULT_PATH)
+include_directories(${SBPL_INCLUDE_DIRS})
 
+## Set ROS dependencies.
+set(${PROJECT_NAME}_catkin_DEPENDENCIES
+  actionlib 
+  costmap_2d 
+  base_local_planner 
+  clear_costmap_recovery 
+  dynamic_reconfigure 
+  geometry_msgs 
+  message_runtime  
+  nav_core nav_msgs 
+  navfn 
+  pluginlib 
+  roscpp 
+  squirrel_navigation_msgs 
+  std_msgs 
+  std_srvs 
+  tf 
+  visualization_msgs)
+
+## Import ROS dependencies.
+find_package(catkin REQUIRED COMPONENTS ${${PROJECT_NAME}_catkin_DEPENDENCIES})
+include_directories(${catkin_INCLUDE_DIRS})
+
+## Include current project folders.
+include_directories(include external)
+
+## Generate reconfig files.
 generate_dynamic_reconfigure_options(
-  cfg/ControllerPIDGains.cfg
-  cfg/DownprojectionLayerPlugin.cfg
-  cfg/DownprojectionMultilayerPlugin.cfg
-  cfg/InflationLayerPlugin.cfg
-  cfg/LocalPlannerPlugin.cfg
-  cfg/MapLayerPlugin.cfg
-  cfg/TrajectoryPlanner.cfg
-)
+  cfg/utils/alpha_beta_filter.cfg 
+  cfg/safety/scan_observer.cfg 
+  cfg/safety/arm_skin_observer.cfg 
+  cfg/controller_pid.cfg 
+  cfg/footprint_planner.cfg 
+  cfg/global_planner.cfg  
+  cfg/local_planner.cfg 
+  cfg/linear_motion_planner.cfg 
+  cfg/navigation_layer.cfg)
 
+## Built libraries.
+set(${PROJECT_NAME}_LIBRARIES 
+  ${PROJECT_NAME}_utils 
+  ${PROJECT_NAME}_safety 
+  ${PROJECT_NAME}_planners 
+  ${PROJECT_NAME}_costmap_layer)
+
+## Catkin package exports.
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES squirrel_costmap_layers squirrel_planners
-  CATKIN_DEPENDS ${squirrel_navigation_DEPENDENCIES}
-  DEPENDS SBPL PCL CGAL
-)
+  LIBRARIES ${${PROJECT_NAME}_LIBRARIES}
+  CATKIN_DEPENDS ${${PROJECT_NAME}_catkin_DEPENDENCIES}
+  DEPENDS Eigen3 Boost)
 
-###########
-## Build ##
-###########
+## Build libraries.
+add_library(${PROJECT_NAME}_utils 
+  src/utils/alpha_beta_filter.cpp)
+target_link_libraries(${PROJECT_NAME}_utils 
+  ${catkin_LIBRARIES})
+add_dependencies(${PROJECT_NAME}_utils 
+  ${PROJECT_NAME}_gencfg)
 
-include_directories(
-  include
-  ${catkin_INCLUDE_DIRS}
-  ${SBPL_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
-)
+add_library(${PROJECT_NAME}_safety 
+  src/safety/scan_observer.cpp 
+  src/safety/arm_skin_observer.cpp)
+target_link_libraries(${PROJECT_NAME}_safety
+  ${catkin_LIBRARIES} 
+  ${PROJECT_NAME}_utils)
+add_dependencies(${PROJECT_NAME}_safety 
+  ${PROJECT_NAME}_gencfg 
+  squirrel_navigation_msgs_generate_messages_cpp)
 
-link_directories(
-  ${catkin_LIBRARY_DIRS} 
-  ${SBPL_LIBRARY_DIRS}
-)
+add_library(${PROJECT_NAME}_planners 
+  src/local_planner.cpp 
+  src/linear_motion_planner.cpp 
+  src/controller_pid.cpp 
+  src/global_planner.cpp 
+  src/footprint_planner.cpp)
+target_link_libraries(${PROJECT_NAME}_planners 
+  ${catkin_LIBRARIES} 
+  ${SBPL_LIBRARY} 
+  ${Boost_LIBRARIES} 
+  ${PROJECT_NAME}_safety)
+add_dependencies(${PROJECT_NAME}_planners 
+  ${PROJECT_NAME}_gencfg 
+  squirrel_navigation_msgs_generate_messages_cpp)
 
-## Compiling and linking the plugins
-add_library(squirrel_planners
-  src/ControllerPID.cpp
-  src/GlobalPlanner.cpp
-  src/LatticeSCQ.cpp
-  src/LocalPlanner.cpp
-  src/TrajectoryPlanner.cpp
-)
+add_library(${PROJECT_NAME}_costmap_layer
+  src/navigation_layer.cpp 
+  external/costmap_2d_strip/obstacle_layer.cpp
+  external/costmap_2d_strip/static_layer.cpp 
+  external/costmap_2d_strip/voxel_layer.cpp)
+target_link_libraries(${PROJECT_NAME}_costmap_layer 
+  ${catkin_LIBRARIES})
+add_dependencies(${PROJECT_NAME}_costmap_layer
+ squirrel_navigation_msgs_generate_messages_cpp 
+ ${PROJECT_NAME}_gencfg)
 
-add_dependencies(squirrel_planners
-  squirrel_navigation_msgs_generate_messages_cpp
-  ${PROJECT_NAME}_gencfg
-)
-
-target_link_libraries(squirrel_planners
-  ${catkin_LIBRARIES}
-  ${SBPL_LIBRARIES}
-  ${PCL_LIBRARIES}
-)
-
-add_library(squirrel_costmap_layers
-  src/CostmapUpdateHandle.cpp
-  src/DownprojectionLayer.cpp
-  src/DownprojectionMultilayer.cpp
-  src/InflatedLayer.cpp
-  src/InflationLayer.cpp
-  src/JointHandle.cpp
-  src/MapLayer.cpp
-  src/MultiInflatedLayer.cpp
-  src/RobotFootprint.cpp
-  src/RobotMultiFootprint.cpp
-)
-
-add_dependencies(squirrel_costmap_layers
-  ${PROJECT_NAME}_gencfg
-)
-
-target_link_libraries(squirrel_costmap_layers
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
-)
-
-## Compiling and linking the nodes 
-add_executable(pointcloud_filter_node
-  src/PointCloudFilter.cpp
-  src/PointCloudFilterNode.cpp
-)
-
-target_link_libraries(pointcloud_filter_node
-  ${catkin_LIBRARIES}
-)
-
-add_executable(planner_update_handle_node
-  src/PlannerUpdateHandle.cpp
-  src/PlannerUpdateHandleNode.cpp
-)
-
-add_dependencies(planner_update_handle_node
-  squirrel_navigation_msgs_generate_messages_cpp
-)
-
-target_link_libraries(planner_update_handle_node
-  ${catkin_LIBRARIES}
-)
-
-#############
-## Install ##
-#############
-
-install(TARGETS  
-  planner_update_handle_node
-  pointcloud_filter_node   
-  squirrel_costmap_layers
-  squirrel_planners 
+## Install.
+install(
+  TARGETS ${${PROJECT_NAME}_LIBRARIES}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-install(DIRECTORY 
-  include/${PROJECT_NAME}/
+install(
+  DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
-  PATTERN ".git" EXCLUDE
-)
+  PATTERN ".git" EXCLUDE)
 
-install(DIRECTORY 
-  launch/
+install(
+  DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-  PATTERN ".git" EXCLUDE
-)
+  PATTERN ".git" EXCLUDE)
 
-install(FILES 
-  SquirrelCostmapLayers.xml
-  SquirrelPlanners.xml 
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+install(
+  DIRECTORY config/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
 
-#############
-## Testing ##
-#############
+install(
+  DIRECTORY rviz
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rviz)
 
-## Add gtest based cpp test target and link libraries
+install(
+  FILES squirrel_navigation_costmap_layers.xml squirrel_navigation_planners.xml 
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
+## Testing.
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_alufr_navigation.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})

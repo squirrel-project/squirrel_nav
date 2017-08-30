@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 Federico Boniardi
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,17 +27,16 @@
 #include "squirrel_2d_localizer/math_types.h"
 #include "squirrel_2d_localizer/se2_types.h"
 
-#include <memory>
 #include <vector>
 
 namespace squirrel_2d_localizer {
 
 class GridMap {
  public:
-  typedef std::unique_ptr<GridMap> Ptr;
-  typedef std::unique_ptr<GridMap const> ConstPtr;
+  class Params {
+   public:
+    static Params defaultParams();
 
-  struct Params {
     double resolution;
     Pose2d origin;
     size_t height;
@@ -45,38 +44,39 @@ class GridMap {
   };
 
  public:
-  GridMap() { setDefaultParams(); }
-  GridMap(const Params& map_params);
+  GridMap() : params_(Params::defaultParams()) {}
+  GridMap(const Params& params);
   virtual ~GridMap() {}
 
+  // Initialize the gridmap.
   void initialize(const std::vector<signed char>& data);
 
+  // Rasterization and size utilities.
   void pointToIndices(const EndPoint2d& e, int* i, int* j) const;
   bool inside(int i, int j) const;
+  void boundingBox(
+      double* min_x, double* max_x, double* min_y, double* max_y) const;
 
-  size_t height() const { return map_params_.height; }
-  size_t width() const { return map_params_.width; }
-  double resolution() const { return map_params_.resolution; }
-
+  // Access the gridmap.
   double operator()(int i, int j) const { return occupancy_map_(i, j); };
-  operator const Matrix<>&() const { return occupancy_map_; }
+  double at(int i, int j) const { return occupancy_map_(i, j); }
+  operator const Eigen::MatrixXd&() const { return occupancy_map_; }
 
-  inline Params& params() { return map_params_; }
+  // Query uknown free space (for resampling).
+  bool unknown(int i, int j) const { return !!unknown_space_(i, j); }
+
+  // Parameters read/write utilities.
+  inline const Params& params() const { return params_; }
+  inline void setParams(const Params& params) { params_ = params; }
+  inline Params& params() { return params_; }
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-  
- private:
-  inline void setDefaultParams() {
-    map_params_.resolution = 0.05;
-    map_params_.origin     = Pose2d(-10., -10., 0.);
-    map_params_.height     = 400;
-    map_params_.width      = 400;
-  }
 
  private:
-  Matrix<> occupancy_map_;
+  Params params_;
 
-  Params map_params_;
+  Eigen::MatrixXd occupancy_map_;
+  Eigen::MatrixXi unknown_space_;
 };
 
 }  // namespace squirrel_2d_localizer

@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 Federico Boniardi
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,6 @@
 #include <Eigen/StdVector>
 
 #include <cmath>
-#include <memory>
 #include <mutex>
 #include <vector>
 
@@ -40,10 +39,10 @@ namespace squirrel_2d_localizer {
 
 class LaserModel {
  public:
-  typedef std::unique_ptr<LaserModel> Ptr;
-  typedef std::unique_ptr<LaserModel const> ConstPtr;
+  class Params {
+   public:
+    static Params defaultParams();
 
-  struct Params {
     double endpoints_min_distance;
     double range_min, range_max;
     double angle_min, angle_max;
@@ -53,36 +52,32 @@ class LaserModel {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
  public:
-  LaserModel() { setDefaultParams(); }
-  LaserModel(const Params& laser_params) : laser_params_(laser_params) {}
+  LaserModel() : params_(Params::defaultParams()) {}
+  LaserModel(const Params& params) : params_(params) {}
   virtual ~LaserModel() {}
 
+  // Compute the particle likelihood.
   void computeParticlesLikelihood(
       const GridMap& grid_map,
       const LatentModelLikelihoodField& likelihood_field,
       const std::vector<float>& measurement, std::vector<Particle>* particles);
 
-  inline Params& params() { return laser_params_; }
-  inline const Params& params() const { return laser_params_; }
+  // Paramters read/write utilities.
+  inline const Params& params() const { return params_; }
+  inline void setParams(const Params& params) { params_ = params; }
+  inline Params& params() { return params_; }
 
  private:
-  inline void setDefaultParams() {
-    laser_params_.endpoints_min_distance = 0.5;
-    laser_params_.range_min              = 0.;
-    laser_params_.range_max              = 6.;
-    laser_params_.angle_min              = -0.5 * M_PI;
-    laser_params_.angle_max              = 0.5 * M_PI;
-  }
-
+  // Compute the effective reading used in the localizer.
   void prepareLaserReadings(const std::vector<float>& measurement);
 
  private:
+  Params params_;
+
   std::vector<EndPoint2d, Eigen::aligned_allocator<EndPoint2d>>
       eff_measurement_;
 
-  Params laser_params_;
-
-  std::mutex mtx_;
+  mutable std::mutex mtx_;
 };
 
 }  // namespace squirrel_2d_localizer

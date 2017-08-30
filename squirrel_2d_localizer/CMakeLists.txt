@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(squirrel_2d_localizer)
 
+## Set build type.
 set(ROS_BUILD_TYPE Release)
 
+## Import external modules.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
 
-## Enable C++11 support
+## Enable C++11 support.
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-std=c++11" COMPILER_SUPPORTS_CXX11)
 check_cxx_compiler_flag("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
@@ -18,7 +20,7 @@ else()
                       "support. Please use a different C++ compiler.")
 endif()
 
-## Enable OpenMP parallelization for gcc
+## Enable OpenMP parallelization for gcc.
 find_package(OpenMP)
 if(OPENMP_FOUND)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -28,85 +30,75 @@ endif(OPENMP_FOUND)
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-## Set ROS dependencies
-set(squirrel_2d_localizer_DEPENDENCIES
-  geometry_msgs
-  message_filters
-  nav_msgs
-  roscpp
-  roslib
-  sensor_msgs
-  tf
-)
-
-## Import ROS dependencies
-find_package(catkin REQUIRED COMPONENTS ${squirrel_2d_localizer_DEPENDENCIES})
-include_directories(${catkin_INCLUDE_DIRS})
-
-find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIR})
-
-## Catkin package
+## Catkin package.
 catkin_package(
  INCLUDE_DIRS include
- LIBRARIES squirrel_2d_localizer
- CATKIN_DEPENDS ${squirrel_2d_localizer_DEPENDENCIES}
- DEPENDS Eigen3
-)
+ LIBRARIES ${PROJECT_NAME}
+ CATKIN_DEPENDS ${${PROJECT_NAME}_DEPENDENCIES}
+ DEPENDS Eigen3)
 
-## Building the localizer
+## Set ROS dependencies
+set(${PROJECT_NAME}_DEPENDENCIES
+  geometry_msgs 
+  message_filters 
+  nav_msgs 
+  roscpp 
+  roslib 
+  sensor_msgs
+  squirrel_2d_localizer_msgs 
+  tf)
+
+## Import ROS dependencies
+find_package(catkin REQUIRED COMPONENTS ${${PROJECT_NAME}_DEPENDENCIES})
+include_directories(${catkin_INCLUDE_DIRS})
+
+## Building the localizer.
 set(ROS_BUILD_TYPE Release)
 include_directories(include)
-add_executable(squirrel_2d_localizer_node  
-  src/convolution.cpp
-  src/grid_map.cpp
-  src/laser_model.cpp
+add_executable(${PROJECT_NAME}_node  
+  src/convolution.cpp 
+  src/grid_map.cpp 
+  src/laser_model.cpp 
   src/latent_model_likelihood_field.cpp
-  src/localizer.cpp
-  src/localizer_ros.cpp
-  src/localizer_ros_node.cpp
+  src/localizer.cpp 
+  src/localizer_ros.cpp 
+  src/localizer_ros_node.cpp 
   src/motion_model.cpp
-  src/resampling.cpp
-  src/se2_types.cpp
-  src/extras/twist_correction.cpp
-  src/extras/twist_correction_ros.cpp
-)
-target_link_libraries(squirrel_2d_localizer_node ${catkin_LIBRARIES} ${OpenCV_LIBS})
+  src/resampling.cpp 
+  src/se2_types.cpp 
+  src/extras/twist_correction.cpp 
+  src/extras/twist_correction_ros.cpp)
+target_link_libraries(${PROJECT_NAME}_node 
+  ${catkin_LIBRARIES})
+add_dependencies(${PROJECT_NAME}_node 
+  squirrel_2d_localizer_msgs_generate_messages_cpp)
 
-#############
-## Install ##
-#############
+## Installation.
+install(
+  TARGETS ${PROJECT_NAME}_node
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-# all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
+install(
+  DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".git" EXCLUDE)
 
-## Mark executable scripts (Python etc.) for installation
-## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(
+  DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}/launch
+  FILES_MATCHING PATTERN "*.launch"
+  PATTERN ".git" EXCLUDE)
 
-## Mark executables and/or libraries for installation
-# install(TARGETS squirrel_2d_localizer squirrel_2d_localizer_node
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(
+  FILES config/robotino_localization.yaml
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}/config)
 
-## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
-
-## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
+install(
+  DIRECTORY rviz
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rviz)
 
 #############
 ## Testing ##

@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 Federico Boniardi
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,23 +38,18 @@ namespace squirrel_2d_localizer {
 
 class TwistCorrectionROS {
  public:
-  typedef std::unique_ptr<TwistCorrectionROS> Ptr;
-  typedef std::unique_ptr<TwistCorrectionROS const> ConstPtr;
-
- public:
   TwistCorrectionROS();
   virtual ~TwistCorrectionROS() {}
 
+  // Comput the correction.
   Pose2d correction(const ros::Time& time) const;
 
  private:
-  inline double linearInterpolation(
-      double x0, double x1, double dt, double t) const {
-    return (1 - t / dt) * x0 + (t / dt) * x1;
-  }
+  // Interpolate between to real number.
+  double linearInterpolation(double x0, double x1, double dt, double t) const;
 
  private:
-  TwistCorrection::Ptr twist_correction_;
+  std::unique_ptr<TwistCorrection> twist_correction_;
 
   ros::NodeHandle nh_;
 

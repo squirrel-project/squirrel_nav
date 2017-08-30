@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 Federico Boniardi
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,26 +52,36 @@ void LaserModel::prepareLaserReadings(const std::vector<float>& measurement) {
   eff_measurement_.clear();
   if (measurement.empty())
     return;
-  const double fov = laser_params_.angle_max - laser_params_.angle_min;
+  const double fov = params_.angle_max - params_.angle_min;
   const double angle_increment = fov / (measurement.size() - 1);
   const double sq_min_endpoint_dist =
-      std::pow(laser_params_.endpoints_min_distance, 2);
+      std::pow(params_.endpoints_min_distance, 2);
   EndPoint2d last_endpoint({-std::numeric_limits<double>::max(), 0.});
   for (size_t i = 0; i < measurement.size(); ++i) {
     const float ray        = measurement[i];
-    const double ray_angle = laser_params_.angle_min + i * angle_increment;
-    if (!std::isfinite(ray) || ray < laser_params_.range_min ||
-        ray > laser_params_.range_max)
+    const double ray_angle = params_.angle_min + i * angle_increment;
+    if (!std::isfinite(ray) || ray < params_.range_min ||
+        ray > params_.range_max)
       continue;
     EndPoint2d next_endpoint =
         ray * EndPoint2d(std::cos(ray_angle), std::sin(ray_angle));
     if ((last_endpoint - next_endpoint).squaredNorm() < sq_min_endpoint_dist)
       continue;
     eff_measurement_.emplace_back(
-        laser_params_.tf_r2l.rotation() * next_endpoint +
-        laser_params_.tf_r2l.translation());
+        params_.tf_r2l.rotation() * next_endpoint +
+        params_.tf_r2l.translation());
     last_endpoint = next_endpoint;
   }
+}
+
+LaserModel::Params LaserModel::Params::defaultParams() {
+  Params params;
+  params.endpoints_min_distance = 0.5;
+  params.range_min              = 0.;
+  params.range_max              = 6.;
+  params.angle_min              = -0.5 * M_PI;
+  params.angle_max              = 0.5 * M_PI;
+  return params;
 }
 
 }  // namespace squirrel_2d_localizer
