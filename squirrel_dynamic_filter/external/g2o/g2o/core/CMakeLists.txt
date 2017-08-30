@@ -1,4 +1,4 @@
-ADD_LIBRARY(g2ocore ${G2O_LIB_TYPE}
+ADD_LIBRARY(g2o_core ${G2O_LIB_TYPE}
 base_edge.h
 base_binary_edge.h          hyper_graph_action.cpp
 base_binary_edge.hpp        hyper_graph_action.h
@@ -37,11 +37,11 @@ robust_kernel_factory.cpp robust_kernel_factory.h
 g2o_core_api.h
 )
 
-SET_TARGET_PROPERTIES(g2ocore PROPERTIES OUTPUT_NAME ${LIB_PREFIX}g2ocore)
+SET_TARGET_PROPERTIES(g2o_core PROPERTIES OUTPUT_NAME g2o_core)
 
-TARGET_LINK_LIBRARIES(g2ocore stuff)
+TARGET_LINK_LIBRARIES(g2o_core stuff)
 
-INSTALL(TARGETS g2ocore
+INSTALL(TARGETS g2o_core
   RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
   LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
   ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib

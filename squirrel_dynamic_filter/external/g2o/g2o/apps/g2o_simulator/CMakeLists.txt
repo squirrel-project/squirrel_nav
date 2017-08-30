@@ -27,36 +27,30 @@ ADD_LIBRARY(g2o_simulator_library ${G2O_LIB_TYPE}
 
 SET_TARGET_PROPERTIES(g2o_simulator_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}simulator)
 
-TARGET_LINK_LIBRARIES(g2o_simulator_library types_slam3d_addons types_slam3d
-                      types_slam2d_addons types_slam2d  g2ocore)
+TARGET_LINK_LIBRARIES(g2o_simulator_library types_slam3d_addons types_slam3d types_slam2d_addons types_slam2d  g2o_core)
 
 ADD_EXECUTABLE(g2o_simulator2d_application
   test_simulator2d.cpp
 )
-TARGET_LINK_LIBRARIES(g2o_simulator2d_application g2o_simulator_library
-                      types_slam2d_addons types_slam2d g2ocore)
+TARGET_LINK_LIBRARIES(g2o_simulator2d_application g2o_simulator_library types_slam2d_addons types_slam2d g2o_core)
 SET_TARGET_PROPERTIES(g2o_simulator2d_application PROPERTIES OUTPUT_NAME g2o_simulator2d${EXE_POSTFIX})
 
 ADD_EXECUTABLE(convertSegmentLine_application convertSegmentLine.cpp)
 
-TARGET_LINK_LIBRARIES(convertSegmentLine_application g2o_simulator_library
-                      types_slam2d_addons types_slam3d types_slam2d g2ocore)
+TARGET_LINK_LIBRARIES(convertSegmentLine_application g2o_simulator_library types_slam2d_addons types_slam3d types_slam2d g2o_core)
 SET_TARGET_PROPERTIES(convertSegmentLine_application PROPERTIES OUTPUT_NAME convertSegmentLine${EXE_POSTFIX})
 
 
 ADD_EXECUTABLE(g2o_simulator3d_application
   test_simulator3d.cpp
 )
-TARGET_LINK_LIBRARIES(g2o_simulator3d_application g2o_simulator_library
-                      types_slam3d_addons types_slam3d types_slam2d_addons
-                      types_slam2d g2ocore)
+TARGET_LINK_LIBRARIES(g2o_simulator3d_application g2o_simulator_library types_slam3d_addons types_slam3d types_slam2d_addons types_slam2d g2o_core)
 SET_TARGET_PROPERTIES(g2o_simulator3d_application PROPERTIES OUTPUT_NAME g2o_simulator3d${EXE_POSTFIX})
 
 ADD_EXECUTABLE(g2o_anonymize_observations_application
   g2o_anonymize_observations.cpp
 )
-TARGET_LINK_LIBRARIES(g2o_anonymize_observations_application types_slam3d
-                      types_slam2d g2ocore)
+TARGET_LINK_LIBRARIES(g2o_anonymize_observations_application types_slam3d types_slam2d g2o_core)
 SET_TARGET_PROPERTIES(g2o_anonymize_observations_application PROPERTIES OUTPUT_NAME g2o_anonymize_observations${EXE_POSTFIX})
 
 INSTALL(TARGETS g2o_simulator_library g2o_simulator2d_application g2o_simulator3d_application g2o_anonymize_observations_application

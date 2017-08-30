@@ -18,7 +18,7 @@ ADD_LIBRARY(g2o_hierarchical_library ${G2O_LIB_TYPE}
 
 SET_TARGET_PROPERTIES(g2o_hierarchical_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}hierarchical)
 
-TARGET_LINK_LIBRARIES(g2o_hierarchical_library g2ocore)
+TARGET_LINK_LIBRARIES(g2o_hierarchical_library g2o_core)
 
 ADD_EXECUTABLE(g2o_hierarchical_application
   g2o_hierarchical.cpp)

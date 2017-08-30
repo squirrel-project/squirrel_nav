@@ -12,7 +12,7 @@ ADD_LIBRARY(tutorial_slam2d_library ${G2O_LIB_TYPE}
 
 SET_TARGET_PROPERTIES(tutorial_slam2d_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}tutorial_slam2d)
 
-TARGET_LINK_LIBRARIES(tutorial_slam2d_library g2ocore solver_csparse)
+TARGET_LINK_LIBRARIES(tutorial_slam2d_library g2o_core solver_csparse)
 
 ADD_EXECUTABLE(tutorial_slam2d
   tutorial_slam2d.cpp

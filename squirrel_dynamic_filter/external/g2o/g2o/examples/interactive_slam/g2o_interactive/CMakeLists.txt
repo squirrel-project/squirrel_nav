@@ -8,7 +8,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
 INCLUDE_DIRECTORIES(${CHOLMOD_INCLUDE_DIR})
 
 SET_TARGET_PROPERTIES(g2o_interactive_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}interactive)
-TARGET_LINK_LIBRARIES(g2o_interactive_library g2ocore types_slam2d types_slam3d solver_cholmod parser_library interface_library)
+TARGET_LINK_LIBRARIES(g2o_interactive_library g2o_core types_slam2d types_slam3d solver_cholmod parser_library interface_library)
 
 ADD_EXECUTABLE(g2o_online_application g2o_online.cpp)
 TARGET_LINK_LIBRARIES(g2o_online_application g2o_interactive_library)

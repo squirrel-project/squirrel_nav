@@ -42,7 +42,7 @@ class tfPointCloud
       cloud_sub_.subscribe(n_, "/kinect/depth/points/",100);///Subscriber
 			tf_filter_ = new tf::MessageFilter<sensor_msgs::PointCloud2> (cloud_sub_, tf_, "base_link", 1);///Filter to synchronize
       tf_filter_->registerCallback(boost::bind(&tfPointCloud::msgCallback, this, _1) );
-      publisher = n_.advertise<squirrel_dynamic_filter_msgs::CloudMsg>("/squirrel/cloud_msg",10);///publisher
+      publisher = n_.advertise<squirrel_dynamic_filter_msgs::CloudMsg>("/squirrel/cloud_msg",100);///publisher
       cloud_msg.odometry.resize(7);
       n_.getParam("DownSamplingRadius",down_sampling_radius);
       n_.getParam("Verbose",is_verbose);
@@ -63,10 +63,12 @@ class tfPointCloud
       }
  ///Downampling the cloud
 
+   
       PointCloud::Ptr cloud(new PointCloud);
       PointCloud::Ptr cloud_sampled(new PointCloud);
       pcl::fromROSMsg(*sensor_msg,*cloud);
       sor.setInputCloud (cloud);
+      //sor.setLeafSize (0.08,0.08,0.08);
       sor.setLeafSize (down_sampling_radius,down_sampling_radius,down_sampling_radius);
       sor.filter (*cloud_sampled);
       cloud_sampled->width = cloud_sampled->points.size();

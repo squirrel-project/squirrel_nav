@@ -234,11 +234,25 @@ void DynamicFilter::msgCallback(const squirrel_dynamic_filter_msgs::DynamicFilte
    // frame_2.odometry = g2o::internal::fromVectorQT(odometry);
 
 
+/*    PointCloud cloud_ground;*/
 
+
+    //pcl::fromROSMsg(dynamic_msg.ground_cloud,cloud_ground);
+
+
+    //for(auto &point:cloud_ground.points)
+    //{
+
+      //cloud_static.points.push_back(point);
+
+
+
+    /*}*/
     pcl::toROSMsg(cloud_static,cloud_static_msg);////service output, static cloud from potentially dynamic
 
 
     cloud_static_msg.header.frame_id = "base_link_static_final";
+    cloud_static_msg.header.stamp= ros::Time::now();
     //cloud_static_msg.header.frame_id = "map";
     transform_map_base_link.setOrigin(tf::Vector3(odometry[0],odometry[1],odometry[2]));
     tf::Quaternion q(odometry[3],odometry[4],odometry[5],odometry[6]);

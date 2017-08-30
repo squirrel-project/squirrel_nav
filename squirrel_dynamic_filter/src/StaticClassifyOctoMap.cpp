@@ -45,7 +45,7 @@ class ClassifyStatic
     ClassifyStatic()
     {
       is_map = true;
-      octomap_sub = n.subscribe("/octomap_full_color", 100, &ClassifyStatic::msgCallback, this);
+      octomap_sub = n.subscribe("/octomap_full_color", 10, &ClassifyStatic::msgCallback, this);
       service = n.advertiseService("classify_static", &ClassifyStatic::ClassifyStaticCallback,this);
       pub_static = n.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static",10);
       pub_dynamic = n.advertise<sensor_msgs::PointCloud2>("/kinect/depth/dynamic",10);
@@ -111,8 +111,6 @@ class ClassifyStatic
       PointCloud::Ptr cloud_input(new PointCloud);
 
 
-      fprintf(stderr, "inside service\n");
-
   //OcTree *tree = new OcTree(map_filename);
 
       pcl::fromROSMsg(req.cloud,cloud_input_raw);
@@ -130,6 +128,7 @@ class ClassifyStatic
     ///if a point is in a occupied voxel then its static, otherswise might be new static or dynamic
       int point_index = 0;
       std::vector <bool> is_processed(cloud_input->points.size(),false);
+      fprintf(stderr,"inside service\n");
       for(auto &point:cloud_input->points)
       {
         if(is_processed[point_index])
