@@ -18,7 +18,7 @@ ADD_LIBRARY(types_slam2d ${G2O_LIB_TYPE}
 
 SET_TARGET_PROPERTIES(types_slam2d PROPERTIES OUTPUT_NAME ${LIB_PREFIX}types_slam2d)
 
-TARGET_LINK_LIBRARIES(types_slam2d g2ocore)
+TARGET_LINK_LIBRARIES(types_slam2d g2o_core)
 IF(G2O_HAVE_OPENGL)
   TARGET_LINK_LIBRARIES(types_slam2d opengl_helper ${OPENGL_gl_LIBRARY} )
 ENDIF()

@@ -1,30 +1,26 @@
-// Copyright (c) 2016-2017, Ayush Dewan and Wolfram Burgard
-// All rights reserved.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-// 
-// * Neither the name of the University of Freiburg nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// The MIT License (MIT)
+//
+// Copyright (c) 2016-2017 Ayush Dewan and Wolfram Burgard
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+
 
 #include "dynamic_filter_node.h"
 using namespace Eigen;
@@ -39,7 +35,7 @@ void DynamicFilter::filter_correspondences(const float neighbour_radius,const fl
 
  c_vec_actual.clear();
  std::vector< std::pair<int,float> >neighbour_info;
- std::vector <int> query_vec; 
+ std::vector <int> query_vec;
  for ( int i = 0 ;i < c_vec.size(); ++i)
  {
   query_vec.push_back(c_vec[i].query);
@@ -50,7 +46,7 @@ void DynamicFilter::filter_correspondences(const float neighbour_radius,const fl
  }
  ///sorting on the basis of correspondence score
  std::sort(neighbour_info.begin(),neighbour_info.end(),boost::bind(&std::pair<int, float>::second, _1) < boost::bind(&std::pair<int, float>::second, _2));
- 
+
  std::vector <bool> updated_correspondences(c_vec.size(),false);
  std::vector <bool> is_actual(c_vec.size(),false);
  std::vector <int> actual_index;///storing index of filtered correspondence
@@ -72,7 +68,7 @@ void DynamicFilter::filter_correspondences(const float neighbour_radius,const fl
 
  float first_constant = log(2*M_PI) + log(covariance_value * covariance_value);
 
- 
+
  std::vector < std::vector <int> > neighbours;
 ///These two data structure helps in avoiding calculation of likelihhod twice
 //w.r.t to an acctual correspondene
@@ -82,8 +78,8 @@ void DynamicFilter::filter_correspondences(const float neighbour_radius,const fl
 
  pcl::search::KdTree <pcl::PointXYZ> kdtree;
  kdtree.setInputCloud(cloud_correspondences);
- 
-//////Find the neighbours for all the point and store them 
+
+//////Find the neighbours for all the point and store them
  for(size_t l = 0; l < c_vec.size(); ++l)
  {
   std::vector <int> pointIdxRadiusSearch;
@@ -104,7 +100,7 @@ void DynamicFilter::filter_correspondences(const float neighbour_radius,const fl
     correspondence_visited_neighbours[l].push_back(false);
    }
 
-  }                                    
+  }
  }
 // cout << "neighbours" << neighbours.size() << endl;
  for(size_t i = 0; i < c_vec.size(); ++i)
@@ -118,7 +114,7 @@ void DynamicFilter::filter_correspondences(const float neighbour_radius,const fl
 //correspondence in its small neighbourhood. If correspondence are avialable use
 //it to calculate likelihood of it being it an actual correspondence. Choose the
 //best correspondence(likelihood score) and add it to actual correspondence
-//list.     
+//list.
 
 
 
@@ -146,7 +142,7 @@ void DynamicFilter::filter_correspondences(const float neighbour_radius,const fl
    for(size_t k = 0; k < c_vec[i].possible_matches.size(); ++k)
    {
     for(size_t j = 0; j < correspondence_neighbours[i].size(); ++j)
-    { 
+    {
      if(correspondence_visited_neighbours[i][j])///likelihood is not added twice
       continue;
      if(c_vec[i].possible_matches[k] >=frame_2.raw_input->points.size() ||c_vec[correspondence_neighbours[i][j]].match >=frame_2.raw_input->points.size())
@@ -176,7 +172,7 @@ void DynamicFilter::filter_correspondences(const float neighbour_radius,const fl
    for(size_t j = 0; j < correspondence_neighbours[i].size(); ++j)
     correspondence_visited_neighbours[i][j] = true;//makes sure the likelihood for this point is not added again
   }
-  
+
   ////if no correspondence have any selected correspondence in its neighbourhood
   //add the best correspondence at that moment
   if(c_best.score[0] == -1000)
@@ -227,17 +223,17 @@ void DynamicFilter::filter_correspondences(const float neighbour_radius,const fl
 void DynamicFilter::EstimateCorrespondencePoint(const float radius,const float sampling_radius,int number_correspondences,std::vector<int>&index_query, std::vector<int> &index_match)
 
 {
- 
- c_vec.clear(); 
+
+ c_vec.clear();
  pcl::PointCloud <int> sampled_indices;
  pcl::UniformSampling <pcl::PointXYZ> uniform_sampling;
  uniform_sampling.setInputCloud (frame_1.cloud_input);
  uniform_sampling.setRadiusSearch (sampling_radius);//0.4 in general
  uniform_sampling.compute (sampled_indices);
- 
+
  for(auto &i:sampled_indices.points)
   frame_1.sampled_points.push_back(frame_1.finite_points[i]);
- 
+
  PointCloud::Ptr cloud_source(new PointCloud);
  SHOTCloud::Ptr source(new SHOTCloud);
  pcl::copyPointCloud(*frame_1.cloud_input,sampled_indices.points,*cloud_source);
@@ -246,11 +242,11 @@ void DynamicFilter::EstimateCorrespondencePoint(const float radius,const float s
  MatrixXf target_feature = frame_2.feature->getMatrixXfMap(352,361,0);
 
 
- 
+
  pcl::search::KdTree<pcl::SHOT352> kdtree;
  pcl::search::KdTree<pcl::PointXYZ>kdtree_point;
  kdtree_point.setInputCloud (frame_2.cloud_input);
- 
+
  int counter = 0;
  int counter_check = 0;
 
@@ -273,20 +269,20 @@ void DynamicFilter::EstimateCorrespondencePoint(const float radius,const float s
     element.second = (diff).dot((diff));
     neighbour_info.push_back(element);
    }
-  
+
   	std::sort(neighbour_info.begin(),neighbour_info.end(),boost::bind(&std::pair<int, float>::second, _1) < boost::bind(&std::pair<int, float>::second, _2));
    correspondences c;
 
    c.query = frame_1.sampled_points[counter];
 
    if(number_correspondences > pointIdxRadiusSearch.size())
-    number_correspondences = pointIdxRadiusSearch.size(); 
+    number_correspondences = pointIdxRadiusSearch.size();
    for(int i = 0; i < number_correspondences ; ++i)
    {
     if(neighbour_info[i].second < feature_score_threshold)
     {
-     c.possible_matches.push_back(neighbour_info[i].first); 
-     c.score.push_back( 1.0 - neighbour_info[i].second); 
+     c.possible_matches.push_back(neighbour_info[i].first);
+     c.score.push_back( 1.0 - neighbour_info[i].second);
     }
    }
    if(c.score.size() > 0)
@@ -300,21 +296,21 @@ void DynamicFilter::EstimateCorrespondencePoint(const float radius,const float s
   }
 
   counter+=1;
- 
+
  }
  if(c_vec.empty())
   return;
- 
 
 
- 
+
+
  filter_correspondences(filter_radius,filter_variance,0.65);
- 
+
 
  pcl::PCDWriter writer;
 
 #if 1
- if(!frame_1.cloud_input->points.empty() && !frame_2.cloud_input->points.empty()) 
+ if(!frame_1.cloud_input->points.empty() && !frame_2.cloud_input->points.empty())
  {
 
 // frame_1.ground->width = frame_1.ground->points.size();
@@ -324,7 +320,7 @@ void DynamicFilter::EstimateCorrespondencePoint(const float radius,const float s
 // ss.str("");
  //ss << output_folder << "ground_a_" << frame_1.frame_id << ".pcd";
 // writer.write(ss.str(),*frame_1.ground,true);
- 
+
  for(auto &c:c_vec_actual)
   {
    index_query.push_back(c.query);
@@ -333,7 +329,7 @@ void DynamicFilter::EstimateCorrespondencePoint(const float radius,const float s
   }
  }
 #else
- if(!frame_1.cloud_input->points.empty() && !frame_2.cloud_input->points.empty()) 
+ if(!frame_1.cloud_input->points.empty() && !frame_2.cloud_input->points.empty())
  {
   frame_1.raw_input->width = frame_1.raw_input->points.size();
   frame_1.raw_input->height = 1;
@@ -351,11 +347,11 @@ void DynamicFilter::EstimateCorrespondencePoint(const float radius,const float s
   ss.str("");
   ss << output_folder << "a_" << frame_1.frame_id << ".pcd";
   writer.write(ss.str(),*frame_1.raw_input,true);
-  
+
   ss.str("");
   ss << output_folder << "ground_a_" << frame_1.frame_id << ".pcd";
   writer.write(ss.str(),*frame_1.ground,true);
-  
+
   ss.str("");
   ss << output_folder << "a_" << frame_2.frame_id << ".pcd";
   writer.write(ss.str(),*frame_2.raw_input,true);
@@ -363,7 +359,7 @@ void DynamicFilter::EstimateCorrespondencePoint(const float radius,const float s
   ss.str("");
   ss << output_folder << "ground_a_" << frame_2.frame_id << ".pcd";
   writer.write(ss.str(),*frame_2.ground,true);
-  
+
 
   ss.str("");
   ss << output_folder << "query_a_" << frame_1.frame_id << ".csv";
@@ -383,10 +379,10 @@ void DynamicFilter::EstimateCorrespondencePoint(const float radius,const float s
    myfile_query << c.query << endl;
    myfile_match << c.match << endl;
   }
- /* 
+ /*
   for(auto &query:index_query)
    myfile_query << query << endl;
-    
+
   for(auto &match:index_match)
    myfile_match << match << endl;
    ///
@@ -412,7 +408,7 @@ void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,
 ///Associtaing points in scan t-1(frame_1.cloud_transformed) and points in scan
 //t(frame_1.raw_input)
  pcl::Correspondences corr;
- pcl::registration::CorrespondenceEstimation <Point,Point> est; 
+ pcl::registration::CorrespondenceEstimation <Point,Point> est;
  est.setInputSource (frame_1.raw_input);
  est.setInputTarget (frame_1.cloud_transformed);
  est.determineCorrespondences (corr);
@@ -437,8 +433,8 @@ void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,
    }
   }
  }
- 
-///uniform sampling for correspondences 
+
+///uniform sampling for correspondences
  pcl::PointCloud <int> sampled_indices;
  pcl::UniformSampling <pcl::PointXYZ> uniform_sampling;
  uniform_sampling.setInputCloud (cloud_trans);
@@ -447,7 +443,7 @@ void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,
 
  PointCloud::Ptr cloud_trans_sampled(new PointCloud);
 
- pcl::copyPointCloud(*cloud_trans,sampled_indices.points, *cloud_trans_sampled); 
+ pcl::copyPointCloud(*cloud_trans,sampled_indices.points, *cloud_trans_sampled);
  ///calculating correspondence between t and t+1
  pcl::Correspondences corr_final;
  est.setInputSource (cloud_trans_sampled);
@@ -458,12 +454,12 @@ void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,
 
  pcl::search::KdTree <pcl::PointXYZ> kdtree;
  kdtree.setInputCloud(frame_2.raw_input);
- 
-//////Find the neighbours for all the point and store them 
+
+//////Find the neighbours for all the point and store them
  std::vector <bool>is_dynamic(frame_2.raw_input->points.size(),true);
  for(auto &c:corr_final)
  {
-  
+
   index_query.push_back(indices_corr[sampled_indices.points[c.index_query]]);
   index_match.push_back(c.index_match);
   std::vector <int> pointIdxRadiusSearch;
@@ -477,7 +473,7 @@ void DynamicFilter::EstimateCorrespondenceEuclidean(const float sampling_radius,
  std::vector<int>frame_2_dynamic;
  for(size_t i = 0; i < is_dynamic.size(); ++i)
  {
-  if(is_dynamic[i]) 
+  if(is_dynamic[i])
    indices_dynamic.push_back(i);
  }
 

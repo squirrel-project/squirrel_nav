@@ -27,7 +27,7 @@ ADD_LIBRARY(deprecated_types_slam3d ${G2O_LIB_TYPE}
 )
 
 SET_TARGET_PROPERTIES(deprecated_types_slam3d PROPERTIES OUTPUT_NAME ${LIB_PREFIX}deprecated_types_slam3d)
-TARGET_LINK_LIBRARIES(deprecated_types_slam3d ${OPENGL_gl_LIBRARY} core types_slam3d)
+TARGET_LINK_LIBRARIES(deprecated_types_slam3d ${OPENGL_gl_LIBRARY} g2o_core types_slam3d)
 
 INSTALL(TARGETS deprecated_types_slam3d
   RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin

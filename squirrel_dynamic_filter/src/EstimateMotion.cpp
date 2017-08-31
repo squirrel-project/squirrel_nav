@@ -1,3 +1,26 @@
+// The MIT License (MIT)
+//
+// Copyright (c) 2016-2017 Ayush Dewan and Wolfram Burgard
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+
 #include "dynamic_filter_node.h"
 using namespace Eigen;
 using namespace std;
@@ -316,6 +339,27 @@ void DynamicFilter::EstimateMotion(const std::vector <int> &index_query,const st
    write_trans.close();
    write_intensity_z.close();
 
+
+/*   Eigen::Matrix4f frame_to_map = Eigen::Matrix4f::Identity();*/
+
+   //frame_to_map(0,0) = frame_2.odometry(0,0);
+   //frame_to_map(0,1) = frame_2.odometry(0,1);
+   //frame_to_map(0,2) = frame_2.odometry(0,2);
+   //frame_to_map(0,3) = frame_2.odometry(0,3);
+
+   //frame_to_map(1,0) = frame_2.odometry(1,0);
+   //frame_to_map(1,1) = frame_2.odometry(1,1);
+   //frame_to_map(1,2) = frame_2.odometry(1,2);
+   //frame_to_map(1,3) = frame_2.odometry(1,3);
+
+   //frame_to_map(2,0) = frame_2.odometry(2,0);
+   //frame_to_map(2,1) = frame_2.odometry(2,1);
+   //frame_to_map(2,2) = frame_2.odometry(2,2);
+   //frame_to_map(2,3) = frame_2.odometry(2,3);
+
+   //PointCloud cloud_save_trans;
+
+   //pcl::transformPointCloud(*cloud_save,cloud_save_trans,frame_to_map);
 
    pcl::PCDWriter writer;
    frame_1.cloud_transformed->width = frame_1.cloud_transformed->points.size();

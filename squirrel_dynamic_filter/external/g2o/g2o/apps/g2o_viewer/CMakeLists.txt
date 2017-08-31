@@ -43,8 +43,8 @@ ADD_EXECUTABLE(g2o_viewer
 
 SET_TARGET_PROPERTIES(g2o_viewer PROPERTIES OUTPUT_NAME g2o_viewer${EXE_POSTFIX})
 
-TARGET_LINK_LIBRARIES(viewer_library g2ocore g2o_cli_library ${QGLVIEWER_LIBRARY} ${MY_QT_LIBRARIES} ${OPENGL_LIBRARY})
-TARGET_LINK_LIBRARIES(viewer_library g2ocore opengl_helper)
+TARGET_LINK_LIBRARIES(viewer_library g2o_core g2o_cli_library ${QGLVIEWER_LIBRARY} ${MY_QT_LIBRARIES} ${OPENGL_LIBRARY})
+TARGET_LINK_LIBRARIES(viewer_library g2o_core opengl_helper)
 TARGET_LINK_LIBRARIES(g2o_viewer viewer_library)
 
 INSTALL(TARGETS g2o_viewer viewer_library
