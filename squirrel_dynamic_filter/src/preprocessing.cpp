@@ -1,3 +1,25 @@
+// The MIT License (MIT)
+//
+// Copyright (c) 2016-2017 Ayush Dewan and Wolfram Burgard
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 #include "ros/ros.h"
 #include "tf/transform_listener.h"
 #include "tf/message_filter.h"
@@ -99,26 +121,15 @@ class tfPointCloud
        preprocessing(sensor_msg.cloud_msg,cloud_processed,ground_indices,non_ground_indices);//remove ground and far away points
 
        pcl::copyPointCloud(*cloud_processed,ground_indices,*ground);//ground
- 
+
        pcl::toROSMsg(*ground,dynamic_filter_msg.ground_cloud);
-//       transform_map_base_link.setOrigin(tf::Vector3(sensor_msg.odometry[0],sensor_msg.odometry[1],sensor_msg.odometry[2]));
-//       tf::Quaternion q(sensor_msg.odometry[3],sensor_msg.odometry[4],sensor_msg.odometry[5],sensor_msg.odometry[6]);
-  //     transform_map_base_link.setRotation(q);
 
-//       br.sendTransform(tf::StampedTransform(transform_map_base_link, ros::Time::now(), "map", "base_link_static_final"));
-
-//          dynamic_filter_msg.ground_cloud.header.frame_id = "base_link_static_final";
- //         dynamic_filter_msg.ground_cloud.header.stamp = ros::Time::now();
- //   pub.publish(dynamic_filter_msg.ground_cloud);
-     
-        pcl::copyPointCloud(*cloud_processed,non_ground_indices,*not_ground);//non-ground
+       pcl::copyPointCloud(*cloud_processed,non_ground_indices,*not_ground);//non-ground
        not_ground->width = not_ground->points.size();
        not_ground->height = 1;
-       cerr << not_ground->width << "," << ground->points.size() << endl;   
-
-          /*   dynamic_cloud->width = dynamic_cloud->points.size();*/
-             //dynamic_cloud->height = 1;
-       ////calling the static Classify service
+       //cerr << not_ground->width << "," << ground->points.size() << endl;
+       //
+       ///call the service to get points which do not belong to the current map
 
        pcl::toROSMsg(*not_ground,classify_static_srv.request.cloud);
        classify_static_srv.request.odometry.resize(7);
@@ -189,9 +200,9 @@ class tfPointCloud
        TimeDiff time_diff = end - start;
        double correspondence_time = time_diff.count();
        time_write << correspondence_time << endl;
-        
-       //std::cerr << dynamic_cloud->points.size() << endl;
 
+       //std::cerr << dynamic_cloud->points.size() << endl;
+///send msg for classifying points as static or dynamic
        pcl::toROSMsg(*dynamic_cloud,dynamic_filter_msg.cloud);
        dynamic_filter_msg.odometry[0] = sensor_msg.odometry[0];
        dynamic_filter_msg.odometry[1] = sensor_msg.odometry[1];

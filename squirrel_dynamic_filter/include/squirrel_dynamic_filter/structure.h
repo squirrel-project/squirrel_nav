@@ -1,3 +1,27 @@
+// The MIT License (MIT)
+//
+// Copyright (c) 2016-2017 Ayush Dewan and Wolfram Burgard
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+
+
 #include "datatypes_squirrel.h"
 #include "edge_unary.h"
 #include "edge.h"
@@ -33,18 +57,18 @@ struct Frame
  std::vector <int> sampled_points;
  std::vector <float> prior_dynamic;
  void clear()
- {  
+ {
   raw_input->points.clear();
   cloud_input->points.clear();
-  feature->points.clear(); 
-  clusters.clear(); 
+  feature->points.clear();
+  clusters.clear();
   finite_points.clear();
   sampled_points.clear();
   neighbours.clear();
   ground->points.clear();
  }
  void copy(Frame &frame)
- {   
+ {
   frame.raw_input->points.clear();
   frame.cloud_input->points.clear();
   frame.feature->points.clear();
@@ -53,7 +77,7 @@ struct Frame
   frame.clusters.clear();
   frame.neighbours.clear();
   frame.ground->points.clear();
-  
+
   frame.raw_input->points = raw_input->points;
   frame.cloud_input->points = cloud_input->points;
   frame.feature->points = feature->points;
@@ -80,16 +104,16 @@ struct Frame
   frame.odometry(3,3) = odometry(3,3);
 
 
-  
+
 
  }
 
- 
+
 
 
 
  ///Odometry,motion,clsuter
- 
+
 };
 struct correspondences
 {

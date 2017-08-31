@@ -1,3 +1,27 @@
+// The MIT License (MIT)
+//
+// Copyright (c) 2016-2017 Ayush Dewan and Wolfram Burgard
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+
+
 #ifndef FEATURESHOT_HPP
 #define FEATURESHOT_HPP
 
@@ -43,23 +67,23 @@ inline void FeatureEstimationSHOT::estimateFeature(const PointCloud::Ptr &scene,
  {
 
   if(pcl::isFinite(cloud_normal_temp->points[i]))
-  {  
+  {
    finite_normal_pts.push_back(i);
    scene_temp->points.push_back(scene->points[i]);
    cloud_normal->points.push_back(cloud_normal_temp->points[i]);
 
   }
- 
+
  }
 
 scene->points.clear();
- 
+
 scene->points = scene_temp->points;
 
    std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
-    
- 
+
+
 // fprintf(stderr,"%d,%d",scene_temp->points.size(),scene->points.size());
 // getchar();
 
@@ -107,7 +131,7 @@ inline void FeatureEstimationSHOT::estimateFeature(const PointCloud::Ptr &scene,
    //normal_indices.push_back(i);
 
   }
- 
+
  }
 // search_surface->points.clear();
 // search_surface->points = scene_temp->points;
@@ -176,7 +200,7 @@ inline void FeatureEstimationSHOT::estimateFeature(const PointCloud::Ptr &scene,
 #pragma omp parallel for
  for(size_t j = 0; j < scene->points.size(); ++j)
  {
- 
+
   PointCloud::Ptr cloud(new PointCloud);
 
   pcl::PointCloud < pcl::SHOT352 >::Ptr cloud_feature(new pcl::PointCloud < pcl::SHOT352 >);
@@ -203,7 +227,7 @@ inline void FeatureEstimationSHOT::estimateFeature(const PointCloud::Ptr &scene,
 
  }
  for(size_t j = 0; j < scene->points.size(); ++j)
- { 
+ {
   if(pcl_isfinite(feature->points[j].descriptor[0]))
    finite_points.push_back(j);
  }

@@ -1,3 +1,26 @@
+// The MIT License (MIT)
+//
+// Copyright (c) 2016-2017 Ayush Dewan and Wolfram Burgard
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+
 #include "ros/ros.h"
 #include "tf/transform_listener.h"
 #include "tf/message_filter.h"
@@ -17,10 +40,8 @@
 #include "edge.h"
 #include <tf/transform_broadcaster.h>
 
-
-///Receiving the kinect data and sending the data to the dynamic_filter. This is
-//required to compensate for the speed of the code. It publishes the cloud and
-//the corresponding pose of the robot
+////used for publishing the points corresponding to the extracted
+//ground. Required for clearing the octomap
 
 using namespace std;
 using namespace Eigen;
@@ -234,21 +255,6 @@ class tfPointCloud
       ros::Duration(0.3).sleep();
 
 
-  ///Publising the cloud and odometry
-    //  pcl::toROSMsg(*cloud_sampled, cloud_msg.cloud_msg);
-
-
-//      cloud_msg.cloud_msg.header.stamp = sensor_msg->header.stamp;
-//      tf::Vector3 pos = transform.getOrigin();
-//      tf::Quaternion rot = transform.getRotation();
-//      cloud_msg.odometry[0] = pos[0];
-//      cloud_msg.odometry[1] = pos[1];
-//      cloud_msg.odometry[2] = pos[2];
-//      cloud_msg.odometry[3] = rot[0];
- //     cloud_msg.odometry[4] = rot[1];
-  //    cloud_msg.odometry[5] = rot[2];
-  //    cloud_msg.odometry[6] = rot[3];
-   //   publisher.publish(cloud_msg);
     }
 
 };
