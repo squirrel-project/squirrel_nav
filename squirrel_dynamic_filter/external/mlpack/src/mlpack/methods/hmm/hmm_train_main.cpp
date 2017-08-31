@@ -9,6 +9,9 @@
  * 3-clause BSD license along with mlpack.  If not, see
  * http://www.opensource.org/licenses/BSD-3-Clause for more information.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+
 #include <mlpack/prereqs.hpp>
 #include <mlpack/core/util/cli.hpp>
 
@@ -445,3 +448,5 @@ int main(int argc, char** argv)
 
   CLI::Destroy();
 }
+
+#pragma GCC diagnostic pop

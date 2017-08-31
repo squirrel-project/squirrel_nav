@@ -7,6 +7,8 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake-mod
 #SET(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules)
 #SET(libg2o_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fext-numeric-literals")
+
 set(squirrel_dynamic_filter_DEPENDENCIES
   roscpp
   rospy
@@ -60,7 +62,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 find_package(CSparse REQUIRED)
 include_directories(${CSPARSE_INCLUDE_DIR})
-set(CMAKE_CXX_FLAGS " -pthread -Wno-deprecated" )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-deprecated" )
 	
 find_package(OpenMP)
 if (OPENMP_FOUND)
