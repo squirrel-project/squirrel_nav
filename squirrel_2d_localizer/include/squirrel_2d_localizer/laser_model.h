@@ -67,12 +67,12 @@ class LaserModel {
   inline void setParams(const Params& params) { params_ = params; }
   inline Params& params() { return params_; }
 
+ protected:
+  Params params_;
+  
  private:
   // Compute the effective reading used in the localizer.
   void prepareLaserReadings(const std::vector<float>& measurement);
-
- private:
-  Params params_;
 
   std::vector<EndPoint2d, Eigen::aligned_allocator<EndPoint2d>>
       eff_measurement_;

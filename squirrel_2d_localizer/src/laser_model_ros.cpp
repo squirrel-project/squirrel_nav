@@ -20,52 +20,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef SQUIRREL_2D_LOCALIZER_TWIST_CORRECTION_ROS_H_
-#define SQUIRREL_2D_LOCALIZER_TWIST_CORRECTION_ROS_H_
-
-#include "squirrel_2d_localizer/TwistCorrectionConfig.h"
-#include "squirrel_2d_localizer/extras/twist_correction.h"
+#include "squirrel_2d_localizer/laser_model_ros.h"
 
 #include <ros/node_handle.h>
-#include <ros/time.h>
-
-#include <nav_msgs/Odometry.h>
-
-#include <dynamic_reconfigure/server.h>
-
-#include <message_filters/cache.h>
-#include <message_filters/subscriber.h>
-
-#include <memory>
 
 namespace squirrel_2d_localizer {
 
-class TwistCorrectionROS {
- public:
-  TwistCorrectionROS();
-  virtual ~TwistCorrectionROS() {}
-  
-  // Comput the correction.
-  Pose2d correction(const ros::Time& time) const;
+LaserModelROS::LaserModelROS(const LaserModel::Params& params)
+    : LaserModel(params), dsrv_(nullptr) {
+  initialize();
+}
 
- private:
-  void reconfigureCallback(TwistCorrectionConfig& config, uint32_t level);
+void LaserModelROS::initialize() {
+  ros::NodeHandle pnh("~/laser_model");
+  dsrv_.reset(new dynamic_reconfigure::Server<LaserModelConfig>(pnh));
+  dsrv_->setCallback(
+      boost::bind(&LaserModelROS::reconfigureCallback, this, _1, _2));
+}
 
-  // Interpolate between to real number.
-  double linearInterpolation(double x0, double x1, double dt, double t) const;
-
- private:
-  std::unique_ptr<TwistCorrection> twist_correction_;
-  
-  ros::NodeHandle nh_;
-
-  message_filters::Subscriber<nav_msgs::Odometry> odom_sub_;
-  message_filters::Cache<nav_msgs::Odometry> cache_;
-
-  bool enabled_;
-  std::unique_ptr<dynamic_reconfigure::Server<TwistCorrectionConfig>> dsrv_;
-};
+void LaserModelROS::reconfigureCallback(
+    LaserModelConfig& config, uint32_t level) {
+  params_.endpoints_min_distance = config.beams_min_distance;
+}
 
 }  // namespace squirrel_2d_localizer
-
-#endif /* SQUIRREL_2D_LOCALIZER_TWIST_CORRECTION_ROS_H_ */

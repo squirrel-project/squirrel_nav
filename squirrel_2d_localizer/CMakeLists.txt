@@ -30,15 +30,9 @@ endif(OPENMP_FOUND)
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-## Catkin package.
-catkin_package(
- INCLUDE_DIRS include
- LIBRARIES ${PROJECT_NAME}
- CATKIN_DEPENDS ${${PROJECT_NAME}_DEPENDENCIES}
- DEPENDS Eigen3)
-
 ## Set ROS dependencies
-set(${PROJECT_NAME}_DEPENDENCIES
+set(${PROJECT_NAME}_catkin_DEPENDENCIES
+  dynamic_reconfigure
   geometry_msgs 
   message_filters 
   nav_msgs 
@@ -49,8 +43,22 @@ set(${PROJECT_NAME}_DEPENDENCIES
   tf)
 
 ## Import ROS dependencies
-find_package(catkin REQUIRED COMPONENTS ${${PROJECT_NAME}_DEPENDENCIES})
+find_package(catkin REQUIRED COMPONENTS ${${PROJECT_NAME}_catkin_DEPENDENCIES})
 include_directories(${catkin_INCLUDE_DIRS})
+
+## Genereate reconfig files.
+generate_dynamic_reconfigure_options(
+  cfg/laser_model.cfg
+  cfg/monte_carlo_localization.cfg
+  cfg/motion_model.cfg
+  cfg/twist_correction.cfg)
+
+## Catkin package.
+catkin_package(
+ INCLUDE_DIRS include
+ LIBRARIES ${PROJECT_NAME}
+ CATKIN_DEPENDS ${${PROJECT_NAME}_catkin_DEPENDENCIES}
+ DEPENDS Eigen3)
 
 ## Building the localizer.
 set(ROS_BUILD_TYPE Release)
@@ -59,11 +67,14 @@ add_executable(${PROJECT_NAME}_node
   src/convolution.cpp 
   src/grid_map.cpp 
   src/laser_model.cpp 
+  src/laser_model_ros.cpp
   src/latent_model_likelihood_field.cpp
+  src/latent_model_likelihood_field_ros.cpp
   src/localizer.cpp 
   src/localizer_ros.cpp 
   src/localizer_ros_node.cpp 
   src/motion_model.cpp
+  src/motion_model_ros.cpp
   src/resampling.cpp 
   src/se2_types.cpp 
   src/extras/twist_correction.cpp 
@@ -71,6 +82,7 @@ add_executable(${PROJECT_NAME}_node
 target_link_libraries(${PROJECT_NAME}_node 
   ${catkin_LIBRARIES})
 add_dependencies(${PROJECT_NAME}_node 
+  ${PROJECT_NAME}_gencfg
   squirrel_2d_localizer_msgs_generate_messages_cpp)
 
 ## Installation.

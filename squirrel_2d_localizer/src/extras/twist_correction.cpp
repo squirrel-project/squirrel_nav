@@ -28,6 +28,17 @@
 
 namespace squirrel_2d_localizer {
 
+void TwistCorrection::reset() {
+  corr_(0, 0) = params_.corr_xx;
+  corr_(0, 1) = corr_(1, 0) = params_.corr_xy;
+  corr_(0, 2) = corr_(2, 0) = params_.corr_xa;
+  corr_(1, 1) = params_.corr_xy;
+  corr_(1, 2) = corr_(2, 1) = params_.corr_ya;
+  corr_(2, 2) = params_.corr_aa;
+  corr_ *= params_.corr_magnitude;
+  a_ = params_.alpha;
+}
+
 Pose2d TwistCorrection::correction(const Twist2d& twist) {
   if (!twist_) {
     twist_.reset(new Twist2d(twist));

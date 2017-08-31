@@ -76,4 +76,16 @@ Pose2d Pose2d::inverse() const {
   return inv;
 }
 
+Eigen::Vector3d Pose2d::toVector() const {
+  return Eigen::Vector3d(
+      translation_(0), translation_(1),
+      angles::normalize_angle(rotation_.angle()));
+}
+
+void Pose2d::fromVector(const Eigen::Vector3d& xya) {
+  translation_(0) = xya(0);
+  translation_(1) = xya(1);
+  rotation_       = Rotation2d(xya(2));
+}
+
 }  // namespace squirrel_2d_localizer

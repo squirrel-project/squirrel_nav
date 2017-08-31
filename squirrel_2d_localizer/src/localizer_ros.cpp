@@ -21,6 +21,9 @@
 // SOFTWARE.
 
 #include "squirrel_2d_localizer/localizer_ros.h"
+#include "squirrel_2d_localizer/laser_model_ros.h"
+#include "squirrel_2d_localizer/latent_model_likelihood_field_ros.h"
+#include "squirrel_2d_localizer/motion_model_ros.h"
 
 #include <ros/package.h>
 
@@ -39,7 +42,8 @@ namespace squirrel_2d_localizer {
 LocalizerROS::LocalizerROS()
     : node_name_(ros::this_node::getName()),
       update_laser_params_(true),
-      initial_localization_counter_(0) {
+      initial_localization_counter_(0),
+      mcl_dsrv_(nullptr) {
   ros::NodeHandle nh("~"), gnh;
   // frames.
   nh.param<std::string>("map_frame", map_frame_id_, "map");
@@ -54,43 +58,20 @@ LocalizerROS::LocalizerROS()
   nh.param<double>("init_pose_x", init_x_, 0.);
   nh.param<double>("init_pose_y", init_y_, 0.);
   nh.param<double>("init_pose_a", init_a_, 0.);
-  nh.param<bool>("use_twist_correction", use_twist_correction_, false);
-  if (use_twist_correction_)
-    twist_correction_.reset(new TwistCorrectionROS);
   // localizer parameters.
-  ros::NodeHandle loc_nh("~/localizer");
-  Localizer::Params loc_param;
-  loc_nh.param<int>("num_particles", loc_param.num_particles, 1000);
-  loc_nh.param<double>("min_lin_update", loc_param.min_lin_update, 0.5);
-  loc_nh.param<double>("min_ang_update", loc_param.min_ang_update, 0.5);
-  loc_nh.param<double>("init_stddev_x", loc_param.init_stddev_x, 0.5);
-  loc_nh.param<double>("init_stddev_y", loc_param.init_stddev_y, 0.5);
-  loc_nh.param<double>("init_stddev_a", loc_param.init_stddev_a, 0.5);
-  localizer_.reset(new Localizer(loc_param));
+  localizer_.reset(new Localizer);
+  ros::NodeHandle loc_nh("~/mcl");
+  mcl_dsrv_.reset(
+      new dynamic_reconfigure::Server<MonteCarloLocalizationConfig>(loc_nh));
+  mcl_dsrv_->setCallback(
+      boost::bind(&LocalizerROS::reconfigureCallback, this, _1, _2));
   // motion model parameters.
-  ros::NodeHandle mm_nh("~/motion_model");
-  MotionModel::Params motion_param;
-  mm_nh.param<double>("noise_xx", motion_param.noise_xx, 1.);
-  mm_nh.param<double>("noise_xy", motion_param.noise_xy, 0.);
-  mm_nh.param<double>("noise_xa", motion_param.noise_xa, 0.);
-  mm_nh.param<double>("noise_yy", motion_param.noise_yy, 1.);
-  mm_nh.param<double>("noise_ya", motion_param.noise_ya, 0.);
-  mm_nh.param<double>("noise_aa", motion_param.noise_aa, 1.);
-  mm_nh.param<double>("noise_magnitude", motion_param.noise_magnitude, 0.5);
-  std::unique_ptr<MotionModel> motion_model(new MotionModel(motion_param));
+  std::unique_ptr<MotionModel> motion_model(new MotionModelROS);
   // likelihood fields paramters.
-  ros::NodeHandle lf_nh("~/latent_model_likelihood_field");
-  LatentModelLikelihoodField::Params lmlf_param;
-  lf_nh.param<double>("uniform_hit", lmlf_param.uniform_hit, 0.1);
-  lf_nh.param<double>("observation_sigma", lmlf_param.observation_sigma, 1.);
   std::unique_ptr<LatentModelLikelihoodField> likelihood_field(
-      new LatentModelLikelihoodField(lmlf_param));
+      new LatentModelLikelihoodFieldROS);
   // laser model params.
-  ros::NodeHandle lm_nh("~/laser_model");
-  LaserModel::Params lm_param;
-  lm_nh.param<double>(
-      "beam_min_distance", lm_param.endpoints_min_distance, 0.1);
-  std::unique_ptr<LaserModel> laser_model(new LaserModel(lm_param));
+  std::unique_ptr<LaserModel> laser_model(new LaserModelROS);
   // init grid map
   GridMap::Params map_params;
   nav_msgs::GetMap get_map;
@@ -176,6 +157,17 @@ void LocalizerROS::spin(double hz) {
   }
 }
 
+void LocalizerROS::reconfigureCallback(
+    MonteCarloLocalizationConfig& config, uint32_t level) {
+  localizer_->params().min_lin_update = config.min_lin_update;
+  localizer_->params().min_ang_update = config.min_ang_update;
+  localizer_->params().init_stddev_x  = config.init_stddev_x;
+  localizer_->params().init_stddev_y  = config.init_stddev_y;
+  localizer_->params().init_stddev_a  = config.init_stddev_a;
+  if (localizer_->updateNumParticles(config.num_particles))
+    localizer_->params().num_particles = config.num_particles;
+}
+
 void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
   ROS_INFO_STREAM_ONCE(node_name_ << ": Subscribing to laser scan.");
   ros::Time scan_time = msg->header.stamp;
@@ -207,10 +199,8 @@ void LocalizerROS::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
     return;
   const Pose2d& motion =
       ros_conversions::fromTFMsgTo<Pose2d>(tf_o2r_.inverse() * tf_o2r_new);
-  const Pose2d& correction = use_twist_correction_
-                                 ? twist_correction_->correction(scan_time)
-                                 : Pose2d(0., 0., 0.);
-  const bool force_update = initial_localization_counter_++ < 5;
+  const Pose2d& correction = twist_correction_.correction(scan_time);
+  const bool force_update  = initial_localization_counter_++ < 5;
   if (localizer_->updateFilter(motion, msg->ranges, correction, force_update)) {
     tf_o2r_ = tf_o2r_new;
     publishParticles(scan_time);

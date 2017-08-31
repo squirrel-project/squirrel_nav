@@ -72,9 +72,10 @@ class GridMap {
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
- private:
+ protected:
   Params params_;
 
+ private:
   Eigen::MatrixXd occupancy_map_;
   Eigen::MatrixXi unknown_space_;
 };

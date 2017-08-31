@@ -41,7 +41,7 @@ void Localizer::initialize(
 }
 
 void Localizer::resetPose(const Pose2d& init_pose) {
-  std::unique_lock<std::mutex> lock(init_mtx_);
+  std::unique_lock<std::mutex> lock(mtx_);
   std::mt19937 rnd_eng(std::rand());
   std::normal_distribution<double> randn(0., 1.);
   if (!particles_.empty())
@@ -65,7 +65,7 @@ void Localizer::resetPose(const Pose2d& init_pose) {
 }
 
 void Localizer::resetParticles(const std::vector<Particle>& particles) {
-  std::unique_lock<std::mutex> lock(init_mtx_);
+  std::unique_lock<std::mutex> lock(mtx_);
   // Reset particle set.
   if (!particles_.empty())
     particles_.clear();
@@ -77,10 +77,25 @@ void Localizer::resetParticles(const std::vector<Particle>& particles) {
   cum_ang_motion_ = 0.;
 }
 
+bool Localizer::updateNumParticles(int new_particles_num) {
+  std::unique_lock<std::mutex> lock(mtx_);
+  const int nparticles = particles_.size();
+  if (particles_.empty() || nparticles == new_particles_num)
+    return true;
+  const int nparticles_diff = std::abs(nparticles - new_particles_num);
+  // Add new particles.
+  if (nparticles < new_particles_num)
+    resampling::uniformUpsample(nparticles_diff, &particles_);
+  // Remove random particles particles.
+  if (nparticles > new_particles_num)
+    resampling::uniformDownsample(nparticles_diff, &particles_);
+  return true;
+}
+
 bool Localizer::updateFilter(
     const Transform2d& motion, const std::vector<float>& scan,
     const Transform2d& extra_correction, bool force_update) {
-  std::unique_lock<std::mutex> lock(init_mtx_);
+  std::unique_lock<std::mutex> lock(mtx_);
   cum_lin_motion_ += motion.translation().norm();
   cum_ang_motion_ += std::abs(angles::normalize_angle(motion[2]));
   if (cum_lin_motion_ < params_.min_lin_update &&

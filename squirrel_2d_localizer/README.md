@@ -20,20 +20,18 @@ to retrieve the map.
 - `~/robot_frame` (default `/base_link`): the robot frame
 - `~/init_pose_{x,y,a}` (default `{0.0, 0.0, 0.0}`): initial guess
   pose.
-- `~/localizer/num_particles` (default: `750`): number of particles for
+- `~/mcl/num_particles` (default: `750`): number of particles for
   the particle filter.
-- `~/localizer/min_lin_update` (default `0.5`): minimum (cumulative) linear
+- `~/mcl/min_lin_update` (default `0.5`): minimum (cumulative) linear
   distance before performing a filter update.
-- `~/localizer/min_ang_update` (default `0.5`): minimum (cumulative) angular
+- `~/mcl/min_ang_update` (default `0.5`): minimum (cumulative) angular
   distance before performing a filter update.
-- `~/localizer/init_stddev_{x,y,a}` (default `{0.5, 0.5, 0.5}`): initial
+- `~/mcl/init_stddev_{x,y,a}` (default `{0.5, 0.5, 0.5}`): initial
   standard deviations of particles (Gaussian distributed).
 - `~/motion_model/noise_{xx, xy, xa, yy, ya, aa}` (default `{1.0, 0.0, 0.0, 1.0,
   0.0, 1.0}`), noise components of the odometry model.
 - `~/motion_model/noise_magnitude` (default `1.0`): rescaling factor for the noise
   parameters.
-- `~/latent_model_likelihood_field/saturation_distance` (default `0.5`): saturation distance of
-  the Gaussian kernels.
 - `~/latent_model_likelihood_field/observation_sigma` (default `0.5`): variance
   parameter of the gaussian kernels.
 - `~/laser_model/beam_min_distance` (default `0.1`) downsampling

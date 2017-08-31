@@ -12,17 +12,8 @@ publish_extra_tf: false
 extra_parent_frame_id: "/map"
 extra_child_frame_id: "/origin"
 
-## twist angular correction
-use_twist_correction: true
-twist_correction:
-  corr_aa: 1.0
-  corr_magnitude: 0.001
-  alpha_filter: 0.75
-  max_lin_vel: 0.5
-  max_ang_vel: 0.7
-
 ## localizer parameters
-localizer:
+mcl:
   num_particles: 1000
   min_lin_update: 0.05
   min_ang_update: 0.05
@@ -47,4 +38,13 @@ latent_model_likelihood_field:
 
 ## laser beams model
 laser_model:
-  beam_min_distance: 0.15
+  beams_min_distance: 0.15
+
+## twist angular correction
+twist_correction:
+  enabled: true
+  corr_aa: 1.0
+  corr_magnitude: 0.001
+  alpha_filter: 0.75
+  max_lin_vel: 0.5
+  max_ang_vel: 0.7

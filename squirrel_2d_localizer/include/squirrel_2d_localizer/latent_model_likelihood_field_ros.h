@@ -20,52 +20,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef SQUIRREL_2D_LOCALIZER_TWIST_CORRECTION_ROS_H_
-#define SQUIRREL_2D_LOCALIZER_TWIST_CORRECTION_ROS_H_
+#ifndef SQUIRREL_2D_LOCALIZER_LATENT_MODEL_LIKELIHOOD_FIELD_ROS_H_
+#define SQUIRREL_2D_LOCALIZER_LATENT_MODEL_LIKELIHOOD_FIELD_ROS_H_
 
-#include "squirrel_2d_localizer/TwistCorrectionConfig.h"
-#include "squirrel_2d_localizer/extras/twist_correction.h"
-
-#include <ros/node_handle.h>
-#include <ros/time.h>
-
-#include <nav_msgs/Odometry.h>
+#include "squirrel_2d_localizer/latent_model_likelihood_field.h"
 
 #include <dynamic_reconfigure/server.h>
-
-#include <message_filters/cache.h>
-#include <message_filters/subscriber.h>
 
 #include <memory>
 
 namespace squirrel_2d_localizer {
 
-class TwistCorrectionROS {
+class LatentModelLikelihoodFieldROS : public LatentModelLikelihoodField {
  public:
-  TwistCorrectionROS();
-  virtual ~TwistCorrectionROS() {}
-  
-  // Comput the correction.
-  Pose2d correction(const ros::Time& time) const;
+  LatentModelLikelihoodFieldROS();
+  LatentModelLikelihoodFieldROS(
+      const LatentModelLikelihoodField::Params& params);
+  virtual ~LatentModelLikelihoodFieldROS() {}
 
  private:
-  void reconfigureCallback(TwistCorrectionConfig& config, uint32_t level);
-
-  // Interpolate between to real number.
-  double linearInterpolation(double x0, double x1, double dt, double t) const;
-
- private:
-  std::unique_ptr<TwistCorrection> twist_correction_;
-  
-  ros::NodeHandle nh_;
-
-  message_filters::Subscriber<nav_msgs::Odometry> odom_sub_;
-  message_filters::Cache<nav_msgs::Odometry> cache_;
-
-  bool enabled_;
-  std::unique_ptr<dynamic_reconfigure::Server<TwistCorrectionConfig>> dsrv_;
+  void init();
 };
 
 }  // namespace squirrel_2d_localizer
 
-#endif /* SQUIRREL_2D_LOCALIZER_TWIST_CORRECTION_ROS_H_ */
+#endif /* SQUIRREL_2D_LOCALIZER_LATENT_MODEL_LIKELIHOOD_FIELD_ROS_H_ */

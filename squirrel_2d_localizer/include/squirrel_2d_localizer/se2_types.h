@@ -55,8 +55,11 @@ class Pose2d {
 
   Pose2d inverse() const;
 
+  Eigen::Vector3d toVector() const;
+  void fromVector(const Eigen::Vector3d& xya);
+  
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-
+  
  private:
   Eigen::Vector2d translation_;
   Rotation2d rotation_;

@@ -47,6 +47,8 @@ class TwistCorrection {
   TwistCorrection(const Params& params) : params_(params) { initialize(); }
   virtual ~TwistCorrection() {}
 
+  void reset();
+
   // Compute the correction twist.
   Pose2d correction(const Twist2d& twist);
 

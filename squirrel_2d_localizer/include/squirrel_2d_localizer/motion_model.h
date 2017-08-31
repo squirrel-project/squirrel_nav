@@ -56,9 +56,10 @@ class MotionModel {
   inline void setParams(const Params& params) { params_ = params; }
   inline Params& params() { return params_; }
 
- private:
+ protected:
   Params params_;
 
+ private:
   mutable std::mt19937 rnd_eng_;
   mutable std::mutex mtx_;
 };

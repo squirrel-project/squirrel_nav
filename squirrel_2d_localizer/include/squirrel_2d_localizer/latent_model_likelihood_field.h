@@ -55,13 +55,14 @@ class LatentModelLikelihoodField {
   inline const Params& params() const { return params_; }
   inline void setParams(const Params& params) { params_ = params; }
   inline Params& params() { return params_; }
-  
+
+ protected:
+  Params params_;
+
  private:
   bool inside(int i, int j) const;
 
  private:
-  Params params_;
-
   Eigen::MatrixXd likelihood_cache_;
   int likelihood_cache_rows_, likelihood_cache_cols_;
 };

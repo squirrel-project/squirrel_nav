@@ -35,8 +35,9 @@
 namespace squirrel_2d_localizer {
 
 struct Particle {
-  Particle() : weight(0.){};
+  Particle() : weight(0.) {}
   Particle(const Pose2d& p, double w) : pose(p), weight(w) {}
+  Particle(const Particle& pt) : pose(pt.pose), weight(pt.weight) {}
 
   Pose2d pose;
   double weight;

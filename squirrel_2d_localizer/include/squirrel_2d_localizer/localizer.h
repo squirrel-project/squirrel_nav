@@ -58,6 +58,7 @@ class Localizer {
   // Update the localizer.
   void resetPose(const Pose2d& init_pose = Pose2d(0., 0., 0.));
   void resetParticles(const std::vector<Particle>& particles);
+  bool updateNumParticles(int num_new_particles);
   bool updateFilter(
       const Transform2d& motion, const std::vector<float>& scan,
       const Transform2d& extra_correction = Pose2d(0., 0., 0.),
@@ -69,7 +70,7 @@ class Localizer {
   const Eigen::Matrix3d& covariance() const { return covariance_; }
 
   // Get the update guard.
-  std::mutex& mutex() const { return init_mtx_; }
+  std::mutex& mutex() const { return mtx_; }
 
   // Get the localizer's objects.
   inline GridMap* gridMap() { return map_.get(); }
@@ -83,9 +84,10 @@ class Localizer {
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
- private:
+ protected:
   Params params_;
 
+ private:
   std::unique_ptr<GridMap> map_;
   std::unique_ptr<LatentModelLikelihoodField> likelihood_field_;
   std::unique_ptr<LaserModel> laser_model_;
@@ -97,7 +99,7 @@ class Localizer {
 
   double cum_lin_motion_, cum_ang_motion_;
 
-  mutable std::mutex init_mtx_;
+  mutable std::mutex mtx_;
 };
 
 }  // namespace squirrel_2d_localizer

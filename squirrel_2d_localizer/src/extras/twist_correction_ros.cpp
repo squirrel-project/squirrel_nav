@@ -28,23 +28,20 @@
 namespace squirrel_2d_localizer {
 
 TwistCorrectionROS::TwistCorrectionROS()
-    : odom_sub_(nh_, "/odom", 1), cache_(odom_sub_, 100) {
+    : odom_sub_(nh_, "/odom", 1),
+      cache_(odom_sub_, 100),
+      dsrv_(nullptr),
+      enabled_(false) {
+  twist_correction_.reset(new TwistCorrection);
   ros::NodeHandle pnh("~/twist_correction");
-  TwistCorrection::Params params;
-  pnh.param<double>("corr_xx", params.corr_xx, 0.);
-  pnh.param<double>("corr_xy", params.corr_xy, 0.);
-  pnh.param<double>("corr_xa", params.corr_xa, 0.);
-  pnh.param<double>("corr_yy", params.corr_yy, 0.);
-  pnh.param<double>("corr_ya", params.corr_ya, 0.);
-  pnh.param<double>("corr_aa", params.corr_aa, 1.);
-  pnh.param<double>("corr_magnitude", params.corr_magnitude, 1.);
-  pnh.param<double>("alpha_filter", params.alpha, 0.5);
-  pnh.param<double>("max_lin_vel", params.max_lin_vel, 0.5);
-  pnh.param<double>("max_ang_vel", params.max_ang_vel, 0.7);
-  twist_correction_.reset(new TwistCorrection(params));
+  dsrv_.reset(new dynamic_reconfigure::Server<TwistCorrectionConfig>(pnh));
+  dsrv_->setCallback(
+      boost::bind(&TwistCorrectionROS::reconfigureCallback, this, _1, _2));
 }
 
 Pose2d TwistCorrectionROS::correction(const ros::Time& time) const {
+  if (!enabled_)
+    return Pose2d(0, 0, 0);
   const auto& odom_before_time = cache_.getElemBeforeTime(time);
   const auto& odom_after_time  = cache_.getElemAfterTime(time);
   if (!odom_before_time || !odom_after_time)
@@ -61,6 +58,23 @@ Pose2d TwistCorrectionROS::correction(const ros::Time& time) const {
       linearInterpolation(tw0.linear.y, tw1.linear.y, t, dt),
       linearInterpolation(tw0.angular.z, tw1.angular.z, t, dt));
   return twist_correction_->correction(twist);
+}
+
+void TwistCorrectionROS::reconfigureCallback(
+    TwistCorrectionConfig& config, uint32_t level) {
+  TwistCorrection::Params params;
+  params.corr_xx        = config.corr_xx;
+  params.corr_xy        = config.corr_xy;
+  params.corr_xa        = config.corr_xa;
+  params.corr_yy        = config.corr_yy;
+  params.corr_ya        = config.corr_ya;
+  params.corr_aa        = config.corr_aa;
+  params.corr_magnitude = config.corr_magnitude;
+  params.max_lin_vel    = config.max_lin_vel;
+  params.max_ang_vel    = config.max_ang_vel;
+  enabled_              = config.enabled;
+  twist_correction_->setParams(params);
+  twist_correction_->reset();
 }
 
 double TwistCorrectionROS::linearInterpolation(
