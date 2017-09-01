@@ -27,10 +27,13 @@
 namespace squirrel_2d_localizer {
 
 Pose2d::Pose2d(double x, double y, double a)
-    : translation_({x, y}), rotation_(a) {}
+    : translation_(x, y), rotation_(a) {}
 
 Pose2d::Pose2d(const Eigen::Vector2d& translation, double a)
     : translation_(translation), rotation_(a) {}
+
+Pose2d::Pose2d(const Eigen::Vector3d& pose_vec)
+    : translation_(pose_vec(0), pose_vec(1)), rotation_(pose_vec(2)) {}
 
 double Pose2d::operator[](size_t i) const {
   if (i == 0)

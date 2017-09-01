@@ -36,6 +36,7 @@ class Pose2d {
   Pose2d() : translation_(0., 0.), rotation_(0.) {}
   Pose2d(double x, double y, double a);
   Pose2d(const Eigen::Vector2d& translation, double a);
+  Pose2d(const Eigen::Vector3d& pose_vec);
   Pose2d(const Pose2d& model) = default;
   virtual ~Pose2d() {}
 
