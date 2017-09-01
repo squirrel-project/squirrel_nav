@@ -47,8 +47,8 @@ namespace particles {
 
 inline double computeTotalWeight(const std::vector<Particle>& particles) {
   double tot_weight = 0.;
-  for (size_t i = 0; i < particles.size(); ++i)
-    tot_weight += particles[i].weight;
+  for (const auto& particle : particles)
+    tot_weight += particle.weight;
   return tot_weight;
 }
 
@@ -67,31 +67,30 @@ inline void setWeights(
 }
 
 inline void setWeight(double weight, std::vector<Particle>* particles) {
-  for (size_t i             = 0; i < particles->size(); ++i)
-    particles->at(i).weight = weight;
+  for (auto& particle : *particles)
+    particle.weight = weight;
 }
 
 inline void computeMeanAndCovariance(
     const std::vector<Particle>& particles, Pose2d* mean,
     Eigen::Matrix3d* covariance) {
   double mean_x = 0., mean_y = 0., mean_c = 0., mean_s = 0., sq_tot_w = 0.;
-  for (size_t i = 0; i < particles.size(); ++i) {
-    const double weight = particles[i].weight;
-    mean_x += weight * particles[i].pose[0];
-    mean_y += weight * particles[i].pose[1];
-    mean_c += weight * std::cos(particles[i].pose[2]);
-    mean_s += weight * std::sin(particles[i].pose[2]);
+  for (const auto& particle : particles) {
+    const double weight = particle.weight;
+    mean_x += weight * particle.pose[0];
+    mean_y += weight * particle.pose[1];
+    mean_c += weight * std::cos(particle.pose[2]);
+    mean_s += weight * std::sin(particle.pose[2]);
     sq_tot_w += weight * weight;
   }
   const double mean_a = std::atan2(mean_s, mean_c);
-  *mean               = Pose2d(mean_x, mean_y, mean_a);
   const double unbias = 1 - sq_tot_w;
   double cov00 = 0., cov01 = 0., cov02 = 0., cov11 = 0., cov12 = 0., cov22 = 0.;
-  for (size_t i = 0; i < particles.size(); ++i) {
-    const double dx = particles[i].pose[0] - mean_x;
-    const double dy = particles[i].pose[1] - mean_y;
-    const double da = angles::normalize_angle(particles[i].pose[2] - mean_a);
-    const double weight = particles[i].weight;
+  for (const auto& particle : particles) {
+    const double dx     = particle.pose[0] - mean_x;
+    const double dy     = particle.pose[1] - mean_y;
+    const double da     = angles::normalize_angle(particle.pose[2] - mean_a);
+    const double weight = particle.weight;
     cov00 += weight * dx * dx / unbias;
     cov01 += weight * dx * dy / unbias;
     cov02 += weight * dx * da / unbias;
@@ -99,6 +98,9 @@ inline void computeMeanAndCovariance(
     cov12 += weight * dy * da / unbias;
     cov22 += weight * da * da / unbias;
   }
+  // Update mean.
+  *mean = Pose2d(mean_x, mean_y, mean_a);
+  // Update covariance.
   (*covariance)(0, 0) = cov00;
   (*covariance)(0, 1) = (*covariance)(1, 0) = cov01;
   (*covariance)(0, 2) = (*covariance)(2, 0) = cov02;
