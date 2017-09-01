@@ -80,8 +80,7 @@ void uniformDownsample(
   std::unique_lock<std::mutex> lock(__internal::resampling_mtx_);
   // Extract uniformly which particles to keep.
   const int new_particles_num = particles->size() - nparticles_remove;
-  std::mt19937 rg(std::rand());
-  std::shuffle(particles->begin(), particles->end(), rg);
+  std::shuffle(particles->begin(), particles->end(), std::mt19937(std::rand()));
   particles->erase(particles->begin() + new_particles_num, particles->end());
 }
 
