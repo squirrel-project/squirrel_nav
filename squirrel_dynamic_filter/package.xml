@@ -17,6 +17,7 @@
 
 
     <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>armadillo</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>std_msgs</build_depend>
@@ -26,6 +27,7 @@
   <run_depend>sensor_msgs</run_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>pcl_ros</build_depend>
+  <run_depend>armadillo</run_depend>
   <run_depend>pcl_ros</run_depend>
   <build_depend>squirrel_dynamic_filter_msgs</build_depend>
   <run_depend>squirrel_dynamic_filter_msgs</run_depend>
