@@ -14,9 +14,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "squirrel_footprint_observer/footprint_observer.h"
+#include "squirrel_footprint_observer/footprint_io.h"
 #include "squirrel_footprint_observer/footprint_utils.h"
 #include "squirrel_footprint_observer/parameter_parser.h"
 
+#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -25,7 +27,11 @@ namespace squirrel_footprint_observer {
 
 FootprintObserver::FootprintObserver() : enabled_(true) {
   const std::string& node_name = ros::this_node::getName();
+  // Initialize the parameter server.
   ros::NodeHandle pnh("~");
+  dsrv_.reset(new dynamic_reconfigure::Server<FootprintObserverConfig>(pnh));
+  dsrv_->setCallback(
+      boost::bind(&FootprintObserver::reconfigureCallback, this, _1, _2));
   // Read base footprint.
   if (pnh.hasParam("base_radius")) {
     double base_radius;
@@ -72,6 +78,8 @@ FootprintObserver::FootprintObserver() : enabled_(true) {
       ros::shutdown();
     }
   }
+  // Wait for annoying ROS crap to start up. Apparently no better solution.
+  ros::Duration(1.0).sleep();  
   // Read the robot frame id.
   pnh.param<std::string>(
       "base_frame_id", footprint_.header.frame_id, "/base_link");
@@ -79,8 +87,11 @@ FootprintObserver::FootprintObserver() : enabled_(true) {
   enable_sub_ =
       pnh.subscribe("enable", 1, &FootprintObserver::enableCallback, this);
   footprint_pub_ = pnh.advertise<geometry_msgs::PolygonStamped>("footprint", 1);
-  footprint_srv_ = pnh.advertiseService(
-      "getFootprint", &FootprintObserver::footprintServiceCallback, this);
+  footprint_get_srv_ = pnh.advertiseService(
+      "getFootprint", &FootprintObserver::getFootprintServiceCallback, this);
+  footprint_dump_srv_ = pnh.advertiseService(
+      "dumpFootprint", &FootprintObserver::dumpFootprintServiceCallback, this);
+  // INitialization  succesfull.
   ROS_INFO_STREAM(node_name << ": FootprintObserver successfully initialized.");
 }
 
@@ -99,8 +110,53 @@ void FootprintObserver::spin(double hz) {
   }
 }
 
+void FootprintObserver::reconfigureCallback(
+    FootprintObserverConfig& config, uint32_t level) {
+  enabled_ = config.enabled;
+}
+
+void FootprintObserver::enableCallback(const std_msgs::Bool::ConstPtr& msg) {
+  enabled_ = msg->data;
+}
+
+bool FootprintObserver::dumpFootprintServiceCallback(
+    squirrel_footprint_observer_msgs::dump_footprint::Request& req,
+    squirrel_footprint_observer_msgs::dump_footprint::Response& res) {
+  std::unique_lock<std::mutex> lock(update_mtx_);
+  const std::string& node_name = ros::this_node::getName();
+  if (req.ostream == "stdout") {
+    res.succeeded = true;
+    ROS_INFO_STREAM(node_name << ": \n footprint: " << footprint_.polygon);
+    return true;
+  } else if (req.ostream == "stderr") {
+    res.succeeded = true;
+    ROS_ERROR_STREAM(node_name << ": \n footprint: " << footprint_.polygon);
+    return true;
+  } else {
+    std::ofstream fout(req.ostream);
+    if (fout.good() && fout.is_open()) {
+      res.succeeded = true;
+      fout << "footprint: " << footprint_.polygon << std::endl;
+      fout.close();
+      return true;
+    } else {
+      res.succeeded = false;
+      return false;
+    }
+  }
+}
+
+bool FootprintObserver::getFootprintServiceCallback(
+    squirrel_footprint_observer_msgs::get_footprint::Request& req,
+    squirrel_footprint_observer_msgs::get_footprint::Response& res) {
+  std::unique_lock<std::mutex> lock(update_mtx_);
+  updateFootprint(ros::Time::now());
+  res.footprint = footprint_.polygon;
+  return true;
+}
+
 void FootprintObserver::updateFootprint(const ros::Time& stamp) {
-  std::unique_lock<std::mutex> lock(update_mtx);
+  std::unique_lock<std::mutex> lock(update_mtx_);
   const size_t njoints        = joint_chain_.size();
   const size_t footprint_size = kBaseNumPoints + njoints * kJointNumPoints;
   std::vector<Point2D> full_footprint;
@@ -112,8 +168,9 @@ void FootprintObserver::updateFootprint(const ros::Time& stamp) {
     const std::string& joint_frame_id = joint_chain_[i];
     try {
       tfl_.waitForTransform(
-          base_frame_id, joint_frame_id, stamp, ros::Duration(0.05));
-      tfl_.lookupTransform(base_frame_id, joint_frame_id, stamp, tf_base2joint);
+          base_frame_id, joint_frame_id, stamp, ros::Duration(1.0));
+      tfl_.lookupTransform(
+          base_frame_id, joint_frame_id, stamp, tf_base2joint);
     } catch (const tf::TransformException& ex) {
       const std::string& node_name = ros::this_node::getName();
       ROS_ERROR_STREAM(node_name << ": " << ex.what());
@@ -141,18 +198,6 @@ void FootprintObserver::updateFootprint(const ros::Time& stamp) {
     footprint_.polygon.points[i].x = ch_footprint[i].x();
     footprint_.polygon.points[i].y = ch_footprint[i].y();
   }
-}
-
-void FootprintObserver::enableCallback(const std_msgs::Bool::ConstPtr& msg) {
-  enabled_ = msg->data;
-}
-
-bool FootprintObserver::footprintServiceCallback(
-    squirrel_footprint_observer_msgs::get_footprint::Request& req,
-    squirrel_footprint_observer_msgs::get_footprint::Response& res) {
-  updateFootprint(ros::Time::now());
-  res.footprint = footprint_.polygon;
-  return true;
 }
 
 }  // namespace squirrel_footprint_observer

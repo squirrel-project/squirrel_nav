@@ -18,7 +18,6 @@ set(squirrel_3d_mapping_DEPENDENCIES
   roscpp
   sensor_msgs
   squirrel_3d_mapping_msgs
-  squirrel_rgbd_mapping_msgs
   std_msgs
   std_srvs
   visualization_msgs

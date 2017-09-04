@@ -1,6 +1,6 @@
 IF(CHOLMOD_INCLUDE_DIR OR CSPARSE_INCLUDE_DIR)
   ADD_EXECUTABLE(sba_demo sba_demo.cpp)
-  TARGET_LINK_LIBRARIES(sba_demo g2ocore types_icp types_sba)
+  TARGET_LINK_LIBRARIES(sba_demo g2o_core types_icp types_sba)
   SET_TARGET_PROPERTIES(sba_demo PROPERTIES OUTPUT_NAME sba_demo${EXE_POSTFIX})
 ENDIF()
 

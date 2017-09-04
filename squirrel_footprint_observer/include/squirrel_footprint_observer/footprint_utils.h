@@ -18,6 +18,7 @@
 
 #include "squirrel_footprint_observer/geometry_types.h"
 
+#include <iostream>
 #include <cmath>
 #include <vector>
 

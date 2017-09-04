@@ -2,4 +2,4 @@ ADD_EXECUTABLE(convert_sba_slam3d
   convert_sba_slam3d.cpp
 )
 SET_TARGET_PROPERTIES(convert_sba_slam3d PROPERTIES OUTPUT_NAME convert_sba_slam3d${EXE_POSTFIX})
-TARGET_LINK_LIBRARIES(convert_sba_slam3d g2ocore types_slam3d types_sba)
+TARGET_LINK_LIBRARIES(convert_sba_slam3d g2o_core types_slam3d types_sba)

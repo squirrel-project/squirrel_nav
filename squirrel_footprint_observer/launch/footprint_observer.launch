@@ -1,9 +1,15 @@
 <launch>
-  <arg name="config_file" default="$(find squirrel_footprint_observer)/config/robotino_footprint.yaml"/>
+  <arg name="config_file" default="$(find squirrel_footprint_observer)/config/robotino_full.yaml"/>
+  <arg name="rviz" default="false"/>
 
+  <!-- The footprint observer -->
   <node name="squirrel_footprint_observer" pkg="squirrel_footprint_observer" type="squirrel_footprint_observer_node"
 	output="screen">
     <rosparam file="$(arg config_file)" command="load"/>
   </node>
+
+  <!-- RViz -->
+  <node pkg="rviz" type="rviz" name="squirrel_footprint_observer_rviz" 
+	args="-d $(find squirrel_footprint_observer)/rviz/squirrel_footprint_observer.rviz" if="$(arg rviz)"/>
 
 </launch>

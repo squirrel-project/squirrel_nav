@@ -9,7 +9,7 @@ ADD_LIBRARY(calibration_odom_laser_library ${G2O_LIB_TYPE}
   g2o_calibration_odom_laser_api.h
 )
 SET_TARGET_PROPERTIES(calibration_odom_laser_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}calibration_odom_laser)
-TARGET_LINK_LIBRARIES(calibration_odom_laser_library g2ocore solver_csparse types_sclam2d types_data)
+TARGET_LINK_LIBRARIES(calibration_odom_laser_library g2o_core solver_csparse types_sclam2d types_data)
 
 ADD_EXECUTABLE(sclam_odom_laser
   sclam_odom_laser.cpp

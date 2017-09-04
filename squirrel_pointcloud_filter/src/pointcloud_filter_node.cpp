@@ -27,7 +27,9 @@
 
 int main(int argc, char *argv[]) {
   ros::init(argc, argv, "pointcloud_filter_node");
+
   squirrel_pointcloud_filter::PointCloudFilter pcf;
   pcf.spin();
+
   return EXIT_SUCCESS;
 }

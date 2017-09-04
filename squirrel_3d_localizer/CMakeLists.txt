@@ -23,8 +23,7 @@ set(squirrel_3d_localizer_CATKIN_DEPENDENCIES
   std_msgs
   std_srvs
   tf
-  visualization_msgs
-)
+  visualization_msgs)
 
 ## include catkin
 find_package(catkin REQUIRED COMPONENTS ${squirrel_3d_localizer_CATKIN_DEPENDENCIES})

@@ -16,17 +16,21 @@
 #ifndef SQUIRREL_FOOTPRINT_OBSERVER_FOOTPRINT_OBSERVER_H_
 #define SQUIRREL_FOOTPRINT_OBSERVER_FOOTPRINT_OBSERVER_H_
 
+#include "squirrel_footprint_observer/FootprintObserverConfig.h"
+#include "squirrel_footprint_observer/geometry_types.h"
+
 #include <ros/ros.h>
 
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 
+#include <dynamic_reconfigure/server.h>
+
 #include <geometry_msgs/Polygon.h>
 #include <geometry_msgs/PolygonStamped.h>
+#include <squirrel_footprint_observer_msgs/dump_footprint.h>
 #include <squirrel_footprint_observer_msgs/get_footprint.h>
 #include <std_msgs/Bool.h>
-
-#include "squirrel_footprint_observer/geometry_types.h"
 
 #include <memory>
 #include <mutex>
@@ -39,20 +43,31 @@ class FootprintObserver {
   FootprintObserver();
   virtual ~FootprintObserver() {}
 
+  // Spinner.
   void spin(double hz = 10.);
 
- public:
-  mutable std::mutex update_mtx;
-
  private:
-  void updateFootprint(const ros::Time& stamp);
-
+  // Reconfigure utilities.
+  void reconfigureCallback(FootprintObserverConfig& config, uint32_t level);
   void enableCallback(const std_msgs::Bool::ConstPtr& msg);
-  bool footprintServiceCallback(
+
+  // Service callbacks.
+  bool getFootprintServiceCallback(
       squirrel_footprint_observer_msgs::get_footprint::Request& req,
       squirrel_footprint_observer_msgs::get_footprint::Response& res);
+  bool dumpFootprintServiceCallback(
+      squirrel_footprint_observer_msgs::dump_footprint::Request& req,
+      squirrel_footprint_observer_msgs::dump_footprint::Response& res);
+
+  // Update the footprint.
+  void updateFootprint(const ros::Time& stamp);
+
+  // Mutex getter.
+  inline std::mutex& mutex() const { return update_mtx_; }
 
  private:
+  std::unique_ptr<dynamic_reconfigure::Server<FootprintObserverConfig>> dsrv_;
+
   std::vector<Point2D> base_footprint_;
   std::vector<Point2D> joint_footprint_;
   std::vector<std::string> joint_chain_;
@@ -63,8 +78,10 @@ class FootprintObserver {
 
   ros::Publisher footprint_pub_;
   ros::Subscriber enable_sub_;
-  ros::ServiceServer footprint_srv_;
+  ros::ServiceServer footprint_get_srv_, footprint_dump_srv_;
   tf::TransformListener tfl_;
+
+  mutable std::mutex update_mtx_;
 };
 
 namespace {

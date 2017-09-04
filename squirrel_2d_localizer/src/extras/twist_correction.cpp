@@ -1,30 +1,24 @@
-// Copyright (c) 2016-2017, Federico Boniardi and Wolfram Burgard
-// All rights reserved.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-// 
-// * Neither the name of the University of Freiburg nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// The MIT License (MIT)
+//
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "squirrel_2d_localizer/extras/twist_correction.h"
 
@@ -34,14 +28,15 @@
 
 namespace squirrel_2d_localizer {
 
-TwistCorrection::TwistCorrection() : twist_(nullptr) {
-  setDefaultParams();
-  initialize();
-}
-
-TwistCorrection::TwistCorrection(const Params& params)
-    : twist_(nullptr), params_(params) {
-  initialize();
+void TwistCorrection::reset() {
+  corr_(0, 0) = params_.corr_xx;
+  corr_(0, 1) = corr_(1, 0) = params_.corr_xy;
+  corr_(0, 2) = corr_(2, 0) = params_.corr_xa;
+  corr_(1, 1) = params_.corr_xy;
+  corr_(1, 2) = corr_(2, 1) = params_.corr_ya;
+  corr_(2, 2) = params_.corr_aa;
+  corr_ *= params_.corr_magnitude;
+  a_ = params_.alpha;
 }
 
 Pose2d TwistCorrection::correction(const Twist2d& twist) {
@@ -51,9 +46,21 @@ Pose2d TwistCorrection::correction(const Twist2d& twist) {
   } else {
     applyAlphaFilter(twist);
   }
-  const Twist2d& sq_twist    = thresholdSquaredMagnitude(*twist_);
-  const Vector<3> correction = corr_ * sq_twist;
+  const Twist2d& sq_twist          = thresholdSquaredMagnitude(*twist_);
+  const Eigen::Vector3d correction = corr_ * sq_twist;
   return Pose2d(correction[0], correction[1], correction[2]);
+}
+
+void TwistCorrection::initialize() {
+  twist_.reset(nullptr);
+  corr_(0, 0) = params_.corr_xx;
+  corr_(0, 1) = corr_(1, 0) = params_.corr_xy;
+  corr_(0, 2) = corr_(2, 0) = params_.corr_xa;
+  corr_(1, 1) = params_.corr_xy;
+  corr_(1, 2) = corr_(2, 1) = params_.corr_ya;
+  corr_(2, 2) = params_.corr_aa;
+  corr_ *= params_.corr_magnitude;
+  a_ = params_.alpha;
 }
 
 void TwistCorrection::applyAlphaFilter(const Twist2d& twist) {
@@ -77,6 +84,19 @@ Twist2d TwistCorrection::thresholdSquaredMagnitude(const Twist2d& twist) const {
   output[1] = std::copysign(std::min(sq_max_lin_vel, sq_twist_y), twist[1]);
   output[2] = std::copysign(std::min(sq_max_ang_vel, sq_twist_a), twist[2]);
   return output;
+}
+
+TwistCorrection::Params TwistCorrection::Params::defaultParams() {
+  Params params;
+  params.corr_magnitude = 1.;
+  params.corr_xx        = 0.;
+  params.corr_xy        = 0.;
+  params.corr_xa        = 0.;
+  params.corr_yy        = 0.;
+  params.corr_ya        = 0.;
+  params.corr_aa        = 1.;
+  params.alpha          = 0.5;
+  return params;
 }
 
 }  // namespace squirrel_2d_localizer

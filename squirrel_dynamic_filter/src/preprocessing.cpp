@@ -1,30 +1,24 @@
-// Copyright (c) 2016-2017, Ayush Dewan and Wolfram Burgard
-// All rights reserved.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-// 
-// * Neither the name of the University of Freiburg nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// The MIT License (MIT)
+//
+// Copyright (c) 2016-2017 Ayush Dewan and Wolfram Burgard
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "ros/ros.h"
 #include "tf/transform_listener.h"
@@ -82,7 +76,6 @@ class tfPointCloud
     tf::Transform transform_map_base_link;
     ofstream time_write;
 
-    pcl::PCDWriter writer;
   public:
     tfPointCloud():counter(0)
     {
@@ -97,7 +90,7 @@ class tfPointCloud
       n_.getParam("StoreResults",store_results);
       pub = n_.advertise<sensor_msgs::PointCloud2>("/kinect/depth/static_final/",10);//Publising the filtered pointcloud
       dynamic_filter_msg_pub = n_.advertise<squirrel_dynamic_filter_msgs::DynamicFilterMsg>("/squirrel/dynamic_filter_msg",10);//Publising the filtered pointcloud
-      cloud_sub = n_.subscribe("/squirrel/cloud_msg", 500, &tfPointCloud::msgCallback, this);
+      cloud_sub = n_.subscribe("/squirrel/cloud_msg", 100, &tfPointCloud::msgCallback, this);
           ///subscribing to the message sent by l_frequency
       dynamic_srv.request.odometry.resize(7);
       dynamic_filter_msg.odometry.resize(7);
@@ -128,13 +121,15 @@ class tfPointCloud
        preprocessing(sensor_msg.cloud_msg,cloud_processed,ground_indices,non_ground_indices);//remove ground and far away points
 
        pcl::copyPointCloud(*cloud_processed,ground_indices,*ground);//ground
+
+       pcl::toROSMsg(*ground,dynamic_filter_msg.ground_cloud);
+
        pcl::copyPointCloud(*cloud_processed,non_ground_indices,*not_ground);//non-ground
        not_ground->width = not_ground->points.size();
        not_ground->height = 1;
-
-          /*   dynamic_cloud->width = dynamic_cloud->points.size();*/
-             //dynamic_cloud->height = 1;
-       ////calling the static Classify service
+       //cerr << not_ground->width << "," << ground->points.size() << endl;
+       //
+       ///call the service to get points which do not belong to the current map
 
        pcl::toROSMsg(*not_ground,classify_static_srv.request.cloud);
        classify_static_srv.request.odometry.resize(7);
@@ -146,6 +141,8 @@ class tfPointCloud
        classify_static_srv.request.odometry[5] = sensor_msg.odometry[5];
        classify_static_srv.request.odometry[6] = sensor_msg.odometry[6];
        measure_time start = SystemClock::now();
+//       fprintf(stderr,"calling ther service\n");
+
        if(not_ground->points.size() > 50)
        {
          if(classify_static_client.call(classify_static_srv))
@@ -155,6 +152,7 @@ class tfPointCloud
          }
        }
 
+  //     fprintf(stderr,"outside service\n");
        static_cloud->width = static_cloud->points.size();
        static_cloud->height = 1;
 
@@ -170,6 +168,7 @@ class tfPointCloud
        not_ground->width = not_ground->points.size();
        not_ground->height = 1;
 
+      pcl::PCDWriter writer;
 
 
        if(store_results)
@@ -202,6 +201,8 @@ class tfPointCloud
        double correspondence_time = time_diff.count();
        time_write << correspondence_time << endl;
 
+       //std::cerr << dynamic_cloud->points.size() << endl;
+///send msg for classifying points as static or dynamic
        pcl::toROSMsg(*dynamic_cloud,dynamic_filter_msg.cloud);
        dynamic_filter_msg.odometry[0] = sensor_msg.odometry[0];
        dynamic_filter_msg.odometry[1] = sensor_msg.odometry[1];
@@ -213,6 +214,11 @@ class tfPointCloud
        dynamic_filter_msg.frame_id = counter;
        if(dynamic_cloud->points.size() > 50)
          dynamic_filter_msg_pub.publish(dynamic_filter_msg);
+//       else
+ //       {
+
+
+   //     }
        counter+=1;
 
 
@@ -298,7 +304,7 @@ class tfPointCloud
       std::vector <bool> is_ground(cloud_processed->points.size(),false);
       std::vector <int> indices;
       std::vector <int> indices_ground;
-#pragma omp parallel for
+//#pragma omp parallel for
       for(size_t i = 0; i < cloud_processed->points.size();++i)
       {
         Eigen::Vector3f point_eigen = cloud_processed->points[i].getVector3fMap();

@@ -79,11 +79,16 @@ squirrel_navigation/maps/test_maps
 squirrel_pushing_planner/scripts/debug_pushing_plan.sh
 squirrel_pushing_planner/src/pushing_planner_test.cpp
 squirrel_pushing_planner/scripts
-squirrel_navigator
 squirrel_navigation/config/robot1/rviz/debug_mcl.rviz
+squirrel_dynamic_filter/CATKIN_IGNORE
 squirrel_dynamic_filter/results/
 squirrel_dynamic_filter/params/sensor_to_base_link.csv
 squirrel_dynamic_filter/dependencies/*
 squirrel_dynamic_filter/external/g2o/build/*
 squirrel_dynamic_filter/external/g2o/lib/*
 squirrel_dynamic_filter/external/g2o/bin/*
+squirrel_2d_localizer/CATKIN_IGNORE
+squirrel_2d_localizer/config/last_pose.yaml
+squirrel_3d_localizer/CATKIN_IGNORE
+squirrel_3d_mapping/CATKIN_IGNORE
+squirrel_navigation/CATKIN_IGNORE

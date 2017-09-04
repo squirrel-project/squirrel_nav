@@ -1,18 +1,10 @@
 <launch>
-  <arg name="rviz" default="false" />
   <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
-  <arg name="robot_id" default="alufr-robotino" />
-  <arg name="autolocalization" default="false"/>
-  <arg name="3d_mapping" default="true" />
+  <arg name="3d_mapping" default="false" />
   <arg name="use_last_pose" default="true"/>
   <arg name="twist_mux" default="true"/>
-  <arg name="plan_with_arm" default="false"/>
+  <arg name="rviz" value="false"/>
 
-  <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/robot_6dof_base_params.yaml" 
-            command="load" if="$(arg plan_with_arm)"/>
-  <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/robot_base_params.yaml" 
-            command="load" unless="$(arg plan_with_arm)"/>
-    
   <!-- Run Monte Carlo Localization (many parameters in squirrel_localizer.launch) -->
   <include file="$(find squirrel_2d_localizer)/launch/squirrel_2d_localizer.launch">
     <arg name="map_file" value="$(arg map_file)"/>
@@ -22,54 +14,33 @@
   <!-- Run pointcloud_filter_node: filter the PointCloud to speed up planning -->
   <include file="$(find squirrel_pointcloud_filter)/launch/pointcloud_filter.launch">
     <arg name="cloud_in" value="/kinect/depth/points"/>
-    <arg name="cloud_out" value="/rgbdscan"/>
+    <arg name="voxelized_cloud_out" value="/kinect_voxelized_points"/>
   </include>
 
-  <!-- Run autolocalization_node: localize the robot before starting navigation tasks -->
-  <node pkg="squirrel_navigation" type="autolocalization_node" name="autolocalization" output="screen" if="$(arg autolocalization)">
-    <param name="global_localization" value="false" />
-    <param name="max_angular_vel" value="0.8" />
-    <param name="max_linear_vel" value="0.1" />
-    <param name="tolerance_var_x" value="0.05" />
-    <param name="tolerance_var_y" value="0.05" />
-    <param name="tolerance_var_th" value="0.05" />
-  </node>
- 
-  <!--- Run move_base: execute the navigation tasks -->
-  <node pkg="squirrel_navigation" type="planner_update_handle_node" name="planner_update_handle" output="screen" respawn="true"/>
+  <!-- Run the footprint observer -->
+  <include file="$(find squirrel_footprint_observer)/launch/footprint_observer.launch">
+    <arg name="config_file" value="$(find squirrel_footprint_observer)/config/robotino_full.yaml"/>
+  </include>
 
+  <!-- Run move_base -->
+  <rosparam command="delete" ns="move_base"/> <!-- Fix move_base bug -->
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/kinect_handle_params.yaml" command="load" />
-    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/costmap_common_params.yaml" command="load" ns="global_costmap" />
-    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/costmap_common_params.yaml" command="load" ns="local_costmap" />
-    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/local_costmap_params.yaml" command="load" />
-    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/global_costmap_params.yaml" command="load" />
-    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/base_local_planner_params.yaml" command="load" />
-    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/base_global_planner_params.yaml" command="load" />
-    <rosparam file="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/move_base_params.yaml" command="load" />
-    <param name="GlobalPlanner/lattice/primitive_filename" value="$(find squirrel_navigation)/config/$(arg robot_id)/move_base/motion-primitives/motion_primitives_50mm.mprim"/>
+    <rosparam file="$(find squirrel_navigation)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find squirrel_navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find squirrel_navigation)/config/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find squirrel_navigation)/config/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find squirrel_navigation)/config/local_planner_params.yaml" command="load" />
+    <rosparam file="$(find squirrel_navigation)/config/global_planner_params.yaml" command="load" />
+    <rosparam file="$(find squirrel_navigation)/config/move_base_params.yaml" command="load" />
+    <param name="GlobalPlanner/ARAstar/motion_primitives_filename" value="$(find squirrel_navigation)/motion_primitives/motion_primitives.mprim"/>
     <remap from="/cmd_vel" to="/cmd_navigation" if="$(arg twist_mux)"/>
   </node>
   
   <!-- Run the octomap server and the 3d collision check -->
   <include file="$(find squirrel_3d_mapping)/launch/3d_mapping.launch" if="$(arg 3d_mapping)"/>
 
-  <!-- Run the footprint observer -->
-  <include file="$(find squirrel_footprint_observer)/launch/footprint_observer.launch" />
+  <!-- RViz -->
+  <node pkg="rviz" type="rviz" name="squirrel_navigation_rviz" 
+	args="-d $(find squirrel_navigation)/rviz/squirrel_navigation.rviz" if="$(arg rviz)"/>
 
-  <!-- Run the planner for pushing task -->
-  <include file="$(find squirrel_pushing_planner)/launch/pushing_planner.launch">
-    <arg name="tolerance" value="0.025" />
-    <arg name="start_goal_frame_id" value="/map" />
-    <arg name="plan_frame_id" value="/map" />
-    <arg name="object_frame_id" value="/map"/>
-    <arg name="costmap_topic" value="/move_base/global_costmap/costmap"/>
-    <arg name="costmap_updates_topic" value="/move_base/global_costmap/costmap"/>
-  </include>
-
-  <!-- Run rviz -->
-  <include file="$(find squirrel_navigation)/launch/rviz.launch" if="$(arg rviz)">
-    <arg name="mapping" value="false"/>
-    <arg name="robot" value="$(arg robot_id)"/>
-  </include>
 </launch>

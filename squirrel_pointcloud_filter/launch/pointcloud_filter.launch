@@ -1,12 +1,22 @@
 <launch>
   <arg name="cloud_in" default="/cloud_in"/>
-  <arg name="cloud_out" default="/cloud_out"/>
+  <arg name="voxelized_cloud_out" default="/voxelized_cloud_out"/>
+  <arg name="ground_cloud_out" default="/ground_cloud_out"/>
+  <arg name="nonground_cloud_out" default="/nonground_cloud_out"/>
+  <arg name="rviz" value="false"/>
 
+  <!-- The point cloud filter -->
   <node name="pointcloud_filter" pkg="squirrel_pointcloud_filter" type="squirrel_pointcloud_filter_node"
         output="screen" respawn="true">
-    <remap from="/cloud_in" to="$(arg cloud_in)"/>
-    <remap from="/cloud_out" to="$(arg cloud_out)"/>
+    <remap from="cloud_in" to="$(arg cloud_in)"/>
+    <remap from="voxelized_cloud_out" to="$(arg voxelized_cloud_out)"/>
+    <remap from="ground_cloud_out" to="$(arg ground_cloud_out)"/>
+    <remap from="nonground_cloud_out" to="$(arg nonground_cloud_out)"/>
     <rosparam file="$(find squirrel_pointcloud_filter)/config/asus_filter.yaml" command="load" />
   </node>
+
+  <!-- RViz -->
+  <node pkg="rviz" type="rviz" name="squirrel_pointcloud_filter_rviz" 
+	args="-d $(find squirrel_pointcloud_filter)/rviz/squirrel_pointcloud_filter.rviz" if="$(arg rviz)"/>
 
 </launch>

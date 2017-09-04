@@ -1,29 +1,25 @@
-// g2o - General Graph Optimization
-// Copyright (C) 2011 R. Kuemmerle, G. Grisetti, W. Burgard
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the following disclaimer.
-// * Redistributions in binary form must reproduce the above copyright
-//   notice, this list of conditions and the following disclaimer in the
-//   documentation and/or other materials provided with the distribution.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-// IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-// TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-// PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
-// TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// The MIT License (MIT)
+//
+// Copyright (c) 2016-2017 Ayush Dewan and Wolfram Burgard
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 #include "vertex_se3_append.h"
 #include "g2o/core/factory.h"
 //#ifdef G2O_HAVE_OPENGL
@@ -75,23 +71,23 @@ using namespace g2o::internal;
     for (int i=0; i<10; i++)
     {
       is >> input[i];
-    
+
        }
      for (int i=0; i<7; i++)
     {
       est[i]=input[i];
-    
+
        }
    for (int i=7; i<10; i++)
     {
       pos[i-7]=input[i];
-    
+
        }
-   
+
 
 
     setEstimate(fromVectorQT(est));
-    
+
     setPosition(pos);
 
 
@@ -125,7 +121,7 @@ using namespace g2o::internal;
       std::cerr << __PRETTY_FUNCTION__ << ": warning, no valid os specified" << std::endl;
       return 0;
     }
-    
+
     VertexSE3_Vector3D* v =  static_cast<VertexSE3_Vector3D*>(element);
     Vector6d est=toVectorMQT(v->estimate());
     for (int i=0; i<6; i++)
@@ -147,7 +143,7 @@ using namespace g2o::internal;
       glVertex3f(p[0].x(), p[0].y(), p[0].z());
       glVertex3f(p[i].x(), p[i].y(), p[i].z());
       glVertex3f(p[i+1].x(), p[i+1].y(), p[i+1].z());
-    }    
+    }
     glEnd();
   }
   VertexSE3DrawAction::VertexSE3DrawAction(): DrawAction(typeid(VertexSE3_Vector3D).name()){
@@ -166,7 +162,7 @@ using namespace g2o::internal;
     }
     return true;
   }
-  HyperGraphElementAction* VertexSE3DrawAction::operator()(HyperGraph::HyperGraphElement* element, 
+  HyperGraphElementAction* VertexSE3DrawAction::operator()(HyperGraph::HyperGraphElement* element,
                  HyperGraphElementAction::Parameters* params_){
     if (typeid(*element).name()!=_typeName)
       return 0;
@@ -175,7 +171,7 @@ using namespace g2o::internal;
 
     if (! _previousParams)
       return this;
-    
+
     if (_show && !_show->value())
       return this;
 

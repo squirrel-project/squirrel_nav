@@ -3,7 +3,7 @@ INCLUDE_DIRECTORIES(${CHOLMOD_INCLUDE_DIR})
 ADD_EXECUTABLE(static_target
   static_target.cpp
 )
-TARGET_LINK_LIBRARIES(static_target g2ocore solver_cholmod)
+TARGET_LINK_LIBRARIES(static_target g2o_core solver_cholmod)
 SET_TARGET_PROPERTIES(static_target PROPERTIES OUTPUT_NAME static_target${EXE_POSTFIX})
 
 ADD_EXECUTABLE(constant_velocity_target
@@ -12,6 +12,6 @@ ADD_EXECUTABLE(constant_velocity_target
 
 SET_TARGET_PROPERTIES(constant_velocity_target PROPERTIES OUTPUT_NAME constant_velocity_target${EXE_POSTFIX})
 
-TARGET_LINK_LIBRARIES(constant_velocity_target g2ocore solver_cholmod solver_pcg types_slam2d)
+TARGET_LINK_LIBRARIES(constant_velocity_target g2o_core solver_cholmod solver_pcg types_slam2d)
 
 

@@ -11,6 +11,10 @@
  * 3-clause BSD license along with mlpack.  If not, see
  * http://www.opensource.org/licenses/BSD-3-Clause for more information.
  */
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wreturn-type"
+
 #include "dtree.hpp"
 #include <stack>
 #include <vector>
@@ -974,3 +978,4 @@ void DTree<MatType, TagType>::Serialize(Archive& ar, const unsigned int /* versi
   ar & CreateNVP(right, "right");
 }
 
+#pragma GCC diagnostic pop

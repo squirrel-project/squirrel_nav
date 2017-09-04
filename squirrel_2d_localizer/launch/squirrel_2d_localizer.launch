@@ -1,6 +1,7 @@
 <launch>
   <arg name="use_last_pose" default="false"/>
   <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml"/>
+  <arg name="rviz" default="false"/>
 
   <!--- Run mapserver -->
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)"/>
@@ -8,8 +9,12 @@
   <!-- Run the localizer -->
   <node name="squirrel_2d_localizer" pkg="squirrel_2d_localizer" type="squirrel_2d_localizer_node" output="screen">
     <param name="use_last_pose" value="$(arg use_last_pose)"/>
-    <rosparam file="$(find squirrel_2d_localizer)/config/robotino_localization.yaml" command="load"/>
+    <rosparam file="$(find squirrel_2d_localizer)/config/default_localization.yaml" command="load"/>
     <rosparam file="$(find squirrel_2d_localizer)/config/last_pose.yaml" command="load" />
   </node>
-    
+
+  <!-- RViz -->
+  <node pkg="rviz" type="rviz" name="squirrel_2d_localizer_rviz" 
+	args="-d $(find squirrel_2d_localizer)/rviz/squirrel_2d_localizer.rviz" if="$(arg rviz)"/>
+
 </launch>

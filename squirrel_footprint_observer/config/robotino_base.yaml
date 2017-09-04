@@ -1,0 +1,2 @@
+base_frame_id: /base_link
+base_radius: 0.25

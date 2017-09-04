@@ -21,7 +21,7 @@ int main(int argc, char *argv[]){
   ros::init(argc, argv, "squirrel_footprint_observer");
 
   squirrel_footprint_observer::FootprintObserver fo;
-  fo.spin(10.);
+  fo.spin(10.0);
   
   return EXIT_SUCCESS;
 }

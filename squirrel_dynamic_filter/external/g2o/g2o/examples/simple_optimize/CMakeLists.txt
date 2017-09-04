@@ -6,6 +6,6 @@ ADD_EXECUTABLE(simple_optimize
 
 SET_TARGET_PROPERTIES(simple_optimize PROPERTIES OUTPUT_NAME simple_optimize${EXE_POSTFIX})
 
-TARGET_LINK_LIBRARIES(simple_optimize g2ocore solver_csparse)
+TARGET_LINK_LIBRARIES(simple_optimize g2o_core solver_csparse)
 TARGET_LINK_LIBRARIES(simple_optimize types_slam2d)
 TARGET_LINK_LIBRARIES(simple_optimize types_slam3d)

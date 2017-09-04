@@ -19,7 +19,7 @@ ADD_LIBRARY(types_slam3d_addons ${G2O_LIB_TYPE}
 
 SET_TARGET_PROPERTIES(types_slam3d_addons PROPERTIES OUTPUT_NAME ${LIB_PREFIX}types_slam3d_addons)
 
-TARGET_LINK_LIBRARIES(types_slam3d_addons types_slam3d g2ocore)
+TARGET_LINK_LIBRARIES(types_slam3d_addons types_slam3d g2o_core)
 IF(G2O_HAVE_OPENGL)
   TARGET_LINK_LIBRARIES(types_slam3d_addons ${OPENGL_gl_LIBRARY} )
 ENDIF()

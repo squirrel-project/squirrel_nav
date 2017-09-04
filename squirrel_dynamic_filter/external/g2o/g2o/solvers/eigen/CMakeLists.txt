@@ -3,7 +3,7 @@ ADD_LIBRARY(solver_eigen ${G2O_LIB_TYPE}
   linear_solver_eigen.h
 )
 SET_TARGET_PROPERTIES(solver_eigen PROPERTIES OUTPUT_NAME ${LIB_PREFIX}solver_eigen)
-TARGET_LINK_LIBRARIES(solver_eigen g2ocore)
+TARGET_LINK_LIBRARIES(solver_eigen g2o_core)
 
 INSTALL(TARGETS solver_eigen
   RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin

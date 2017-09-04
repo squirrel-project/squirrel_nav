@@ -9,7 +9,7 @@ ADD_LIBRARY(types_sclam2d ${G2O_LIB_TYPE}
 
 SET_TARGET_PROPERTIES(types_sclam2d PROPERTIES OUTPUT_NAME ${LIB_PREFIX}types_sclam2d)
 
-TARGET_LINK_LIBRARIES(types_sclam2d types_slam2d g2ocore)
+TARGET_LINK_LIBRARIES(types_sclam2d types_slam2d g2o_core)
 IF(G2O_HAVE_OPENGL)
   TARGET_LINK_LIBRARIES(types_sclam2d ${OPENGL_gl_LIBRARY})
 ENDIF()

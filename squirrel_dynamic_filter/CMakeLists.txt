@@ -7,6 +7,8 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake-mod
 #SET(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules)
 #SET(libg2o_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fext-numeric-literals")
+
 set(squirrel_dynamic_filter_DEPENDENCIES
   roscpp
   rospy
@@ -18,20 +20,15 @@ set(squirrel_dynamic_filter_DEPENDENCIES
   octomap_ros
   octomap_msgs
 )
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/mlpack/src/)
-
-
-MESSAGE(status "aaadadada")
-
-MESSAGE(status ${CMAKE_BINARY_DIR})
-
-#include_directories(${CMAKE_BINARY_DIR}/include/mlpack/)
 add_subdirectory(external/mlpack)
 set(mlpack_lib mlpack)
 
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/g2o/)
 add_subdirectory(external/g2o external/g2o/build)
-set(G2O_CORE g2ocore stuff types_slam2d types_slam3d solver_csparse csparse_extension)
+set(G2O_CORE g2o_core stuff types_slam2d types_slam3d solver_csparse csparse_extension)
 #set(PCL_DIR "/export/home/dewan/software/pcl/build/")
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -65,7 +62,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 find_package(CSparse REQUIRED)
 include_directories(${CSPARSE_INCLUDE_DIR})
-set(CMAKE_CXX_FLAGS " -pthread -Wno-deprecated" )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-deprecated" )
 	
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -182,20 +179,16 @@ add_dependencies(vertex_se3_vector3D ${G2O_CORE})
 add_executable(dynamic_filter_node src/dynamic_filter_node.cpp
                src/EstimateFeature.cpp src/EstimateCorrespondence
               src/EstimateMotion.cpp src/DynamicScore.cpp)
-target_link_libraries(dynamic_filter_node ${catkin_LIBRARIES} ${Boost_LIBRARIES}
-                      ${PCL_LIBRARIES} vertex_se3_vector3D ${G2O_CORE_LIBRARY}
-                      ${G2O_TYPES_SLAM3D} ${PCL_LIBRARIES} ${G2O_STUFF_LIBRARY}
-                      ${G2O_SOLVER_CSPARSE} ${CSPARSE_LIBRARY}
-                      ${G2O_SOLVER_CSPARSE_EXTENSION} ${ARMADILLO_LIBRARIES}
-                      ${G2O_CORE} mlpack)
-add_dependencies(dynamic_filter_node
-                 squirrel_dynamic_filter_msgs_generate_messages_cpp ${G2O_CORE}
-                 ${mlpack_lib})
+target_link_libraries(dynamic_filter_node ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} vertex_se3_vector3D ${G2O_CORE_LIBRARY} ${G2O_TYPES_SLAM3D} ${PCL_LIBRARIES} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION} ${mlpack_lib} ${ARMADILLO_LIBRARIES} ${G2O_CORE})
+add_dependencies(dynamic_filter_node squirrel_dynamic_filter_msgs_generate_messages_cpp ${G2O_CORE})
 
 add_executable(preprocessing src/preprocessing.cpp)
 target_link_libraries(preprocessing ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY} ${G2O_CORE}) 
 add_dependencies(preprocessing squirrel_dynamic_filter_msgs_generate_messages_cpp ${G2O_CORE})
-
+add_executable(l_frequency_ground src/l_frequency_ground.cpp)
+target_link_libraries(l_frequency_ground ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} ${G2O_CORE})
+add_dependencies(l_frequency_ground squirrel_dynamic_filter_msgs_generate_messages_cpp)
+#
 add_executable(l_frequency src/l_frequency.cpp)
 target_link_libraries(l_frequency ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} ${G2O_CORE})
 add_dependencies(l_frequency squirrel_dynamic_filter_msgs_generate_messages_cpp)
@@ -209,9 +202,8 @@ target_link_libraries(remove_dynamic ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PC
 add_dependencies(remove_dynamic ${G2O_CORE})
 
 add_executable(temporal_inference src/TemporalInference.cpp)
-target_link_libraries(temporal_inference ${catkin_LIBRARIES} ${Boost_LIBRARIES}
-                      ${PCL_LIBRARIES} mlpack "/usr/lib/libarmadillo.so" vertex_se3_vector3D ${G2O_CORE})
-add_dependencies(temporal_inference ${G2O_CORE} ${mlpack_lib})
+target_link_libraries(temporal_inference ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} ${mlpack_lib} "/usr/lib/libarmadillo.so" vertex_se3_vector3D ${G2O_CORE})
+add_dependencies(temporal_inference ${G2O_CORE})
 
 add_executable(sensor_to_base_link src/sensor_to_base_link.cpp)
 target_link_libraries(sensor_to_base_link ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} ${G2O_CORE})

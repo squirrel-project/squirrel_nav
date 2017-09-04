@@ -19,13 +19,16 @@ The package provide a single node
 
 See `robotino_footprint.yaml` as example.
 
-### Services.
-- `~/getFootprint`: Retrieve the current footprint of the robot
+### Advertised Services
+Uses messages provieded by [squirrel_footprint_observer_msgs](https://github.com/squirrel-project/squirrel_common/tree/indigo_dev/squirrel_footprint_observer_msgs)
+- `~/getFootprint`: Retrieve the current footprint of the robot.
+- `~/dumpFootprint`: Print footprint on file or stdout/stderr as well
+  as on a file.
 
-### Published topics.
+### Advertised Topics
 - `~/footprint`(*geometry_msgs/PolygonStamped*): The current footprint.
 
-### Subscribed topics.
+### Subscriptions
 - `/tf`: the transformations from `base_frame_id` to the frames
   specified in `joint_chain`.
 - `~/enable` (*std_msgs/Bool*): Toggle the constant update of the

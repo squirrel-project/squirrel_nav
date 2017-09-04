@@ -4,7 +4,7 @@ ADD_LIBRARY(solver_structure_only ${G2O_LIB_TYPE}
 )
 
 SET_TARGET_PROPERTIES(solver_structure_only PROPERTIES OUTPUT_NAME ${LIB_PREFIX}solver_structure_only)
-TARGET_LINK_LIBRARIES(solver_structure_only g2ocore)
+TARGET_LINK_LIBRARIES(solver_structure_only g2o_core)
 
 INSTALL(TARGETS solver_structure_only
   RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin

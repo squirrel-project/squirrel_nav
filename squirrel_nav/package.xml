@@ -1,11 +1,19 @@
 <?xml version="1.0"?>
 <package>
+
   <name>squirrel_nav</name>
-  <version>0.0.1</version>
-  <description>Everything related navigation</description>
-  <author email="boniardi@cs.uni-freiburg.de">Federico Bonairdi</author>
+
+  <version>2.0.0</version>
+
+  <description>
+    Everything related to navigation.
+  </description>
+
   <maintainer email="nhg@ipa.fhg.de">Nadia Hammoudeh Garcia</maintainer>
-  <license>BSD</license>
+
+  <license>MIT</license>
+
+  <author email="boniardi@cs.uni-freiburg.de">Federico Bonairdi</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 
@@ -13,13 +21,12 @@
   <run_depend>squirrel_3d_localizer</run_depend>
   <run_depend>squirrel_3d_mapping</run_depend>
   <run_depend>squirrel_dynamic_filter</run_depend>
+  <run_depend>squirrel_footprint_observer</run_depend>
   <run_depend>squirrel_navigation</run_depend>
   <run_depend>squirrel_pointcloud_filter</run_depend>
-  <run_depend>squirrel_pushing_planner</run_depend>
-  <!-- CATKIN_IGNORE-->
-  <!--run_depend>squirrel_rgbd_mapping</run_depend-->
 
   <export>
     <metapackage/>
   </export>
+
 </package>

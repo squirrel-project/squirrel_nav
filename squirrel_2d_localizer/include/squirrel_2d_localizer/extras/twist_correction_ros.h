@@ -1,39 +1,37 @@
-// Copyright (c) 2016-2017, Federico Boniardi and Wolfram Burgard
-// All rights reserved.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-// 
-// * Neither the name of the University of Freiburg nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// The MIT License (MIT)
+//
+// Copyright (c) 2016-2017 Federico Boniardi and Wolfram Burgard
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #ifndef SQUIRREL_2D_LOCALIZER_TWIST_CORRECTION_ROS_H_
 #define SQUIRREL_2D_LOCALIZER_TWIST_CORRECTION_ROS_H_
 
+#include "squirrel_2d_localizer/TwistCorrectionConfig.h"
 #include "squirrel_2d_localizer/extras/twist_correction.h"
 
-#include <ros/ros.h>
+#include <ros/node_handle.h>
+#include <ros/time.h>
 
 #include <nav_msgs/Odometry.h>
+
+#include <dynamic_reconfigure/server.h>
 
 #include <message_filters/cache.h>
 #include <message_filters/subscriber.h>
@@ -44,28 +42,28 @@ namespace squirrel_2d_localizer {
 
 class TwistCorrectionROS {
  public:
-  typedef std::unique_ptr<TwistCorrectionROS> Ptr;
-  typedef std::unique_ptr<TwistCorrectionROS const> ConstPtr;
-
- public:
   TwistCorrectionROS();
   virtual ~TwistCorrectionROS() {}
-
+  
+  // Comput the correction.
   Pose2d correction(const ros::Time& time) const;
 
  private:
-  inline double linearInterpolation(
-      double x0, double x1, double dt, double t) const {
-    return (1 - t / dt) * x0 + (t / dt) * x1;
-  }
+  void reconfigureCallback(TwistCorrectionConfig& config, uint32_t level);
+
+  // Interpolate between to real number.
+  double linearInterpolation(double x0, double x1, double dt, double t) const;
 
  private:
-  TwistCorrection::Ptr twist_correction_;
-
+  std::unique_ptr<TwistCorrection> twist_correction_;
+  
   ros::NodeHandle nh_;
 
   message_filters::Subscriber<nav_msgs::Odometry> odom_sub_;
   message_filters::Cache<nav_msgs::Odometry> cache_;
+
+  bool enabled_;
+  std::unique_ptr<dynamic_reconfigure::Server<TwistCorrectionConfig>> dsrv_;
 };
 
 }  // namespace squirrel_2d_localizer

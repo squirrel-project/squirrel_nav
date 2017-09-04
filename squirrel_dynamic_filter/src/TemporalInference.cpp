@@ -1,30 +1,24 @@
-// Copyright (c) 2016-2017, Ayush Dewan and Wolfram Burgard
-// All rights reserved.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-// 
-// * Neither the name of the University of Freiburg nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// The MIT License (MIT)
+//
+// Copyright (c) 2016-2017 Ayush Dewan and Wolfram Burgard
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "datatypes_squirrel.h"
 #include <pcl/visualization/pcl_visualizer.h>
@@ -39,6 +33,8 @@
 using namespace std;
 using namespace Eigen;
 using namespace g2o;
+/// Node which implements the Bayes filter for classifying points as
+//static or dynamic
 
 bool close_viewer;
 void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event,
@@ -97,7 +93,7 @@ int main(int argc,char **argv)
     Vector7d trans;
 				for(int i = 0 ; i<7;i++)
 				{
-				
+
 					std::size_t found = line.find(",");
 					if(i==0)
 						trans[0] = atof(line.substr(0,found).c_str());
@@ -116,10 +112,10 @@ int main(int argc,char **argv)
 					string line_new=line.substr(found+1);
 					line=line_new;
 
-     
 
 
-					
+
+
 				}
 
 				motion_trans.push_back(trans);
@@ -127,8 +123,8 @@ int main(int argc,char **argv)
    }
  }
 
- myfile.close();	
- 
+ myfile.close();
+
  Isometry3D frame_1 = ::g2o::internal::fromVectorQT(motion_trans[start_frame]);
  Isometry3D frame_2 = ::g2o::internal::fromVectorQT(motion_trans[start_frame + 1]);
  Isometry3D odometry = (frame_2.inverse() * frame_1);////odometry from the robot
@@ -149,8 +145,8 @@ int main(int argc,char **argv)
  reader.read(ss.str(),*cloud);
 
  prior_dynamic.assign(cloud->points.size(),0.2);
- 
- 
+
+
 
 
  mlpack::distribution::GaussianDistribution dist(mean,covariance);
@@ -178,7 +174,7 @@ int main(int argc,char **argv)
    Vector7d trans;
    for(int i = 0 ; i<7;i++)
    {
-    
+
     std::size_t found = line.find(",");
     if(i==0)
      trans[0] = atof(line.substr(0,found).c_str());
@@ -197,7 +193,7 @@ int main(int argc,char **argv)
     string line_new=line.substr(found+1);
     line=line_new;
    }
-  
+
    Isometry3D estimated_motion = ::g2o::internal::fromVectorQT(trans);
 
    Vector4f point = cloud->points[counter].getVector4fMap();
@@ -213,10 +209,10 @@ int main(int argc,char **argv)
 
    cloud_trans->points.push_back(PCLpoint);
 
-   
+
 
    Isometry3D motion_diff = estimated_motion.inverse() * odometry;
-   
+
    Vector3d trans_motion(motion_diff(0,3),motion_diff(1,3),motion_diff(2,3));
    observation[0] = motion_diff(0,3);
    observation[1] = motion_diff(1,3);
@@ -225,12 +221,11 @@ int main(int argc,char **argv)
    float posterior_d = (1.0 - dist.Probability(observation)/max)  * ((p_d_d * prior_dynamic[counter]) + (p_d_s * (1.0 - prior_dynamic[counter])));
    float posterior_s = (dist.Probability(observation)/max) * ((p_s_s * (1.0 - prior_dynamic[counter])) + (p_s_d * prior_dynamic[counter]));
 
-   float probability = posterior_d/(posterior_d + posterior_s); 
+   float probability = posterior_d/(posterior_d + posterior_s);
    current_belief.push_back(probability);
 
 
 
-  
 
 
 
@@ -239,7 +234,8 @@ int main(int argc,char **argv)
 
 
 
-   
+
+
 
 //   cout << trans_motion.lpNorm<2>() << endl;
 //   cout << dist.Probability(observation)/max << "," << probability << endl;
@@ -258,7 +254,7 @@ int main(int argc,char **argv)
  }
  for(size_t i = start_frame+1; i < end_frame; ++i)
  {
-  cout << i << endl; 
+  cout << i << endl;
   frame_1 = ::g2o::internal::fromVectorQT(motion_trans[i]);
   frame_2 = ::g2o::internal::fromVectorQT(motion_trans[i + 1]);
   odometry = (frame_2.inverse() * frame_1);////odometry from the robot
@@ -269,7 +265,7 @@ int main(int argc,char **argv)
   reader.read(ss.str(),*cloud);
 
   IntensityCloud::Ptr cloud_intensity(new IntensityCloud);
-  
+
   reader.read(ss.str(),*cloud_intensity);
   ss.str("");
 
@@ -282,7 +278,7 @@ int main(int argc,char **argv)
   est.setInputTarget (cloud_trans);
   est.determineCorrespondences (all_correspondences);
 
-  
+
   cloud_trans->points.clear();
   counter = 0;
   ss.str("");
@@ -298,7 +294,7 @@ int main(int argc,char **argv)
     Vector7d trans;
     for(int i = 0 ; i<7;i++)
     {
-     
+
      std::size_t found = line.find(",");
      if(i==0)
       trans[0] = atof(line.substr(0,found).c_str());
@@ -317,7 +313,7 @@ int main(int argc,char **argv)
      string line_new=line.substr(found+1);
      line=line_new;
     }
-   
+
     Isometry3D estimated_motion = ::g2o::internal::fromVectorQT(trans);
 
     Vector4f point = cloud->points[counter].getVector4fMap();
@@ -333,7 +329,7 @@ int main(int argc,char **argv)
 
     cloud_trans->points.push_back(PCLpoint);
     Isometry3D motion_diff = estimated_motion.inverse() * odometry;
-    
+
     Vector3d trans_motion(motion_diff(0,3),motion_diff(1,3),motion_diff(2,3));
     observation[0] = motion_diff(0,3);
     observation[1] = motion_diff(1,3);
@@ -354,7 +350,7 @@ int main(int argc,char **argv)
     float posterior_s = (dist.Probability(observation)/max) * ((p_s_s * (1.0 - prior)) + (p_s_d * prior));
 
 
-    float probability = posterior_d/(posterior_d + posterior_s); 
+    float probability = posterior_d/(posterior_d + posterior_s);
     current_belief.push_back(probability);
     //current_belief.push_back(posterior_d);
     if(counter > cloud_intensity->points.size())
@@ -380,7 +376,7 @@ int main(int argc,char **argv)
 
    myfile.close();
   }
-  
+
   for(auto &point:ground.points)
   {
    point.intensity = 0.0;
@@ -424,14 +420,14 @@ int main(int argc,char **argv)
  viewer->setCameraParameters(cam,1);
  std::clock_t start;
  double duration;
- start = std::clock(); 
+ start = std::clock();
 
  close_viewer = false;
  ss.str("");
 // ss << folder << "p_intensity_" << i << ".png";
 // viewer->saveScreenshot(ss.str());
-  
-  while (( std::clock() - start ) / (double)CLOCKS_PER_SEC <0.001) 
+
+  while (( std::clock() - start ) / (double)CLOCKS_PER_SEC <0.001)
  // while (!viewer->wasStopped ())
 //  while(!close_viewer)
   {
@@ -443,7 +439,7 @@ int main(int argc,char **argv)
   viewer->removeAllShapes ();
 
 
- } 
+ }
 
 
 

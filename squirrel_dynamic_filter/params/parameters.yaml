@@ -13,7 +13,7 @@ KeyPointRadius : 0.05
 MaxMotion : 0.2
 StaticFrontThreshold : 3.0
 Verbose : true
-StoreResults : true
+StoreResults : false
 #OutputFolder : "/home/dewan/squirrel/catkin_ws/src/squirrel_nav/squirrel_dynamic_filter/results/test/"
 #InputFolder : "/home/dewan/squirrel/catkin_ws/src/squirrel_nav/squirrel_dynamic_filter/"
 #InputFolder : "/home/alufr/catkin_ws/src/squirrel_nav/squirrel_dynamic_filter/"
