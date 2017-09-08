@@ -65,15 +65,15 @@ include_directories(include external)
 
 ## Generate reconfig files.
 generate_dynamic_reconfigure_options(
-  cfg/utils/alpha_beta_filter.cfg 
-  cfg/safety/scan_observer.cfg 
-  cfg/safety/arm_skin_observer.cfg 
-  cfg/controller_pid.cfg 
-  cfg/footprint_planner.cfg 
-  cfg/global_planner.cfg  
-  cfg/local_planner.cfg 
-  cfg/linear_motion_planner.cfg 
-  cfg/navigation_layer.cfg)
+  cfg/utils/AlphaBetaFilter.cfg
+  cfg/safety/ScanObserver.cfg
+  cfg/safety/ArmSkinObserver.cfg
+  cfg/ControllerPID.cfg 
+  cfg/FootprintPlanner.cfg 
+  cfg/GlobalPlanner.cfg  
+  cfg/LocalPlanner.cfg 
+  cfg/LinearMotionPlanner.cfg 
+  cfg/NavigationLayer.cfg)
 
 ## Built libraries.
 set(${PROJECT_NAME}_LIBRARIES 
