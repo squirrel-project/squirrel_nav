@@ -29,7 +29,7 @@ find_package(catkin REQUIRED COMPONENTS ${${PROJECT_NAME}_DEPENDENCIES})
 include_directories(${catkin_INCLUDE_DIRS})
 
 ## Generate reconfigure files.
-generate_dynamic_reconfigure_options(cfg/point_cloud_filter.cfg)
+generate_dynamic_reconfigure_options(cfg/pointcloud_filter.cfg)
 
 ## Catkin package
 catkin_package(
