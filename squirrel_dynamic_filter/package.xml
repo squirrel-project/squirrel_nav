@@ -16,7 +16,7 @@
   <license>BSD</license>
 
 
-    <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin</buildtool_depend>
   <build_depend>armadillo</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
@@ -40,6 +40,13 @@
   <build_depend>tf</build_depend>
   <run_depend>suitesparse</run_depend>
   <build_depend>suitesparse</build_depend>
+  <run_depend>eigen</run_depend>
+  <build_depend>eigen</build_depend>
+  <run_depend>libqglviewer-qt4-dev</run_depend>
+  <build_depend>libqglviewer-qt4-dev</build_depend>
+  <run_depend>qt5-qmake</run_depend>
+  <build_depend>qt5-qmake</build_depend>
+
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
