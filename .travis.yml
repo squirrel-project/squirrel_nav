@@ -8,6 +8,7 @@ env:
     - ROS_DISTRO="indigo"
     - UPSTREAM_WORKSPACE=file
     - CATKIN_CONFIG="--no-install"
+    - WRITABLE_SOURCE=true
 install:
   - git clone --depth=1 https://github.com/ros-industrial/industrial_ci.git .ci_config
 script:
