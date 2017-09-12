@@ -29,7 +29,7 @@ find_package(catkin REQUIRED COMPONENTS ${${PROJECT_NAME}_DEPENDENCIES})
 include_directories(${catkin_INCLUDE_DIRS})
 
 ## Generate reconfigure files.
-generate_dynamic_reconfigure_options(cfg/point_cloud_filter.cfg)
+generate_dynamic_reconfigure_options(cfg/PointCloudFilter.cfg)
 
 ## Catkin package
 catkin_package(
@@ -60,11 +60,7 @@ install(
   PATTERN ".git" EXCLUDE)
 
 install(
-  DIRECTORY rviz
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rviz)
-
-install(
-  FILES config/asus_filter.yaml
+  DIRECTORY rviz cfg config launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 ## Testing.

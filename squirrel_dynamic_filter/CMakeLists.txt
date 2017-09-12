@@ -29,6 +29,16 @@ set(mlpack_lib mlpack)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/g2o/)
 add_subdirectory(external/g2o external/g2o/build)
 set(G2O_CORE g2o_core stuff types_slam2d types_slam3d solver_csparse csparse_extension)
+
+add_custom_target(build_g2o
+	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/external/g2o/lib/libg2o_opengl_helper.so ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_LIB_DESTINATION}
+	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/external/g2o/lib/libg2o_csparse_extension.so ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_LIB_DESTINATION}
+	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/external/g2o/lib/libg2o_ext_freeglut_minimal.so ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_LIB_DESTINATION}
+	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/external/g2o/lib/libg2o_parser.so ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_LIB_DESTINATION}
+	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/external/g2o/lib/libg2o_stuff.so ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_LIB_DESTINATION}
+	COMMENT "Copying ${PROJECT_SOURCE_DIR}/external/g2o/lib to ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_LIB_DESTINATION}"
+)
+
 #set(PCL_DIR "/export/home/dewan/software/pcl/build/")
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -169,7 +179,7 @@ include_directories(
 
 add_library(vertex_se3_vector3D src/vertex_se3_vector3D.cpp src/edge_unary.cpp src/edge.cpp)
 target_link_libraries (vertex_se3_vector3D ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY})
-add_dependencies(vertex_se3_vector3D ${G2O_CORE})
+add_dependencies(vertex_se3_vector3D ${G2O_CORE} build_g2o)
 #add_executable(sensor_msgs_to_pcl_tf src/sensor_msgs_to_pcl_tf.cpp)
 #target_link_libraries(sensor_msgs_to_pcl_tf ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
