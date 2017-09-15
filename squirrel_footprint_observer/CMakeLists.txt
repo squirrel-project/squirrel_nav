@@ -44,7 +44,7 @@ find_package(YamlCpp REQUIRED)
 include_directories(${YAMLCPP_INCLUDE_DIR})
 
 ## Genereate reconfig files.
-generate_dynamic_reconfigure_options(cfg/footprint_observer.cfg)
+generate_dynamic_reconfigure_options(cfg/FootprintObserver.cfg)
 
 ## Catkin package.
 catkin_package(

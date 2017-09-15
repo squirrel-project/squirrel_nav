@@ -48,10 +48,10 @@ include_directories(${catkin_INCLUDE_DIRS})
 
 ## Genereate reconfig files.
 generate_dynamic_reconfigure_options(
-  cfg/laser_model.cfg
-  cfg/monte_carlo_localization.cfg
-  cfg/motion_model.cfg
-  cfg/twist_correction.cfg)
+  cfg/LaserModel.cfg
+  cfg/MonteCarloLocalization.cfg
+  cfg/MotionModel.cfg
+  cfg/TwistCorrection.cfg)
 
 ## Catkin package.
 catkin_package(
