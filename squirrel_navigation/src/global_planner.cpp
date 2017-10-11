@@ -93,8 +93,7 @@ bool GlobalPlanner::makePlan(
           "squirrel_navigation/GlobalPlanner: Planning with constant heading "
           "is possible only for circular footprints. Disable "
           "'plan_with_footprint' parameters.");
-  } else {
-    plan_found        = dijkstra_planner_->makePlan(start, goal, waypoints);
+  } else if (plan_found = dijkstra_planner_->makePlan(start, goal, waypoints)) {
     waypoints.front() = start;
     for (int i = 1; i < (int)waypoints.size() - 1; ++i) {
       if (params_.plan_with_constant_heading) {
