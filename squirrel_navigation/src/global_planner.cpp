@@ -116,10 +116,12 @@ bool GlobalPlanner::makePlan(
       ROS_INFO_STREAM(
           "squirrel_navigation/GlobalPlanner: Found a collision free path ("
           << waypoints.size() << " waypoints).");
-    else
+    else {
+      waypoints.clear();
       ROS_WARN_STREAM(
           "squirrel_navigation/GlobalPlanner: Could not find a collision free "
           "path.");
+    }
   }
   // Publish topics.
   const ros::Time& now = ros::Time::now();
