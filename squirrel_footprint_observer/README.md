@@ -34,3 +34,7 @@ Uses messages provieded by [squirrel_footprint_observer_msgs](https://github.com
 - `~/enable` (*std_msgs/Bool*): Toggle the constant update of the
   footprint observer. Disable `~/footprint` to be published while the
   service `~/getFootprint` remains active.
+
+## Non-ROS Dependencies
+The package depends on [yaml-cpp](https://github.com/jbeder/yaml-cpp)
+and [CGAL](https://www.cgal.org/).

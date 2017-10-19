@@ -59,3 +59,8 @@ Uses messages provided by [squirrel_2d_localization_msgs](https://github.com/squ
   as from `robot_frame` to the sensor link.
 - `/initialpose` (*geometry_msgs/PoseWithCovarianceStamped*) initial
   guess.
+
+## Non-ROS Dependencies
+The package depends on
+[Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) version
+3.3 or superior.
