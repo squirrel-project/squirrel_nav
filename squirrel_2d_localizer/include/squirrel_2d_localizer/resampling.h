@@ -40,10 +40,10 @@ namespace resampling {
 void importanceSampling(std::vector<Particle>* particles);
 
 // Uniform upsampling of particles.
-void uniformUpsample(int nparticles_add, std::vector<Particle>* particles);
+bool uniformUpsample(int nparticles_add, std::vector<Particle>* particles);
 
 // Uniform dawnsampling of particles.
-void uniformDownsample(int nparticles_remove, std::vector<Particle>* particles);
+bool uniformDownsample(int nparticles_remove, std::vector<Particle>* particles);
 
 namespace __internal {
 
