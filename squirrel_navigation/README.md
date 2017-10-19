@@ -151,3 +151,8 @@ Uses messages provided by [squirrel_navigation_msgs](https://github.com/squirrel
 ## Know Issues
 On shutdown, `ClassLoader` throws an error. It should only happens on
 exit and therefore not influence the navigation stack. 
+
+## Non-ROS Dependencies
+The package depends on
+[Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) version
+3.3 or superior.
