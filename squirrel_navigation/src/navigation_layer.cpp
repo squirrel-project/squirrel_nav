@@ -32,6 +32,10 @@
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "squirrel_navigation/navigation_layer.h"
+#include "squirrel_navigation/utils/math_utils.h"
+#include "squirrel_navigation/utils/footprint_utils.h"
+
+#include <costmap_2d/footprint.h>
 
 #include <pluginlib/class_list_macros.h>
 
@@ -55,7 +59,9 @@ void NavigationLayer::onInitialize() {
   // Align size of kinect and laser layer.
   static_layer_.matchSize<ObstacleLayer>(&laser_layer_);
   static_layer_.matchSize<VoxelLayer>(&kinect_layer_);
-  // Initialize services.
+  // Initialize subscribers and services.
+  footprint_sub_ = pnh.subscribe(
+      params_.footprint_topic, 1, &NavigationLayer::footprintCallback, this);
   clear_costmap_srv_ = pnh.advertiseService(
       "clearCostmapRegion", &NavigationLayer::clearCostmapRegionCallback, this);
   obstacles_map_srv_ = pnh.advertiseService(
@@ -130,8 +136,42 @@ void NavigationLayer::reset() {
 
 void NavigationLayer::reconfigureCallback(
     NavigationLayerConfig& config, uint32_t level) {
-  kinect_layer_.enabled() = config.use_kinect;
-  laser_layer_.enabled()  = config.use_laser_scan;
+  kinect_layer_.enabled()  = config.use_kinect;
+  laser_layer_.enabled()   = config.use_laser_scan;
+  params_.footprint_topic = config.footprint_topic;
+}
+
+void NavigationLayer::footprintCallback(
+    const geometry_msgs::Polygon::ConstPtr& footprint) {
+  const auto& footprint_spec =
+      footprint::closedPolygon(costmap_2d::toPointVector(*footprint));
+  const size_t footprint_spec_size = footprint_spec.size();
+  // Get currents footprints.
+  const auto& footprint_curr_ll = laser_layer_.getFootprint();
+  const auto& footprint_curr_kl = kinect_layer_.getFootprint();
+  // Check the new footprint for the laser layer.
+  bool new_footprint_ll = footprint_spec_size != footprint_curr_ll.size();
+  if (!new_footprint_ll)
+    for (size_t i = 0; i < footprint_spec_size; ++i)
+      if (math::linearDistance2D(footprint_spec[i], footprint_curr_ll[i]) >=
+          1e-3) {
+        new_footprint_ll = true;
+        break;
+      }
+  // Check the new footprint for the kinect layer.
+  bool new_footprint_kl = footprint_spec.size() != footprint_curr_kl.size();
+  if (!new_footprint_kl)
+    for (size_t i = 0; i < footprint_spec_size; ++i)
+      if (math::linearDistance2D(footprint_spec[i], footprint_curr_kl[i]) >=
+          1e-3) {
+        new_footprint_kl = true;
+        break;
+      }
+  // Update the footprints if needed.
+  if (new_footprint_ll)
+    laser_layer_.setFootprint(footprint_spec);
+  if (new_footprint_kl)
+    kinect_layer_.setFootprint(footprint_spec);
 }
 
 bool NavigationLayer::clearCostmapRegionCallback(
@@ -277,8 +317,9 @@ void NavigationLayer::mergeCostmaps(
 
 NavigationLayer::Params NavigationLayer::Params::defaultParams() {
   Params params;
-  params.use_kinect     = true;
-  params.use_laser_scan = true;
+  params.use_kinect      = true;
+  params.use_laser_scan  = true;
+  params.footprint_topic = "/squirrel_footprint_observer/footprint";
   return params;
 }
 
