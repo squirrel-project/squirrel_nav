@@ -235,7 +235,7 @@ size_t NavigationLayer::getObstaclesMap(
     for (size_t y = 0; y < size_y; ++y) {
       const unsigned int index       = master_costmap->getIndex(x, y);
       obstacles_indicator->at(index) = false;
-      if (master_costmap->getCost(x, y) == costmap_2d::FREE_SPACE) {
+      if (master_costmap->getCost(x, y) == costmap_2d::LETHAL_OBSTACLE) {
         obstacles_indicator->at(index) = true;
         master_costmap->mapToWorld(x, y, px, py);
         obstacles_positions->emplace_back(point);
