@@ -33,6 +33,7 @@
 
 #include "squirrel_navigation/navigation_layer.h"
 #include "squirrel_navigation/utils/footprint_utils.h"
+#include "squirrel_navigation/utils/math_utils.h"
 #include "squirrel_navigation/utils/shape_primitives.h"
 
 #include <visualization_msgs/MarkerArray.h>
@@ -220,7 +221,7 @@ bool NavigationLayer::getPathClearanceCallback(
   // Get the proximity informations.
   res.clearance = std::numeric_limits<double>::max();
   for (int i = 0; i < nwaypoints; ++i) {
-    const auto& waypoint = req.plan.poses[i];
+    const auto& waypoint = req.plan.poses[i].pose.position;
     // Get the clearance of the waypoint.
     res.proximities[i] = std::numeric_limits<double>::max();
     for (int o = 0; o < obstacles_positions.size(); ++o) {
