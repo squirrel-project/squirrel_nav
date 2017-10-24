@@ -10,6 +10,7 @@ plugins:
 ObstaclesLayer:
   use_kinect: true
   use_laser_scan: true
+  footprint_topic: /squirrel_footprint_observer/footprint
 
   LaserLayer: 
     enabled: true
