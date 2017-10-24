@@ -63,7 +63,7 @@ void NavigationLayer::onInitialize() {
   footprint_sub_ = pnh.subscribe(
       params_.footprint_topic, 1, &NavigationLayer::footprintCallback, this);
   proximities_pub_ =
-      pnh.advertise<visualization_msgs::MarkerArray>("/path_proximities", 1);
+      pnh.advertise<visualization_msgs::MarkerArray>("path_proximities", 1);
   // Initialize services.
   clear_costmap_srv_ = pnh.advertiseService(
       "clearCostmapRegion", &NavigationLayer::clearCostmapRegionCallback, this);
@@ -214,7 +214,7 @@ bool NavigationLayer::getPathClearanceCallback(
   getObstaclesMap(&obstacles_indicator, &obstacles_positions);
   // Resize the storage.
   const int nwaypoints = req.plan.poses.size();
-  res.proximity_map.reserve(nwaypoints);
+  res.proximity_map.resize(nwaypoints);
   res.proximities.resize(nwaypoints);
   geometry_msgs::Point32 closest_obstacle;
   // Get the proximity informations.
@@ -224,9 +224,8 @@ bool NavigationLayer::getPathClearanceCallback(
     // Get the clearance of the waypoint.
     res.proximities[i] = std::numeric_limits<double>::max();
     for (int o = 0; o < obstacles_positions.size(); ++o) {
-      const double dist = std::hypot(
-          waypoint.pose.position.x - obstacles_positions[o].x,
-          waypoint.pose.position.y - obstacles_positions[o].y);
+      const double dist =
+          math::linearDistance2D(waypoint, obstacles_positions[o]);
       if (dist < res.proximities[i]) {
         res.proximities[i]   = dist;
         res.proximity_map[i] = obstacles_positions[o];
@@ -265,6 +264,8 @@ size_t NavigationLayer::getObstaclesMap(
       if (master_costmap->getCost(x, y) == costmap_2d::LETHAL_OBSTACLE) {
         obstacles_indicator->at(index) = true;
         master_costmap->mapToWorld(x, y, px, py);
+        point.x = px;
+        point.y = py;
         obstacles_positions->emplace_back(point);
         nobstacles++;
       }
@@ -316,7 +317,7 @@ void NavigationLayer::publishPathProximities(
     marker.ns      = ros::this_node::getNamespace() + "Clearances";
     marker.id      = i;
     marker.type    = visualization_msgs::Marker::LINE_STRIP;
-    marker.type    = visualization_msgs::Marker::MODIFY;
+    marker.action  = visualization_msgs::Marker::MODIFY;
     marker.pose    = waypoints[i].pose;
     marker.scale.x = 0.0025;
     marker.color.r = 1.0;
