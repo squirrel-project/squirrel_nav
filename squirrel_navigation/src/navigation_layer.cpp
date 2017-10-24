@@ -33,6 +33,9 @@
 
 #include "squirrel_navigation/navigation_layer.h"
 #include "squirrel_navigation/utils/footprint_utils.h"
+#include "squirrel_navigation/utils/shape_primitives.h"
+
+#include <visualization_msgs/MarkerArray.h>
 
 #include <pluginlib/class_list_macros.h>
 
@@ -59,6 +62,8 @@ void NavigationLayer::onInitialize() {
   // Initialize publishers and subscribers.
   footprint_sub_ = pnh.subscribe(
       params_.footprint_topic, 1, &NavigationLayer::footprintCallback, this);
+  proximities_pub_ =
+      pnh.advertise<visualization_msgs::MarkerArray>("/path_proximities", 1);
   // Initialize services.
   clear_costmap_srv_ = pnh.advertiseService(
       "clearCostmapRegion", &NavigationLayer::clearCostmapRegionCallback, this);
@@ -69,6 +74,8 @@ void NavigationLayer::onInitialize() {
   // Finalize intialization.
   current_ = true;
   enabled_ = true;
+  // Reset the markers id.
+  query_path_nwaypoints_ = 0;
   // Initialization Successful.
   ROS_INFO("squirrel_navigation/NavigationLayer: Initializations successful.");
 }
@@ -231,6 +238,8 @@ bool NavigationLayer::getPathClearanceCallback(
       res.clearance_waypoint = i;
     }
   }
+  // Visualize the proximities.
+  publishPathProximities(req.plan.header, req.plan.poses, res.proximities);
   return true;
 }
 
@@ -291,6 +300,44 @@ void NavigationLayer::mergeCostmaps(
       it++;
     }
   }
+}
+
+void NavigationLayer::publishPathProximities(
+    const std_msgs::Header& markers_header,
+    const std::vector<geometry_msgs::PoseStamped>& waypoints,
+    const std::vector<float>& proximities) {
+  const int nwaypoints = waypoints.size();
+  // Create the visualization.
+  visualization_msgs::MarkerArray markers_msg;
+  markers_msg.markers.reserve(std::max(nwaypoints, query_path_nwaypoints_));
+  for (int i = 0; i < nwaypoints; ++i) {
+    visualization_msgs::Marker marker;
+    marker.header  = markers_header;
+    marker.ns      = ros::this_node::getNamespace() + "Clearances";
+    marker.id      = i;
+    marker.type    = visualization_msgs::Marker::LINE_STRIP;
+    marker.type    = visualization_msgs::Marker::MODIFY;
+    marker.pose    = waypoints[i].pose;
+    marker.scale.x = 0.0025;
+    marker.color.r = 1.0;
+    marker.color.g = 1.0;
+    marker.color.b = 0.0;
+    marker.color.a = 0.7;
+    marker.points  = circle(proximities[i]);
+    markers_msg.markers.emplace_back(marker);
+  }
+  // Remove the old markers.
+  for (int i = nwaypoints; i < query_path_nwaypoints_; ++i) {
+    visualization_msgs::Marker delete_marker;
+    delete_marker.ns     = ros::this_node::getNamespace() + "Clearances";
+    delete_marker.id     = i;
+    delete_marker.action = visualization_msgs::Marker::DELETE;
+    markers_msg.markers.emplace_back(delete_marker);
+  }
+  // Update number of waypoints.
+  query_path_nwaypoints_ = nwaypoints;
+  // Publish stuff.
+  proximities_pub_.publish(markers_msg);
 }
 
 NavigationLayer::Params NavigationLayer::Params::defaultParams() {
