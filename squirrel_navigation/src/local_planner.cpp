@@ -199,19 +199,8 @@ void LocalPlanner::footprintCallback(
     const geometry_msgs::PolygonStamped::ConstPtr& msg) {
   ROS_INFO_STREAM_ONCE(
       "squirrel_navigation/LocalPlanner: Subscribed to the footprint.");
-  bool footprint_changed = false;
-  if (footprint_.size() == msg->polygon.points.size()) {
-    for (unsigned int i = 0; i < footprint_.size(); ++i)
-      if (math::linearDistance2D(footprint_[i], msg->polygon.points[i]) >
-          0.01) {
-        footprint_changed = true;
-        break;
-      }
-  } else {
-    footprint_changed = true;
-  }
   // If footprint changed update the internal values.
-  if (footprint_changed) {
+  if (!footprint::equal(*msg, footprint_)) {
     footprint_ = costmap_2d::toPointVector(msg->polygon);
     costmap_2d::calculateMinAndMaxDistances(
         footprint_, inscribed_radius_, circumscribed_radius_);

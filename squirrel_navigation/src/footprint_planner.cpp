@@ -32,6 +32,7 @@
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "squirrel_navigation/footprint_planner.h"
+#include "squirrel_navigation/utils/footprint_utils.h"
 #include "squirrel_navigation/utils/math_utils.h"
 
 #include <ros/init.h>
@@ -220,21 +221,8 @@ void FootprintPlanner::footprintCallback(
       "squirrel_navigation/FootprintPlanner: Subscribed to the footprint.");
   // Update the footprint.
   std::unique_lock<std::mutex> lock(footprint_mtx_);
-  if (footprint->polygon.points.size() != footprint_.size()) {
-    footprint_changed_          = true;
-    sbpl_need_reinitialization_ = true;
-  } else {
-    footprint_changed_ = false;
-    for (unsigned int i = 0; i < footprint_.size(); ++i) {
-      if (math::linearDistance2D(footprint_[i], footprint->polygon.points[i]) >
-          0.01) {
-        footprint_changed_ = true;
-        break;
-      }
-    }
-    if (!footprint_changed_)
-      return;
-  }
+  if (footprint::equal(*footprint, footprint_))
+    return;
   // Footprint has changed.
   sbpl_need_reinitialization_ = true;
   footprint_                  = costmap_2d::toPointVector(footprint->polygon);

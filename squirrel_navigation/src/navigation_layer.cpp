@@ -32,6 +32,7 @@
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "squirrel_navigation/navigation_layer.h"
+#include "squirrel_navigation/utils/footprint_utils.h"
 
 #include <pluginlib/class_list_macros.h>
 
@@ -55,6 +56,9 @@ void NavigationLayer::onInitialize() {
   // Align size of kinect and laser layer.
   static_layer_.matchSize<ObstacleLayer>(&laser_layer_);
   static_layer_.matchSize<VoxelLayer>(&kinect_layer_);
+  // Initialize publishers and subscribers.
+  footprint_sub_ = pnh.subscribe(
+      params_.footprint_topic, 1, &NavigationLayer::footprintCallback, this);
   // Initialize services.
   clear_costmap_srv_ = pnh.advertiseService(
       "clearCostmapRegion", &NavigationLayer::clearCostmapRegionCallback, this);
@@ -128,10 +132,24 @@ void NavigationLayer::reset() {
   current_ = true;
 }
 
+void NavigationLayer::footprintCallback(
+    const geometry_msgs::PolygonStamped::ConstPtr& msg) {
+  const auto& new_footprint = costmap_2d::toPointVector(msg->polygon);
+  // Update the laser layer.
+  if (laser_layer_.enabled() &&
+      footprint::equal(new_footprint, laser_layer_.getFootprint()))
+    laser_layer_.setFootprint(new_footprint);
+  // Update the kinect layer.
+  if (kinect_layer_.enabled() &&
+      footprint::equal(new_footprint, kinect_layer_.getFootprint()))
+    kinect_layer_.setFootprint(new_footprint);
+}
+
 void NavigationLayer::reconfigureCallback(
     NavigationLayerConfig& config, uint32_t level) {
   kinect_layer_.enabled() = config.use_kinect;
   laser_layer_.enabled()  = config.use_laser_scan;
+  params_.footprint_topic = config.footprint_topic;
 }
 
 bool NavigationLayer::clearCostmapRegionCallback(
@@ -277,8 +295,9 @@ void NavigationLayer::mergeCostmaps(
 
 NavigationLayer::Params NavigationLayer::Params::defaultParams() {
   Params params;
-  params.use_kinect     = true;
-  params.use_laser_scan = true;
+  params.use_kinect      = true;
+  params.use_laser_scan  = true;
+  params.footprint_topic = "/squirrel_footprint_observer/footprint";
   return params;
 }
 

@@ -34,7 +34,12 @@
 #ifndef SQUIRREL_NAVIGATION_FOOTPRINT_UTILS_H_
 #define SQUIRREL_NAVIGATION_FOOTPRINT_UTILS_H_
 
+#include "squirrel_navigation/utils/math_utils.h"
+
+#include <costmap_2d/footprint.h>
+
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/PolygonStamped.h>
 
 #include <vector>
 
@@ -51,6 +56,24 @@ inline std::vector<geometry_msgs::Point> closedPolygon(
   for (int i = 0; i <= npoints; ++i)
     output.emplace_back(open_polygon[i % npoints]);
   return output;
+}
+
+inline bool equal(
+    const std::vector<geometry_msgs::Point>& footprint1,
+    const std::vector<geometry_msgs::Point>& footprint2) {
+  if (footprint1.size() != footprint2.size())
+    return false;
+  for (unsigned int i = 0; i < footprint1.size(); ++i)
+    if (math::linearDistance2D(footprint1[i], footprint2[i]) > 1e-8)
+      return false;
+  return true;
+}
+
+inline bool equal(
+    const geometry_msgs::PolygonStamped& footprint_msg,
+    const std::vector<geometry_msgs::Point>& footprint_spec) {
+  return equal(
+      costmap_2d::toPointVector(footprint_msg.polygon), footprint_spec);
 }
 
 }  // namespace footprint
