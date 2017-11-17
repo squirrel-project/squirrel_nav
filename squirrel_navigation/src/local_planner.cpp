@@ -200,7 +200,7 @@ bool LocalPlanner::setPlan(
   }
   // Notify that goal has to be reached.
   std_msgs::Bool msg;
-  msg.data = false;
+  msg.data = true;
   navigation_pub_.publish(msg);
   // Return.
   return true;
