@@ -3,6 +3,7 @@ LocalPlanner:
   visualize_topics: true
   odom_topic: "/odom"
   footprint_topic: "/squirrel_footprint_observer/footprint"
+  navigation_notification_topic: /twist_mux/locks/pause_rotatory
   goal_lin_tolerance: 0.05
   goal_ang_tolerance: 0.05
   max_safe_lin_velocity: 0.7

@@ -103,6 +103,8 @@ void LocalPlanner::initialize(
   traj_pub_ = pnh.advertise<geometry_msgs::PoseArray>("trajectory", 1);
   footprints_pub_ =
       pnh.advertise<visualization_msgs::MarkerArray>("footprints", 1);
+  navigation_pub_ =
+      pnh.advertise<std_msgs::Bool>(params_.navigation_topic, 1);
   odom_sub_ =
       nh.subscribe(params_.odom_topic, 1, &LocalPlanner::odomCallback, this);
   footprint_sub_ = nh.subscribe(
@@ -169,6 +171,10 @@ bool LocalPlanner::isGoalReached() {
     current_goal_.reset(nullptr);
     if (params_.verbose)
       ROS_INFO_STREAM("squirrel_navigation/LocalPlanner: Goal reached.");
+    // Notify that the goal is reached.
+    std_msgs::Bool msg;
+    msg.data = false;
+    navigation_pub_.publish(msg);
     return true;
   }
   return false;
@@ -192,6 +198,11 @@ bool LocalPlanner::setPlan(
     publishTrajectory(stamp);
     publishFootprints(stamp);
   }
+  // Notify that goal has to be reached.
+  std_msgs::Bool msg;
+  msg.data = false;
+  navigation_pub_.publish(msg);
+  // Return.
   return true;
 }
 
@@ -231,6 +242,7 @@ void LocalPlanner::reconfigureCallback(
     LocalPlannerConfig& config, uint32_t level) {
   params_.odom_topic                   = config.odom_topic;
   params_.footprint_topic              = config.footprint_topic;
+  params_.navigation_topic             = config.navigation_notification_topic;
   params_.collision_based_replanning   = config.collision_based_replanning;
   params_.replanning_lin_lookahead     = config.replanning_lin_lookahead;
   params_.replanning_ang_lookahead     = config.replanning_ang_lookahead;
