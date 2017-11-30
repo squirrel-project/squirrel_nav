@@ -15,7 +15,7 @@ ObstaclesLayer:
   LaserLayer: 
     enabled: true
     publish_voxel_map: false
-    obstacle_range: 5.0
+     obstacle_range: 5.0
     raytrace_range: 10.0
     collision_radius: 0.25
     observation_sources: laser_scan
@@ -31,6 +31,7 @@ ObstaclesLayer:
     publish_voxel_map: false
     robot_height: 0.9
     floor_threshold: 0.03
+    obstacle_persistence: 60.0
     obstacle_range: 3.0
     raytrace_range: 10.0
     collision_radius: 0.25

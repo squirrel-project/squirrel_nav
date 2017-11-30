@@ -298,7 +298,8 @@ void NavigationLayer::mergeCostmaps(
     unsigned int it = stride * j + min_i;
     for (int i = min_i; i < max_i; ++i) {
       costmap_[it] = std::max(laser_costmap[it], kinect_costmap[it]);
-      costmap_[it] = std::max(static_costmap[it], costmap_[it]);
+      if (static_costmap[it] != costmap_2d::NO_INFORMATION)
+        costmap_[it] = std::max(static_costmap[it], costmap_[it]);
       it++;
     }
   }

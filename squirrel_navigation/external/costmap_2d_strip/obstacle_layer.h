@@ -183,6 +183,10 @@ protected:
   int combination_method_;
 
   double sq_robot_radius_;
+
+  double obstacle_persistence_;
+  std::map<unsigned int, double> obstacles_stamps_;
+  void clearOutdatedObstacles(double stamp);  
   
 private:
   void reconfigureCB(costmap_2d::ObstaclePluginConfig &config, uint32_t level);

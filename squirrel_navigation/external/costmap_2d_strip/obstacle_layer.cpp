@@ -73,12 +73,14 @@ void ObstacleLayer::onInitialize()
   double robot_radius;
   nh.param("collision_radius", robot_radius, 0.25);
   sq_robot_radius_ = robot_radius * robot_radius;
+
+  nh.param("obstacle_persistence", obstacle_persistence_, 0.0);
   
   std::string topics_string;
   // get the topics that we'll subscribe to from the parameter server
   nh.param("observation_sources", topics_string, std::string(""));
   ROS_INFO("    Subscribed to Topics: %s", topics_string.c_str());
-
+  
   // get our tf prefix
   ros::NodeHandle prefix_nh;
   const std::string tf_prefix = tf::getPrefixParam(prefix_nh);
@@ -368,6 +370,11 @@ void ObstacleLayer::updateBounds(double robot_x, double robot_y, double robot_ya
     raytraceFreespace(clearing_observations[i], min_x, min_y, max_x, max_y);
   }
 
+  // Clear outdated obstacles.
+  const double now = ros::Time::now().toSec();
+  if (obstacle_persistence_ > 0)
+    clearOutdatedObstacles(now);
+
   // place the new obstacles into a priority queue... each with a priority of zero to begin with
   for (std::vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it)
   {
@@ -417,6 +424,8 @@ void ObstacleLayer::updateBounds(double robot_x, double robot_y, double robot_ya
 
       unsigned int index = getIndex(mx, my);
       costmap_[index] = LETHAL_OBSTACLE;
+      if (obstacle_persistence_ > 0)
+        obstacles_stamps_[index] = now;
 
       touch(px, py, min_x, min_y, max_x, max_y);
     }
@@ -634,6 +643,17 @@ void ObstacleLayer::resize(unsigned int size_x, unsigned int size_y, double reso
                            double origin_x, double origin_y) {
   layered_costmap_->resizeMap(size_x, size_y, resolution, origin_x, origin_y, true);
   resizeMap(size_x, size_y, resolution, origin_x, origin_y);
+}
+
+void ObstacleLayer::clearOutdatedObstacles(double stamp) {
+  for (auto it = obstacles_stamps_.begin(); it != obstacles_stamps_.end();) {
+    if (std::abs(it->second - stamp) > obstacle_persistence_) {
+      costmap_[it->first] = costmap_2d::FREE_SPACE;
+      it = obstacles_stamps_.erase(it);
+    } else {
+      ++it;
+    }
+  }
 }
 
 }  // namespace squirrel_navigation

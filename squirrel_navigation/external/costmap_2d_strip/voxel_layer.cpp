@@ -146,6 +146,11 @@ void VoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, 
     raytraceFreespace(clearing_observations[i], min_x, min_y, max_x, max_y);
   }
 
+  // clear outdated obstacles
+  const double now = ros::Time::now().toSec();
+  if (obstacle_persistence_ > 0)
+    clearOutdatedObstacles(now);
+  
   std::set<unsigned int> obstacles;
   
   // place the new obstacles into a priority queue... each with a priority of zero to begin with
@@ -197,6 +202,8 @@ void VoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, 
         {
           costmap_[index] = LETHAL_OBSTACLE;
           obstacles.insert(index);
+          if (obstacle_persistence_ > 0)
+            obstacles_stamps_[index] = now;
         }
 
         if (cloud.points[i].z < floor_threshold_ &&
