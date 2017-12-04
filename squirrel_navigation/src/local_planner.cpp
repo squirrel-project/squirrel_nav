@@ -103,8 +103,7 @@ void LocalPlanner::initialize(
   traj_pub_ = pnh.advertise<geometry_msgs::PoseArray>("trajectory", 1);
   footprints_pub_ =
       pnh.advertise<visualization_msgs::MarkerArray>("footprints", 1);
-  navigation_pub_ =
-      pnh.advertise<std_msgs::Bool>(params_.navigation_topic, 1);
+  navigation_pub_ = pnh.advertise<std_msgs::Bool>(params_.navigation_topic, 1);
   odom_sub_ =
       nh.subscribe(params_.odom_topic, 1, &LocalPlanner::odomCallback, this);
   footprint_sub_ = nh.subscribe(
@@ -230,7 +229,7 @@ void LocalPlanner::odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
     odom_robot_pose.pose   = odom->pose.pose;
     tfl_->waitForTransform(
         map_frame_id, odom->header.frame_id, odom->header.stamp,
-        ros::Duration(0.1));
+        ros::Duration(0.25));
     tfl_->transformPose(map_frame_id, odom_robot_pose, robot_pose_);
     twistToGlobalFrame(odom->twist.twist, &robot_twist_.twist);
   } catch (const tf::TransformException& ex) {
