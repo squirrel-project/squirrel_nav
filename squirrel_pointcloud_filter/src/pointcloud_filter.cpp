@@ -1,32 +1,40 @@
 // Copyright (c) 2017, Federico Boniardi and Wolfram Burgard
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-// 
-// * Neither the name of the University of Freiburg nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// modification, are permitted provided that the following conditions
+// are met:
+//
+// * Redistributions of source code must retain the above copyright
+//   notice, this list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright
+//   notice, this list of conditions and the following disclaimer in
+//   the documentation and/or other materials provided with the
+//   distribution.
+//
+// * Neither the name of the University of Freiburg nor the names of
+//   its contributors may be used to endorse or promote products
+//   derived from this software without specific prior written
+//   permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+// COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+// OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "squirrel_pointcloud_filter/pointcloud_filter.h"
+#include "squirrel_pointcloud_filters/filters/arm_filter.h"
+#include "squirrel_pointcloud_filters/filters/end_effector_filter.h"
+#include "squirrel_pointcloud_filters/filters/grasp_filter.h"
 
 #include <stdexcept>
 #include <string>
@@ -50,6 +58,17 @@ void PointCloudFilter::initialize() {
   dsrv_.reset(new dynamic_reconfigure::Server<PointCloudFilterConfig>(pnh));
   dsrv_->setCallback(
       boost::bind(&PointCloudFilter::reconfigureCallback, this, _1, _2));
+  // Initialize custom filters.
+  std::vector<std::string> custom_filters;
+  pnh.param<std::vector<std::string>>("custom_filters", custom_filters, {});
+  for (const auto& filter_name : custom_filters) {
+    if (filter_name == ArmFilter::tag)
+      custom_filters_.emplace_back(new ArmFilter(filter_name));
+    if (filter_name == EndEffectorFilter::tag)
+      custom_filters_.emplace_back(new EndeEffectorFilter(filter_name));
+    if (filter_name == GraspFilter::tag)
+      custom_filters_.emplace_back(new GraspFilter(filter_name));
+  }
   // Initialize publisher and subscribers.
   pcl_sub_ = gnh.subscribe(
       "/cloud_in", 1, &PointCloudFilter::pointCloudCallback, this);
@@ -90,6 +109,10 @@ void PointCloudFilter::pointCloudCallback(
     std::vector<int> nan_filter;
     pcl::removeNaNFromPointCloud(*pointcloud_raw, *pointcloud_raw, nan_filter);
   }
+  // Apply custom filters.
+  if (!custom_filters_.empty() && !params_.do_voxel_filter)
+    for (const auto& custom_filter : custom_filters_)
+      custom_filter->apply(pointcloud_raw);
   // Apply voxel filter.
   pcl::PointCloud<pcl::PointXYZ>::Ptr voxelized_pointcloud(
       new pcl::PointCloud<pcl::PointXYZ>);
@@ -100,6 +123,10 @@ void PointCloudFilter::pointCloudCallback(
         params_.resolutions_xyz[0], params_.resolutions_xyz[1],
         params_.resolutions_xyz[2]);
     voxel_filter_->filter(*voxelized_pointcloud);
+    // Apply custom filters to the voxelized pointcloud instead.
+    if (!custom_filters_.empty())
+      for (const auto& custom_filter : custom_filters_)
+        custom_filter->apply(voxelized_pointcloud);
     // Publish the filtered pointcloud.
     sensor_msgs::PointCloud2 voxelized_pointcloud_msg;
     voxelized_pointcloud_msg.header = msg_in->header;

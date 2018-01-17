@@ -1,23 +1,23 @@
 // Copyright (c) 2017, Federico Boniardi and Wolfram Burgard
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
-// 
+//
 // * Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright
 //   notice, this list of conditions and the following disclaimer in
 //   the documentation and/or other materials provided with the
 //   distribution.
-// 
+//
 // * Neither the name of the University of Freiburg nor the names of
 //   its contributors may be used to endorse or promote products
 //   derived from this software without specific prior written
 //   permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -31,15 +31,59 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "squirrel_pointcloud_filter/pointcloud_filter.h"
+#ifndef SQUIRREL_POINTCLOUD_FILTER_FILTERS_GRASP_FILTER_H_
+#define SQUIRREL_POINTCLOUD_FILTER_FILTERS_GRASP_FILTER_H_
 
-#include <cstdlib>
+#include "squirrel_pointcloud_filter/GraspFilterConfig.h"
+#include "squirrel_pointcloud_filter/filters/filter.h"
 
-int main(int argc, char *argv[]) {
-  ros::init(argc, argv, "pointcloud_filter_node");
+#include <std_msgs/Float32MultiArray.h>
 
-  squirrel_pointcloud_filter::PointCloudFilter pcf;
-  pcf.spin();
+#include <dynamic_reconfigure/server.h>
 
-  return EXIT_SUCCESS;
-}
+#include <tf/transform_datatypes.h>
+#include <tf/transform_listener.h>
+
+#include <ros/subscriber.h>
+
+#include <array>
+#include <mutex>
+#include <string>
+
+namespace squirrel_pointcloud_filter {
+
+class GraspFilter : public Filter {
+ public:
+  GraspFilter() : dsrv_(nullptr), intialized_(false) {}
+  GraspFilter(const std::string& name);
+  virtual ~GraspFilter() {}
+
+  void initialize(const std::string& name) override;
+  void apply(
+      const pcl::PointCloud<pcl::PointXYZ>::Ptr& poincloud) const override;
+
+ private:
+  void reconfigureCallback(GraspFilterConfig& config, uint32_t level);
+  void objectSizeCallback(const std_msgs::Float32MultiArray::ConstPtr& params);
+
+ private:
+  std::unique_ptr<dynamic_reconfigure::Server<GraspFilterConfig>> dsrv_;
+
+  std::string object_frame_;
+  bool enabled_;
+  bool const_object_dim_;
+  std::string object_topic_;
+  std::arrat<float, 3> sizes_;
+
+  bool initialized_;
+
+  ros::Subscriber sub_;
+
+  tf::TransformListener tfl_;
+
+  mutable std::mutex mtx_;
+};
+
+}  // namespace squirrel_pointcloud_filter
+
+#endif /* SQUIRREL_POINTCLOUD_FILTER_FILTERS_GRASP_FILTER_H_ */

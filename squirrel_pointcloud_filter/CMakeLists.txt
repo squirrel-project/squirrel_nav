@@ -20,16 +20,23 @@ endif()
 ## Set ROS dependencies
 set(${PROJECT_NAME}_DEPENDENCIES
   dynamic_reconfigure 
+  geometry_msgs
   pcl_conversions 
   pcl_ros 
-  roscpp)
+  roscpp
+  std_msgs
+  tf)
 
 ## Import ROS dependencies
 find_package(catkin REQUIRED COMPONENTS ${${PROJECT_NAME}_DEPENDENCIES})
 include_directories(${catkin_INCLUDE_DIRS})
 
 ## Generate reconfigure files.
-generate_dynamic_reconfigure_options(cfg/PointCloudFilter.cfg)
+generate_dynamic_reconfigure_options(
+  cfg/ArmFilter.cfg
+  cfg/EndEffectorFilter.cfg
+  cfg/GraspFilter.cfg
+  cfg/PointCloudFilter.cfg)
 
 ## Catkin package
 catkin_package(
@@ -39,6 +46,9 @@ catkin_package(
 ## Build the pointcloud filter.
 include_directories(include)
 add_executable(${PROJECT_NAME}_node 
+  src/filters/arm_filter.cpp
+  src/filters/end_effector_filter.cpp
+  src/filters/grasp_filter.cpp
   src/pointcloud_filter.cpp  
   src/pointcloud_filter_node.cpp)
 target_link_libraries(${PROJECT_NAME}_node 
