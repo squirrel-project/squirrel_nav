@@ -48,7 +48,7 @@ GraspFilter::GraspFilter(const std::string& name)
 
 void GraspFilter::initialize(const std::string& name) {
   if (!initialized_) {
-    ros::Node nh("~/" + name), gnh;
+    ros::NodeHandle nh("~/" + name), gnh;
 
     dsrv_.reset(new dynamic_reconfigure::Server<GraspFilterConfig>(nh));
     dsrv_->setCallback(
@@ -65,11 +65,11 @@ void GraspFilter::initialize(const std::string& name) {
 }
 
 void GraspFilter::apply(
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr& poincloud) const {
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud) const {
   if (!enabled_)
     return;
 
-  std::thread<std::mutex> lock(mtx_);
+  std::unique_lock<std::mutex> lock(mtx_);
 
   const ros::Time& now = ros::Time::now();
 
@@ -93,7 +93,7 @@ void GraspFilter::apply(
     return ellipsoid_eq <= 1;
   };
 
-  const int num_init_points = poitcloud->points.size();
+  const int num_init_points = pointcloud->points.size();
   for (auto it = pointcloud->points.begin(); it != pointcloud->points.end();) {
     if (in_ellipsoid(*it - object_position))
       it = pointcloud->points.erase(it);

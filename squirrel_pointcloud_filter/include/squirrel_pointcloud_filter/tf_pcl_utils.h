@@ -40,26 +40,12 @@
 
 namespace squirrel_pointcloud_filter {
 
-inline tf::Vector3 operator-(const tf::Vector3& v1, const tf::Vector3& v2) {
-  return tf::Vector3(
-      v1.getX() - v2.getX(), v1.getY() - v2.getY(), v1.getZ() - v2.getZ());
-}
-
 inline tf::Vector3 operator-(const pcl::PointXYZ& p, const tf::Vector3& v) {
   return tf::Vector3(p.x - v.getX(), p.y - v.getY(), p.z - v.getZ());
 }
 
-inline tf::Vector3 operator+(const tf::Vector3& v1, const tf::Vector3& v2) {
-  return tf::Vector3(
-      v1.getX() + v2.getX(), v1.getY() + v2.getY(), v1.getZ() + v2.getZ());
-}
-
 inline tf::Vector3 operator+(const pcl::PointXYZ& p, const tf::Vector3& v) {
   return tf::Vector3(p.x + v.getX(), p.y + v.getY(), p.z + v.getZ());
-}
-
-inline tf::Vector3 operator*(float s, const tf::Vector3& v) {
-  return tf::Vector3(s * v.getX(), s * v.getY(), s * v.getZ());
 }
 
 }  // namespace squirrel_pointcloud_filter

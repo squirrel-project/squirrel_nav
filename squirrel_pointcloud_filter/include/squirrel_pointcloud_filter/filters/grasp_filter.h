@@ -54,13 +54,16 @@ namespace squirrel_pointcloud_filter {
 
 class GraspFilter : public Filter {
  public:
-  GraspFilter() : dsrv_(nullptr), intialized_(false) {}
+  GraspFilter() : dsrv_(nullptr), initialized_(false) {}
   GraspFilter(const std::string& name);
   virtual ~GraspFilter() {}
 
   void initialize(const std::string& name) override;
   void apply(
-      const pcl::PointCloud<pcl::PointXYZ>::Ptr& poincloud) const override;
+      const pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud) const override;
+
+ public:
+  static const std::string tag;
 
  private:
   void reconfigureCallback(GraspFilterConfig& config, uint32_t level);
@@ -73,7 +76,7 @@ class GraspFilter : public Filter {
   bool enabled_;
   bool const_object_dim_;
   std::string object_topic_;
-  std::arrat<float, 3> sizes_;
+  std::array<double, 3> sizes_;
 
   bool initialized_;
 

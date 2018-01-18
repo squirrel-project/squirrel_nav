@@ -39,7 +39,7 @@
 #include <string>
 #include <vector>
 
-namespace squirrel_pointcloud_filters {
+namespace squirrel_pointcloud_filter {
 
 // Abstact interface for a filter.
 class Filter {
@@ -47,7 +47,6 @@ class Filter {
   virtual ~Filter() {}
 
   virtual void initialize(const std::string& name) = 0;
-
   virtual void apply(
       const pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud) const = 0;
 
@@ -55,6 +54,6 @@ class Filter {
   std::string pointcloud_frame_;
 };
 
-}  // namespace squirrel_pointcloud_filters
+}  // namespace squirrel_pointcloud_filter
 
 #endif /* SQUIRREL_POINTCLOUD_FILTER_FILTER_H_ */

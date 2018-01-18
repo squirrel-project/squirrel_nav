@@ -59,23 +59,23 @@ class ArmFilter : public Filter {
   ArmFilter(const std::string& name);
   virtual ~ArmFilter() {}
 
-  void intialize(const std::string& name) override;
+  void initialize(const std::string& name) override;
   void apply(
       const pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud) const override;
 
  public:
-  static const std::string filter_tag;
-
+  static const std::string tag;
+  
  private:
   void reconfigureCallback(ArmFilterConfig& config, uint32_t level);
 
   bool getJointsSegments(std::vector<Segment>* segments) const;
   bool inCylinder(
       const Segment& segment, double radius,
-      double pcl::PointXYZ& query_point) const;
+      const pcl::PointXYZ& query_point) const;
 
  private:
-  std::unique_ptr<dyanmic_reconfigure::Server<ArmFilterConfig>> dsrv_;
+  std::unique_ptr<dynamic_reconfigure::Server<ArmFilterConfig>> dsrv_;
 
   std::vector<std::string> joint_chain_;
   std::vector<double> segments_sq_radii_;
@@ -84,7 +84,7 @@ class ArmFilter : public Filter {
 
   bool enabled_;
 
-  bool intialized_;
+  bool initialized_;
 };
 
 }  // namespace squirrel_pointcloud_filter

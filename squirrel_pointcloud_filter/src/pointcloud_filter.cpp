@@ -32,9 +32,9 @@
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "squirrel_pointcloud_filter/pointcloud_filter.h"
-#include "squirrel_pointcloud_filters/filters/arm_filter.h"
-#include "squirrel_pointcloud_filters/filters/end_effector_filter.h"
-#include "squirrel_pointcloud_filters/filters/grasp_filter.h"
+#include "squirrel_pointcloud_filter/filters/arm_filter.h"
+#include "squirrel_pointcloud_filter/filters/end_effector_filter.h"
+#include "squirrel_pointcloud_filter/filters/grasp_filter.h"
 
 #include <stdexcept>
 #include <string>
@@ -65,7 +65,7 @@ void PointCloudFilter::initialize() {
     if (filter_name == ArmFilter::tag)
       custom_filters_.emplace_back(new ArmFilter(filter_name));
     if (filter_name == EndEffectorFilter::tag)
-      custom_filters_.emplace_back(new EndeEffectorFilter(filter_name));
+      custom_filters_.emplace_back(new EndEffectorFilter(filter_name));
     if (filter_name == GraspFilter::tag)
       custom_filters_.emplace_back(new GraspFilter(filter_name));
   }

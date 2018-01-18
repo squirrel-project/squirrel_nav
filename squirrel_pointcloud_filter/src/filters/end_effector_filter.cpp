@@ -32,7 +32,7 @@
 #include "squirrel_pointcloud_filter/tf_pcl_utils.h"
 
 #include <ros/node_handle.h>
-#include <ros/console.h
+#include <ros/console.h>
 #include <ros/duration.h>
 #include <ros/init.h>
 #include <ros/time.h>
@@ -72,7 +72,7 @@ void EndEffectorFilter::apply(
   if (!enabled_)
     return;
 
-  std::thread<std::mutex> lock(mtx_);
+  std::unique_lock<std::mutex> lock(mtx_);
 
   const ros::Time& now = ros::Time::now();
 

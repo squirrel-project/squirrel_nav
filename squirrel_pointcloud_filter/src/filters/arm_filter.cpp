@@ -46,12 +46,12 @@ ArmFilter::ArmFilter(const std::string& name)
   initialize(name);
 }
 
-void ArmFilter::intialize(const std::string& name) {
+void ArmFilter::initialize(const std::string& name) {
   if (!initialized_) {
     ros::NodeHandle nh("~/" + name);
-    dsrv_.reset(new dyanmic_reconfigure::Server<ArmFilterConfig>(nh));
+    dsrv_.reset(new dynamic_reconfigure::Server<ArmFilterConfig>(nh));
     dsrv_->setCallback(
-        boost::bind(&ArmFilter::reconfigureCallback&, this, _1, _2));
+        boost::bind(&ArmFilter::reconfigureCallback, this, _1, _2));
 
     nh.param<std::vector<std::string>>("joint_chain", joint_chain_, {});
     nh.param<std::vector<double>>("segments_sq_radii", segments_sq_radii_, {});
@@ -63,7 +63,7 @@ void ArmFilter::intialize(const std::string& name) {
 }
 
 void ArmFilter::apply(
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud) const override {
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud) const {
   if (!enabled_)
     return;
 
@@ -76,8 +76,8 @@ void ArmFilter::apply(
 
   // Remove the points.
   for (auto it = pointcloud->points.begin(); it != pointcloud->points.end();) {
-    for (unsigned int i = 0; i < segments.size(); ++i)
-      if (inCylinder(segments[i], segments_sq_radii_[i], *it)) {
+    for (unsigned int i = 0; i < joint_segments.size(); ++i)
+      if (inCylinder(joint_segments[i], segments_sq_radii_[i], *it)) {
         it = pointcloud->points.erase(it);
         continue;
       }
@@ -117,6 +117,8 @@ bool ArmFilter::getJointsSegments(std::vector<Segment>* segments) const {
     return std::get<0>(segment) + std::get<2>(segment) * std::get<1>(segment);
   };
 
+  const int num_joints = joint_chain_.size();
+  
   segments->reserve(num_joints - 1);
   for (unsigned int i = 1; i < num_joints; ++i) {
     // Lookup the transform.
@@ -144,7 +146,7 @@ bool ArmFilter::getJointsSegments(std::vector<Segment>* segments) const {
 
 bool ArmFilter::inCylinder(
     const Segment& segment, double sq_radius,
-    double pcl::PointXYZ& query_point) const {
+    const pcl::PointXYZ& query_point) const {
   // Vector first -> query_point.
   const tf::Vector3& dp = query_point - std::get<0>(segment);
 
@@ -158,6 +160,6 @@ bool ArmFilter::inCylinder(
   return sq_dist < sq_radius;
 }
 
-const std::string ArmFilter::filter_tag = "ArmFilter";
+const std::string ArmFilter::tag = "ArmFilter";
 
 }  // namespace squirrel_pointcloud_filter

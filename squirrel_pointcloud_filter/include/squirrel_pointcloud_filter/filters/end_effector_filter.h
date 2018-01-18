@@ -34,8 +34,8 @@
 #ifndef SQUIRREL_POINTCLOUD_FILTER_FILTERS_END_EFFECTOR_FILTER_H_
 #define SQUIRREL_POINTCLOUD_FILTER_FILTERS_END_EFFECTOR_FILTER_H_
 
-#include "squirrel_pointcloud_filters/filters/EndEffectorFilterConfig.h"
-#include "squirrel_pointcloud_filters/filters/filters.h"
+#include "squirrel_pointcloud_filter/EndEffectorFilterConfig.h"
+#include "squirrel_pointcloud_filter/filters/filter.h"
 
 #include <std_msgs/Float32.h>
 
@@ -48,7 +48,7 @@
 #include <mutex>
 #include <string>
 
-namespace squirrel_pointcloud_filters {
+namespace squirrel_pointcloud_filter {
 
 class EndEffectorFilter : public Filter {
  public:
@@ -60,10 +60,13 @@ class EndEffectorFilter : public Filter {
   void apply(
       const pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud) const override;
 
+ public:
+  static const std::string tag;
+
  private:
   void reconfigureCallback(EndEffectorFilterConfig& config, uint32_t level);
   void endEffectorCallback(const std_msgs::Float32::ConstPtr& radius);
-  
+
  private:
   std::unique_ptr<dynamic_reconfigure::Server<EndEffectorFilterConfig>> dsrv_;
 
@@ -72,16 +75,16 @@ class EndEffectorFilter : public Filter {
   bool const_end_effector_dim_;
   std::string end_effector_topic_;
   double sq_radius_;
-  
+
   bool initialized_;
 
   ros::Subscriber sub_;
 
   tf::TransformListener tfl_;
-  
+
   mutable std::mutex mtx_;
 };
 
-}  // namespace squirrel_pointcloud_filters
+}  // namespace squirrel_pointcloud_filter
 
 #endif /* SQUIRREL_POINTCLOUD_FILTER_FILTERS_END_EFFECTOR_FILTER_H_ */
