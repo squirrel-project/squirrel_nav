@@ -19,7 +19,6 @@
 #include <dynamic_reconfigure/Config.h>
 #include <dynamic_reconfigure/Reconfigure.h>
 
-#include <ros/node_handle.h>
 #include <ros/service.h>
 
 #include <iomanip>
@@ -28,8 +27,8 @@
 
 namespace squirrel_footprint_observer {
 
-ArmFoldingObserver::ArmFoldingObserver() : joint_index_map_(nullptr) {
-  ros::NodeHandle nh("~"), gnh;
+void ArmFoldingObserver::initialize(const std::string& name) {
+  ros::NodeHandle nh("~/" + name);
 
   std::vector<std::string> joint_names;
   std::vector<double> joint_values;
@@ -51,18 +50,21 @@ ArmFoldingObserver::ArmFoldingObserver() : joint_index_map_(nullptr) {
     joints_values_.emplace(joint_names[i], joint_values[i]);
 
   // Subscribe to the joint states.
-  joint_states_sub_ = gnh.subscribe(
+  joint_states_sub_ = gnh_.subscribe(
       joint_states_topic_, 1, &ArmFoldingObserver::jointStatesCallback, this);
-
-  // Keep track of the 'plan_with_footprint' parameter.
-  gnh.getParamCached(
-      "/move_base/GlobalPlanner/plan_with_footprint", plan_with_footprint_);
 }
 
 void ArmFoldingObserver::jointStatesCallback(
     const sensor_msgs::JointState::ConstPtr& joint_state) {
+  if (verbose_)
+    ROS_INFO_STREAM_ONCE_NAMED(
+        "arm_folding_observer", "Subscribed to '" << joint_states_topic_
+                                                  << "'.");
   if (!joint_index_map_)
     buildJointIndexMap(joint_state->name);
+
+  gnh_.getParamCached(
+      "/move_base/GlobalPlanner/plan_with_footprint", plan_with_footprint_);
 
   const auto& positions = joint_state->position;
 
@@ -82,7 +84,7 @@ void ArmFoldingObserver::jointStatesCallback(
     }
   }
 
-  if (plan_with_footprint != plan_with_footprint)
+  if (plan_with_footprint != plan_with_footprint_)
     toggleFootprintPlanner(plan_with_footprint);
 }
 
@@ -93,6 +95,8 @@ void ArmFoldingObserver::toggleFootprintPlanner(bool on_off) const {
 
   dynamic_reconfigure::Reconfigure reconfigure;
   reconfigure.request.config.bools.emplace_back(bool_param);
+
+  ros::service::waitForService("/move_base/GlobalPlanner/set_parameters");
 
   if (ros::service::call(
           "/move_base/GlobalPlanner/set_parameters", reconfigure)) {
@@ -125,7 +129,7 @@ void ArmFoldingObserver::buildJointIndexMap(
                                       << "does not appear to be published.");
       joints_exists_.emplace(joint_name, false);
     } else {
-      joints_values_.emplace(joint_name, (int)std::distance(begin, it));
+      joint_index_map_->emplace(joint_name, (int)std::distance(begin, it));
       joints_exists_.emplace(joint_name, true);
     }
   }

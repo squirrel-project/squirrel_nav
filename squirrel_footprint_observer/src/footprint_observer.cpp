@@ -18,6 +18,10 @@
 #include "squirrel_footprint_observer/footprint_utils.h"
 #include "squirrel_footprint_observer/parameter_parser.h"
 
+#include <visualization_msgs/Marker.h>
+
+#include <tf/tf.h>
+
 #include <fstream>
 #include <stdexcept>
 #include <string>
@@ -27,11 +31,13 @@ namespace squirrel_footprint_observer {
 
 FootprintObserver::FootprintObserver() : enabled_(true) {
   const std::string& node_name = ros::this_node::getName();
+
   // Initialize the parameter server.
   ros::NodeHandle pnh("~");
   dsrv_.reset(new dynamic_reconfigure::Server<FootprintObserverConfig>(pnh));
   dsrv_->setCallback(
       boost::bind(&FootprintObserver::reconfigureCallback, this, _1, _2));
+
   // Read base footprint.
   if (pnh.hasParam("base_radius")) {
     double base_radius;
@@ -57,6 +63,7 @@ FootprintObserver::FootprintObserver() : enabled_(true) {
         node_name << ": Please specify the base radius or the base footprint");
     ros::shutdown();
   }
+
   // Read the single joint footprint.
   if (pnh.hasParam("joint_radius")) {
     double joint_radius;
@@ -70,6 +77,7 @@ FootprintObserver::FootprintObserver() : enabled_(true) {
           node_name << ": Joint footprint successfully initialized.");
     }
   }
+
   // Read the arm joint chain.
   if (pnh.hasParam("joint_chain")) {
     pnh.getParam("joint_chain", joint_chain_);
@@ -78,20 +86,30 @@ FootprintObserver::FootprintObserver() : enabled_(true) {
       ros::shutdown();
     }
   }
+
   // Wait for annoying ROS crap to start up. Apparently no better solution.
-  ros::Duration(1.0).sleep();  
+  ros::Duration(1.0).sleep();
+
   // Read the robot frame id.
   pnh.param<std::string>(
       "base_frame_id", footprint_.header.frame_id, "/base_link");
+
   // Initialize the footprint services, publisher and subscribers.
   enable_sub_ =
       pnh.subscribe("enable", 1, &FootprintObserver::enableCallback, this);
   footprint_pub_ = pnh.advertise<geometry_msgs::PolygonStamped>("footprint", 1);
+  footprint_marker_pub_ =
+      pnh.advertise<visualization_msgs::Marker>("footprint_folding", 1);
   footprint_get_srv_ = pnh.advertiseService(
       "getFootprint", &FootprintObserver::getFootprintServiceCallback, this);
   footprint_dump_srv_ = pnh.advertiseService(
       "dumpFootprint", &FootprintObserver::dumpFootprintServiceCallback, this);
-  // INitialization  succesfull.
+
+  // Initialize the arm folding observer.
+  arm_folding_observer_.reset(new ArmFoldingObserver);
+  arm_folding_observer_->initialize("arm_folding_observer");
+
+  // Initialization  succesfull.
   ROS_INFO_STREAM(node_name << ": FootprintObserver successfully initialized.");
 }
 
@@ -102,8 +120,9 @@ void FootprintObserver::spin(double hz) {
       ros::spinOnce();
       if (!enabled_)
         continue;
-      updateFootprint(ros::Time::now());
-      footprint_pub_.publish(footprint_);
+      const ros::Time& now = ros::Time::now();
+      updateFootprint(now);
+      publishFootprint(now);
     } catch (const std::runtime_error& err) {
       ROS_ERROR_STREAM(node_name << ": " << err.what());
     }
@@ -169,8 +188,7 @@ void FootprintObserver::updateFootprint(const ros::Time& stamp) {
     try {
       tfl_.waitForTransform(
           base_frame_id, joint_frame_id, stamp, ros::Duration(1.0));
-      tfl_.lookupTransform(
-          base_frame_id, joint_frame_id, stamp, tf_base2joint);
+      tfl_.lookupTransform(base_frame_id, joint_frame_id, stamp, tf_base2joint);
     } catch (const tf::TransformException& ex) {
       const std::string& node_name = ros::this_node::getName();
       ROS_ERROR_STREAM(node_name << ": " << ex.what());
@@ -198,6 +216,45 @@ void FootprintObserver::updateFootprint(const ros::Time& stamp) {
     footprint_.polygon.points[i].x = ch_footprint[i].x();
     footprint_.polygon.points[i].y = ch_footprint[i].y();
   }
+}
+
+void FootprintObserver::publishFootprint(const ros::Time& stamp) {
+  if (footprint_.polygon.points.empty())
+    return;
+
+  footprint_.header.stamp = stamp;
+  footprint_pub_.publish(footprint_);
+
+  visualization_msgs::Marker footprint_marker;
+  footprint_marker.header.frame_id  = footprint_.header.frame_id;
+  footprint_marker.header.stamp     = stamp;
+  footprint_marker.ns               = "footprint";
+  footprint_marker.id               = 0;
+  footprint_marker.type             = visualization_msgs::Marker::LINE_STRIP;
+  footprint_marker.action           = visualization_msgs::Marker::MODIFY;
+  footprint_marker.pose.position.x  = 0.0;
+  footprint_marker.pose.position.y  = 0.0;
+  footprint_marker.pose.position.z  = 0.0;
+  footprint_marker.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
+  footprint_marker.scale.x          = 0.01;
+  footprint_marker.color.r = arm_folding_observer_->folded() ? 0.0 : 1.0;
+  footprint_marker.color.g = arm_folding_observer_->folded() ? 1.0 : 0.0;
+  footprint_marker.color.b = 0.0;
+  footprint_marker.color.a = 1.0;
+
+  const int npoints = footprint_.polygon.points.size();
+
+  footprint_marker.points.resize(npoints + 1);
+  for (unsigned int i = 0; i <= footprint_.polygon.points.size(); ++i) {
+    auto& point = footprint_marker.points[i];
+    point.x     = footprint_.polygon.points[i % npoints].x;
+    point.y     = footprint_.polygon.points[i % npoints].y;
+    point.z     = 0.0;
+
+    footprint_marker.points.emplace_back(point);
+  }
+
+  footprint_marker_pub_.publish(footprint_marker);
 }
 
 }  // namespace squirrel_footprint_observer

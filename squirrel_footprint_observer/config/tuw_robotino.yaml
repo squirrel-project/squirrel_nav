@@ -2,3 +2,9 @@ base_frame_id: /base_linkz
 base_radius: 0.26
 joint_radius: 0.15
 joint_chain: [/arm_link1, /arm_motor2, /arm_link2, /arm_link3, /arm_link4, /arm_link5, /arm_palm_link]
+
+arm_folding_observer:
+  verbose: true
+  joint_states_topic: /arm_controller/joint_states
+  joint_names: [arm_joint1, arm_joint2, arm_joint3, arm_joint4, arm_joint5]
+  ref_joint_states: [0.292, 2.27, 0.19, -1.17, 0.53]

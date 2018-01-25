@@ -17,6 +17,7 @@
 #define SQUIRREL_FOOTPRINT_OBSERVER_FOOTPRINT_OBSERVER_H_
 
 #include "squirrel_footprint_observer/FootprintObserverConfig.h"
+#include "squirrel_footprint_observer/arm_folding_observer.h"
 #include "squirrel_footprint_observer/geometry_types.h"
 
 #include <ros/ros.h>
@@ -39,35 +40,36 @@
 namespace squirrel_footprint_observer {
 
 class FootprintObserver {
- public:
+public:
   FootprintObserver();
   virtual ~FootprintObserver() {}
 
   // Spinner.
   void spin(double hz = 10.);
 
- private:
+private:
   // Reconfigure utilities.
   void reconfigureCallback(FootprintObserverConfig& config, uint32_t level);
   void enableCallback(const std_msgs::Bool::ConstPtr& msg);
 
   // Service callbacks.
   bool getFootprintServiceCallback(
-      squirrel_footprint_observer_msgs::get_footprint::Request& req,
-      squirrel_footprint_observer_msgs::get_footprint::Response& res);
+      squirrel_footprint_observer_msgs::get_footprint::Request &req,
+      squirrel_footprint_observer_msgs::get_footprint::Response &res);
   bool dumpFootprintServiceCallback(
-      squirrel_footprint_observer_msgs::dump_footprint::Request& req,
-      squirrel_footprint_observer_msgs::dump_footprint::Response& res);
+      squirrel_footprint_observer_msgs::dump_footprint::Request &req,
+      squirrel_footprint_observer_msgs::dump_footprint::Response &res);
 
   // Update the footprint.
   void updateFootprint(const ros::Time& stamp);
-
+  void publishFootprint(const ros::Time& stamp);
+  
   // Mutex getter.
-  inline std::mutex& mutex() const { return update_mtx_; }
+  inline std::mutex &mutex() const { return update_mtx_; }
 
- private:
+private:
   std::unique_ptr<dynamic_reconfigure::Server<FootprintObserverConfig>> dsrv_;
-
+  
   std::vector<Point2D> base_footprint_;
   std::vector<Point2D> joint_footprint_;
   std::vector<std::string> joint_chain_;
@@ -75,8 +77,10 @@ class FootprintObserver {
   bool enabled_;
 
   geometry_msgs::PolygonStamped footprint_;
-
-  ros::Publisher footprint_pub_;
+  
+  std::unique_ptr<ArmFoldingObserver> arm_folding_observer_;
+  
+  ros::Publisher footprint_pub_, footprint_marker_pub_;
   ros::Subscriber enable_sub_;
   ros::ServiceServer footprint_get_srv_, footprint_dump_srv_;
   tf::TransformListener tfl_;
@@ -86,11 +90,10 @@ class FootprintObserver {
 
 namespace {
 
-constexpr size_t kBaseNumPoints  = 20;
+constexpr size_t kBaseNumPoints = 20;
 constexpr size_t kJointNumPoints = 10;
 
-}  // namespace
-
-}  // namespace squirrel_footprint_observer
+} // namespace
+} // namespace squirrel_footprint_observer
 
 #endif /* SQUIRREL_FOOTPRINT_OBSERVER_FOOTPRINT_OBSERVER_H_ */

@@ -57,6 +57,7 @@ include_directories(include)
 
 ## Building the footprint observer
 add_executable(footprint_observer_node
+  src/arm_folding_observer.cpp
   src/footprint_observer.cpp
   src/footprint_observer_node.cpp)
 target_link_libraries(footprint_observer_node 
@@ -67,8 +68,8 @@ add_dependencies(footprint_observer_node
 
 ## Building the arm folding observer
 add_executable(arm_folding_observer_node
-  src/arm_folding_observer_node.cpp
-  src/arm_folding_observer.cpp)
+  src/arm_folding_observer.cpp
+  src/arm_folding_observer_node.cpp)
 target_link_libraries(arm_folding_observer_node
   ${catkin_LIBRARIES})
 

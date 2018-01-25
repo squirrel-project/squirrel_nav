@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
   ros::init(argc, argv, "arm_folding_observer");
 
   squirrel_footprint_observer::ArmFoldingObserver afo;
+  afo.initialize();
   afo.spin();
   
   return EXIT_SUCCESS;

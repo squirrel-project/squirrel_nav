@@ -20,6 +20,7 @@
 
 #include <ros/init.h>
 #include <ros/subscriber.h>
+#include <ros/node_handle.h>
 
 #include <map>
 #include <string>
@@ -34,19 +35,24 @@ constexpr double kJointValueTolerance = 1e-1;
 
 class ArmFoldingObserver {
  public:
-  ArmFoldingObserver();
+  ArmFoldingObserver() : joint_index_map_(nullptr) {}
   virtual ~ArmFoldingObserver() {}
 
-  // Spinner.
-  inline void spin() { ros::spin(); }
+  void initialize(const std::string& name = "");
+  
+  inline bool folded() const { return !plan_with_footprint_; }
 
+  // Spinners.
+  inline void spin() { ros::spin(); }
+  inline void spinOnce() { ros::spinOnce(); }
+  
  private:
   void jointStatesCallback(
       const sensor_msgs::JointState::ConstPtr& joint_state);
 
   void toggleFootprintPlanner(bool on_off) const;
   void buildJointIndexMap(const std::vector<std::string>& joint_msg_names);
-
+  
  private:
   bool verbose_;
   std::string joint_states_topic_;
@@ -58,6 +64,8 @@ class ArmFoldingObserver {
   std::map<std::string, bool> joints_exists_;
 
   ros::Subscriber joint_states_sub_;
+
+  ros::NodeHandle gnh_;
 };
 
 }  // namespace squirrel_footprint_observer
