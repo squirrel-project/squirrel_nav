@@ -203,6 +203,8 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
 
   BaseBrake base_brake_;
 
+  static constexpr double kShortPathsReplanningTolerance = 0.2;
+  
   mutable std::mutex state_mtx_;
 };
 

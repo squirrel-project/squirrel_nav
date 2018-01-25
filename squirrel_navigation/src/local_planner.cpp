@@ -463,23 +463,30 @@ bool LocalPlanner::isTrajectorySafe(
 bool LocalPlanner::needReplanning(
     const std::vector<geometry_msgs::PoseStamped>& old_waypoints,
     const std::vector<geometry_msgs::PoseStamped>& new_waypoints) const {
+  const double old_path_length = math::pathLength(old_waypoints);
+  const double new_path_length = math::pathLength(old_waypoints);
+
+  if (old_path_length <= kShortPathsReplanningTolerance)
+    return false;
+
   const bool current_trajectory_suboptimal =
-      math::pathLength(new_waypoints) <=
-      params_.replanning_path_length_ratio * math::pathLength(new_waypoints);
+      new_path_length <= params_.replanning_path_length_ratio * old_path_length;
   const bool need_replanning =
       current_trajectory_suboptimal || !isTrajectorySafe(old_waypoints);
+
   if (params_.verbose && need_replanning)
     ROS_INFO_STREAM(
         "squirrel_navigation::LocalPlanner: Found a shorter trajectory or "
         "trajectory not safe. Replanning requested.");
+
   return need_replanning;
 }
 
 bool LocalPlanner::newGoal(const geometry_msgs::Pose& pose) const {
   if (!current_goal_)
     return true;
-  bool new_position    = math::linearDistance2D(*current_goal_, pose) > 1e-8;
-  bool new_orientation = math::angularDistanceYaw(*current_goal_, pose) > 1e-8;
+  bool new_position    = math::linearDistance2D(*current_goal_, pose) > 1e-2;
+  bool new_orientation = math::angularDistanceYaw(*current_goal_, pose) > 1e-2;
   return new_position || new_orientation;
 }
 

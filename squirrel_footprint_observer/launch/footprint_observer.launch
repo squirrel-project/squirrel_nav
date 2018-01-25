@@ -3,8 +3,8 @@
   <arg name="rviz" default="false"/>
 
   <!-- The footprint observer -->
-  <node name="squirrel_footprint_observer" pkg="squirrel_footprint_observer" type="squirrel_footprint_observer_node"
-	output="screen">
+  <node name="squirrel_footprint_observer" pkg="squirrel_footprint_observer" 
+	type="footprint_observer_node" output="screen">
     <rosparam file="$(arg config_file)" command="load"/>
   </node>
 
