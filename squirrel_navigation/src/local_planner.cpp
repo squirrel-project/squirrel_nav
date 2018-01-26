@@ -522,9 +522,11 @@ bool LocalPlanner::needReplanning(
 bool LocalPlanner::newGoal(const geometry_msgs::Pose& pose) const {
   if (!current_goal_)
     return true;
-
-  bool new_position    = math::linearDistance2D(*current_goal_, pose) > 1e-2;
-  bool new_orientation = math::angularDistanceYaw(*current_goal_, pose) > 1e-2;
+  
+  const bool new_position =
+      math::linearDistance2D(*current_goal_, pose) > params_.goal_lin_tolerance;
+  const bool new_orientation = math::angularDistanceYaw(*current_goal_, pose) >
+                               params_.goal_ang_tolerance;
 
   return new_position || new_orientation;
 }
