@@ -10,6 +10,7 @@ plugins:
 ObstaclesLayer:
   use_kinect: true
   use_laser_scan: true
+  footprint_topic: /squirrel_footprint_observer/footprint
 
   LaserLayer: 
     enabled: true
@@ -30,6 +31,7 @@ ObstaclesLayer:
     publish_voxel_map: false
     robot_height: 0.9
     floor_threshold: 0.03
+    obstacle_persistence: 60.0
     obstacle_range: 3.0
     raytrace_range: 10.0
     collision_radius: 0.25

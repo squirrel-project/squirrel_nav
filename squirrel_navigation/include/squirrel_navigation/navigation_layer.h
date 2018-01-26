@@ -36,7 +36,9 @@
 
 #include "squirrel_navigation/NavigationLayerConfig.h"
 
+#include <ros/publisher.h>
 #include <ros/service.h>
+#include <ros/subscriber.h>
 
 #include <dynamic_reconfigure/server.h>
 
@@ -46,12 +48,15 @@
 #include <costmap_2d_strip/static_layer.h>
 #include <costmap_2d_strip/voxel_layer.h>
 
+#include <geometry_msgs/PolygonStamped.h>
 #include <squirrel_navigation_msgs/ClearCostmapRegion.h>
 #include <squirrel_navigation_msgs/GetObstaclesMap.h>
 #include <squirrel_navigation_msgs/GetPathClearance.h>
+#include <std_msgs/Header.h>
 
 #include <memory>
 #include <mutex>
+#include <string>
 
 namespace squirrel_navigation {
 
@@ -62,6 +67,7 @@ class NavigationLayer : public costmap_2d::CostmapLayer {
     static Params defaultParams();
 
     bool use_kinect, use_laser_scan;
+    std::string footprint_topic;
   };
 
  public:
@@ -99,6 +105,7 @@ class NavigationLayer : public costmap_2d::CostmapLayer {
  private:
   // Update the parameters and service callbacks
   void reconfigureCallback(NavigationLayerConfig& config, uint32_t level);
+  void footprintCallback(const geometry_msgs::PolygonStamped::ConstPtr& msg);
   bool clearCostmapRegionCallback(
       squirrel_navigation_msgs::ClearCostmapRegion::Request& req,
       squirrel_navigation_msgs::ClearCostmapRegion::Response& res);
@@ -123,6 +130,12 @@ class NavigationLayer : public costmap_2d::CostmapLayer {
       unsigned char* static_costmap, unsigned int stride, int min_i, int min_j,
       int max_i, int max_j);
 
+  // Visualize proximities.
+  void publishPathProximities(
+      const std_msgs::Header& markers_header,
+      const std::vector<geometry_msgs::PoseStamped>& waypoints,
+      const std::vector<float>& proximities);
+
  private:
   Params params_;
   std::unique_ptr<dynamic_reconfigure::Server<NavigationLayerConfig>> dsrv_;
@@ -131,8 +144,12 @@ class NavigationLayer : public costmap_2d::CostmapLayer {
   squirrel_navigation::VoxelLayer kinect_layer_;
   squirrel_navigation::StaticLayer static_layer_;
 
+  ros::Subscriber footprint_sub_;
+
+  ros::Publisher proximities_pub_;
   ros::ServiceServer clear_costmap_srv_, obstacles_map_srv_,
       path_clearance_srv_;
+  int query_path_nwaypoints_;
 
   mutable std::mutex update_mtx_;
 };

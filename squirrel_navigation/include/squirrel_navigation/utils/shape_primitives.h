@@ -1,23 +1,23 @@
 // Copyright (c) 2017, Federico Boniardi and Wolfram Burgard
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
-// 
+//
 // * Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright
 //   notice, this list of conditions and the following disclaimer in
 //   the documentation and/or other materials provided with the
 //   distribution.
-// 
+//
 // * Neither the name of the University of Freiburg nor the names of
 //   its contributors may be used to endorse or promote products
 //   derived from this software without specific prior written
 //   permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -31,15 +31,26 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "squirrel_pointcloud_filter/pointcloud_filter.h"
+#ifndef SQUIRREL_NAVIGATION_UTILS_SHAPE_PRIMITIVES_H_
+#define SQUIRREL_NAVIGATION_UTILS_SHAPE_PRIMITIVES_H_
 
-#include <cstdlib>
+#include <geometry_msgs/Point.h>
 
-int main(int argc, char *argv[]) {
-  ros::init(argc, argv, "pointcloud_filter_node");
+#include <vector>
 
-  squirrel_pointcloud_filter::PointCloudFilter pcf;
-  pcf.spin();
+namespace squirrel_navigation {
 
-  return EXIT_SUCCESS;
+std::vector<geometry_msgs::Point> circle(float radius, int npoints = 20) {
+  const double da = 2 * M_PI / (npoints - 1);
+  // Genereate the output.
+  std::vector<geometry_msgs::Point> points(npoints);
+  for (int i = 0; i < npoints; ++i) {
+    points[i].x = radius * std::cos(i * da);
+    points[i].y = radius * std::sin(i * da);
+  }
+  return points;
 }
+
+}  // namespace squirrel_navigation
+
+#endif /* SQUIRREL_NAVIGATION_UTILS_SHAPE_PRIMITIVES_H_ */

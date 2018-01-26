@@ -129,6 +129,7 @@ detected with depth cameras and the safety laser rangefinders.
 ### Parameters
 - `~/use_kinect` whether to use or not the kinect.
 - `~/use_laser` whether to use or not the laser scan.
+- `~/footprint_topic` the footprint.
 - `~/LaserLayer/*` parameters of [`costmap_2d::ObstacleLayer`](http://docs.ros.org/jade/api/costmap_2d/html/classcostmap__2d_1_1ObstacleLayer.html).
 - `~/DepthCameraLayer/*` parameters of [`costmap_2d::VoxelLayer`](http://docs.ros.org/jade/api/costmap_2d/html/classcostmap__2d_1_1VoxelLayer.html).
 - `~/StaticLayer/*` parameters of [`costmap_2d::StaticLayer`](http://docs.ros.org/jade/api/costmap_2d/html/classcostmap__2d_1_1StaticLayer.html).
@@ -145,6 +146,9 @@ Uses messages provided by [squirrel_navigation_msgs](https://github.com/squirrel
   returns the clearance of a path as well as the proximity map of
   every waypoint of the path.
 
+### Advertised Topics
+- `~/path_proximities` (`visualization_msgs/MarkerArray`) The
+  clearance of the path.
 
 ## Know Issues
 On shutdown, `ClassLoader` throws an error. It should only happens on

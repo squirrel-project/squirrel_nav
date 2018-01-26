@@ -32,6 +32,11 @@
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "squirrel_navigation/navigation_layer.h"
+#include "squirrel_navigation/utils/footprint_utils.h"
+#include "squirrel_navigation/utils/math_utils.h"
+#include "squirrel_navigation/utils/shape_primitives.h"
+
+#include <visualization_msgs/MarkerArray.h>
 
 #include <pluginlib/class_list_macros.h>
 
@@ -55,6 +60,11 @@ void NavigationLayer::onInitialize() {
   // Align size of kinect and laser layer.
   static_layer_.matchSize<ObstacleLayer>(&laser_layer_);
   static_layer_.matchSize<VoxelLayer>(&kinect_layer_);
+  // Initialize publishers and subscribers.
+  footprint_sub_ = pnh.subscribe(
+      params_.footprint_topic, 1, &NavigationLayer::footprintCallback, this);
+  proximities_pub_ =
+      pnh.advertise<visualization_msgs::MarkerArray>("path_proximities", 1);
   // Initialize services.
   clear_costmap_srv_ = pnh.advertiseService(
       "clearCostmapRegion", &NavigationLayer::clearCostmapRegionCallback, this);
@@ -65,6 +75,8 @@ void NavigationLayer::onInitialize() {
   // Finalize intialization.
   current_ = true;
   enabled_ = true;
+  // Reset the markers id.
+  query_path_nwaypoints_ = 0;
   // Initialization Successful.
   ROS_INFO("squirrel_navigation/NavigationLayer: Initializations successful.");
 }
@@ -128,10 +140,24 @@ void NavigationLayer::reset() {
   current_ = true;
 }
 
+void NavigationLayer::footprintCallback(
+    const geometry_msgs::PolygonStamped::ConstPtr& msg) {
+  const auto& new_footprint = costmap_2d::toPointVector(msg->polygon);
+  // Update the laser layer.
+  if (laser_layer_.enabled() &&
+      footprint::equal(new_footprint, laser_layer_.getFootprint()))
+    laser_layer_.setFootprint(new_footprint);
+  // Update the kinect layer.
+  if (kinect_layer_.enabled() &&
+      footprint::equal(new_footprint, kinect_layer_.getFootprint()))
+    kinect_layer_.setFootprint(new_footprint);
+}
+
 void NavigationLayer::reconfigureCallback(
     NavigationLayerConfig& config, uint32_t level) {
   kinect_layer_.enabled() = config.use_kinect;
   laser_layer_.enabled()  = config.use_laser_scan;
+  params_.footprint_topic = config.footprint_topic;
 }
 
 bool NavigationLayer::clearCostmapRegionCallback(
@@ -189,19 +215,18 @@ bool NavigationLayer::getPathClearanceCallback(
   getObstaclesMap(&obstacles_indicator, &obstacles_positions);
   // Resize the storage.
   const int nwaypoints = req.plan.poses.size();
-  res.proximity_map.reserve(nwaypoints);
+  res.proximity_map.resize(nwaypoints);
   res.proximities.resize(nwaypoints);
   geometry_msgs::Point32 closest_obstacle;
   // Get the proximity informations.
   res.clearance = std::numeric_limits<double>::max();
   for (int i = 0; i < nwaypoints; ++i) {
-    const auto& waypoint = req.plan.poses[i];
+    const auto& waypoint = req.plan.poses[i].pose.position;
     // Get the clearance of the waypoint.
     res.proximities[i] = std::numeric_limits<double>::max();
     for (int o = 0; o < obstacles_positions.size(); ++o) {
-      const double dist = std::hypot(
-          waypoint.pose.position.x - obstacles_positions[o].x,
-          waypoint.pose.position.y - obstacles_positions[o].y);
+      const double dist =
+          math::linearDistance2D(waypoint, obstacles_positions[o]);
       if (dist < res.proximities[i]) {
         res.proximities[i]   = dist;
         res.proximity_map[i] = obstacles_positions[o];
@@ -213,6 +238,8 @@ bool NavigationLayer::getPathClearanceCallback(
       res.clearance_waypoint = i;
     }
   }
+  // Visualize the proximities.
+  publishPathProximities(req.plan.header, req.plan.poses, res.proximities);
   return true;
 }
 
@@ -235,9 +262,11 @@ size_t NavigationLayer::getObstaclesMap(
     for (size_t y = 0; y < size_y; ++y) {
       const unsigned int index       = master_costmap->getIndex(x, y);
       obstacles_indicator->at(index) = false;
-      if (master_costmap->getCost(x, y) == costmap_2d::FREE_SPACE) {
+      if (master_costmap->getCost(x, y) == costmap_2d::LETHAL_OBSTACLE) {
         obstacles_indicator->at(index) = true;
         master_costmap->mapToWorld(x, y, px, py);
+        point.x = px;
+        point.y = py;
         obstacles_positions->emplace_back(point);
         nobstacles++;
       }
@@ -269,16 +298,56 @@ void NavigationLayer::mergeCostmaps(
     unsigned int it = stride * j + min_i;
     for (int i = min_i; i < max_i; ++i) {
       costmap_[it] = std::max(laser_costmap[it], kinect_costmap[it]);
-      costmap_[it] = std::max(static_costmap[it], costmap_[it]);
+      if (static_costmap[it] != costmap_2d::NO_INFORMATION)
+        costmap_[it] = std::max(static_costmap[it], costmap_[it]);
       it++;
     }
   }
 }
 
+void NavigationLayer::publishPathProximities(
+    const std_msgs::Header& markers_header,
+    const std::vector<geometry_msgs::PoseStamped>& waypoints,
+    const std::vector<float>& proximities) {
+  const int nwaypoints = waypoints.size();
+  // Create the visualization.
+  visualization_msgs::MarkerArray markers_msg;
+  markers_msg.markers.reserve(std::max(nwaypoints, query_path_nwaypoints_));
+  for (int i = 0; i < nwaypoints; ++i) {
+    visualization_msgs::Marker marker;
+    marker.header  = markers_header;
+    marker.ns      = ros::this_node::getNamespace() + "Clearances";
+    marker.id      = i;
+    marker.type    = visualization_msgs::Marker::LINE_STRIP;
+    marker.action  = visualization_msgs::Marker::MODIFY;
+    marker.pose    = waypoints[i].pose;
+    marker.scale.x = 0.0025;
+    marker.color.r = 1.0;
+    marker.color.g = 1.0;
+    marker.color.b = 0.0;
+    marker.color.a = 0.7;
+    marker.points  = circle(proximities[i]);
+    markers_msg.markers.emplace_back(marker);
+  }
+  // Remove the old markers.
+  for (int i = nwaypoints; i < query_path_nwaypoints_; ++i) {
+    visualization_msgs::Marker delete_marker;
+    delete_marker.ns     = ros::this_node::getNamespace() + "Clearances";
+    delete_marker.id     = i;
+    delete_marker.action = visualization_msgs::Marker::DELETE;
+    markers_msg.markers.emplace_back(delete_marker);
+  }
+  // Update number of waypoints.
+  query_path_nwaypoints_ = nwaypoints;
+  // Publish stuff.
+  proximities_pub_.publish(markers_msg);
+}
+
 NavigationLayer::Params NavigationLayer::Params::defaultParams() {
   Params params;
-  params.use_kinect     = true;
-  params.use_laser_scan = true;
+  params.use_kinect      = true;
+  params.use_laser_scan  = true;
+  params.footprint_topic = "/squirrel_footprint_observer/footprint";
   return params;
 }
 

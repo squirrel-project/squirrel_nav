@@ -7,3 +7,11 @@ update_rate_hz: 10.0
 resolution_x: 0.025
 resolution_y: 0.025
 resolution_z: 0.025
+custom_filters: [ArmFilter]
+
+ArmFilter:
+  enabled: true
+  pointcloud_frame: /kinect_depth_optical_frame
+  joint_chain: [/arm_link1, /arm_motor2, /arm_link2, /arm_link3, /arm_link4, /arm_link5]
+  segments_sq_radii: [0.01, 0.01, 0.01, 0.01, 0.01]
+  

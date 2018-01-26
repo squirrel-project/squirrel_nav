@@ -118,6 +118,14 @@ public:
   unsigned char* costmap() { return costmap_; }
   bool currentStatus() const { return current_; }
   bool& enabled() { return enabled_; } 
+
+  const std::vector<geometry_msgs::Point>& getFootprint() const {
+    return layered_costmap_->getFootprint();
+  }
+  
+  void setFootprint(const std::vector<geometry_msgs::Point>& footprint_spec) {
+    layered_costmap_->setFootprint(footprint_spec);
+  }
   
 protected:
   virtual void setupDynamicReconfigure(ros::NodeHandle& nh);
@@ -175,6 +183,10 @@ protected:
   int combination_method_;
 
   double sq_robot_radius_;
+
+  double obstacle_persistence_;
+  std::map<unsigned int, double> obstacles_stamps_;
+  void clearOutdatedObstacles(double stamp);  
   
 private:
   void reconfigureCB(costmap_2d::ObstaclePluginConfig &config, uint32_t level);
