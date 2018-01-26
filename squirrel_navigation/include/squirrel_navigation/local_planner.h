@@ -113,33 +113,10 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   inline Params& params() { return params_; }
 
  private:
-  class BaseBrake {
-   public:
-    BaseBrake() : enable_stamp_(nullptr) {}
-    virtual ~BaseBrake() {}
-
-   public:
-    bool spin(geometry_msgs::Twist* cmd);
-
-    void enable(const ros::Duration& duration);
-    void disable();
-
-   private:
-    std::unique_ptr<ros::Time> enable_stamp_;
-    ros::Duration enable_time_;
-  };
-
- private:
   // Callbacks.
   void footprintCallback(const geometry_msgs::PolygonStamped::ConstPtr& msg);
   void odomCallback(const nav_msgs::Odometry::ConstPtr& odom);
   void reconfigureCallback(LocalPlannerConfig& config, uint32_t level);
-
-  bool brakeRobotCallback(
-      squirrel_navigation_msgs::BrakeRobot::Request& req,
-      squirrel_navigation_msgs::BrakeRobot::Response& res);
-  bool unbrakeRobotCallback(
-      std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
 
   // Visualization utils.
   void publishTrajectory(const ros::Time& stamp) const;
@@ -185,13 +162,13 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   geometry_msgs::TwistStamped robot_twist_;
   geometry_msgs::PoseStamped robot_pose_;
   std::unique_ptr<geometry_msgs::Pose> current_goal_;
-  std::shared_ptr<tf::TransformListener> tfl_;
-  std::shared_ptr<costmap_2d::Costmap2DROS> costmap_ros_;
+
+  tf::TransformListener* tfl_;
+  costmap_2d::Costmap2DROS* costmap_ros_;
 
   ros::Publisher ref_pub_, traj_pub_, footprints_pub_, cmd_pub_,
       navigation_pub_;
   ros::Subscriber odom_sub_, footprint_sub_;
-  ros::ServiceServer brake_srv_, unbrake_srv_;
 
   std::vector<geometry_msgs::Point> footprint_;
   double inscribed_radius_, circumscribed_radius_;
@@ -200,8 +177,6 @@ class LocalPlanner : public nav_core::BaseLocalPlanner {
   int last_nwaypoints_;
 
   bool init_;
-
-  BaseBrake base_brake_;
 
   static constexpr double kShortPathsReplanningTolerance = 0.2;
   
