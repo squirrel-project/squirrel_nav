@@ -1,0 +1,9 @@
+<launch>
+  <arg name="config_file" default="$(find squirrel_footprint_observer)/config/arm_folding_observer_params.yaml"/>
+
+  <node name="arm_folding_observer" pkg="squirrel_footprint_observer" 
+	type="arm_folding_observer_node" output="screen">
+    <rosparam file="$(arg config_file)" command="load"/>
+  </node>
+
+</launch>
