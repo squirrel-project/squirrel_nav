@@ -11,4 +11,5 @@ env:
 install:
   - git clone --depth=1 https://github.com/ipa-mdl/industrial_ci.git -b target-repo-rw .ci_config
 script:
-  - travis_wait 60 .ci_config/travis.sh 
+  - while true; do echo "travis waiting...."; sleep 500; done &
+  - .ci_config/travis.sh 
