@@ -1,6 +1,6 @@
 <launch>
   <arg name="map_file" default="$(find squirrel_navigation)/maps/default-map.yaml" />
-  <arg name="3d_mapping" default="false" />
+  <arg name="3d_mapping" default="true" />
   <arg name="use_last_pose" default="true"/>
   <arg name="twist_mux" default="true"/>
   <arg name="rviz" value="false"/>
@@ -37,7 +37,7 @@
   </node>
   
   <!-- Run the octomap server and the 3d collision check -->
-  <include file="$(find squirrel_3d_mapping)/launch/3d_mapping.launch" if="$(arg 3d_mapping)"/>
+  <include file="$(find squirrel_3d_mapping)/launch/3d_mapping_initial.launch" if="$(arg 3d_mapping)"/>
 
   <!-- RViz -->
   <node pkg="rviz" type="rviz" name="squirrel_navigation_rviz" 
