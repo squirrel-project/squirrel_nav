@@ -8,7 +8,8 @@ env:
     - ROS_DISTRO="indigo"
     - UPSTREAM_WORKSPACE=file
     - WRITABLE_SOURCE=true
+    - ROS_PARALLEL_JOBS=-j4
 install:
   - git clone --depth=1 https://github.com/ipa-mdl/industrial_ci.git -b target-repo-rw .ci_config
 script:
-  - travis_wait 60 .ci_config/travis.sh 
+  - .ci_config/travis.sh 
