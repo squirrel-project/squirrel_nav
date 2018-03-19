@@ -77,7 +77,7 @@ install(
   PATTERN ".git" EXCLUDE)
 
 install(
-  FILES config/robotino_footprint.yaml
+  DIRECTORY config
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 ## Testing.
