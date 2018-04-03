@@ -1,5 +1,5 @@
 ## Robot radius.
-robot_radius: 0.22
+robot_radius: 0.28
 
 # costmap_2d plugins declaration.
 plugins:
@@ -29,8 +29,8 @@ ObstaclesLayer:
     enabled: true
     publish_voxel_map: false
     robot_height: 0.9
-    floor_threshold: 0.03
-    obstacle_range: 3.0
+    floor_threshold: 0.07
+    obstacle_range: 2.0
     raytrace_range: 10.0
     collision_radius: 0.25
     observation_sources: kinect_cloud
@@ -46,6 +46,6 @@ ObstaclesLayer:
 
 ## Parameters for costmap_2d::InflationLayer
 InflationLayer:
-  inscribed_radius: 0.22
+  inscribed_radius: 0.28
   inflation_radius: 0.6
   cost_scaling_factor: 10.0

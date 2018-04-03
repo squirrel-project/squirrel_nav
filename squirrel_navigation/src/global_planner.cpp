@@ -63,7 +63,7 @@ void GlobalPlanner::initialize(
   dsrv_->setCallback(
       boost::bind(&GlobalPlanner::reconfigureCallback, this, _1, _2));
   // Initialize internal observers.
-  costmap_ros_.reset(costmap_ros);
+  costmap_ros_ = costmap_ros;
   // Initialize the path planners.
   dijkstra_planner_.reset(new navfn::NavfnROS);
   dijkstra_planner_->initialize(name + "/Dijkstra", costmap_ros);
@@ -110,6 +110,7 @@ bool GlobalPlanner::makePlan(
     }
     waypoints.back() = goal;
   }
+
   // Print info.
   if (params_.verbose) {
     if (plan_found)
@@ -121,14 +122,17 @@ bool GlobalPlanner::makePlan(
           "squirrel_navigation/GlobalPlanner: Could not find a collision free "
           "path.");
   }
+  
   // Clear waypoints if plan not found.
   if (!plan_found)
     waypoints.clear(); 
+
   // Publish topics.
   const ros::Time& now = ros::Time::now();
   publishPlan(waypoints, now);
   publishWaypoints(waypoints, now);
   publishFootprints(waypoints, now);
+
   // Feedback.
   return plan_found;
 }

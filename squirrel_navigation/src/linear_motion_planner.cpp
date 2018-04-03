@@ -81,7 +81,7 @@ void LinearMotionPlanner::update(
   std::unique_lock<std::mutex> lock(update_mtx_);
   // Update the trajectory with new waypoints.
   const int head_waypoint_index = computeHeadingWaypointIndex(stamp);
-  if (head_waypoint_index + params_.waypoints_heading_lookahead ==
+  if (head_waypoint_index + params_.waypoints_heading_lookahead >=
       (int)waypoints_.size() - 1)
     return;
   if ((int)waypoints.size() - 1 < params_.waypoints_heading_lookahead)

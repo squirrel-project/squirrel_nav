@@ -1,0 +1,4 @@
+verbose: true
+joint_states_topic: /arm_controller/joint_states
+joint_names: [arm_joint1, arm_joint2, arm_joint3, arm_joint4, arm_joint5]
+ref_joint_states: [0.292, 2.27, 0.19, -1.17, 0.53]

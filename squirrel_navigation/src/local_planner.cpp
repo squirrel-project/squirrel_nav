@@ -120,18 +120,22 @@ void LocalPlanner::initialize(
 
 bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
   std::unique_lock<std::mutex> lock(state_mtx_);
+  // Safety stop.
+  cmd.linear.x = cmd.linear.y = cmd.angular.z = 0.0;
+
   // Check if the robot is braked.
   if (base_brake_.spin(&cmd))
     return true;
+
   // Check the scan observer.
   for (const auto& safety_observer : safety_observers_)
     if (!safety_observer->safe())
-      return true;
+      return false;
+  
   // Compute the reference pose and perform safety check.
   const ros::Time& stamp = robot_pose_.header.stamp;
   geometry_msgs::Pose ref_pose;
   geometry_msgs::Twist ref_twist;
-  std::vector<geometry_msgs::PoseStamped> trajectory;
   motion_planner_->computeReference(stamp, &ref_pose, &ref_twist);
   publishReference(ref_pose, stamp);
   if (math::linearDistance2D(robot_pose_.pose, ref_pose) >
@@ -144,16 +148,24 @@ bool LocalPlanner::computeVelocityCommands(geometry_msgs::Twist& cmd) {
     current_goal_.reset(nullptr);
     return false;
   }
+
+  const auto& trajectory = motion_planner_->trajectory();
+  if (!isTrajectorySafe(trajectory))
+    return false;
+
   // Compute the commands via PID controller in map frame.
   geometry_msgs::Twist map_cmd;
   controller_->computeCommand(
       stamp, robot_pose_.pose, ref_pose, robot_twist_.twist, ref_twist,
       &map_cmd);
+
   // Transform the commands in robot frame.
   geometry_msgs::Twist robot_cmd;
   twistToRobotFrame(map_cmd, &robot_cmd);
+
   // Threshold the twist according to safety parameters.
   safeVelocityCommands(robot_cmd, &cmd);
+
   // Publish the command.
   publishTwist(robot_pose_, cmd);
   return true;
@@ -176,8 +188,10 @@ bool LocalPlanner::isGoalReached() {
 
 bool LocalPlanner::setPlan(
     const std::vector<geometry_msgs::PoseStamped>& waypoints) {
+
   if (waypoints.empty())
     return false;
+
   const ros::Time& stamp = robot_pose_.header.stamp;
   if (newGoal(waypoints.back().pose)) {
     current_goal_.reset(new geometry_msgs::Pose(waypoints.back().pose));
@@ -230,11 +244,12 @@ void LocalPlanner::odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
     odom_robot_pose.pose   = odom->pose.pose;
     tfl_->waitForTransform(
         map_frame_id, odom->header.frame_id, odom->header.stamp,
-        ros::Duration(0.1));
+        ros::Duration(0.5));
     tfl_->transformPose(map_frame_id, odom_robot_pose, robot_pose_);
     twistToGlobalFrame(odom->twist.twist, &robot_twist_.twist);
   } catch (const tf::TransformException& ex) {
     ROS_ERROR_STREAM("squirrel_navigation/LocalPlanner: " << ex.what());
+    ROS_INFO("But we increased the duration to 0.5!!");
   }
 }
 
@@ -440,9 +455,10 @@ void LocalPlanner::safeVelocityCommands(
 bool LocalPlanner::isTrajectorySafe(
     const std::vector<geometry_msgs::PoseStamped>& trajectory) const {
   double cum_lin_lookahead = 0.0, cum_ang_lookahead = 0.0;
-  for (unsigned int i = 0; i < trajectory.size() - 1; ++i) {
+
+  const int nwaypoints = trajectory.size();
+  for (int i = 0; i < nwaypoints; ++i) {
     const auto& curr_waypoint = trajectory[i].pose;
-    const auto& next_waypoint = trajectory[i + 1].pose;
     // Compute the cost of the current waypoint.
     const double x             = curr_waypoint.position.x;
     const double y             = curr_waypoint.position.y;
@@ -451,35 +467,49 @@ bool LocalPlanner::isTrajectorySafe(
         x, y, a, footprint_, inscribed_radius_, circumscribed_radius_);
     if (waypoint_cost < 0. || waypoint_cost >= costmap_2d::LETHAL_OBSTACLE)
       return false;
+    
     // Update the lookahead.
-    const double dl = math::linearDistance2D(curr_waypoint, next_waypoint);
-    const double da = math::angularDistanceYaw(curr_waypoint, next_waypoint);
-    if ((cum_lin_lookahead += dl) >= params_.replanning_lin_lookahead ||
-        (cum_ang_lookahead += da) >= params_.replanning_ang_lookahead)
-      return true;
+    if (i < trajectory.size() - 1) {
+      const auto& next_waypoint = trajectory[i + 1].pose;
+      const double dl = math::linearDistance2D(curr_waypoint, next_waypoint);
+      const double da = math::angularDistanceYaw(curr_waypoint, next_waypoint);
+      if ((cum_lin_lookahead += dl) >= params_.replanning_lin_lookahead ||
+          (cum_ang_lookahead += da) >= params_.replanning_ang_lookahead)
+        return true;
+    }
   }
+  
+  return true;
 }
 
 bool LocalPlanner::needReplanning(
     const std::vector<geometry_msgs::PoseStamped>& old_waypoints,
     const std::vector<geometry_msgs::PoseStamped>& new_waypoints) const {
+  const double old_length = math::pathLength(old_waypoints);
+  const double new_length = math::pathLength(new_waypoints);
+
+  if (old_length <= kShortPathsReplanningTolerance)
+    return false;
+  
   const bool current_trajectory_suboptimal =
-      math::pathLength(new_waypoints) <=
-      params_.replanning_path_length_ratio * math::pathLength(new_waypoints);
-  const bool need_replanning =
-      current_trajectory_suboptimal || !isTrajectorySafe(old_waypoints);
-  if (params_.verbose && need_replanning)
+      (new_length <= params_.replanning_path_length_ratio * old_length);
+  // const bool need_replanning =
+  //     current_trajectory_suboptimal || !isTrajectorySafe(old_waypoints);
+
+  if (params_.verbose && current_trajectory_suboptimal // need_replanning
+      )
     ROS_INFO_STREAM(
         "squirrel_navigation::LocalPlanner: Found a shorter trajectory or "
         "trajectory not safe. Replanning requested.");
-  return need_replanning;
+
+  return current_trajectory_suboptimal; // need_replanning;
 }
 
 bool LocalPlanner::newGoal(const geometry_msgs::Pose& pose) const {
   if (!current_goal_)
     return true;
-  bool new_position    = math::linearDistance2D(*current_goal_, pose) > 1e-8;
-  bool new_orientation = math::angularDistanceYaw(*current_goal_, pose) > 1e-8;
+  bool new_position    = math::linearDistance2D(*current_goal_, pose) > params_.goal_lin_tolerance;
+  bool new_orientation = math::angularDistanceYaw(*current_goal_, pose) > params_.goal_ang_tolerance;
   return new_position || new_orientation;
 }
 

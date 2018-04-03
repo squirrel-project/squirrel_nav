@@ -120,7 +120,7 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
   
   int last_nwaypoints_;
 
-  std::shared_ptr<costmap_2d::Costmap2DROS> costmap_ros_;
+  costmap_2d::Costmap2DROS* costmap_ros_;
 };
 
 }  // namespace squirrel_navigation

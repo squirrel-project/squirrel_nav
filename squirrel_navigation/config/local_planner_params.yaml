@@ -3,21 +3,21 @@ LocalPlanner:
   visualize_topics: true
   odom_topic: "/odom"
   footprint_topic: "/squirrel_footprint_observer/footprint"
-  goal_lin_tolerance: 0.05
-  goal_ang_tolerance: 0.05
+  goal_lin_tolerance: 0.1
+  goal_ang_tolerance: 0.1
   max_safe_lin_velocity: 0.7
   max_safe_ang_velocity: 0.9
   max_safe_lin_displacement: 0.5
   max_safe_ang_displacement: 1.0
   collision_based_replanning: true
-  replanning_lin_lookahead: 1.0
+  replanning_lin_lookahead: 2.0
   replanning_ang_lookahead: 1.0
-  replanning_path_length_ratio: 0.75
-  safety_observers: ["ScanSafetyObserver", "ArmSkinObserver"]
+  replanning_path_length_ratio: 0.5
+  safety_observers: []
 
   LinearMotionPlanner:
-    max_linear_velocity: 0.8
-    max_angular_velocity: 1.0
+    max_linear_velocity: 0.4
+    max_angular_velocity: 0.9
     linear_smoother: 0.75
     angular_smoother: 0.75
     time_scaler: 2.0
@@ -26,8 +26,8 @@ LocalPlanner:
 
   ControllerPID:
     visualize_topics: false
-    kP_lin: 1.5
-    kP_ang: 1.5
+    kP_lin: 1.75
+    kP_ang: 2.0
     kI_lin: 0.0001
     kI_ang: 0.0001
     kD_lin: 0.0001

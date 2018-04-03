@@ -52,9 +52,19 @@ catkin_package(
  CATKIN_DEPENDS ${${PROJECT_NAME}_DEPENDENCIES}
  DEPENDS CGAL YamlCpp)
 
-## Building the footprint observer
+## Include the headers.
 include_directories(include)
+
+## Building the arm folding observer
+add_executable(arm_folding_observer_node
+  src/arm_folding_observer_node.cpp
+  src/arm_folding_observer.cpp)
+target_link_libraries(arm_folding_observer_node
+  ${catkin_LIBRARIES})
+
+## Building the footprint observer
 add_executable(${PROJECT_NAME}_node
+  src/arm_folding_observer.cpp
   src/footprint_observer.cpp
   src/footprint_observer_node.cpp)
 target_link_libraries(${PROJECT_NAME}_node 
@@ -65,7 +75,7 @@ add_dependencies(${PROJECT_NAME}_node
 
 ## Install
 install(
-  TARGETS ${PROJECT_NAME}_node
+  TARGETS ${PROJECT_NAME}_node arm_folding_observer_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
